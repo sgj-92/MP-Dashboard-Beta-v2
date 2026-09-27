@@ -60,8 +60,8 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Branch | `main` |
-| Last verified implementation commit | **`023a0f7`** |
-| Tests | **650 / 650 passing** (196 of them drive a real browser) |
+| Last verified implementation commit | **`0766d7b`** |
+| Tests | **672 / 672 passing** (206 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -148,6 +148,22 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Fixture follow-up: Called Out, Upcoming and Manage fixture — DONE
+(`0766d7b`).** Shaun/CGPT, 27 Sep.
+- **Called Out vs Upcoming.** A game all four have agreed is **Called Out**.
+  It becomes **Upcoming** only when an Admin records *Court booking made*. A
+  date, time or venue never promotes it.
+- **The Upcoming tab** has three sections, each collapsible on its own:
+  Needs attention (at the top, shown only when something needs it), Upcoming
+  and Called Out.
+- **Backing out.** A player who backs out puts the game in Needs attention;
+  nothing is deleted. An Admin can replace them on the same fixture, and the
+  replacement confirms for themselves.
+- **Manage fixture** is the Admin's one panel for a fixture. Remove fixture
+  now lives inside it.
+- **Existing fixtures are not classified as booked.** An Admin answers each
+  one. Section 5 has what Shaun needs to know.
 
 **Fixture flow D1–D3 — DONE (`023a0f7`).** Shaun/CGPT decisions of 27 Sep,
 from the Phase 1 audit's defects:
@@ -631,6 +647,37 @@ supplies who is acting and whether they are an admin.
     choice against recorded results. Nothing is closed in bulk or on load.
   - **"Add result"** from a card records `fixtureId` on the submission as a
     proposal. It no longer deletes the fixture.
+- **Court booking and stages (27 Sep follow-up, `0766d7b`).** An agreed
+  fixture (`status: 'confirmed'`) is shown by a derived stage,
+  `FixtureFlow.stage()`. The stage is never stored.
+  - **Needs attention:** someone has backed out (`cantPlay`), or a replacement
+    has not yet answered. This overrides the other two stages.
+  - **Upcoming:** everyone is in and `courtBookingMade === true`.
+  - **Called Out:** everyone is in and the court is not booked.
+  - `pending` is still a request in Play › Requests, and `played` and
+    `removed` are unchanged. Playing a game still needs the D3 Admin answer; a
+    passed date never marks one played.
+- **Court booking:** only an Admin sets it, in Manage fixture, in the review
+  list, or when adding an agreed game. Turning it off keeps the date, time
+  and venue. Backing out never clears it, because the court may still
+  physically be booked.
+- **Replacement:** the newcomer takes the same seat on the same side and the
+  fixture keeps its id. The newcomer starts unconfirmed and the others keep
+  their answers. `formerPlayers` and `history` record who agreed, who backed
+  out, and who replaced them.
+- **Admin answers:** an Admin can also set a player's answer directly in
+  Manage fixture. It is recorded as `marked-in` / `marked-waiting` /
+  `backed-out`, by the Admin.
+- **Schema additions:**
+  - `courtBookingMade` (boolean). Absent means not recorded, which is read as
+    not booked and never written for you.
+  - `agreedAt`.
+  - `formerPlayers[] {name, replacedBy, at, by, hadConfirmed, backedOutAt}`.
+  - `cantPlay[name]` now `{at, by, wasIn}`.
+  - New history actions: `agreed` (was `upcoming`), `added-agreed`,
+    `court-booked`, `court-not-booked` (with `firstRecorded` on the first
+    answer), `backed-out`, `marked-in`, `marked-waiting`, `replaced`,
+    `sides-changed` and `details-changed`.
 - **Trust:** the viewer is self-declared, as before. These rules stop the app
   from offering the wrong action; they are not access control.
 
@@ -717,6 +764,11 @@ Shaun's decisions, including where an agent recommended otherwise.
 | D2 — confirmations belong to the player responding | **DONE `023a0f7`.** Shaun/CGPT, 27 Sep 2026. The requester is auto-confirmed, so a request starts at 1/4. Each participant answers "I'm in" or "Can't play" for themselves, as the selected player, in Play (the Pending card under Requests), never through a profile. 4/4 moves the **same record** to Upcoming. Home is not redesigned by this. |
 | D3 — a result never silently closes an Upcoming fixture | **DONE `023a0f7`.** Shaun/CGPT, 27 Sep 2026: *"NEVER silently auto-match."* At approval, plausible outstanding fixtures are found and the Admin is asked *"Does this result belong to this Upcoming game?"*, with the result and the possible match shown. **"This was the game"** links it, marks it played and keeps provenance. **"Upcoming game is still outstanding"** keeps the result valid and the fixture listed, and that pair is never proposed again. With several candidates the Admin picks one or **"None — still outstanding / unrelated result"**. With no credible candidate, nothing is asked. Stale fixtures are **never bulk-closed**: they are reconciled one at a time, and a past fixture with no plausible result stays available. |
 | Upcoming cards arrive collapsed | **DONE `023a0f7`.** Shaun/CGPT, 27 Sep 2026. Collapsed by default on entering Upcoming. The one-line card reads "Erf & Eli vs Osh & Stormz / Date TBC · Venue TBC · 4/4 confirmed ›". Each game opens and closes independently; there is **no Collapse All**. The expanded card shows the teams, date/time/venue, requester, each player's confirmation, Add result, "I can't play" for a participant viewer, and Admin-only controls where appropriate. It must stay useful at 375px with a generous touch target. **Share Upcoming is future work, not built.** |
+| Called Out is separate from Upcoming | **DONE `0766d7b`.** Shaun/CGPT, 27 Sep 2026. An agreed game is not Upcoming until a court is actually booked. Agreed-but-unbooked games are kept, as **Called Out**, so they are not forgotten. Both are sections of the existing Upcoming tab, **not a new Play sub-tab**, and each collapses independently. Cards keep the D1–D3 folded default. Called Out shows its age ("Called out 6d ago"). Old Called Out games are **never** auto-expired, deleted or cancelled, and there are no "Still happening?" prompts yet; both are future product decisions. **Supersedes D2's "4/4 moves to Upcoming":** 4/4 plus no booking is Called Out, and 4/4 plus a booking is Upcoming. |
+| Court booking made is an explicit fact | **DONE `0766d7b`.** Shaun/CGPT, 27 Sep 2026. It is the authoritative line between Called Out and Upcoming. It is **never inferred** from a date, time or venue. It is set only by a deliberate Admin action, labelled "Marks this game as booked and moves it to Upcoming." Turning it off returns a healthy game to Called Out with its details intact. |
+| Backing out and replacement keep the fixture | **DONE `0766d7b`.** Shaun/CGPT, 27 Sep 2026. A participant ("I can't play") or an Admin can record that a player backed out. The game goes to **Needs attention**, which overrides Called Out and Upcoming, and nothing is deleted. The fixture's identity, the fact that the player had agreed, the booking (**never silently cleared**), the details and the other answers are all kept. An Admin can replace the player **on the same fixture**. The replacement does **not** inherit the old player's confirmation, and the others keep theirs. Once the replacement confirms, the game returns to Called Out or Upcoming by the booking it kept. Provenance: agreed → backed out → replaced → confirmed. |
+| Manage fixture; Remove is not a card action | **DONE `0766d7b`.** Shaun/CGPT, 27 Sep 2026. **Manage fixture** is an Admin-only secondary action that edits the existing fixture and never creates a replacement record. It covers players 1–4, sides, each player's answer, date, time, venue and Court booking made. **Remove fixture** moves inside it, keeping its explicit confirmation. The normal expanded Admin card is: details, Add result, Prediction available ›, Manage fixture ›. Players never see removal. D3 reconciliation is unchanged. |
+| Existing fixtures are not migrated to "booked" | **DONE `0766d7b`.** Shaun/CGPT, 27 Sep 2026: a stored date is not proof of a booking, so none is invented. Fixtures without the fact are listed as Called Out, and a one-time, Admin-only **"Court bookings to record"** list asks about each one ("Court booked" / "Not booked yet"). Nothing is written until the Admin answers. See Section 5. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -1646,6 +1698,59 @@ following as one coherent UI refactor, with no data/model changes:
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 27 Sep — fixture follow-up: what Shaun should know, and choices made
+
+**1. The live fixtures need one Admin pass.** Read-only, 27 Sep: the live
+record holds **6** agreed fixtures, all created by Shaun on 21 Sep.
+- **What they contain:** none has a time, a venue or any booking field. Five
+  have no date; one is dated 24 Sep, now past. None has any history.
+- **What can be inferred:** that all four players agreed, because Shaun added
+  them as agreed.
+- **What cannot:** whether any court is booked. So they are **not** marked
+  booked.
+- **What players see:** all six under Called Out ("Court not booked").
+- **What Shaun sees:** the Admin-only *Court bookings to record (6)* list at
+  the top of the Upcoming tab, with "Court booked" / "Not booked yet" on
+  each. That is six taps.
+- **Recommendation:** answer the list once, and remove any game that is no
+  longer happening from Manage fixture.
+
+**2. Two fixtures were deleted before the new rules went live.** The two
+23 Sep games (Antz & Fatch v Jams & Tom; Erf & Rishi v Denis & PDM) are no
+longer in the live record.
+- The document was last written at about **07:34 UTC on 27 Sep**, before
+  the D1–D3 deploy at 08:52. It was therefore the old one-tap delete, which
+  kept no record of who did it.
+- Nothing to act on; recorded so the count change (8 → 6) is explained.
+
+**3. Needs attention presentation (CCode's choice, reported per the brief).**
+- Needs attention is its **own small section at the top** of the Upcoming
+  tab, and appears only when something needs attention.
+- It was not done as a tag inside Called Out or Upcoming, because the brief
+  asked that disrupted games not disappear inside Called Out. A booked game
+  that has lost a player is the most urgent thing on the screen.
+- Each folded card still says whether a court is booked.
+- If Shaun prefers a tag within the normal sections, it is a small change.
+
+**4. Admin can set a player's answer directly.** The brief lists "each
+player's current confirmation/availability" in Manage fixture.
+- An Admin can therefore mark someone In, Not answered or Backed out.
+- It is recorded as the Admin's act, not the player's.
+- This is the one deliberate exception to D2's "nobody confirms another
+  player", and it is Admin-only.
+
+**5. Only an Admin records a court booking.** Often a player books the court.
+Whether a participant should be able to say "I've booked the court" is a
+product question. It is not built.
+
+**6. Smaller points.**
+- **Ordering:** Called Out is oldest first, so the game most likely to be
+  forgotten is on top. Upcoming is soonest first.
+- **Admin-added games** (Requests form and Predict a Matchup) now ask for
+  Court booking made. It is unticked by default, so they land in Called Out.
+- **A player backing out of an unagreed request** leaves it in Requests, as
+  before; only agreed games go to Needs attention.
+
 ### RESOLVED 20 Sep — Tom + Fatch stale reassessment information
 
 **Audit complete (`838ca66`). The record is correct; the stale source was a
@@ -2060,6 +2165,50 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 27 Sep 2026 (fixture follow-up: Called Out, Upcoming, Manage fixture)
+
+`0766d7b`. **672/672 tests pass.** The 22 new tests all fail against
+`023a0f7`. Seven existing tests were updated to the approved behaviour:
+- "agreed" replaces "upcoming" in history.
+- Removal is reached through Manage.
+- An Admin-added game without a booking is Called Out.
+- The date format is now "Fri 18 Sep".
+- An unbooked fixture's D3 question says "Called Out game".
+
+**What changed:**
+- **Rules** are in `fixtureFlow.js`: `stage`, `attention`, `setCourtBooking`,
+  `setAvailability` / `markBackedOut`, `replacePlayer`, `adminEdit`,
+  `createAgreed`. The app only draws them. Schema is in Section 2.
+- **Admin edits are all-or-nothing.** `adminEdit` checks everything before
+  changing anything, and a failed save restores the previous state.
+
+**Checked visually at 375px:**
+- **The live record** (read-only): six Called Out games, plus the Admin
+  review list.
+- **Illustrative fixtures:**
+  - A booked game with a backed-out player, at the top under Needs attention
+    with "Court booked" kept.
+  - An Upcoming game with Manage fixture open.
+  - A Called Out game reading "Proposed: Tue 29 Sep · 20:00 · PadelX / 4/4
+    agreed · Court not booked · Called out 6d ago".
+- No writes and no page errors.
+
+**Bug found and fixed while testing:** in Manage fixture, swapping two
+players between seats reset both to "not answered". Answers now follow the
+player, and only a genuinely new name starts unanswered.
+
+**Edge cases for whoever builds next:**
+- **Home:** `getViewerSnapshot().upcomingGames` (`shell.js`) still means
+  "all agreed", Called Out included. Nothing renders it. A future Home "my
+  next game" should use `FixtureFlow.stage()`.
+- **Last writer wins** on the single fixtures document. It matters more now
+  that Admins edit fixtures too.
+
+**Baton → Shaun / CGPT.**
+- Shaun: the one-time booking review (Section 5, item 1).
+- D4 and D5 remain for product discussion.
+- Nothing is queued for CCode.
 
 ### CCode — 27 Sep 2026 (fixture flow D1–D3)
 
@@ -5543,6 +5692,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `0766d7b` | Fixture follow-up. Called Out vs Upcoming, split by an explicit Admin-set `courtBookingMade`. The Upcoming tab has Needs attention / Upcoming / Called Out sections, each collapsible, with "Called out Nd ago". Backing out (by the player or recorded by an Admin) goes to Needs attention with the booking kept. Admin replacement on the same fixture, where the newcomer starts unconfirmed and `formerPlayers` keeps provenance. Manage fixture edits players, sides, answers, date, time, venue and booking, and holds Remove. Legacy fixtures are not classified as booked; an Admin-only review list covers them. Admin-added games ask for the booking. 22 tests, all failing against the previous code; 672/672. |
 | `023a0f7` | Fixture flow D1–D3: `fixtureFlow.js` lifecycle (one record, history on every change). Player-visible Remove is gone; "I can't play" is for the viewer only (Needs attention); Admin removal takes two steps. The requester starts confirmed; Pending cards answer only for the selected player; the profile confirm button is removed. Approval asks which Upcoming game a result belongs to, if any, and nothing links silently; the Admin reconciles stale fixtures from the expanded card. Upcoming cards arrive folded and open independently. 25 tests (browser tests 11–24 fail against the previous code); 650/650. |
 | `0f9db42` | Player Experience Reset Phase 1 UX audit (evidence only): `PLAYER_UX_AUDIT.md`, 77 screenshots and an index in `docs/ux-audit/`, the journey tap-log, and `scripts/ux-audit-capture.js`; five defects recorded, not fixed (NEXT #15j) |
 | `25191b8` | Monthly Race (Best Month) trial: `monthlyRace.js` plus a fourth League-screen View, by tier with provisional players and "No qualifier this month", and an auditable drill-down per score; reconciled to the analysis on the live record (same order in every tier, largest difference 0.23 from per-match rounding); 21 tests, including proof that ratings, League, Merit and Monthly Performance are unchanged |
@@ -5774,6 +5924,11 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
    open, for product discussion; CCode has not started them.** The wider
    Player Experience Reset is also not started. Findings for whoever designs
    the next step are in the 27 Sep CCode handoff.
+
+   **27 Sep, later: fixture follow-up DONE (`0766d7b`).** This covers Called
+   Out vs Upcoming, Court booking made, backing out and replacement, and
+   Manage fixture (Section 3). **D4 and D5 are still open and not started.**
+   The Section 5 fixture questions are for Shaun / CGPT.
 
 15i. **APPROVED TRIAL — Best Month / Monthly Race** (Shaun, 26 Sep).
    Analysis is complete in [`BEST_MONTH_ANALYSIS.md`](./BEST_MONTH_ANALYSIS.md).
