@@ -306,6 +306,7 @@ maybe('players get no Manage fixture and no removal; an admin card keeps Remove 
   try {
     await install(app);
     const r = await app.run(() => {
+      requestSectionOpen.others = true; // where a request an outsider did not make is listed
       const controls = (id) => [...cardFor(id).querySelectorAll('button')].map((b) => b.textContent.replace(/\s+/g, ' ').trim());
       const look = (viewer) => {
         setCurrentViewer(viewer); goUpcoming(); opened('fxC');

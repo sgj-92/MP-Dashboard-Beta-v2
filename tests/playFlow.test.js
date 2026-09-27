@@ -154,7 +154,8 @@ maybe('Requests and Upcoming open on their lists, not on their forms', async () 
     });
     assert.strictEqual(r.req.open.request, false, 'the request form should arrive folded away');
     assert.strictEqual(r.req.formVisible, false);
-    assert.strictEqual(r.req.open.pending, true, 'the list of requests is the content, so it opens');
+    assert.strictEqual(r.req.open.forMe, true, 'the requests waiting on me are the content, so they open');
+    assert.strictEqual(r.req.open.mine, true, 'and so are the ones I am waiting on');
     assert.ok(r.req.folds >= 3, `Requests should be sectioned, saw ${r.req.folds} folds`);
     assert.ok(r.upcomingFolds >= 1, 'Upcoming should be sectioned too');
     assert.deepStrictEqual(app.pageErrors, []);

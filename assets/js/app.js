@@ -6779,8 +6779,8 @@ let upcomingPredictionOpen = {};
 // phone meant the list of open requests was below three form panels nobody had
 // asked for. The lists open; the forms that create them do not. Not persisted:
 // each screen should open the same way every time.
-let requestSectionOpen = { challenges: true, request: false, adminAdd: false, pending: true };
-let upcomingSectionOpen = { review: true, attention: true, upcoming: true, calledOut: true };
+let requestSectionOpen = { challenges: true, forMe: true, mine: true, request: false, bulk: false, adminAdd: false, others: false };
+let upcomingSectionOpen = { review: true, attention: true, upcoming: true, calledOut: true, archived: false };
 
 // ===================== FIXTURES: REQUESTS AND UPCOMING =====================
 // The rules live in fixtureFlow.js; this draws them and wires the taps.
@@ -6813,6 +6813,9 @@ const FIXTURE_REFUSALS = {
   'missing-player': 'Every seat needs a player.',
   'duplicate-player': 'The same player is in two seats.',
   'already-playing': 'That player is already in this game.',
+  'archived': 'This call-out is archived — an admin can restore it.',
+  'not-called-out': 'Only an active Called Out game can be archived.',
+  'not-archived': 'This game is not archived.',
 };
 
 function fixtureActor(){
@@ -6960,9 +6963,26 @@ function fixtureManageHtml(req){
       <button type="button" class="preset-btn fx-m-save" data-fixture-id="${id}">Save changes</button>
       <button type="button" class="preset-btn fx-m-cancel" data-fixture-id="${id}">Cancel</button>
     </div>
+    ${fixtureArchiveControlHtml(req)}
     <div class="fx-m-danger">${fixtureAdminRemoveHtml(req)}</div>
   </div>`;
   return html;
+}
+
+// Archive call-out / Restore to Called Out: a state change on the same
+// fixture, never a copy. Offered only where it applies.
+function fixtureArchiveControlHtml(req){
+  const st = FixtureFlow.stage(req, new Date().toISOString());
+  const id = escapeHtml(req.id);
+  if(st === FixtureFlow.STAGE.CALLED_OUT){
+    return `<div class="fx-m-archive"><button type="button" class="preset-btn fx-archive" data-fixture-id="${id}">Archive call-out</button>
+      <div class="fx-m-sub">Takes it off the active list. Nothing is deleted; it can be restored.</div></div>`;
+  }
+  if(st === FixtureFlow.STAGE.ARCHIVED){
+    return `<div class="fx-m-archive"><button type="button" class="preset-btn fx-in fx-restore" data-fixture-id="${id}">Restore to Called Out</button>
+      <div class="fx-m-sub">Back on the active list for another ${FixtureFlow.ARCHIVE_DAYS} days.</div></div>`;
+  }
+  return '';
 }
 
 // A recorded result, said the way the Games list says it.
@@ -6975,7 +6995,8 @@ function fixtureResultLine(m){
 // What an agreed fixture is called where it is listed.
 function fixtureStageWord(req){
   const s = FixtureFlow.stage(req);
-  return s === FixtureFlow.STAGE.UPCOMING ? 'Upcoming game' : s === FixtureFlow.STAGE.CALLED_OUT ? 'Called Out game' : 'game';
+  return s === FixtureFlow.STAGE.UPCOMING ? 'Upcoming game' : s === FixtureFlow.STAGE.CALLED_OUT ? 'Called Out game'
+    : s === FixtureFlow.STAGE.ARCHIVED ? 'archived call-out' : 'game';
 }
 
 // Admin, on an agreed fixture that may already have been played: the recorded
@@ -7016,8 +7037,10 @@ function buildPendingRequestCardHtml(req){
 // scan when folded, everything when open.
 function buildUpcomingCardHtml(req, ctx){
   const open = upcomingOpen.has(req.id);
-  const stage = FixtureFlow.stage(req);
+  const now = ctx.now || new Date().toISOString();
+  const stage = FixtureFlow.stage(req, now);
   const S = FixtureFlow.STAGE;
+  const archive = stage === S.ARCHIVED ? FixtureFlow.archiveInfo(req, now) : null;
   const booked = FixtureFlow.isBooked(req);
   const sum = FixtureFlow.summaryLine(req, requestTeams);
   const submitted = ctx.submittedFor.has(req.id);
@@ -7032,8 +7055,11 @@ function buildUpcomingCardHtml(req, ctx){
     status.push(booked ? 'Court booked' : 'Court not booked');
   } else if(stage === S.UPCOMING){
     status.push(`${FixtureFlow.confirmedCount(req)}/${n} confirmed`, 'Court booked');
+  } else if(archive){
+    status.push(`Archived ${fmtRelative(archive.at)}`, archive.auto ? `after ${FixtureFlow.ARCHIVE_DAYS} days unbooked` : `by ${escapeHtml(archive.by)}`);
   } else {
-    status.push(`${FixtureFlow.confirmedCount(req)}/${n} agreed`, 'Court not booked', `Called out ${fmtRelative(FixtureFlow.agreedAt(req))}`);
+    status.push(`${FixtureFlow.confirmedCount(req)}/${n} agreed`, 'Court not booked',
+      req.restoredAt ? `Restored ${fmtRelative(req.restoredAt)}` : `Called out ${fmtRelative(FixtureFlow.activeSince(req))}`);
   }
   const tags = [];
   if(submitted) tags.push(`<span class="fx-tag">Result submitted</span>`);
@@ -7057,12 +7083,13 @@ function buildUpcomingCardHtml(req, ctx){
       <div class="fx-court ${booked ? 'fx-court-yes' : 'fx-court-no'}">${booked ? 'Court booked' : 'Court not booked yet'}</div>
       ${fixturePlayersHtml(req)}
       ${stage === S.ATTENTION ? `<div class="fx-note fx-note-attn">${escapeHtml(fixtureAttentionText(req))} — this game needs sorting out${booked ? ', and a court is booked' : ''}.</div>` : ''}
+      ${archive ? `<div class="fx-note">Archived ${archive.auto ? `automatically, ${FixtureFlow.ARCHIVE_DAYS} days after it was ${req.restoredAt ? 'restored' : 'called out'} without a court booking` : `by ${escapeHtml(archive.by)}`}. Not cancelled and not deleted — first called out ${escapeHtml(fmtFixtureDate(FixtureFlow.calledOutAt(req).slice(0, 10)))}.${isUnlocked ? ' Restore it from Manage fixture.' : ''}</div>` : ''}
       ${submitted ? `<div class="fx-note">A result has been submitted from this game and is waiting for an admin to approve it.</div>`
         : (past ? `<div class="fx-note">The date has passed and no result is linked to this game yet.</div>` : '')}
       <div class="fx-actions">
         ${submitted ? '' : `<button type="button" class="preset-btn request-addresult-btn" data-request-id="${id}">Add result</button>`}
       </div>
-      ${fixtureViewerActionsHtml(req)}
+      ${archive ? '' : fixtureViewerActionsHtml(req)}
       ${upcomingPredictionHtml(req)}
       ${fixtureReconcileHtml(req, ctx)}
       ${fixtureManageHtml(req)}
@@ -7191,6 +7218,24 @@ function wireFixtureControls(box){
         fixtureManageMessage = fixtureFlashMessage || 'Nothing was saved.';
       }
       renderActiveTab();
+    };
+  });
+  box.querySelectorAll('.fx-archive').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const req = find(btn.dataset.fixtureId);
+      if(!req) return;
+      fixtureManageOpen = null;
+      const r = await commitFixtureChange(()=> FixtureFlow.archiveCallOut(req, { isAdmin: isUnlocked, by: fixtureAdminName() }));
+      if(r && r.ok && r.saved){ fixtureFlashMessage = 'Archived. It is under Archived call-outs, and can be restored.'; renderActiveTab(); }
+    };
+  });
+  box.querySelectorAll('.fx-restore').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const req = find(btn.dataset.fixtureId);
+      if(!req) return;
+      fixtureManageOpen = null;
+      const r = await commitFixtureChange(()=> FixtureFlow.restoreCallOut(req, { isAdmin: isUnlocked, by: fixtureAdminName() }));
+      if(r && r.ok && r.saved){ fixtureFlashMessage = `Restored to Called Out for another ${FixtureFlow.ARCHIVE_DAYS} days.`; renderActiveTab(); }
     };
   });
   box.querySelectorAll('.fx-book-set').forEach(btn=>{
@@ -7414,18 +7459,202 @@ function wireRequestPlayerLinks(box){
   });
 }
 
-// Same relevance idea as challengeRelevanceScore: a request needing this
-// viewer's own confirmation surfaces first, then any request they're
-// otherwise named in, then everything else.
-function requestRelevanceScore(req, viewer){
-  if(!viewer || !req.players.includes(viewer.name)) return 0;
-  return req.confirmations[viewer.name] ? 1 : 2;
+// The outstanding requests, split three ways for the selected player -- views
+// over the same records, never copies. Each request appears in one list only.
+//   For me       I'm in it and haven't answered.
+//   My Requests  I asked for it, and it isn't agreed yet.
+//   Others       everything else still outstanding.
+// All newest first, by when the request was made.
+function requestLists(viewerName){
+  const pending = gameRequestsState.filter(r => r.status === 'pending').sort(FixtureFlow.requestOrder);
+  const isMe = (n) => !!viewerName && !!n && String(n).toLowerCase() === viewerName.toLowerCase();
+  const forMe = [], mine = [], others = [];
+  pending.forEach(r => {
+    const me = viewerName ? FixtureFlow.participantName(r, viewerName) : null;
+    if(me && !(r.confirmations || {})[me] && !(r.cantPlay || {})[me]) forMe.push(r);
+    else if(isMe(r.requestedBy)) mine.push(r);
+    else others.push(r);
+  });
+  return { forMe, mine, others };
+}
+
+// "today", "yesterday", "3 days ago" -- by calendar day, where the reader is.
+function fmtRequestedDay(iso){
+  if(!iso) return '';
+  const d = new Date(iso), now = new Date();
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const n = Math.round((day(now) - day(d)) / 86400000);
+  return n <= 0 ? 'today' : n === 1 ? 'yesterday' : `${n} days ago`;
+}
+
+// A request the selected player made: where it stands, at a glance.
+function buildMyRequestCardHtml(req){
+  const sum = FixtureFlow.summaryLine(req, requestTeams);
+  const cant = FixtureFlow.cantPlayers(req);
+  const waiting = req.players.filter(n => !(req.confirmations || {})[n] && !(req.cantPlay || {})[n]);
+  const status = [`${FixtureFlow.confirmedCount(req)}/${req.players.length} agreed`];
+  if(cant.length) status.unshift(`<span class="fx-tag fx-tag-attn">Needs attention</span> ${escapeHtml(cant.join(', '))} can't play`);
+  if(waiting.length) status.push(`Waiting for ${escapeHtml(waiting.join(', '))}`);
+  return `<div class="callout-card fx-card fx-mine${cant.length ? ' fx-attn' : ''}" data-fixture-id="${escapeHtml(req.id)}">
+    <div class="cc-title">${fixtureTeamsHtml(req)}</div>
+    <div class="fx-count">${status.join(' · ')}</div>
+    <div class="cc-detail">Requested ${fmtRequestedDay(req.requestedAt)}${req.preferredDate ? ' · proposed ' + escapeHtml(fmtFixtureDate(req.preferredDate)) : ''}${req.batch ? ' · from a list' : ''}</div>
+    ${fixtureViewerActionsHtml(req)}
+    ${fixtureManageHtml(req)}
+  </div>`;
+}
+
+// ---- Add multiple games: paste, review, then create ------------------------
+// Nothing is written until the reviewed list is confirmed with one tap.
+let bulkDraft = { text: '', rows: null, me: null, by: null, choices: {}, skip: {}, editing: {}, message: '' };
+
+const STAGE_PLACE = { proposed: 'Requests', 'called-out': 'Called Out', upcoming: 'Upcoming', attention: 'Needs attention' };
+
+// Every parsed row with the person's choices applied, and what would stop it.
+function bulkReviewed(){
+  if(!bulkDraft.rows) return [];
+  const now = new Date().toISOString();
+  const seen = [];
+  return bulkDraft.rows.map(row => {
+    const r = FixtureParse.review(row, bulkDraft.choices[row.lineNo], { canon: playerIdFor });
+    const warnings = [];
+    if(r.ready){
+      FixtureFlow.matchupDuplicates(r.players, gameRequestsState, { canon: playerIdFor, teams: r.teams, now }).forEach(d => {
+        warnings.push(`This matchup already exists in ${STAGE_PLACE[d.stage] || 'the fixtures'}${d.samePartnerships ? ', with the same partnerships' : ''}.`);
+      });
+      const key = r.players.map(playerIdFor).sort().join('|');
+      const earlier = seen.find(x => x.key === key);
+      if(earlier) warnings.push(`The same four players are on line ${earlier.lineNo} of this list.`);
+      seen.push({ key, lineNo: row.lineNo });
+    }
+    const include = r.ready && !bulkDraft.skip[row.lineNo];
+    return { row, ...r, warnings, include };
+  });
+}
+
+function bulkSeatSelectHtml(row, si, pi, p, value){
+  const names = allPlayerNames();
+  const first = (p.options || []).filter(n => names.includes(n));
+  const rest = names.filter(n => !first.includes(n));
+  const opt = (n) => `<option value="${escapeHtml(n)}"${n === value ? ' selected' : ''}>${escapeHtml(n)}</option>`;
+  return `<select class="fg-select fx-bulk-seat${value ? '' : ' fx-bulk-open'}" data-line="${row.lineNo}" data-side="${si}" data-seat="${pi}" aria-label="Line ${row.lineNo}, side ${si ? 'B' : 'A'}, player ${pi + 1}">
+    <option value=""${value ? '' : ' selected'}>${escapeHtml(p.text ? `“${p.text}” — choose` : 'Choose')}</option>
+    ${first.length ? `<optgroup label="Could be">${first.map(opt).join('')}</optgroup><optgroup label="Everyone">${rest.map(opt).join('')}</optgroup>` : names.map(opt).join('')}
+  </select>`;
+}
+
+function bulkSectionHtml(){
+  const who = submissionIdentity();
+  let h = `<div id="reqFoldBulkBody">`;
+  if(!bulkDraft.rows){
+    h += `<div class="section-sub">Paste or write a list — one game per line, e.g. <i>Me &amp; PDM vs Rishi &amp; Erf</i>. “Me” is you. Nothing is sent until you have checked the list.</div>`;
+    h += identityLineHtml('Requesting');
+    h += `<textarea id="bulkText" class="fg-select fx-bulk-text" rows="7" placeholder="Me &amp; PDM vs Rishi &amp; Erf&#10;Shaun/PDM v Tom/Osh&#10;Me and KC against Len and Eli">${escapeHtml(bulkDraft.text)}</textarea>
+      <div class="fx-actions"><button type="button" class="preset-btn" id="bulkParse">Check games</button></div>`;
+    if(bulkDraft.message) h += `<div class="section-sub" style="color:var(--gold-bright);">${escapeHtml(bulkDraft.message)}</div>`;
+    return h + `</div>`;
+  }
+  const rows = bulkReviewed();
+  const ready = rows.filter(r => r.ready).length;
+  const creating = rows.filter(r => r.include).length;
+  const needs = rows.length - ready;
+  h += `<div class="fx-bulk-summary"><b>${rows.length} game${rows.length === 1 ? '' : 's'} found</b> · ${ready} ready${needs ? ` · ${needs} need${needs === 1 ? 's' : ''} fixing` : ''}</div>`;
+  h += `<div class="section-sub">Requested by ${escapeHtml(bulkDraft.by || who || '—')}${bulkDraft.me ? ` · “Me” is ${escapeHtml(bulkDraft.me)}` : ''}</div>`;
+  rows.forEach(r => {
+    const row = r.row;
+    const fixable = !row.problems.length;
+    const icon = r.ready ? (r.warnings.length ? '⚠' : '✓') : (fixable ? '⚠' : '✖');
+    const title = r.ready ? `${r.teams[0].map(escapeHtml).join(' &amp; ')} vs ${r.teams[1].map(escapeHtml).join(' &amp; ')}` : escapeHtml(row.text);
+    h += `<div class="fx-bulk-row ${r.ready ? 'is-ready' : 'is-blocked'}" data-line="${row.lineNo}">
+      <div class="fx-bulk-head"><span class="fx-bulk-icon">${icon}</span><span class="fx-bulk-title">${title}</span>
+        ${r.ready ? `<label class="fx-bulk-include"><input type="checkbox" class="fx-bulk-inc" data-line="${row.lineNo}"${r.include ? ' checked' : ''}> Create</label>` : ''}</div>
+      <div class="fx-bulk-line">Line ${row.lineNo}: “${escapeHtml(row.text)}”</div>`;
+    // A ready game shows its players as read; its seats open only to change
+    // one. A game that needs a decision shows them straight away.
+    const showSeats = fixable && (!r.ready || bulkDraft.editing[row.lineNo]);
+    if(fixable && r.ready){
+      h += `<button type="button" class="lg-inline-fold fx-bulk-change" data-line="${row.lineNo}" aria-expanded="${!!bulkDraft.editing[row.lineNo]}">${bulkDraft.editing[row.lineNo] ? 'Done' : 'Change players'}<span class="lg-inline-chev" aria-hidden="true">${bulkDraft.editing[row.lineNo] ? '⌄' : '›'}</span></button>`;
+    }
+    if(showSeats){
+      h += row.sides.map((side, si) => `<div class="fx-bulk-side"><span class="fx-m-label">Side ${si ? 'B' : 'A'}</span>${
+        side.map((p, pi) => bulkSeatSelectHtml(row, si, pi, p, r.teams[si][pi])).join('')}</div>`).join('');
+    }
+    r.issues.forEach(i => { h += `<div class="fx-note fx-note-attn">${escapeHtml(i.message)}</div>`; });
+    if(!fixable) h += `<div class="fx-note">Fix this line in the list and check again.</div>`;
+    r.warnings.forEach(w => { h += `<div class="fx-note fx-note-warn">⚠ ${escapeHtml(w)}</div>`; });
+    h += `</div>`;
+  });
+  if(bulkDraft.message) h += `<div class="section-sub" style="color:var(--gold-bright);">${escapeHtml(bulkDraft.message)}</div>`;
+  h += `<div class="fx-actions">
+    <button type="button" class="preset-btn fx-in" id="bulkCreate"${creating ? '' : ' disabled'}>Create ${creating} request${creating === 1 ? '' : 's'}</button>
+    <button type="button" class="preset-btn" id="bulkEdit">Edit list</button>
+  </div>`;
+  return h + `</div>`;
+}
+
+function wireBulk(box){
+  const text = box.querySelector('#bulkText');
+  if(text) text.oninput = ()=>{ bulkDraft.text = text.value; };
+  const parseBtn = box.querySelector('#bulkParse');
+  if(parseBtn) parseBtn.onclick = ()=>{
+    bulkDraft.text = text ? text.value : bulkDraft.text;
+    const by = submissionIdentity();
+    const viewer = getCurrentViewer();
+    if(!by){ bulkDraft.message = 'Choose who you are first — the games are requested in your name.'; renderWishlist(); return; }
+    const rows = FixtureParse.parse(bulkDraft.text, { directory: allPlayerNames(), me: viewer ? viewer.name : null });
+    if(!rows.length){ bulkDraft.message = 'Nothing to check yet — write one game per line.'; renderWishlist(); return; }
+    Object.assign(bulkDraft, { rows, by, me: viewer ? viewer.name : null, choices: {}, skip: {}, editing: {}, message: '' });
+    renderWishlist();
+  };
+  box.querySelectorAll('.fx-bulk-seat').forEach(sel=>{
+    sel.onchange = ()=>{
+      const line = +sel.dataset.line;
+      const c = bulkDraft.choices[line] || (bulkDraft.choices[line] = [[], []]);
+      c[+sel.dataset.side][+sel.dataset.seat] = sel.value || null;
+      renderWishlist();
+    };
+  });
+  box.querySelectorAll('.fx-bulk-inc').forEach(cb=>{
+    cb.onchange = ()=>{ bulkDraft.skip[+cb.dataset.line] = !cb.checked; renderWishlist(); };
+  });
+  const edit = box.querySelector('#bulkEdit');
+  if(edit) edit.onclick = ()=>{ Object.assign(bulkDraft, { rows: null, choices: {}, skip: {}, editing: {}, message: '' }); renderWishlist(); };
+  box.querySelectorAll('.fx-bulk-change').forEach(btn=>{
+    btn.onclick = ()=>{ const l = +btn.dataset.line; bulkDraft.editing[l] = !bulkDraft.editing[l]; renderWishlist(); };
+  });
+  const create = box.querySelector('#bulkCreate');
+  if(create) create.onclick = async ()=>{
+    const by = submissionIdentity();
+    if(!by || by !== bulkDraft.by){
+      bulkDraft.message = `You're now ${by || 'nobody'} — check the list again so the games are requested in the right name.`;
+      bulkDraft.rows = null; renderWishlist(); return;
+    }
+    const go = bulkReviewed().filter(r => r.include);
+    if(!go.length) return;
+    const at = new Date().toISOString();
+    const batchId = 'batch_' + Date.parse(at) + '_' + Math.random().toString(36).slice(2, 6);
+    const made = go.map((r, i) => FixtureFlow.createRequest({
+      players: r.players, teams: r.teams, requestedBy: by, at,
+      batch: { id: batchId, index: i, size: go.length },
+    }));
+    const before = gameRequestsState.length;
+    gameRequestsState.push(...made);
+    const ok = await saveGameRequests(gameRequestsState);
+    if(!ok){
+      gameRequestsState.length = before;
+      bulkDraft.message = storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — nothing was created. Try again.` : `Save failed — this page can't reach shared storage.`;
+      renderWishlist(); return;
+    }
+    bulkDraft = { text: '', rows: null, me: null, by: null, choices: {}, skip: {}, editing: {}, message: '' };
+    requestSectionOpen.mine = true;
+    fixtureFlashMessage = `Created ${made.length} request${made.length === 1 ? '' : 's'} — they're under My Requests, and the other players answer them from For me.`;
+    dataChanged();
+  };
 }
 
 function renderWishlist(flashMessage, adminFlashMessage){
   const box = document.getElementById('wishlistView');
   const viewer = getCurrentViewer();
-  const pending = gameRequestsState.filter(r=>r.status==='pending');
 
   const openChallenges = challengesState.filter(c => c.state !== 'confirmed').length;
   let html = foldHeading('reqFoldChallenges', `🎯 Challenges (${openChallenges})`, requestSectionOpen.challenges);
@@ -7433,11 +7662,32 @@ function renderWishlist(flashMessage, adminFlashMessage){
     html += `<div id="reqFoldChallengesBody">${renderChallengesSection()}</div>`;
   }
   html += `<div class="mp-divider"></div>`;
+
+  // For me, then My Requests: the two lists a player acts on.
+  const lists = requestLists(viewer ? viewer.name : null);
+  if(fixtureFlashMessage) html += `<div class="section-sub" style="color:var(--gold-bright);">${escapeHtml(fixtureFlashMessage)}</div>`;
+  html += foldHeading('reqFoldForMe', `📨 For me (${lists.forMe.length})`, requestSectionOpen.forMe, { summary: 'waiting on your answer' });
+  if(requestSectionOpen.forMe){
+    html += `<div id="reqFoldForMeBody">`;
+    html += !viewer ? `<div class="section-sub">Choose who you are to see the requests waiting on you.</div>`
+      : lists.forMe.length ? lists.forMe.map(buildPendingRequestCardHtml).join('')
+      : `<div class="section-sub">Nothing waiting on you.</div>`;
+    html += `</div>`;
+  }
+  html += foldHeading('reqFoldMine', `📤 My Requests (${lists.mine.length})`, requestSectionOpen.mine, { summary: 'waiting on others' });
+  if(requestSectionOpen.mine){
+    html += `<div id="reqFoldMineBody">`;
+    html += !viewer ? `<div class="section-sub">Choose who you are to see the requests you've made.</div>`
+      : lists.mine.length ? lists.mine.map(buildMyRequestCardHtml).join('')
+      : `<div class="section-sub">No requests of yours are waiting. Once all four are in, a game moves to the Upcoming tab.</div>`;
+    html += `</div>`;
+  }
+  html += `<div class="mp-divider"></div>`;
   html += foldHeading('reqFoldRequest', '🙋 Request a game', requestSectionOpen.request,
     { summary: 'name four players' });
   if(requestSectionOpen.request){
   html += `<div id="reqFoldRequestBody">`;
-  html += `<div class="section-sub">Name four players. You're in as soon as you ask; the other three answer here under Pending. Once all four are in it moves to the Upcoming tab as Called Out, until a court is booked.</div>`;
+  html += `<div class="section-sub">Name four players. You're in as soon as you ask; the other three answer from their For me list, and you can follow it under My Requests. Once all four are in it moves to the Upcoming tab as Called Out, until a court is booked.</div>`;
   html += identityLineHtml('Requesting');
   html += `<div class="fg-controls">
     <div class="fg-row"><label class="fg-label">Players</label>
@@ -7453,6 +7703,10 @@ function renderWishlist(flashMessage, adminFlashMessage){
   </div>`;
   html += `</div>`;
   }
+
+  html += foldHeading('reqFoldBulk', '📋 Add multiple games', requestSectionOpen.bulk,
+    { summary: bulkDraft.rows ? 'list being checked' : 'paste a list' });
+  if(requestSectionOpen.bulk) html += bulkSectionHtml();
 
   if(isUnlocked){
     html += foldHeading('reqFoldAdmin', '⚡ Admin: add an agreed game', requestSectionOpen.adminAdd,
@@ -7478,27 +7732,14 @@ function renderWishlist(flashMessage, adminFlashMessage){
     }
   }
 
-  // Requests waiting on the selected player come first, and the heading says
-  // how many there are -- the confirmations live here, not in anybody's
-  // profile.
-  const waitingOnMe = viewer ? pending.filter(r => {
-    const me = FixtureFlow.participantName(r, viewer.name);
-    return me && !(r.confirmations || {})[me] && !(r.cantPlay || {})[me];
-  }).length : 0;
-  html += foldHeading('reqFoldPending', `⏳ Pending (${pending.length})`, requestSectionOpen.pending,
-    waitingOnMe ? { summary: `${waitingOnMe} waiting on you` } : undefined);
-  if(requestSectionOpen.pending){
-    html += `<div id="reqFoldPendingBody">`;
-    if(fixtureFlashMessage) html += `<div class="section-sub" style="color:var(--gold-bright);">${escapeHtml(fixtureFlashMessage)}</div>`;
-    if(pending.length === 0){
-      html += `<div class="section-sub">No open requests right now.</div>`;
-    } else {
-      pending.slice().sort((a,b)=>
-        requestRelevanceScore(b, viewer) - requestRelevanceScore(a, viewer) || (a.requestedAt < b.requestedAt ? 1 : -1)
-      ).forEach(req=>{
-        html += buildPendingRequestCardHtml(req);
-      });
-    }
+  // Everyone else's outstanding requests, newest first.
+  html += `<div class="mp-divider"></div>`;
+  html += foldHeading('reqFoldOthers', `⏳ Other requests (${lists.others.length})`, requestSectionOpen.others,
+    { summary: 'everyone else' });
+  if(requestSectionOpen.others){
+    html += `<div id="reqFoldOthersBody">`;
+    html += lists.others.length ? lists.others.map(buildPendingRequestCardHtml).join('')
+      : `<div class="section-sub">No other open requests.</div>`;
     html += `</div>`;
   }
 
@@ -7507,9 +7748,10 @@ function renderWishlist(flashMessage, adminFlashMessage){
   wireIdentityLines(box);
   wireFixtureControls(box);
   wireChallengeControls(box, flashMessage, adminFlashMessage);
+  wireBulk(box);
 
-  [['reqFoldChallenges','challenges'], ['reqFoldRequest','request'],
-   ['reqFoldAdmin','adminAdd'], ['reqFoldPending','pending']].forEach(([id, key])=>{
+  [['reqFoldChallenges','challenges'], ['reqFoldForMe','forMe'], ['reqFoldMine','mine'], ['reqFoldRequest','request'],
+   ['reqFoldBulk','bulk'], ['reqFoldAdmin','adminAdd'], ['reqFoldOthers','others']].forEach(([id, key])=>{
     const el = document.getElementById(id);
     if(el) el.onclick = ()=>{ requestSectionOpen[key] = !requestSectionOpen[key]; renderWishlist(); };
   });
@@ -7543,7 +7785,8 @@ function renderWishlist(flashMessage, adminFlashMessage){
       msg.textContent = storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — try again.` : `Save failed — this page can't reach shared storage.`;
       return;
     }
-    dataChanged({ redraw: ()=> renderWishlist('Requested! The other players answer here under Pending.') });
+    requestSectionOpen.mine = true;
+    dataChanged({ redraw: ()=> renderWishlist('Requested! It is under My Requests; the other players answer from For me.') });
   }; });
 
   on('adminReqSubmit', (adminReqSubmit)=>{
@@ -7581,17 +7824,17 @@ function renderWishlist(flashMessage, adminFlashMessage){
 function renderUpcoming(){
   const box = document.getElementById('upcomingView');
   const S = FixtureFlow.STAGE;
+  const now = new Date().toISOString();
   const agreed = gameRequestsState.filter(r => FixtureFlow.isAgreed(r));
-  const byStage = (st) => agreed.filter(r => FixtureFlow.stage(r) === st);
-  const since = (r) => FixtureFlow.agreedAt(r) || '';
-  // Needs attention and Called Out: longest-waiting first, so the game most
-  // likely to be forgotten is the one at the top. Upcoming: soonest first.
-  const attention = byStage(S.ATTENTION).sort((a,b)=> since(a) < since(b) ? -1 : 1);
-  const upcoming = byStage(S.UPCOMING).sort((a,b)=>
-    (a.preferredDate || '9999') < (b.preferredDate || '9999') ? -1
-    : (a.preferredDate || '9999') > (b.preferredDate || '9999') ? 1
-    : ((a.preferredTime || '') < (b.preferredTime || '') ? -1 : 1));
-  const calledOut = byStage(S.CALLED_OUT).sort((a,b)=> since(a) < since(b) ? -1 : 1);
+  const byStage = (st) => agreed.filter(r => FixtureFlow.stage(r, now) === st);
+  // Every list has one explicit order (FixtureFlow): Upcoming answers "what's
+  // next?", soonest first; Called Out is a chasing list, newest (or newly
+  // restored) first; archived, most recently archived first. Needs attention
+  // keeps the newest disruption on top.
+  const attention = byStage(S.ATTENTION).sort(FixtureFlow.requestOrder);
+  const upcoming = byStage(S.UPCOMING).sort(FixtureFlow.upcomingOrder);
+  const calledOut = byStage(S.CALLED_OUT).sort(FixtureFlow.calledOutOrder);
+  const archived = byStage(S.ARCHIVED).sort(FixtureFlow.archivedOrder(now));
   // Made before court bookings were recorded: nothing says whether a court is
   // booked, so they sit in Called Out until an admin answers for each one.
   const unrecorded = isUnlocked ? agreed.filter(r => !FixtureFlow.bookingRecorded(r)) : [];
@@ -7599,6 +7842,7 @@ function renderUpcoming(){
   // Shared by every card: which fixtures already have a result waiting for
   // approval, the recorded results an admin may reconcile against, and today.
   const ctx = {
+    now,
     today: localIsoToday(),
     submittedFor: new Set(extraMatchesState.filter(x => x.status === 'pending' && x.fixtureId).map(x => x.fixtureId)),
     results: isUnlocked ? getAllApprovedMatches() : [],
@@ -7650,13 +7894,17 @@ function renderUpcoming(){
   html += `<div class="mp-divider"></div>`;
   html += section('calledOut', 'upFoldCalledOut', '📣 Called Out', calledOut,
     'Nothing called out. A request lands here once all four players are in.', 'agreed, court not booked');
+  // Call-outs nobody organised: 14 days without a booking, or archived by an
+  // admin. Kept whole, folded away, restorable.
+  html += section('archived', 'upFoldArchived', '🗃 Archived call-outs', archived,
+    `Nothing archived. A Called Out game moves here after ${FixtureFlow.ARCHIVE_DAYS} days without a court booking.`, 'not deleted');
 
   box.innerHTML = html;
   wireRequestPlayerLinks(box);
   wireRequestPredictions(box);
   wireFixtureControls(box);
 
-  [['upFoldReview','review'], ['upFoldAttention','attention'], ['upFoldUpcoming','upcoming'], ['upFoldCalledOut','calledOut']].forEach(([id, key])=>{
+  [['upFoldReview','review'], ['upFoldAttention','attention'], ['upFoldUpcoming','upcoming'], ['upFoldCalledOut','calledOut'], ['upFoldArchived','archived']].forEach(([id, key])=>{
     const el = document.getElementById(id);
     if(el) el.onclick = ()=>{ upcomingSectionOpen[key] = !upcomingSectionOpen[key]; renderUpcoming(); };
   });

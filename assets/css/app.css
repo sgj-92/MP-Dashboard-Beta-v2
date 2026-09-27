@@ -2340,3 +2340,27 @@ body { padding-bottom: calc(var(--shell-nav-height) + var(--shell-safe-bottom));
 .fx-review-row{ padding: 10px 0; border-top: 1px solid var(--line); }
 .fx-review-row:first-of-type{ border-top: none; }
 .fx-review-row .fx-meta{ display: block; margin-top: 2px; }
+
+/* Fixture follow-up 2: My Requests, Add multiple games, archived call-outs. */
+.fx-note-warn{ color: var(--gold-bright); }
+.fx-m-archive{ margin-top: 12px; }
+.fx-m-archive .preset-btn{ width: 100%; min-height: 40px; }
+.fx-m-archive .fx-m-sub{ display: block; margin-top: 4px; }
+.fx-bulk-text{ width: 100%; box-sizing: border-box; min-height: 150px; resize: vertical; margin-top: 8px;
+  font-family: var(--font-interface); font-size: 14px; line-height: 1.45; padding: 10px; }
+.fx-bulk-summary{ font-family: var(--font-interface); font-size: 13px; margin: 4px 0 2px; }
+.fx-bulk-row{ font-family: var(--font-interface); padding: 10px 12px; margin-top: 8px; border: 1px solid var(--line); border-radius: 12px; }
+.fx-bulk-row.is-blocked{ border-color: var(--gold-dim); }
+.fx-bulk-head{ display: flex; align-items: center; gap: 8px; }
+.fx-bulk-icon{ flex: 0 0 auto; width: 18px; text-align: center; }
+.fx-bulk-row.is-ready .fx-bulk-icon{ color: var(--green); }
+.fx-bulk-row.is-blocked .fx-bulk-icon{ color: var(--gold-bright); }
+.fx-bulk-title{ flex: 1 1 auto; min-width: 0; font-weight: 700; font-size: 13.5px; overflow-wrap: anywhere; }
+.fx-bulk-include{ flex: 0 0 auto; font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 4px; }
+.fx-bulk-include input{ width: 18px; height: 18px; accent-color: var(--gold-bright); }
+.fx-bulk-line{ font-size: 11px; color: var(--text-dim); margin: 3px 0 4px 26px; overflow-wrap: anywhere; }
+.fx-bulk-side{ display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+.fx-bulk-side .fx-m-label{ grid-column: 1 / -1; margin: 4px 0 0; }
+.fx-bulk-side .fg-select{ min-width: 0; width: 100%; box-sizing: border-box; }
+.fx-bulk-open{ border-color: var(--gold-bright); }
+#bulkCreate[disabled]{ opacity: .45; cursor: not-allowed; }

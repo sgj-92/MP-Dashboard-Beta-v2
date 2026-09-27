@@ -19,6 +19,11 @@ const H = require('./helpers/uiHarness.js');
 const FF = require('../assets/js/fixtureFlow.js');
 
 const maybe = H.available() ? test : test.skip;
+// The clock these fixtures were written for. Without it the Called Out
+// games below, agreed mid-September, would age into the archive as the real
+// calendar moves on and quietly leave the lists these tests read.
+const NOW = '2026-09-20T12:00:00.000Z';
+const openApp = (opts) => H.open({ now: NOW, ...(opts || {}) });
 const T0 = '2026-09-20T10:00:00.000Z';
 const four = ['Ann', 'Bob', 'Cat', 'Dan'];
 const upcoming = (extra) => ({
@@ -167,7 +172,7 @@ const install = (app) => app.run(() => {
 });
 
 maybe('D1: a non-participant gets no withdraw or remove control; a participant cannot remove the fixture', async () => {
-  const app = await H.open({ club: club([agreed('fxUp')]) });
+  const app = await openApp({ club: club([agreed('fxUp')]) });
   try {
     await install(app);
     const r = await app.run(() => {
@@ -185,7 +190,7 @@ maybe('D1: a non-participant gets no withdraw or remove control; a participant c
 });
 
 maybe('D1: "I can\'t play" marks only the viewer, keeps the fixture listed and flags it', async () => {
-  const app = await H.open({ club: club([agreed('fxUp')]) });
+  const app = await openApp({ club: club([agreed('fxUp')]) });
   try {
     await install(app);
     const r = await app.run(async () => {
@@ -212,7 +217,7 @@ maybe('D1: "I can\'t play" marks only the viewer, keeps the fixture listed and f
 });
 
 maybe('D1: an admin removes a fixture only after a second, explicit confirmation', async () => {
-  const app = await H.open({ club: club([agreed('fxUp')]) });
+  const app = await openApp({ club: club([agreed('fxUp')]) });
   try {
     await install(app);
     const r = await app.run(async () => {
@@ -237,7 +242,7 @@ maybe('D1: an admin removes a fixture only after a second, explicit confirmation
 });
 
 maybe('D2: a request made in the app starts with its requester confirmed', async () => {
-  const app = await H.open();
+  const app = await openApp();
   try {
     await install(app);
     const r = await app.run(async () => {
@@ -251,13 +256,14 @@ maybe('D2: a request made in the app starts with its requester confirmed', async
     });
     assert.strictEqual(r.status, 'pending');
     assert.deepStrictEqual(r.confirmations, { Shaun: false, Tom: true, Max: false, KC: false });
-    assert.match(r.count, /^1\/4 confirmed/);
+    // Under My Requests, in the requester's words for it.
+    assert.match(r.count, /^1\/4 agreed · Waiting for Shaun, Max, KC/);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
 
 maybe('D2: the Pending card answers only for the selected player, and 4/4 moves the same record to Upcoming', async () => {
-  const app = await H.open({ club: club([pendingReq('fxP', ['Shaun', 'Tom'])]) });
+  const app = await openApp({ club: club([pendingReq('fxP', ['Shaun', 'Tom'])]) });
   try {
     await install(app);
     const r = await app.run(async () => {
@@ -282,7 +288,7 @@ maybe('D2: the Pending card answers only for the selected player, and 4/4 moves 
 });
 
 maybe("D2: another player's profile cannot be used to confirm as that player", async () => {
-  const app = await H.open({ club: club([pendingReq('fxP', ['Shaun'])]) });
+  const app = await openApp({ club: club([pendingReq('fxP', ['Shaun'])]) });
   try {
     const r = await app.run(async () => {
       setCurrentViewer('Rishi');
@@ -305,7 +311,7 @@ maybe("D2: another player's profile cannot be used to confirm as that player", a
 });
 
 maybe('Upcoming: every fixture is folded on arrival, opens on its own, and folds again on return', async () => {
-  const app = await H.open({ club: club([agreed('fx1'), agreed('fx2', { requestedAt: '2026-09-16T09:00:00.000Z' })]) });
+  const app = await openApp({ club: club([agreed('fx1'), agreed('fx2', { requestedAt: '2026-09-16T09:00:00.000Z' })]) });
   try {
     await install(app);
     const r = await app.run(() => {
@@ -337,7 +343,7 @@ maybe('Upcoming: every fixture is folded on arrival, opens on its own, and folds
 });
 
 maybe('Upcoming at 375px: the folded card keeps teams, date, venue and confirmations without overflow', async () => {
-  const app = await H.open({ club: club([agreed('fx1', { courtBookingMade: true })]) });
+  const app = await openApp({ club: club([agreed('fx1', { courtBookingMade: true })]) });
   try {
     await install(app);
     await app.page.setViewportSize({ width: 375, height: 812 });
@@ -377,7 +383,7 @@ const approve = (app, choose) => app.run(async (choice) => {
 }, choose);
 
 maybe('D3: a recorded result does not close a matching Upcoming fixture; the admin must answer first', async () => {
-  const app = await H.open({ club: club([agreed('fxUp')]) });
+  const app = await openApp({ club: club([agreed('fxUp')]) });
   try {
     await install(app);
     await app.run(() => submit('sub1', ['Shaun', 'Tom'], ['Max', 'KC']));
@@ -394,7 +400,7 @@ maybe('D3: a recorded result does not close a matching Upcoming fixture; the adm
 });
 
 maybe('D3: "This was the game" rates the result, then links and closes exactly that fixture', async () => {
-  const app = await H.open({ club: club([agreed('fxUp'), agreed('fxOther', { players: ['Rishi', 'Len', 'Osh', 'Eli'], teams: [['Rishi', 'Len'], ['Osh', 'Eli']] })]) });
+  const app = await openApp({ club: club([agreed('fxUp'), agreed('fxOther', { players: ['Rishi', 'Len', 'Osh', 'Eli'], teams: [['Rishi', 'Len'], ['Osh', 'Eli']] })]) });
   try {
     await install(app);
     await app.run(() => submit('sub1', ['Shaun', 'Tom'], ['Max', 'KC'], { fixtureId: 'fxUp' }));
@@ -410,7 +416,7 @@ maybe('D3: "This was the game" rates the result, then links and closes exactly t
 });
 
 maybe('D3: "still outstanding" rates the result and keeps the fixture, which is never offered that result again', async () => {
-  const app = await H.open({ club: club([agreed('fxUp')]) });
+  const app = await openApp({ club: club([agreed('fxUp')]) });
   try {
     await install(app);
     await app.run(() => submit('sub1', ['Shaun', 'Tom'], ['Max', 'KC']));
@@ -427,7 +433,7 @@ maybe('D3: "still outstanding" rates the result and keeps the fixture, which is 
 
 maybe('D3: with several plausible fixtures, none is resolved silently; the admin picks one or none', async () => {
   const repeat = agreed('fxSecond', { requestedAt: '2026-09-16T09:00:00.000Z', preferredDate: '2026-09-19' });
-  const app = await H.open({ club: club([agreed('fxFirst'), repeat]) });
+  const app = await openApp({ club: club([agreed('fxFirst'), repeat]) });
   try {
     await install(app);
     await app.run(() => submit('sub1', ['Shaun', 'Tom'], ['Max', 'KC']));
@@ -448,7 +454,7 @@ maybe('D3: a stale fixture with a matching recorded result is left exactly as st
   // closed. A real recorded September match -- one whose four players have no
   // other result that day, so it is the single credible candidate -- and a
   // fixture for those four on that date.
-  const app = await H.open();
+  const app = await openApp();
   let real;
   try {
     real = await app.run(() => {
@@ -466,7 +472,7 @@ maybe('D3: a stale fixture with a matching recorded result is left exactly as st
     preferredDate: real.date, preferredTime: '14:00', location: 'Epsom',
     confirmations: Object.fromEntries([...real.winners, ...real.losers].map((n) => [n, true])), status: 'confirmed',
   };
-  const app2 = await H.open({ club: club([stale]) });
+  const app2 = await openApp({ club: club([stale]) });
   try {
     await install(app2);
     const r = await app2.run(async () => {
@@ -497,7 +503,7 @@ maybe('D3: a stale fixture with a matching recorded result is left exactly as st
 });
 
 maybe('D3: a past fixture with no plausible result stays in Upcoming for later manual resolution', async () => {
-  const app = await H.open({ club: club([agreed('fxPast', { players: ['Rishi', 'Len', 'Osh', 'Eli'], teams: [['Rishi', 'Len'], ['Osh', 'Eli']], preferredDate: '2026-09-17', requestedAt: '2026-09-16T09:00:00.000Z' })]) });
+  const app = await openApp({ club: club([agreed('fxPast', { players: ['Rishi', 'Len', 'Osh', 'Eli'], teams: [['Rishi', 'Len'], ['Osh', 'Eli']], preferredDate: '2026-09-17', requestedAt: '2026-09-16T09:00:00.000Z' })]) });
   try {
     await install(app);
     const r = await app.run(() => {
@@ -516,7 +522,7 @@ maybe('D3: a past fixture with no plausible result stays in Upcoming for later m
 maybe('ratings are untouched by the fixture decision: the same plan with or without an Upcoming game', async () => {
   const plans = [];
   for (const requests of [[], [agreed('fxUp')]]) {
-    const app = await H.open({ club: club(requests) });
+    const app = await openApp({ club: club(requests) });
     try {
       await install(app);
       plans.push(await app.run(async () => {

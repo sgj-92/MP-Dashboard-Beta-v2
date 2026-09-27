@@ -10,9 +10,20 @@
 //   Called Out       all in, court not booked
 //   Upcoming         all in, court booked (`courtBookingMade === true`)
 //   Needs attention  someone has backed out, or a replacement has not answered
+//   Archived         a Called Out game nobody organised: 14 days in Called Out
+//                    without reaching Upcoming, or archived by an admin
 //
 // Court booking is its own fact, set only by an admin. A date, time or venue
 // is a proposal, and never makes a fixture Upcoming by itself.
+//
+// The archive clock. `calledOutAt` is when the fixture first became Called
+// Out and is never overwritten. `activeSince` starts the current active
+// window: set with `calledOutAt`, and restarted only by an admin's Restore or
+// by the fixture coming back from Upcoming (it did progress). Editing the
+// date, time or venue never restarts it. Archiving is derived from the clock
+// -- nothing is written when a call-out goes stale -- or recorded as
+// `archivedAt` when an admin archives by hand. Either way it is not deletion,
+// cancellation, or evidence that the game was or was not played.
 //
 // The record is the same object throughout -- it is never copied into a new
 // one when it changes state -- and every change is written to its `history`,
@@ -47,8 +58,11 @@
   // Where a fixture is shown. Derived from the record by `stage`.
   const STAGE = {
     PROPOSED: 'proposed', CALLED_OUT: 'called-out', UPCOMING: 'upcoming',
-    ATTENTION: 'attention', PLAYED: 'played', REMOVED: 'removed',
+    ATTENTION: 'attention', ARCHIVED: 'archived', PLAYED: 'played', REMOVED: 'removed',
   };
+
+  // How long a call-out stays on the active list without reaching Upcoming.
+  const ARCHIVE_DAYS = 14;
 
   // How far a result can sit from a fixture's date and still be worth asking
   // about. Wide on purpose: this only decides whether a human is ASKED.
@@ -87,6 +101,17 @@
       req.agreedAt = when;
       record(req, { at: when, by, action: 'agreed' });
     }
+    track(req, when);
+  }
+
+  // The first time a fixture is Called Out, say so on the record, and start
+  // its active window then. A fixture agreed before `agreedAt` was stored was
+  // agreed when it was made, so its clock starts from that, not from now.
+  function track(req, when) {
+    if (baseStage(req) !== STAGE.CALLED_OUT || req.calledOutAt) return;
+    const t = req.agreedAt ? when : agreedAt(req);
+    req.calledOutAt = t;
+    if (!req.activeSince) req.activeSince = t;
   }
 
   // The court booking, as recorded. `undefined` on fixtures made before it
@@ -94,13 +119,41 @@
   function isBooked(req) { return !!req && req.courtBookingMade === true; }
   function bookingRecorded(req) { return !!req && typeof req.courtBookingMade === 'boolean'; }
 
-  function stage(req) {
+  // The stage without the archive clock.
+  function baseStage(req) {
     if (!req) return null;
     if (req.status === STATUS.REMOVED) return STAGE.REMOVED;
     if (req.status === STATUS.PLAYED) return STAGE.PLAYED;
     if (req.status !== STATUS.AGREED) return STAGE.PROPOSED;
     if (cantPlayers(req).length || !allIn(req)) return STAGE.ATTENTION;
     return isBooked(req) ? STAGE.UPCOMING : STAGE.CALLED_OUT;
+  }
+
+  // Where the fixture is shown at `now`: a Called Out game past its window,
+  // or archived by an admin, is Archived.
+  function stage(req, now) {
+    const s = baseStage(req);
+    if (s === STAGE.CALLED_OUT && archiveInfo(req, now)) return STAGE.ARCHIVED;
+    return s;
+  }
+
+  // When the current active Called Out window began. Records without the
+  // explicit fields (made before them) fall back to when they were agreed.
+  function calledOutAt(req) { return req.calledOutAt || agreedAt(req); }
+  function activeSince(req) { return req.activeSince || calledOutAt(req); }
+  function archiveDueAt(req) {
+    const since = activeSince(req);
+    return since ? new Date(Date.parse(since) + ARCHIVE_DAYS * DAY).toISOString() : null;
+  }
+
+  // Whether, when and by whom a Called Out game was archived -- or null.
+  function archiveInfo(req, now) {
+    if (baseStage(req) !== STAGE.CALLED_OUT) return null;
+    if (req.archivedAt) return { at: req.archivedAt, by: req.archivedBy || 'admin', auto: false };
+    const due = archiveDueAt(req);
+    const t = now || new Date().toISOString();
+    if (due && Date.parse(t) >= Date.parse(due)) return { at: due, by: null, auto: true };
+    return null;
   }
 
   // Why an agreed fixture needs attention: who backed out, and who has been
@@ -124,7 +177,7 @@
 
   // A new request. The requester is in by making it -- when they are one of
   // the players -- so a four-player request starts 1/4.
-  function createRequest({ players, requestedBy, at, id, preferredDate }) {
+  function createRequest({ players, requestedBy, at, id, preferredDate, teams, batch }) {
     const when = at || new Date().toISOString();
     const confirmations = {};
     (players || []).forEach((n) => { confirmations[n] = false; });
@@ -137,8 +190,11 @@
       confirmations,
       courtBookingMade: false,
       status: STATUS.PENDING,
-      history: [{ at: when, by: requestedBy, action: 'requested' }],
+      history: [{ at: when, by: requestedBy, action: 'requested', ...(batch ? { batch: batch.id } : {}) }],
     };
+    if (Array.isArray(teams) && teams.length === 2) req.teams = [teams[0].slice(), teams[1].slice()];
+    // Made with others in one pasted list: which list, and where in it.
+    if (batch) req.batch = { id: batch.id, index: batch.index, size: batch.size };
     if (requester) record(req, { at: when, by: requester, action: 'in' });
     settle(req, requestedBy, when);
     return req;
@@ -162,6 +218,7 @@
       history: [{ at: when, by, action: 'added-agreed', courtBookingMade: courtBookingMade === true }],
     };
     if (Array.isArray(teams) && teams.length === 2) req.teams = [teams[0].slice(), teams[1].slice()];
+    track(req, when);
     return req;
   }
 
@@ -173,6 +230,8 @@
     const me = participantName(req, actor);
     if (!me) return { ok: false, reason: 'not-participant' };
     if (response !== 'in' && response !== 'cant') return { ok: false, reason: 'bad-response' };
+    // An archived call-out is for an admin to restore, not to be answered.
+    if (stage(req, when) === STAGE.ARCHIVED) return { ok: false, reason: 'archived' };
     if (!req.confirmations) req.confirmations = {};
     if (!req.cantPlay) req.cantPlay = {};
     if (response === 'in') {
@@ -185,6 +244,7 @@
       req.confirmations[me] = false;
       record(req, { at: when, by: me, action: 'cant-play' });
     }
+    track(req, when);
     return { ok: true, player: me };
   }
 
@@ -207,8 +267,19 @@
     if (req.courtBookingMade === booked) return { ok: true, changed: false };
     const when = at || new Date().toISOString();
     const was = req.courtBookingMade;
+    const archived = archiveInfo(req, when);
     req.courtBookingMade = booked;
-    record(req, { at: when, by: by || 'admin', action: booked ? 'court-booked' : 'court-not-booked', ...(was === undefined ? { firstRecorded: true } : {}) });
+    record(req, { at: when, by: by || 'admin', action: booked ? 'court-booked' : 'court-not-booked',
+      ...(was === undefined ? { firstRecorded: true } : {}),
+      ...(archived ? { fromArchive: { at: archived.at, auto: archived.auto } } : {}) });
+    if (booked) {
+      // Booked: out of Called Out, and out of its archive with it.
+      delete req.archivedAt; delete req.archivedBy;
+    } else if (was === true) {
+      // Back from Upcoming. It did progress, so this is a new active window.
+      req.activeSince = when;
+    }
+    track(req, when);
     return { ok: true, changed: true };
   }
 
@@ -241,6 +312,7 @@
       delete req.cantPlay[me];
       record(req, { at: when, by: who, action: 'marked-waiting', player: me });
     }
+    track(req, when);
     return { ok: true, changed: true };
   }
 
@@ -279,6 +351,7 @@
     req.confirmations[joining] = false;
     if (req.cantPlay) delete req.cantPlay[leaving];
     record(req, { at: when, by: who, action: 'replaced', player: leaving, replacement: joining });
+    track(req, when);
     return { ok: true };
   }
 
@@ -371,7 +444,85 @@
       const r = setCourtBooking(req, { isAdmin, booked: e.courtBookingMade, by: who, at: when });
       if (r.changed) changes++;
     }
+    track(req, when);
     return { ok: true, changes };
+  }
+
+  // Archive call-out: an admin takes an active Called Out game off the list.
+  function archiveCallOut(req, { isAdmin, by, at }) {
+    const refused = adminGate(req, isAdmin);
+    if (refused) return { ok: false, reason: refused };
+    const when = at || new Date().toISOString();
+    if (stage(req, when) !== STAGE.CALLED_OUT) return { ok: false, reason: 'not-called-out' };
+    track(req, when);
+    req.archivedAt = when;
+    req.archivedBy = by || 'admin';
+    record(req, { at: when, by: req.archivedBy, action: 'archived' });
+    return { ok: true };
+  }
+
+  // Restore to Called Out: the same fixture, everything kept, and a fresh
+  // 14-day window from now. When it was first called out is left alone.
+  function restoreCallOut(req, { isAdmin, by, at }) {
+    const refused = adminGate(req, isAdmin);
+    if (refused) return { ok: false, reason: refused };
+    const when = at || new Date().toISOString();
+    if (stage(req, when) !== STAGE.ARCHIVED) return { ok: false, reason: 'not-archived' };
+    const info = archiveInfo(req, when);
+    track(req, when);
+    delete req.archivedAt; delete req.archivedBy;
+    req.restoredAt = when;
+    req.activeSince = when;
+    record(req, { at: when, by: by || 'admin', action: 'restored', archivedAt: info.at, archivedBy: info.auto ? 'auto' : info.by });
+    return { ok: true };
+  }
+
+  // Open fixtures with the same four players -- what a new request might be
+  // repeating. A warning for a person to weigh, never a merge.
+  function matchupDuplicates(players, requests, opts) {
+    const o = opts || {};
+    const canon = o.canon || ((n) => String(n).toLowerCase());
+    const key = setKey(players, canon);
+    const active = [STAGE.PROPOSED, STAGE.CALLED_OUT, STAGE.UPCOMING, STAGE.ATTENTION];
+    return (requests || [])
+      .filter((r) => active.includes(stage(r, o.now)) && setKey(r.players || [], canon) === key)
+      .map((r) => ({
+        fixture: r, stage: stage(r, o.now),
+        samePartnerships: !!(o.teams && samePartnerships(o.teams, seatsAsSides(r), canon)),
+      }));
+  }
+  function seatsAsSides(r) { const s = seats(r); return [s.slice(0, s.length / 2), s.slice(s.length / 2)]; }
+
+  // ---- orders: explicit, never whatever order storage returned -------------
+
+  const tie = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  // Requests: newest first. A pasted list shares one moment, so it keeps the
+  // order it was written in.
+  function requestOrder(a, b) {
+    if (a.requestedAt !== b.requestedAt) return a.requestedAt < b.requestedAt ? 1 : -1;
+    const ai = a.batch ? a.batch.index : 0, bi = b.batch ? b.batch.index : 0;
+    return ai - bi || tie(a, b);
+  }
+  // Upcoming: what is happening next. By date, then time; a TBC time after
+  // the timed games that day; no date at all last.
+  function upcomingOrder(a, b) {
+    const da = a.preferredDate || '9999-99-99', db = b.preferredDate || '9999-99-99';
+    if (da !== db) return da < db ? -1 : 1;
+    const ta = a.preferredTime || '99:99', tb = b.preferredTime || '99:99';
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    return (a.requestedAt < b.requestedAt ? -1 : a.requestedAt > b.requestedAt ? 1 : 0) || tie(a, b);
+  }
+  // Called Out: a chasing list, newest (or newly restored) first.
+  function calledOutOrder(a, b) {
+    const sa = activeSince(a) || '', sb = activeSince(b) || '';
+    return (sa < sb ? 1 : sa > sb ? -1 : 0) || tie(a, b);
+  }
+  // Archived: most recently archived first.
+  function archivedOrder(now) {
+    return (a, b) => {
+      const xa = (archiveInfo(a, now) || {}).at || '', xb = (archiveInfo(b, now) || {}).at || '';
+      return (xa < xb ? 1 : xa > xb ? -1 : 0) || tie(a, b);
+    };
   }
 
   // Who has said they can't play, in the order the fixture lists its players.
@@ -510,7 +661,10 @@
   return {
     STATUS, STAGE, WINDOW,
     isOpen, isAgreed, participantName,
-    isBooked, bookingRecorded, stage, attention, agreedAt, availabilityOf, seats,
+    ARCHIVE_DAYS,
+    isBooked, bookingRecorded, stage, baseStage, attention, agreedAt, availabilityOf, seats,
+    calledOutAt, activeSince, archiveDueAt, archiveInfo, archiveCallOut, restoreCallOut,
+    matchupDuplicates, requestOrder, upcomingOrder, calledOutOrder, archivedOrder,
     createRequest, createAgreed, respond, cantPlayers, needsAttention, confirmedCount,
     setCourtBooking, setAvailability, markBackedOut, replacePlayer, adminEdit,
     adminRemove, reconcile, keepOutstanding,
