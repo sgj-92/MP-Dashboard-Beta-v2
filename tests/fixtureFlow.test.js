@@ -51,14 +51,15 @@ test('each participant answers only for themselves; a non-participant cannot ans
   assert.strictEqual(JSON.stringify(r), before, 'a refused answer changes nothing');
 });
 
-test('4/4 moves the SAME record into Upcoming, with no copy made', () => {
+test('4/4 moves the SAME record on as an agreed fixture, with no copy made', () => {
   const r = FF.createRequest({ players: four, requestedBy: 'Ann', at: T0 });
   const id = r.id;
   ['Bob', 'Cat', 'Dan'].forEach((n) => FF.respond(r, n, 'in', T0));
   assert.strictEqual(r.status, 'confirmed');
   assert.strictEqual(r.id, id, 'same identity');
-  assert.strictEqual(r.history[r.history.length - 1].action, 'upcoming');
+  assert.strictEqual(r.history[r.history.length - 1].action, 'agreed');
   assert.strictEqual(r.history[r.history.length - 1].by, 'Dan', 'the transition is attributed to whoever completed it');
+  assert.strictEqual(r.agreedAt, T0);
 });
 
 // --- D1: can't play and removal, in the module --------------------------------
@@ -196,7 +197,7 @@ maybe('D1: "I can\'t play" marks only the viewer, keeps the fixture listed and f
       return {
         status: f.status, confirmations: f.confirmations, cant: Object.keys(f.cantPlay || {}),
         last: f.history.at(-1), stored: stored[0].cantPlay,
-        stillListed: !!cardFor('fxUp'), folded: cardFor('fxUp').querySelector('.fx-meta').textContent,
+        stillListed: !!cardFor('fxUp'), folded: cardFor('fxUp').querySelector('.fx-head').textContent,
       };
     });
     assert.strictEqual(r.status, 'confirmed');
@@ -217,12 +218,16 @@ maybe('D1: an admin removes a fixture only after a second, explicit confirmation
     const r = await app.run(async () => {
       isUnlocked = true; currentUserName = 'Shaun'; setCurrentViewer('Rishi');
       goUpcoming(); cardFor('fxUp').querySelector('.fx-head').click();
+      // Removal is not a card action: it sits inside Manage fixture.
+      const onCard = !!cardFor('fxUp').querySelector('.fx-remove-arm');
+      cardFor('fxUp').querySelector('.fx-manage-toggle').click();
       cardFor('fxUp').querySelector('.fx-remove-arm').click();
-      const armed = { status: gameRequestsState[0].status, writes: window.__writes.length, text: cardFor('fxUp').textContent };
+      const armed = { onCard, status: gameRequestsState[0].status, writes: window.__writes.length, text: cardFor('fxUp').textContent };
       cardFor('fxUp').querySelector('.fx-remove-yes').click();
       await new Promise((x) => setTimeout(x, 150));
       return { armed, status: gameRequestsState[0].status, by: gameRequestsState[0].removedBy, listed: !!cardFor('fxUp') };
     });
+    assert.strictEqual(r.armed.onCard, false, 'Remove is not on the card itself');
     assert.strictEqual(r.armed.status, 'confirmed', 'the first tap only asks');
     assert.strictEqual(r.armed.writes, 0, 'and writes nothing');
     assert.match(r.armed.text, /Remove this fixture for everyone\?/);
@@ -332,7 +337,7 @@ maybe('Upcoming: every fixture is folded on arrival, opens on its own, and folds
 });
 
 maybe('Upcoming at 375px: the folded card keeps teams, date, venue and confirmations without overflow', async () => {
-  const app = await H.open({ club: club([agreed('fx1')]) });
+  const app = await H.open({ club: club([agreed('fx1', { courtBookingMade: true })]) });
   try {
     await install(app);
     await app.page.setViewportSize({ width: 375, height: 812 });
@@ -342,7 +347,7 @@ maybe('Upcoming at 375px: the folded card keeps teams, date, venue and confirmat
       return { text: c.textContent.replace(/\s+/g, ' '), overflow: c.scrollWidth > c.clientWidth + 1 || document.documentElement.scrollWidth > window.innerWidth + 1 };
     });
     assert.match(r.text, /Shaun & Tom vs Max & KC/);
-    assert.match(r.text, /2026-09-18 · Court 1 · 4\/4 confirmed/);
+    assert.match(r.text, /Fri 18 Sep · Court 1 4\/4 confirmed · Court booked/);
     assert.strictEqual(r.overflow, false);
   } finally { await app.close(); }
 });
@@ -480,9 +485,11 @@ maybe('D3: a stale fixture with a matching recorded result is left exactly as st
       return { offered, untouched, candidates: yes.length, clicked, after: { status: gameRequestsState[0].status, played: gameRequestsState[0].playedMatchId } };
     });
     assert.deepStrictEqual(r.untouched, { writes: 0, status: 'confirmed' }, 'loading and browsing never bulk-closes a stale fixture');
-    assert.match(r.offered, /Does this recorded result belong to this Upcoming game\?/);
+    // Made without a booking fact, so it is listed as Called Out -- and a
+    // result is still only ever a question.
+    assert.match(r.offered, /Does this recorded result belong to this Called Out game\?/);
     assert.match(r.offered, /This was the game/);
-    assert.match(r.offered, /Upcoming game is still outstanding/);
+    assert.match(r.offered, /Called Out game is still outstanding/);
     assert.deepStrictEqual([r.candidates, r.clicked], [1, real.id]);
     assert.deepStrictEqual(r.after, { status: 'played', played: real.id }, 'only the admin decision closes it');
     assert.deepStrictEqual(app2.pageErrors, []);

@@ -2314,3 +2314,29 @@ body { padding-bottom: calc(var(--shell-nav-height) + var(--shell-safe-bottom));
 .fx-choice input{ margin-top: 3px; }
 .fx-choice.is-chosen{ color: var(--text); }
 #approveConfirmBtn[disabled]{ opacity: .45; cursor: not-allowed; }
+
+/* Fixture follow-up: court booking, stages and Manage fixture. */
+.fx-head .fx-meta + .fx-meta{ margin-top: -1px; }
+.fx-court{ display: inline-block; margin-top: 8px; font-family: var(--font-interface); font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-dim); }
+.fx-court-yes{ color: var(--green); border-color: var(--green); }
+.fx-manage-toggle{ margin-top: 10px; }
+.fx-manage{ margin-top: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.fx-m-label{ display: block; font-family: var(--font-interface); font-size: 11px; font-weight: 700; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: .04em; margin: 8px 0 4px; }
+.fx-m-label:first-child{ margin-top: 0; }
+.fx-m-seat-row{ display: flex; gap: 6px; margin-bottom: 6px; }
+.fx-m-seat-row .fx-m-seat{ flex: 1 1 auto; min-width: 0; }
+.fx-m-seat-row .fx-m-state{ flex: 0 0 118px; }
+.fx-m-hint{ font-size: 11.5px; color: var(--gold-bright); margin: 2px 0 4px; }
+.fx-m-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fx-m-field{ display: block; min-width: 0; }
+.fx-m-field .fg-select{ width: 100%; box-sizing: border-box; }
+.fx-m-booking{ display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 10px; border: 1px solid var(--line);
+  border-radius: 10px; cursor: pointer; font-size: 13px; line-height: 1.35; }
+.fx-m-booking input{ width: 20px; height: 20px; margin-top: 1px; flex: 0 0 auto; accent-color: var(--gold-bright); }
+.fx-m-sub{ font-size: 11.5px; color: var(--text-dim); }
+.fx-m-danger{ margin-top: 12px; padding-top: 4px; border-top: 1px solid var(--line); }
+.fx-review-row{ padding: 10px 0; border-top: 1px solid var(--line); }
+.fx-review-row:first-of-type{ border-top: none; }
+.fx-review-row .fx-meta{ display: block; margin-top: 2px; }

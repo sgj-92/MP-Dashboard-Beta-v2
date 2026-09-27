@@ -199,7 +199,8 @@ maybe('a prediction becomes an Upcoming game without naming anyone twice', async
     assert.strictEqual(r.req.preferredDate, '', 'an unknown date is allowed through, not blocked');
     assert.strictEqual(r.req.location, 'Court 2');
     assert.strictEqual(r.stillFilled, r.names[0], 'the prediction must survive its own redraw');
-    assert.match(r.confirmation, /Added to Upcoming/);
+    assert.match(r.confirmation, /Added to Called Out/, 'no court booking was ticked, so it is Called Out');
+    assert.strictEqual(r.req.courtBookingMade, false);
     // The agreed presentation, not the technical one it replaced.
     assert.match(r.card, /Expected to win about \d+% of the games/);
     assert.ok(!/expected score|blend|reliability/i.test(r.card),
@@ -329,7 +330,7 @@ maybe('creating an Upcoming game updates the screen without navigating away', as
       await new Promise(x => setTimeout(x, 250));
       return {
         changed: document.getElementById('wishlistView').innerHTML !== before,
-        message: document.getElementById('wishlistView').textContent.includes('Added to Upcoming'),
+        message: document.getElementById('wishlistView').textContent.includes('Added to Called Out'),
         stored: gameRequestsState.length,
       };
     });

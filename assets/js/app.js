@@ -1836,6 +1836,7 @@ document.querySelectorAll('#tabrow .tab-btn').forEach(b=>{
     // Upcoming opens as a list to scan: every fixture folded, each one opened
     // on its own. Redraws after an action keep what the reader opened.
     if(activeTab === 'upcoming' && arrivingFrom !== 'upcoming') upcomingOpen = new Set();
+    if(activeTab !== arrivingFrom){ fixtureManageOpen = null; fixtureManageMessage = ''; fixtureRemoveArmed = null; }
     document.querySelectorAll('#tabrow .tab-btn').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
 
@@ -3275,9 +3276,11 @@ async function bridgeChallengeToRequest(ch){
     requestedAt: new Date().toISOString(),
     players, preferredDate: '',
     confirmations,
+    courtBookingMade: false,
     status: Object.values(confirmations).every(v=>v) ? 'confirmed' : 'pending',
     history: [{ at: new Date().toISOString(), by: ch.createdBy || ch.challenger, action: 'requested', fromChallenge: ch.id }],
   };
+  if(req.status === 'confirmed') req.agreedAt = req.requestedAt;
   gameRequestsState.push(req);
   const ok = await saveGameRequests(gameRequestsState);
   if(!ok){ gameRequestsState.pop(); return false; }
@@ -5888,7 +5891,7 @@ async function submitNewGame(){
 
   let linkedNote = '';
   if(linkedRequestId){
-    linkedNote = ' The Upcoming game stays listed until an admin confirms this was it.';
+    linkedNote = ' The game stays listed until an admin confirms this was it.';
     linkedRequestId = null;
   }
 
@@ -6777,7 +6780,7 @@ let upcomingPredictionOpen = {};
 // asked for. The lists open; the forms that create them do not. Not persisted:
 // each screen should open the same way every time.
 let requestSectionOpen = { challenges: true, request: false, adminAdd: false, pending: true };
-let upcomingSectionOpen = { list: true };
+let upcomingSectionOpen = { review: true, attention: true, upcoming: true, calledOut: true };
 
 // ===================== FIXTURES: REQUESTS AND UPCOMING =====================
 // The rules live in fixtureFlow.js; this draws them and wires the taps.
@@ -6787,13 +6790,30 @@ let upcomingSectionOpen = { list: true };
 //     acts for anyone else.
 //   - Only a participant sees "I'm in" / "Can't play". Nobody else sees a
 //     withdrawal or removal control.
-//   - Removal is admin-only and takes a second, explicit tap.
+//   - Admin maintenance -- players, sides, answers, date, time, venue, court
+//     booking and, last, removal -- lives in one "Manage fixture" panel.
+//     Removal takes a second, explicit tap.
+//   - An agreed fixture is listed by stage (FixtureFlow.stage): Needs
+//     attention, Upcoming (court booked) or Called Out (not booked yet).
 
-// Which Upcoming fixtures are open. Folded by default; emptied on arrival.
+// Which fixture cards are open. Folded by default; emptied on arrival.
 let upcomingOpen = new Set();
+// The fixture whose Manage panel is open, and what its last save said.
+let fixtureManageOpen = null;
+let fixtureManageMessage = '';
 // The fixture an admin has asked to remove but not yet confirmed.
 let fixtureRemoveArmed = null;
 let fixtureFlashMessage = '';
+
+// What a refused change says, in the club's words.
+const FIXTURE_REFUSALS = {
+  'not-participant': 'Only the players in this game can answer for it.',
+  'not-admin': 'Only an admin can change a fixture.',
+  'closed': 'This fixture is no longer open.',
+  'missing-player': 'Every seat needs a player.',
+  'duplicate-player': 'The same player is in two seats.',
+  'already-playing': 'That player is already in this game.',
+};
 
 function fixtureActor(){
   const v = (typeof getCurrentViewer === 'function') ? getCurrentViewer() : null;
@@ -6805,6 +6825,16 @@ function fixtureAdminName(){
 function localIsoToday(){
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+// "Tue 29 Sep" -- how the club says a date.
+function fmtFixtureDate(iso){
+  if(!iso) return '';
+  const d = new Date(iso + 'T12:00:00Z');
+  if(isNaN(d)) return iso;
+  // By hand: locales disagree ("Fri, 18 Sept"), and this is the club's form.
+  const day = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getUTCDay()];
+  const month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];
+  return `${day} ${d.getUTCDate()} ${month}`;
 }
 
 function fixtureLink(n){
@@ -6819,13 +6849,34 @@ function fixtureTeamsHtml(req){
     : req.players.map(fixtureLink).join(' &amp; ');
 }
 
-// Each player and where they stand: in, can't play, or not answered yet.
+// Date, time and venue in a line, with TBC where nothing is set. A Called Out
+// game's details are only a proposal, and the line says so.
+function fixtureWhenText(req){
+  const bits = [req.preferredDate ? fmtFixtureDate(req.preferredDate) : 'Date TBC'];
+  if(req.preferredTime) bits.push(req.preferredTime);
+  bits.push(req.location || 'Venue TBC');
+  return bits.join(' · ');
+}
+
+// Why an agreed fixture needs attention, in a phrase.
+function fixtureAttentionText(req){
+  const a = FixtureFlow.attention(req);
+  const parts = [];
+  if(a.backedOut.length) parts.push(`${a.backedOut.join(', ')} backed out`);
+  if(a.waiting.length) parts.push(`waiting on ${a.waiting.join(', ')}`);
+  return parts.join(' · ');
+}
+
+// Each player and where they stand: in, backed out, or not answered yet.
 function fixturePlayersHtml(req){
   const cant = req.cantPlay || {};
+  const agreed = FixtureFlow.isAgreed(req);
   return `<div class="fx-players">${req.players.map(n => {
     const state = cant[n] ? 'cant' : ((req.confirmations || {})[n] ? 'in' : 'waiting');
     const icon = state === 'in' ? '✅' : state === 'cant' ? '✖' : '⬜';
-    const label = state === 'in' ? 'in' : state === 'cant' ? `can't play · ${fmtRelative(cant[n].at)}` : 'not answered';
+    const label = state === 'in' ? 'in'
+      : state === 'cant' ? `${agreed ? 'backed out' : "can't play"} · ${fmtRelative(cant[n].at)}`
+      : (agreed ? 'awaiting confirmation' : 'not answered');
     return `<div class="fx-player fx-state-${state}">${icon} ${fixtureLink(n)} <span class="fx-player-state">${label}</span></div>`;
   }).join('')}</div>`;
 }
@@ -6836,29 +6887,82 @@ function fixtureViewerActionsHtml(req){
   if(!me || !FixtureFlow.isOpen(req)) return '';
   const inNow = !!(req.confirmations || {})[me];
   const cantNow = !!(req.cantPlay || {})[me];
-  const upcoming = FixtureFlow.isUpcoming(req);
+  const agreed = FixtureFlow.isAgreed(req);
   const btn = (response, label, cls) => `<button type="button" class="preset-btn fx-respond ${cls}" data-fixture-id="${escapeHtml(req.id)}" data-response="${response}">${label}</button>`;
   let body;
   if(!inNow && !cantNow) body = btn('in', "I'm in", 'fx-in') + btn('cant', "Can't play", 'fx-cant');
-  else if(inNow) body = `<span class="fx-you">You're in</span>` + btn('cant', upcoming ? "I can't play" : "Can't play", 'fx-cant');
+  else if(inNow) body = `<span class="fx-you">You're in</span>` + btn('cant', agreed ? "I can't play" : "Can't play", 'fx-cant');
   else body = `<span class="fx-you fx-you-cant">You said you can't play</span>` + btn('in', "I'm in after all", 'fx-in');
   return `<div class="fx-actions">${body}</div>`;
 }
 
-// Admin removal: two steps, and never shown to a player.
+// Admin removal: two steps, inside Manage fixture, and never shown to a player.
 function fixtureAdminRemoveHtml(req){
   if(!isUnlocked || !FixtureFlow.isOpen(req)) return '';
   const id = escapeHtml(req.id);
   if(fixtureRemoveArmed === req.id){
     return `<div class="fx-remove-confirm">
-      <div>Remove this fixture for everyone? It leaves ${FixtureFlow.isUpcoming(req) ? 'Upcoming' : 'Requests'}; its history is kept.</div>
+      <div>Remove this fixture for everyone? It leaves ${FixtureFlow.isAgreed(req) ? 'the Upcoming tab' : 'Requests'}; its history is kept.</div>
       <div class="difficulty-row" style="margin-top:8px;">
         <button type="button" class="preset-btn fx-remove-yes" data-fixture-id="${id}" style="flex:1;">Remove fixture</button>
         <button type="button" class="preset-btn fx-remove-no" data-fixture-id="${id}" style="flex:1;">Keep it</button>
       </div>
     </div>`;
   }
-  return `<button type="button" class="lg-inline-fold fx-remove-arm" data-fixture-id="${id}">Admin: remove fixture…</button>`;
+  return `<button type="button" class="lg-inline-fold fx-remove-arm" data-fixture-id="${id}">Remove fixture…</button>`;
+}
+
+// Manage fixture: the admin's one place to maintain a fixture -- players and
+// sides, each player's answer, date, time, venue and the court booking -- and,
+// set apart at the bottom, removing it. Every save edits this fixture; none
+// makes a new one.
+function fixtureManageHtml(req){
+  if(!isUnlocked || !FixtureFlow.isOpen(req)) return '';
+  const id = escapeHtml(req.id);
+  const open = fixtureManageOpen === req.id;
+  let html = `<button type="button" class="lg-inline-fold fx-manage-toggle" data-fixture-id="${id}" aria-expanded="${open}" aria-controls="fxManage_${id}">
+      Manage fixture<span class="lg-inline-chev" aria-hidden="true">${open ? '⌄' : '›'}</span>
+    </button>`;
+  if(!open) return html;
+  const seatList = FixtureFlow.seats(req);
+  const size = Math.floor(seatList.length / 2);
+  const names = allPlayerNames();
+  const seatRow = (n, i) => {
+    const options = (names.includes(n) ? names : [n, ...names])
+      .map(x => `<option value="${escapeHtml(x)}"${x === n ? ' selected' : ''}>${escapeHtml(x)}</option>`).join('');
+    const st = FixtureFlow.availabilityOf(req, n);
+    const stOpt = (v, label) => `<option value="${v}"${st === v ? ' selected' : ''}>${label}</option>`;
+    return `<div class="fx-m-seat-row">
+      <select class="fg-select fx-m-seat" data-seat="${i}" data-original="${escapeHtml(n)}" aria-label="Player ${i + 1}">${options}</select>
+      <select class="fg-select fx-m-state" data-seat="${i}" aria-label="Player ${i + 1} answer">${stOpt('in', 'In')}${stOpt('waiting', 'Not answered')}${stOpt('out', 'Backed out')}</select>
+    </div>`;
+  };
+  const booked = req.courtBookingMade === true;
+  const recorded = FixtureFlow.bookingRecorded(req);
+  const answers = Object.fromEntries(req.players.map(n => [n, FixtureFlow.availabilityOf(req, n)]));
+  html += `<div class="fx-manage" id="fxManage_${id}" data-fixture-id="${id}" data-answers="${escapeHtml(JSON.stringify(answers))}">
+    <div class="fx-m-label">Side A</div>
+    ${seatList.slice(0, size).map((n, i) => seatRow(n, i)).join('')}
+    <div class="fx-m-label">Side B</div>
+    ${seatList.slice(size).map((n, i) => seatRow(n, i + size)).join('')}
+    <div class="fx-m-hint" hidden>A new player starts as not answered — they confirm for themselves.</div>
+    <div class="fx-m-grid">
+      <label class="fx-m-field"><span class="fx-m-label">Date</span><input type="date" class="fg-select fx-m-date" value="${escapeHtml(req.preferredDate || '')}"></label>
+      <label class="fx-m-field"><span class="fx-m-label">Time</span><input type="time" class="fg-select fx-m-time" value="${escapeHtml(req.preferredTime || '')}"></label>
+    </div>
+    <label class="fx-m-field"><span class="fx-m-label">Venue</span><input class="fg-select fx-m-venue" value="${escapeHtml(req.location || '')}" placeholder="Court or venue"></label>
+    <label class="fx-m-booking">
+      <input type="checkbox" class="fx-m-booked" data-initial="${recorded ? String(booked) : 'unset'}"${booked ? ' checked' : ''}>
+      <span><b>Court booking made</b><br><span class="fx-m-sub">Marks this game as booked and moves it to Upcoming.${recorded ? '' : ' Not recorded for this game yet.'}</span></span>
+    </label>
+    ${fixtureManageMessage ? `<div class="fx-note fx-note-attn">${escapeHtml(fixtureManageMessage)}</div>` : ''}
+    <div class="fx-actions">
+      <button type="button" class="preset-btn fx-m-save" data-fixture-id="${id}">Save changes</button>
+      <button type="button" class="preset-btn fx-m-cancel" data-fixture-id="${id}">Cancel</button>
+    </div>
+    <div class="fx-m-danger">${fixtureAdminRemoveHtml(req)}</div>
+  </div>`;
+  return html;
 }
 
 // A recorded result, said the way the Games list says it.
@@ -6868,23 +6972,30 @@ function fixtureResultLine(m){
   return `${escapeHtml(m.date)} · ${m.winners.map(escapeHtml).join(' &amp; ')} ${verb} ${m.losers.map(escapeHtml).join(' &amp; ')}${score ? ' · ' + escapeHtml(score) : ''}`;
 }
 
-// Admin, on an Upcoming fixture that may already have been played: the
-// recorded results that could be it, and a human decision. Nothing here runs
-// on its own -- a fixture only closes when one of these buttons is pressed.
+// What an agreed fixture is called where it is listed.
+function fixtureStageWord(req){
+  const s = FixtureFlow.stage(req);
+  return s === FixtureFlow.STAGE.UPCOMING ? 'Upcoming game' : s === FixtureFlow.STAGE.CALLED_OUT ? 'Called Out game' : 'game';
+}
+
+// Admin, on an agreed fixture that may already have been played: the recorded
+// results that could be it, and a human decision. Nothing here runs on its
+// own -- a fixture only closes when one of these buttons is pressed.
 function fixtureReconcileHtml(req, ctx){
-  if(!isUnlocked || !FixtureFlow.isUpcoming(req)) return '';
+  if(!isUnlocked || !FixtureFlow.isAgreed(req)) return '';
   const cands = FixtureFlow.candidatesForFixture(req, ctx.results, { canon: playerIdFor, linkedResultIds: ctx.linked });
   if(!cands.length) return '';
   const id = escapeHtml(req.id);
+  const word = fixtureStageWord(req);
   return `<div class="fx-reconcile">
-    <div class="fx-reconcile-q">Does ${cands.length === 1 ? 'this recorded result' : 'one of these recorded results'} belong to this Upcoming game?</div>
+    <div class="fx-reconcile-q">Does ${cands.length === 1 ? 'this recorded result' : 'one of these recorded results'} belong to this ${word}?</div>
     ${cands.map(c => `<div class="fx-reconcile-row">
       <div class="fx-reconcile-label">Result recorded</div>
       <div>${fixtureResultLine(c.result)}</div>
       <div class="fx-reconcile-why">${c.reasons.map(escapeHtml).join(' · ')}</div>
       <button type="button" class="preset-btn fx-reconcile-yes" data-fixture-id="${id}" data-result-id="${escapeHtml(c.result.id)}">This was the game</button>
     </div>`).join('')}
-    <button type="button" class="preset-btn fx-reconcile-no" data-fixture-id="${id}" data-result-ids="${escapeHtml(cands.map(c => c.result.id).join(','))}">${cands.length === 1 ? 'Upcoming game is still outstanding' : 'None — still outstanding'}</button>
+    <button type="button" class="preset-btn fx-reconcile-no" data-fixture-id="${id}" data-result-ids="${escapeHtml(cands.map(c => c.result.id).join(','))}">${cands.length === 1 ? `${word[0].toUpperCase() + word.slice(1)} is still outstanding` : 'None — still outstanding'}</button>
   </div>`;
 }
 
@@ -6897,37 +7008,55 @@ function buildPendingRequestCardHtml(req){
     <div class="fx-count">${FixtureFlow.confirmedCount(req)}/${req.players.length} confirmed${attention.length ? ` · <span class="fx-tag fx-tag-attn">Needs attention</span>` : ''}</div>
     ${fixturePlayersHtml(req)}
     ${fixtureViewerActionsHtml(req)}
-    ${fixtureAdminRemoveHtml(req)}
+    ${fixtureManageHtml(req)}
   </div>`;
 }
 
-// An Upcoming fixture: one line to scan when folded, everything when open.
+// An agreed fixture -- Upcoming, Called Out or Needs attention: one line to
+// scan when folded, everything when open.
 function buildUpcomingCardHtml(req, ctx){
   const open = upcomingOpen.has(req.id);
+  const stage = FixtureFlow.stage(req);
+  const S = FixtureFlow.STAGE;
+  const booked = FixtureFlow.isBooked(req);
   const sum = FixtureFlow.summaryLine(req, requestTeams);
-  const attention = FixtureFlow.cantPlayers(req);
   const submitted = ctx.submittedFor.has(req.id);
   const past = !!req.preferredDate && req.preferredDate < ctx.today;
-  const tags = [];
-  if(attention.length) tags.push(`<span class="fx-tag fx-tag-attn">Needs attention</span>`);
-  if(submitted) tags.push(`<span class="fx-tag">Result submitted</span>`);
-  else if(past) tags.push(`<span class="fx-tag fx-tag-past">Date passed</span>`);
+  const n = req.players.length;
   const id = escapeHtml(req.id);
 
-  let html = `<div class="callout-card fx-card fx-upcoming${attention.length ? ' fx-attn' : ''}${open ? ' is-open' : ''}" data-fixture-id="${id}">
+  // Line two of the folded card: where the fixture stands.
+  const status = [];
+  if(stage === S.ATTENTION){
+    status.push(`<span class="fx-tag fx-tag-attn">Needs attention</span> ${escapeHtml(fixtureAttentionText(req))}`);
+    status.push(booked ? 'Court booked' : 'Court not booked');
+  } else if(stage === S.UPCOMING){
+    status.push(`${FixtureFlow.confirmedCount(req)}/${n} confirmed`, 'Court booked');
+  } else {
+    status.push(`${FixtureFlow.confirmedCount(req)}/${n} agreed`, 'Court not booked', `Called out ${fmtRelative(FixtureFlow.agreedAt(req))}`);
+  }
+  const tags = [];
+  if(submitted) tags.push(`<span class="fx-tag">Result submitted</span>`);
+  else if(past) tags.push(`<span class="fx-tag fx-tag-past">Date passed</span>`);
+  if(isUnlocked && !FixtureFlow.bookingRecorded(req)) tags.push(`<span class="fx-tag fx-tag-past">Booking not recorded</span>`);
+  const proposed = !booked;
+
+  let html = `<div class="callout-card fx-card fx-upcoming fx-stage-${stage}${stage === S.ATTENTION ? ' fx-attn' : ''}${open ? ' is-open' : ''}" data-fixture-id="${id}">
     <button type="button" class="fx-head" data-fixture-id="${id}" aria-expanded="${open}" aria-controls="fxBody_${id}">
       <span class="fx-head-text">
         <span class="fx-title">${escapeHtml(sum.title)}</span>
-        <span class="fx-meta">${escapeHtml(sum.when)} · ${escapeHtml(sum.confirmed)}${tags.length ? ' ' + tags.join(' ') : ''}</span>
+        <span class="fx-meta">${proposed ? 'Proposed: ' : ''}${escapeHtml(fixtureWhenText(req))}</span>
+        <span class="fx-meta">${status.join(' · ')}${tags.length ? ' ' + tags.join(' ') : ''}</span>
       </span>
       <span class="fx-chev" aria-hidden="true">${open ? '⌄' : '›'}</span>
     </button>`;
   if(open){
     html += `<div class="fx-body" id="fxBody_${id}">
       <div class="cc-title">${fixtureTeamsHtml(req)}</div>
-      <div class="cc-detail">${requestWhenHtml(req, { tbc: true })}requested by ${escapeHtml(req.requestedBy)} (${fmtRelative(req.requestedAt)})</div>
+      <div class="cc-detail">${proposed ? 'Proposed: ' : ''}${escapeHtml(fixtureWhenText(req))} · requested by ${escapeHtml(req.requestedBy)} (${fmtRelative(req.requestedAt)})</div>
+      <div class="fx-court ${booked ? 'fx-court-yes' : 'fx-court-no'}">${booked ? 'Court booked' : 'Court not booked yet'}</div>
       ${fixturePlayersHtml(req)}
-      ${attention.length ? `<div class="fx-note fx-note-attn">${attention.map(escapeHtml).join(', ')} can't play — this game needs sorting out.</div>` : ''}
+      ${stage === S.ATTENTION ? `<div class="fx-note fx-note-attn">${escapeHtml(fixtureAttentionText(req))} — this game needs sorting out${booked ? ', and a court is booked' : ''}.</div>` : ''}
       ${submitted ? `<div class="fx-note">A result has been submitted from this game and is waiting for an admin to approve it.</div>`
         : (past ? `<div class="fx-note">The date has passed and no result is linked to this game yet.</div>` : '')}
       <div class="fx-actions">
@@ -6936,7 +7065,7 @@ function buildUpcomingCardHtml(req, ctx){
       ${fixtureViewerActionsHtml(req)}
       ${upcomingPredictionHtml(req)}
       ${fixtureReconcileHtml(req, ctx)}
-      ${fixtureAdminRemoveHtml(req)}
+      ${fixtureManageHtml(req)}
     </div>`;
   }
   return html + `</div>`;
@@ -6978,7 +7107,8 @@ async function commitFixtureChange(change){
   const before = JSON.stringify(gameRequestsState);
   const result = change();
   if(!result || !result.ok){
-    fixtureFlashMessage = result && result.reason === 'not-participant' ? 'Only the players in this game can answer for it.' : '';
+    gameRequestsState = JSON.parse(before);
+    fixtureFlashMessage = (result && FIXTURE_REFUSALS[result.reason]) || '';
     dataChanged();
     return result;
   }
@@ -6990,7 +7120,7 @@ async function commitFixtureChange(change){
     fixtureFlashMessage = '';
   }
   dataChanged();
-  return result;
+  return Object.assign({}, result, { saved: ok });
 }
 
 // Every fixture control, on whichever screen drew it.
@@ -7011,6 +7141,65 @@ function wireFixtureControls(box){
       await commitFixtureChange(()=> FixtureFlow.respond(req, actor, btn.dataset.response));
     };
   });
+  box.querySelectorAll('.fx-manage-toggle').forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.dataset.fixtureId;
+      fixtureManageOpen = fixtureManageOpen === id ? null : id;
+      fixtureManageMessage = '';
+      fixtureRemoveArmed = null;
+      renderActiveTab();
+    };
+  });
+  // A seat's answer follows its player. Someone already in the game keeps
+  // theirs when moved to another seat; a new name starts unanswered, whatever
+  // the player they replace had said.
+  box.querySelectorAll('.fx-m-seat').forEach(sel=>{
+    sel.onchange = ()=>{
+      const panel = sel.closest('.fx-manage');
+      const answers = JSON.parse(panel.dataset.answers || '{}');
+      const state = panel.querySelector(`.fx-m-state[data-seat="${sel.dataset.seat}"]`);
+      if(state) state.value = answers[sel.value] || 'waiting';
+      const hint = panel.querySelector('.fx-m-hint');
+      if(hint) hint.hidden = ![...panel.querySelectorAll('.fx-m-seat')].some(s => !(s.value in answers));
+    };
+  });
+  box.querySelectorAll('.fx-m-cancel').forEach(btn=>{
+    btn.onclick = ()=>{ fixtureManageOpen = null; fixtureManageMessage = ''; fixtureRemoveArmed = null; renderActiveTab(); };
+  });
+  box.querySelectorAll('.fx-m-save').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const req = find(btn.dataset.fixtureId);
+      const panel = btn.closest('.fx-manage');
+      if(!req || !panel) return;
+      const seatsNow = [...panel.querySelectorAll('.fx-m-seat')].map(s => s.value);
+      const availability = {};
+      panel.querySelectorAll('.fx-m-state').forEach(s => { availability[seatsNow[+s.dataset.seat]] = s.value; });
+      const booking = panel.querySelector('.fx-m-booked');
+      const edit = {
+        seats: seatsNow, availability,
+        date: panel.querySelector('.fx-m-date').value,
+        time: panel.querySelector('.fx-m-time').value,
+        venue: panel.querySelector('.fx-m-venue').value,
+      };
+      // Left unrecorded unless the admin actually answered it.
+      if(!(booking.dataset.initial === 'unset' && !booking.checked)) edit.courtBookingMade = booking.checked;
+      const result = await commitFixtureChange(()=> FixtureFlow.adminEdit(req, edit, { isAdmin: isUnlocked, by: fixtureAdminName(), canon: playerIdFor }));
+      if(result && result.ok && result.saved){
+        fixtureManageOpen = null; fixtureManageMessage = '';
+        fixtureFlashMessage = result.changes ? 'Fixture updated.' : 'Nothing changed.';
+      } else {
+        fixtureManageMessage = fixtureFlashMessage || 'Nothing was saved.';
+      }
+      renderActiveTab();
+    };
+  });
+  box.querySelectorAll('.fx-book-set').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const req = find(btn.dataset.fixtureId);
+      if(!req) return;
+      await commitFixtureChange(()=> FixtureFlow.setCourtBooking(req, { isAdmin: isUnlocked, booked: btn.dataset.booked === 'true', by: fixtureAdminName() }));
+    };
+  });
   box.querySelectorAll('.fx-remove-arm').forEach(btn=>{
     btn.onclick = ()=>{ fixtureRemoveArmed = btn.dataset.fixtureId; renderActiveTab(); };
   });
@@ -7022,6 +7211,7 @@ function wireFixtureControls(box){
       const req = find(btn.dataset.fixtureId);
       if(!req || fixtureRemoveArmed !== req.id) return;
       fixtureRemoveArmed = null;
+      fixtureManageOpen = null;
       await commitFixtureChange(()=> FixtureFlow.adminRemove(req, { isAdmin: isUnlocked, confirmed: true, by: fixtureAdminName() }));
     };
   });
@@ -7160,12 +7350,22 @@ function buildPredictionToUpcomingHtml(pred){
     <div class="fg-row"><label class="fg-label">Date</label><input id="predUpDate" type="date" class="fg-select" /></div>
     <div class="fg-row"><label class="fg-label">Time</label><input id="predUpTime" type="time" class="fg-select" /></div>
     <div class="fg-row"><label class="fg-label">Where</label><input id="predUpPlace" class="fg-select" placeholder="Court or venue (optional)" /></div>
-    <div class="fg-row"><button class="preset-btn" id="predUpAdd" style="width:100%;">+ Add to Upcoming</button></div>
+    ${courtBookingCheckboxHtml('predUpBooked')}
+    <div class="fg-row"><button class="preset-btn" id="predUpAdd" style="width:100%;">+ Add as an agreed game</button></div>
     <div id="predUpMessage" class="section-sub">${escapeHtml(message || '')}</div>
   </div>`;
 }
 
 let predictionUpcomingMessage = '';
+
+// The court booking, asked for explicitly wherever an admin records an agreed
+// game. Off unless ticked: a date or a venue is not a booking.
+function courtBookingCheckboxHtml(id){
+  return `<label class="fx-m-booking" style="margin:4px 0 8px;">
+    <input type="checkbox" id="${id}">
+    <span><b>Court booking made</b><br><span class="fx-m-sub">Marks this game as booked and moves it to Upcoming.</span></span>
+  </label>`;
+}
 
 function wirePredictionToUpcoming(box){
   const btn = box.querySelector('#predUpAdd');
@@ -7177,25 +7377,20 @@ function wirePredictionToUpcoming(box){
     const who = requireName();
     if(!who) return;
 
-    const players = pred.teamA.concat(pred.teamB);
-    // Agreed by an admin, exactly as "add straight to Upcoming" already works:
-    // there is nobody left to confirm it.
-    const confirmations = {};
-    players.forEach(n => confirmations[n] = true);
-
-    const req = {
-      id: 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
-      requestedBy: who, requestedAt: new Date().toISOString(),
-      players,
+    // Agreed by an admin, exactly as "add an agreed game" works: there is
+    // nobody left to confirm it. Called Out unless the court is booked.
+    const booked = !!(box.querySelector('#predUpBooked') || {}).checked;
+    const req = FixtureFlow.createAgreed({
+      players: pred.teamA.concat(pred.teamB),
       // The sides are the whole point of a predicted matchup, so they are
       // recorded rather than re-derived from the order of the flat list.
       teams: [pred.teamA.slice(), pred.teamB.slice()],
+      by: who,
       preferredDate: (box.querySelector('#predUpDate') || {}).value || '',
       preferredTime: (box.querySelector('#predUpTime') || {}).value || '',
       location: ((box.querySelector('#predUpPlace') || {}).value || '').trim(),
-      confirmations, status: 'confirmed',
-      history: [{ at: new Date().toISOString(), by: who, action: 'added-to-upcoming' }],
-    };
+      courtBookingMade: booked,
+    });
     gameRequestsState.push(req);
     const ok = await saveGameRequests(gameRequestsState);
     if(!ok){
@@ -7208,7 +7403,7 @@ function wirePredictionToUpcoming(box){
     // The prediction itself is not stored. It is recomputed from these same
     // players whenever the Upcoming card asks for it, so it can never go stale
     // against a rating that has since moved.
-    predictionUpcomingMessage = `Added to Upcoming: ${pred.teamA.join(' & ')} v ${pred.teamB.join(' & ')}.`;
+    predictionUpcomingMessage = `Added to ${booked ? 'Upcoming' : 'Called Out'}: ${pred.teamA.join(' & ')} v ${pred.teamB.join(' & ')}.`;
     dataChanged();
   };
 }
@@ -7242,7 +7437,7 @@ function renderWishlist(flashMessage, adminFlashMessage){
     { summary: 'name four players' });
   if(requestSectionOpen.request){
   html += `<div id="reqFoldRequestBody">`;
-  html += `<div class="section-sub">Name four players. You're in as soon as you ask; the other three answer here under Pending, and once all four are in it moves to Upcoming.</div>`;
+  html += `<div class="section-sub">Name four players. You're in as soon as you ask; the other three answer here under Pending. Once all four are in it moves to the Upcoming tab as Called Out, until a court is booked.</div>`;
   html += identityLineHtml('Requesting');
   html += `<div class="fg-controls">
     <div class="fg-row"><label class="fg-label">Players</label>
@@ -7260,11 +7455,11 @@ function renderWishlist(flashMessage, adminFlashMessage){
   }
 
   if(isUnlocked){
-    html += foldHeading('reqFoldAdmin', '⚡ Admin: add straight to Upcoming', requestSectionOpen.adminAdd,
+    html += foldHeading('reqFoldAdmin', '⚡ Admin: add an agreed game', requestSectionOpen.adminAdd,
       { summary: 'already agreed' });
     if(requestSectionOpen.adminAdd){
     html += `<div id="reqFoldAdminBody">`;
-    html += `<div class="section-sub">For a game already agreed in WhatsApp — skips the confirmation step entirely.</div>`;
+    html += `<div class="section-sub">For a game already agreed in WhatsApp — skips the confirmation step. It is Called Out until a court is booked.</div>`;
     html += `<div class="fg-controls">
       <div class="fg-row"><label class="fg-label">Players</label>
         <input id="adminReqP1" list="playerNamesList" class="fg-select" placeholder="Player 1" style="margin-bottom:6px;" />
@@ -7275,7 +7470,8 @@ function renderWishlist(flashMessage, adminFlashMessage){
       <div class="fg-row"><label class="fg-label">Preferred date (optional)</label><input id="adminReqDate" type="date" class="fg-select" /></div>
       <div class="fg-row"><label class="fg-label">Time (optional)</label><input id="adminReqTime" type="time" class="fg-select" /></div>
       <div class="fg-row"><label class="fg-label">Where (optional)</label><input id="adminReqPlace" class="fg-select" placeholder="Court or venue" /></div>
-      <div class="fg-row"><button class="preset-btn" id="adminReqSubmit" style="width:100%;">Add directly to Upcoming</button></div>
+      ${courtBookingCheckboxHtml('adminReqBooked')}
+      <div class="fg-row"><button class="preset-btn" id="adminReqSubmit" style="width:100%;">Add agreed game</button></div>
       <div id="adminReqMessage" class="section-sub">${adminFlashMessage || ''}</div>
     </div>`;
     html += `</div>`;
@@ -7361,19 +7557,14 @@ function renderWishlist(flashMessage, adminFlashMessage){
       const adminName = requireName();
       if(!adminName) return;
 
-      const confirmations = {};
-      names.forEach(n=> confirmations[n] = true);
-      const req = {
-        id: 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
-        requestedBy: adminName, requestedAt: new Date().toISOString(),
-        players: names,
-        teams: [names.slice(0,2), names.slice(2,4)],
+      const booked = !!(document.getElementById('adminReqBooked') || {}).checked;
+      const req = FixtureFlow.createAgreed({
+        players: names, teams: [names.slice(0,2), names.slice(2,4)], by: adminName,
         preferredDate: document.getElementById('adminReqDate').value || '',
         preferredTime: (document.getElementById('adminReqTime') || {}).value || '',
         location: ((document.getElementById('adminReqPlace') || {}).value || '').trim(),
-        confirmations, status: 'confirmed',
-        history: [{ at: new Date().toISOString(), by: adminName, action: 'added-to-upcoming' }],
-      };
+        courtBookingMade: booked,
+      });
       gameRequestsState.push(req);
       const ok = await saveGameRequests(gameRequestsState);
       if(!ok){
@@ -7381,7 +7572,7 @@ function renderWishlist(flashMessage, adminFlashMessage){
         msg.textContent = storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — try again.` : `Save failed — this page can't reach shared storage.`;
         return;
       }
-      dataChanged({ redraw: ()=> renderWishlist(undefined, 'Added to Upcoming.') });
+      dataChanged({ redraw: ()=> renderWishlist(undefined, booked ? 'Added to Upcoming.' : 'Added to Called Out.') });
     };
   });
 
@@ -7389,43 +7580,86 @@ function renderWishlist(flashMessage, adminFlashMessage){
 
 function renderUpcoming(){
   const box = document.getElementById('upcomingView');
-  const confirmed = gameRequestsState.filter(r=>r.status==='confirmed');
+  const S = FixtureFlow.STAGE;
+  const agreed = gameRequestsState.filter(r => FixtureFlow.isAgreed(r));
+  const byStage = (st) => agreed.filter(r => FixtureFlow.stage(r) === st);
+  const since = (r) => FixtureFlow.agreedAt(r) || '';
+  // Needs attention and Called Out: longest-waiting first, so the game most
+  // likely to be forgotten is the one at the top. Upcoming: soonest first.
+  const attention = byStage(S.ATTENTION).sort((a,b)=> since(a) < since(b) ? -1 : 1);
+  const upcoming = byStage(S.UPCOMING).sort((a,b)=>
+    (a.preferredDate || '9999') < (b.preferredDate || '9999') ? -1
+    : (a.preferredDate || '9999') > (b.preferredDate || '9999') ? 1
+    : ((a.preferredTime || '') < (b.preferredTime || '') ? -1 : 1));
+  const calledOut = byStage(S.CALLED_OUT).sort((a,b)=> since(a) < since(b) ? -1 : 1);
+  // Made before court bookings were recorded: nothing says whether a court is
+  // booked, so they sit in Called Out until an admin answers for each one.
+  const unrecorded = isUnlocked ? agreed.filter(r => !FixtureFlow.bookingRecorded(r)) : [];
 
-  // Every fixture folds to one line -- teams, when, where, how many are in --
-  // so the list reads like the fixture list it is. Each opens on its own.
-  let html = foldHeading('upFoldList', `📅 Upcoming (${confirmed.length})`, upcomingSectionOpen.list);
-  if(upcomingSectionOpen.list){
-    html += `<div id="upFoldListBody">`;
-    if(fixtureFlashMessage) html += `<div class="section-sub" style="color:var(--gold-bright);">${escapeHtml(fixtureFlashMessage)}</div>`;
-    if(confirmed.length === 0){
-      html += `<div class="section-sub">Nothing agreed yet — a request becomes an Upcoming game once all four players confirm it, and an admin can add one straight here from Requests or from a prediction.</div>`;
-    } else {
-      // Shared by every card: which fixtures already have a result waiting
-      // for approval, the recorded results an admin may reconcile against,
-      // and today's date.
-      const ctx = {
-        today: localIsoToday(),
-        submittedFor: new Set(extraMatchesState.filter(x => x.status === 'pending' && x.fixtureId).map(x => x.fixtureId)),
-        results: isUnlocked ? getAllApprovedMatches() : [],
-        linked: FixtureFlow.linkedResultIds(gameRequestsState),
-      };
-      confirmed.slice().sort((a,b)=> a.requestedAt < b.requestedAt ? 1 : -1).forEach(req=>{
-        html += buildUpcomingCardHtml(req, ctx);
-      });
+  // Shared by every card: which fixtures already have a result waiting for
+  // approval, the recorded results an admin may reconcile against, and today.
+  const ctx = {
+    today: localIsoToday(),
+    submittedFor: new Set(extraMatchesState.filter(x => x.status === 'pending' && x.fixtureId).map(x => x.fixtureId)),
+    results: isUnlocked ? getAllApprovedMatches() : [],
+    linked: FixtureFlow.linkedResultIds(gameRequestsState),
+  };
+  const section = (key, id, label, list, empty, sub) => {
+    let h = foldHeading(id, `${label} (${list.length})`, upcomingSectionOpen[key], sub ? { summary: sub } : undefined);
+    if(upcomingSectionOpen[key]){
+      h += `<div id="${id}Body">`;
+      h += list.length ? list.map(r => buildUpcomingCardHtml(r, ctx)).join('') : `<div class="section-sub">${empty}</div>`;
+      h += `</div>`;
     }
-    html += `</div>`;
+    return h;
+  };
+
+  let html = '';
+  if(fixtureFlashMessage) html += `<div class="section-sub" style="color:var(--gold-bright);">${escapeHtml(fixtureFlashMessage)}</div>`;
+
+  if(unrecorded.length){
+    html += foldHeading('upFoldReview', `🗂 Court bookings to record (${unrecorded.length})`, upcomingSectionOpen.review, { summary: 'admin' });
+    if(upcomingSectionOpen.review){
+      html += `<div id="upFoldReviewBody">
+        <div class="section-sub">These games were added before Money Padel recorded court bookings, so nothing says whether a court is booked. Until you answer, each is listed under Called Out.</div>
+        ${unrecorded.map(r => {
+          const sum = FixtureFlow.summaryLine(r, requestTeams);
+          const id = escapeHtml(r.id);
+          return `<div class="fx-review-row" data-fixture-id="${id}">
+            <div class="fx-title">${escapeHtml(sum.title)}</div>
+            <div class="fx-meta">${escapeHtml(fixtureWhenText(r))} · added ${fmtRelative(r.requestedAt)}</div>
+            <div class="fx-actions">
+              <button type="button" class="preset-btn fx-book-set" data-fixture-id="${id}" data-booked="true">Court booked</button>
+              <button type="button" class="preset-btn fx-book-set" data-fixture-id="${id}" data-booked="false">Not booked yet</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+    html += `<div class="mp-divider"></div>`;
   }
+
+  // Needs attention only appears when something needs it -- at the top, so a
+  // disrupted game is never lost inside the ordinary lists.
+  if(attention.length){
+    html += section('attention', 'upFoldAttention', '⚠️ Needs attention', attention, '');
+    html += `<div class="mp-divider"></div>`;
+  }
+  html += section('upcoming', 'upFoldUpcoming', '📅 Upcoming', upcoming,
+    'No court-booked games yet. A Called Out game moves here once an admin records its court booking.', 'court booked');
+  html += `<div class="mp-divider"></div>`;
+  html += section('calledOut', 'upFoldCalledOut', '📣 Called Out', calledOut,
+    'Nothing called out. A request lands here once all four players are in.', 'agreed, court not booked');
 
   box.innerHTML = html;
   wireRequestPlayerLinks(box);
   wireRequestPredictions(box);
   wireFixtureControls(box);
 
-  const fold = (id, key) => {
+  [['upFoldReview','review'], ['upFoldAttention','attention'], ['upFoldUpcoming','upcoming'], ['upFoldCalledOut','calledOut']].forEach(([id, key])=>{
     const el = document.getElementById(id);
     if(el) el.onclick = ()=>{ upcomingSectionOpen[key] = !upcomingSectionOpen[key]; renderUpcoming(); };
-  };
-  fold('upFoldList', 'list');
+  });
 
   box.querySelectorAll('.request-addresult-btn').forEach(btn=>{
     btn.onclick = ()=>{
@@ -9132,7 +9366,7 @@ async function commitApproval(){
   const a = approvalPlan;
   if(!a) return;
   if(a.fixtureCandidates && a.fixtureCandidates.length && !a.fixtureChoice){
-    approvalMessage = 'Say whether this result belongs to an Upcoming game first.';
+    approvalMessage = 'Say whether this result belongs to one of the listed games first.';
     renderGamesTab();
     return;
   }
@@ -9157,8 +9391,8 @@ async function commitApproval(){
         else FixtureFlow.keepOutstanding(f, { isAdmin: true, resultId: a.matchId, by: a.approvedBy });
       });
       const saved = await saveGameRequests(gameRequestsState);
-      fixtureNote = !saved ? ' The Upcoming link could not be saved — reconcile it from the Upcoming card.'
-        : (a.fixtureChoice && a.fixtureChoice !== 'none' ? ' Its Upcoming game is marked played.' : ' Upcoming left as it was.');
+      fixtureNote = !saved ? ' The fixture link could not be saved — reconcile it from the fixture card.'
+        : (a.fixtureChoice && a.fixtureChoice !== 'none' ? ' Its fixture is marked played.' : ' Fixtures left as they were.');
     }
     await loadV3State();
     approvalMessage = `Rated as ${a.matchId}. ${a.planned.playersMoved.map(p=>`${p.playerId} ${p.delta>0?'+':''}${p.delta}`).join(', ')}.${fixtureNote}`;
@@ -9185,7 +9419,7 @@ function buildApprovalConfirmHtml(){
   </div>`;
 }
 
-// Does this result belong to an Upcoming game? Asked only when there is a
+// Does this result belong to an agreed game? Asked only when there is a
 // credible candidate, answered by the admin, and nothing is chosen for them.
 function approvalFixtureChoiceHtml(a){
   const cands = (a.fixtureCandidates || []).map(c => ({ ...c, fixture: gameRequestsState.find(r => r.id === c.id) })).filter(c => c.fixture);
@@ -9195,16 +9429,16 @@ function approvalFixtureChoiceHtml(a){
   const option = (value, body) => `<label class="fx-choice${a.fixtureChoice === value ? ' is-chosen' : ''}">
       <input type="radio" name="fxChoice" value="${escapeHtml(value)}"${a.fixtureChoice === value ? ' checked' : ''}> <span>${body}</span></label>`;
   return `<div class="fx-reconcile" style="margin-top:10px;">
-    <div class="fx-reconcile-q">Does this result belong to ${cands.length === 1 ? 'this Upcoming game' : 'one of these Upcoming games'}?</div>
+    <div class="fx-reconcile-q">Does this result belong to ${cands.length === 1 ? `this ${fixtureStageWord(cands[0].fixture)}` : 'one of these games'}?</div>
     <div class="fx-reconcile-label">Result entered</div>
     <div>${escapeHtml(r.date)} · ${r.winners.map(escapeHtml).join(' &amp; ')} ${r.isDraw ? 'drew with' : 'def'} ${r.losers.map(escapeHtml).join(' &amp; ')}${score ? ' · ' + escapeHtml(score) : ''}</div>
-    <div class="fx-reconcile-label" style="margin-top:8px;">Possible Upcoming ${cands.length === 1 ? 'match' : 'matches'}</div>
+    <div class="fx-reconcile-label" style="margin-top:8px;">Possible ${cands.length === 1 ? 'match' : 'matches'}</div>
     ${cands.map(c => {
       const f = c.fixture;
       const sum = FixtureFlow.summaryLine(f, requestTeams);
       return option(c.id, `<b>This was the game:</b> ${escapeHtml(sum.title)} · ${escapeHtml(sum.when)} · requested by ${escapeHtml(f.requestedBy)}<br><span class="fx-reconcile-why">${c.reasons.map(escapeHtml).join(' · ')}</span>`);
     }).join('')}
-    ${option('none', cands.length === 1 ? '<b>Upcoming game is still outstanding</b> — this result is a different game' : '<b>None</b> — still outstanding / unrelated result')}
+    ${option('none', cands.length === 1 ? `<b>${(w => w[0].toUpperCase() + w.slice(1))(fixtureStageWord(cands[0].fixture))} is still outstanding</b> — this result is a different game` : '<b>None</b> — still outstanding / unrelated result')}
   </div>`;
 }
 
