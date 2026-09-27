@@ -221,7 +221,9 @@ maybe('an Upcoming game shows the same prediction, and only to an admin', async 
       }];
       document.querySelector('#tabrow .tab-btn[data-tab="upcoming"]').click();
 
-      isUnlocked = false; renderUpcoming();
+      // Upcoming fixtures are folded by default (27 Sep); the detail, and an
+      // admin's prediction, are inside the opened card.
+      isUnlocked = false; upcomingOpen = new Set(['req_test']); renderUpcoming();
       const asPlayer = {
         toggle: !!document.querySelector('.request-pred-toggle'),
         text: document.getElementById('upcomingView').textContent.replace(/\s+/g, ' '),
@@ -247,7 +249,12 @@ maybe('an Upcoming game shows the same prediction, and only to an admin', async 
   } finally { await app.close(); }
 });
 
-maybe('Add result carries the agreed sides and leaves no second copy behind', async () => {
+// Superseded in part by D3 (Shaun/CGPT, 27 Sep 2026): submitting a result from
+// an Upcoming card no longer deletes the fixture. The player's choice of
+// fixture travels with the submission as a proposal, and the fixture stays in
+// Upcoming until an admin confirms the link when approving. Still one record
+// each -- the fixture is never copied -- which is what this test protects.
+maybe('Add result carries the agreed sides and proposes the fixture without closing it', async () => {
   const app = await H.open();
   try {
     const out = await app.run(async () => {
@@ -260,6 +267,7 @@ maybe('Add result carries the agreed sides and leaves no second copy behind', as
         confirmations: Object.fromEntries(names.map(n => [n, true])), status: 'confirmed',
       }];
       document.querySelector('#tabrow .tab-btn[data-tab="upcoming"]').click();
+      document.querySelector('.fx-head').click();
       document.querySelector('.request-addresult-btn').click();
 
       const prefilled = {
@@ -276,11 +284,16 @@ maybe('Add result carries the agreed sides and leaves no second copy behind', as
       await submitNewGame();
       await new Promise(x => setTimeout(x, 250));
 
+      document.querySelector('#tabrow .tab-btn[data-tab="upcoming"]').click();
+      document.querySelector('.fx-head').click();
+      const card = document.getElementById('upcomingView').textContent.replace(/\s+/g, ' ');
       return {
         prefilled, names,
         upcomingLeft: gameRequestsState.length,
+        fixture: gameRequestsState[0] && { status: gameRequestsState[0].status, id: gameRequestsState[0].id },
         submissions: extraMatchesState.length,
         submitted: extraMatchesState[extraMatchesState.length - 1],
+        card, addResultStillOffered: !!document.querySelector('.request-addresult-btn'),
       };
     });
     assert.strictEqual(out.prefilled.tab, 'games');
@@ -289,8 +302,12 @@ maybe('Add result carries the agreed sides and leaves no second copy behind', as
       'the agreed sides carry into the form in the right order');
     assert.strictEqual(out.prefilled.date, '2026-12-29', 'and the agreed date with them');
     assert.strictEqual(out.submissions, 1, 'one submission');
-    assert.strictEqual(out.upcomingLeft, 0,
-      'and the Upcoming entry is gone — a game must not exist twice');
+    assert.strictEqual(out.upcomingLeft, 1, 'the fixture is still the one record it was');
+    assert.deepStrictEqual(out.fixture, { status: 'confirmed', id: 'req_life' },
+      'and it stays in Upcoming: a submission does not close a fixture');
+    assert.strictEqual(out.submitted.fixtureId, 'req_life', 'the submission names the fixture it came from');
+    assert.match(out.card, /Result submitted/, 'the card says a result is waiting for approval');
+    assert.strictEqual(out.addResultStillOffered, false, 'and does not invite a second submission');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });

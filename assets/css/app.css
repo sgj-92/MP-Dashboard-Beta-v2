@@ -2249,3 +2249,68 @@ body { padding-bottom: calc(var(--shell-nav-height) + var(--shell-safe-bottom));
 .mm-note-link:active{ opacity: .7; }
 #rankingsMonthNoteHost .mm-note{ margin: -2px 16px 8px; }
 .home-section-header + .mm-note{ margin: -4px 2px 8px; }
+
+/* ===================== Fixtures: Requests and Upcoming =====================
+   An Upcoming fixture folds to one line to scan -- teams, when, where, how
+   many are in -- and opens on its own. The whole folded card is the target. */
+.fx-card{ padding: 0; overflow: hidden; }
+.fx-card.fx-attn{ border-color: var(--gold-dim); }
+.callout-card.fx-card:not(.fx-upcoming){ padding: 12px 14px; }
+.fx-head{
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px;
+  padding: 12px 14px; background: none; border: none; text-align: left; cursor: pointer;
+  color: var(--text); font: inherit; -webkit-tap-highlight-color: transparent;
+}
+.fx-head:active{ background: var(--surface-2); }
+.fx-head-text{ display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.fx-title{ font-family: var(--font-interface); font-weight: 700; font-size: 14px; line-height: 1.3; }
+.fx-meta{ font-family: var(--font-interface); font-size: 11.5px; color: var(--text-dim); line-height: 1.4; }
+.fx-chev{ color: var(--gold-bright); font-size: 16px; flex: 0 0 auto; width: 16px; text-align: center; }
+.fx-body{ padding: 2px 14px 14px; border-top: 1px solid var(--line); }
+.fx-body .cc-title{ margin-top: 10px; }
+.fx-vs{ color: var(--text-dim); font-weight: 400; }
+.fx-tag{
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .03em;
+  padding: 1px 6px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-dim);
+  vertical-align: 1px;
+}
+.fx-tag-attn{ color: var(--gold-bright); border-color: var(--gold-dim); }
+.fx-tag-past{ color: var(--text-dim); }
+.fx-count{ font-family: var(--font-interface); font-size: 11.5px; font-weight: 700; margin-top: 6px; }
+.fx-players{ margin-top: 8px; display: grid; gap: 4px; }
+.fx-player{ font-size: 12.5px; }
+.fx-player .request-player-link{ text-decoration: underline; cursor: pointer; }
+.fx-player-state{ color: var(--text-dim); font-size: 11px; margin-left: 4px; }
+.fx-player.fx-state-cant .fx-player-state{ color: var(--red); }
+.fx-note{ font-size: 12px; color: var(--text-dim); margin-top: 8px; line-height: 1.45; }
+.fx-note-attn{ color: var(--gold-bright); }
+.fx-actions{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.fx-actions:empty{ display: none; }
+.fx-actions .preset-btn{ min-height: 40px; flex: 1 1 auto; }
+.fx-in{ color: var(--green); border-color: var(--green); }
+.fx-cant{ color: var(--red); border-color: var(--line); }
+.fx-you{ font-size: 12px; font-weight: 700; color: var(--green); }
+.fx-you-cant{ color: var(--red); }
+.request-addresult-btn{ color: var(--green); border-color: var(--green); }
+.fx-remove-arm{ margin-top: 10px; color: var(--text-dim); }
+.fx-remove-confirm{
+  margin-top: 10px; padding: 10px; border: 1px solid var(--gold-dim); border-radius: 10px;
+  font-size: 12px; color: var(--text);
+}
+.fx-reconcile{
+  margin-top: 10px; padding: 10px; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--surface-border); font-size: 12px;
+}
+.fx-reconcile-q{ font-weight: 700; color: var(--gold-bright); margin-bottom: 6px; }
+.fx-reconcile-label{
+  font-family: var(--font-interface); font-size: 10px; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.fx-reconcile-row{ padding: 8px 0; border-top: 1px solid var(--line); }
+.fx-reconcile-row:first-of-type{ border-top: none; }
+.fx-reconcile-why{ color: var(--text-dim); font-size: 11px; margin: 3px 0 6px; }
+.fx-reconcile .preset-btn{ min-height: 40px; width: 100%; margin-top: 4px; }
+.fx-choice{ display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); cursor: pointer; line-height: 1.4; }
+.fx-choice input{ margin-top: 3px; }
+.fx-choice.is-chosen{ color: var(--text); }
+#approveConfirmBtn[disabled]{ opacity: .45; cursor: not-allowed; }

@@ -1833,6 +1833,9 @@ document.querySelectorAll('#tabrow .tab-btn').forEach(b=>{
     const rankingsTabs = ['power', 'wl'];
     if(rankingsTabs.includes(activeTab) && !rankingsTabs.includes(arrivingFrom)) arriveAtRankings();
     if(activeTab === 'summary' && arrivingFrom !== 'summary') arriveAtSummary();
+    // Upcoming opens as a list to scan: every fixture folded, each one opened
+    // on its own. Redraws after an action keep what the reader opened.
+    if(activeTab === 'upcoming' && arrivingFrom !== 'upcoming') upcomingOpen = new Set();
     document.querySelectorAll('#tabrow .tab-btn').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
 
@@ -3254,8 +3257,8 @@ async function makeSecondPick(ch, partnerName){
 // Once both picks are in, the challenge hands off entirely to the existing
 // request/confirmation mechanics: the two anchors are auto-confirmed (they
 // each made a deliberate, active choice to get here), but the two drafted
-// partners still confirm themselves from their own profile, same as any
-// ordinary Wishlist request -- nobody is silently committed to a match they
+// partners still confirm themselves under Play > Requests, same as any
+// ordinary request -- nobody is silently committed to a match they
 // didn't agree to. Safe to retry: only pushes a request once linkedRequestId
 // is actually set.
 async function bridgeChallengeToRequest(ch){
@@ -3273,6 +3276,7 @@ async function bridgeChallengeToRequest(ch){
     players, preferredDate: '',
     confirmations,
     status: Object.values(confirmations).every(v=>v) ? 'confirmed' : 'pending',
+    history: [{ at: new Date().toISOString(), by: ch.createdBy || ch.challenger, action: 'requested', fromChallenge: ch.id }],
   };
   gameRequestsState.push(req);
   const ok = await saveGameRequests(gameRequestsState);
@@ -4216,7 +4220,7 @@ function openSheet(name, matchFilter){
   // filter happens to be active.
   const deltaByMatchId = journeyDeltasByMatchId(journeyResult.journey);
 
-  document.getElementById('sheetProfile').innerHTML = `<div class="profile-box">${buildProfileText(p)}</div>` + buildDevAreasSection(name) + buildGameRequestsForPlayerSection(name) + buildRecentFormSection(name) + buildMonthlyRatingSection(name) + buildJourneySection(name, journeyResult) + buildRankingNeighborsSection(name) + buildCallOutSection(name) + buildDifficultySection(name);
+  document.getElementById('sheetProfile').innerHTML = `<div class="profile-box">${buildProfileText(p)}</div>` + buildDevAreasSection(name) + buildRecentFormSection(name) + buildMonthlyRatingSection(name) + buildJourneySection(name, journeyResult) + buildRankingNeighborsSection(name) + buildCallOutSection(name) + buildDifficultySection(name);
   // A player's own match log is a record of what they played, so it holds the
   // drawn games too. (The rated set, MATCHES, deliberately does not -- see
   // recomputeAll. Nothing below this line feeds a rating or a ranking.)
@@ -4335,19 +4339,6 @@ function openSheet(name, matchFilter){
     };
   });
 
-  document.querySelectorAll('.confirm-request-btn').forEach(btn=>{
-    btn.onclick = async ()=>{
-      const id = btn.dataset.requestId;
-      const player = btn.dataset.player;
-      const req = gameRequestsState.find(r=>r.id===id);
-      if(!req) return;
-      req.confirmations[player] = true;
-      if(req.players.every(n=>req.confirmations[n])) req.status = 'confirmed';
-      const ok = await saveGameRequests(gameRequestsState);
-      if(!ok){ req.confirmations[player] = false; return; }
-      openSheet(name); // refresh to reflect the confirmation
-    };
-  });
   wireRequestPlayerLinks(document.getElementById('sheetProfile'));
 
   const clearFilterEl = document.getElementById('clearProfileFilter');
@@ -5887,15 +5878,17 @@ async function submitNewGame(){
   const id = 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
   const newMatch = {id, date, winners, losers, sets, type: isSingles?'singles':'doubles', note:'', isDraw,
                      status:'pending', submittedBy: submitter, submittedAt: new Date().toISOString()};
+  // Submitted from an Upcoming card: the player has SAID which fixture this
+  // was. That is a proposal, not a link -- an admin confirms it when
+  // approving, and the fixture stays in Upcoming until then (D3).
+  if(linkedRequestId) newMatch.fixtureId = linkedRequestId;
   extraMatchesState.push(newMatch);
   const ok = await saveExtraMatches(extraMatchesState);
   if(!ok){ msg.textContent = storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — try again.` : `Save failed — this page can't reach shared storage. Open the actual published/shared claude.ai link, not a downloaded file.`;; extraMatchesState.pop(); return; }
 
   let linkedNote = '';
   if(linkedRequestId){
-    gameRequestsState = gameRequestsState.filter(r=>r.id!==linkedRequestId);
-    await saveGameRequests(gameRequestsState);
-    linkedNote = ' Removed from Upcoming.';
+    linkedNote = ' The Upcoming game stays listed until an admin confirms this was it.';
     linkedRequestId = null;
   }
 
@@ -6786,50 +6779,185 @@ let upcomingPredictionOpen = {};
 let requestSectionOpen = { challenges: true, request: false, adminAdd: false, pending: true };
 let upcomingSectionOpen = { list: true };
 
-function buildRequestCardHtml(req, showRemove, showAddResult, opts){
-  const o = opts || {};
-  const link = (n) => `<span class="request-player-link" data-player="${escapeHtml(n)}" style="text-decoration:underline; cursor:pointer;">${escapeHtml(n)}</span>`;
-  // A predicted game knows its sides, so it is shown as a fixture rather than
-  // a list of four names in whatever order they were typed.
-  const [sideA, sideB] = requestTeams(req);
-  const title = (req.teams && sideA.length && sideB.length)
-    ? `${sideA.map(link).join(' &amp; ')} <span style="color:var(--text-dim);">v</span> ${sideB.map(link).join(' &amp; ')}`
-    : req.players.map(link).join(' &amp; ');
+// ===================== FIXTURES: REQUESTS AND UPCOMING =====================
+// The rules live in fixtureFlow.js; this draws them and wires the taps.
+//
+//   - A player responds for themselves only -- the actor is always the player
+//     selected on this device (getCurrentViewer). There is no control that
+//     acts for anyone else.
+//   - Only a participant sees "I'm in" / "Can't play". Nobody else sees a
+//     withdrawal or removal control.
+//   - Removal is admin-only and takes a second, explicit tap.
 
-  let buttons = '';
-  if(showAddResult || showRemove){
-    buttons = `<div class="difficulty-row" style="margin-top:8px;">
-      ${showAddResult ? `<button class="preset-btn request-addresult-btn" data-request-id="${escapeHtml(req.id)}" style="flex:1; color:var(--green); border-color:var(--green);">Add result</button>` : ''}
-      ${showRemove ? `<button class="preset-btn request-remove-btn" data-request-id="${escapeHtml(req.id)}" style="flex:1;">Remove</button>` : ''}
+// Which Upcoming fixtures are open. Folded by default; emptied on arrival.
+let upcomingOpen = new Set();
+// The fixture an admin has asked to remove but not yet confirmed.
+let fixtureRemoveArmed = null;
+let fixtureFlashMessage = '';
+
+function fixtureActor(){
+  const v = (typeof getCurrentViewer === 'function') ? getCurrentViewer() : null;
+  return v ? v.name : null;
+}
+function fixtureAdminName(){
+  return (currentUserName && currentUserName.trim()) || fixtureActor() || 'Admin';
+}
+function localIsoToday(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function fixtureLink(n){
+  return `<span class="request-player-link" data-player="${escapeHtml(n)}">${escapeHtml(n)}</span>`;
+}
+
+// The two sides, linked, or the four names when no sides were agreed.
+function fixtureTeamsHtml(req){
+  const [sideA, sideB] = requestTeams(req);
+  return (sideA.length && sideB.length)
+    ? `${sideA.map(fixtureLink).join(' &amp; ')} <span class="fx-vs">vs</span> ${sideB.map(fixtureLink).join(' &amp; ')}`
+    : req.players.map(fixtureLink).join(' &amp; ');
+}
+
+// Each player and where they stand: in, can't play, or not answered yet.
+function fixturePlayersHtml(req){
+  const cant = req.cantPlay || {};
+  return `<div class="fx-players">${req.players.map(n => {
+    const state = cant[n] ? 'cant' : ((req.confirmations || {})[n] ? 'in' : 'waiting');
+    const icon = state === 'in' ? '✅' : state === 'cant' ? '✖' : '⬜';
+    const label = state === 'in' ? 'in' : state === 'cant' ? `can't play · ${fmtRelative(cant[n].at)}` : 'not answered';
+    return `<div class="fx-player fx-state-${state}">${icon} ${fixtureLink(n)} <span class="fx-player-state">${label}</span></div>`;
+  }).join('')}</div>`;
+}
+
+// What the selected player can do about this fixture -- for themselves.
+function fixtureViewerActionsHtml(req){
+  const me = FixtureFlow.participantName(req, fixtureActor());
+  if(!me || !FixtureFlow.isOpen(req)) return '';
+  const inNow = !!(req.confirmations || {})[me];
+  const cantNow = !!(req.cantPlay || {})[me];
+  const upcoming = FixtureFlow.isUpcoming(req);
+  const btn = (response, label, cls) => `<button type="button" class="preset-btn fx-respond ${cls}" data-fixture-id="${escapeHtml(req.id)}" data-response="${response}">${label}</button>`;
+  let body;
+  if(!inNow && !cantNow) body = btn('in', "I'm in", 'fx-in') + btn('cant', "Can't play", 'fx-cant');
+  else if(inNow) body = `<span class="fx-you">You're in</span>` + btn('cant', upcoming ? "I can't play" : "Can't play", 'fx-cant');
+  else body = `<span class="fx-you fx-you-cant">You said you can't play</span>` + btn('in', "I'm in after all", 'fx-in');
+  return `<div class="fx-actions">${body}</div>`;
+}
+
+// Admin removal: two steps, and never shown to a player.
+function fixtureAdminRemoveHtml(req){
+  if(!isUnlocked || !FixtureFlow.isOpen(req)) return '';
+  const id = escapeHtml(req.id);
+  if(fixtureRemoveArmed === req.id){
+    return `<div class="fx-remove-confirm">
+      <div>Remove this fixture for everyone? It leaves ${FixtureFlow.isUpcoming(req) ? 'Upcoming' : 'Requests'}; its history is kept.</div>
+      <div class="difficulty-row" style="margin-top:8px;">
+        <button type="button" class="preset-btn fx-remove-yes" data-fixture-id="${id}" style="flex:1;">Remove fixture</button>
+        <button type="button" class="preset-btn fx-remove-no" data-fixture-id="${id}" style="flex:1;">Keep it</button>
+      </div>
     </div>`;
   }
+  return `<button type="button" class="lg-inline-fold fx-remove-arm" data-fixture-id="${id}">Admin: remove fixture…</button>`;
+}
 
-  // Admin-only, and gated on `isUnlocked` at the moment the card is built --
-  // a prediction is a view on how the club rates its players and is not for
-  // general circulation through the Upcoming list. Only an agreed fixture has
-  // one at all: a request nobody has confirmed is not a matchup yet.
-  let prediction = '';
-  if(o.agreed && isUnlocked){
-    const open = !!upcomingPredictionOpen[req.id];
-    const pred = predictMatchup(sideA, sideB);
-    if(pred.ok){
-      prediction = `<button type="button" class="lg-inline-fold request-pred-toggle" data-request-id="${escapeHtml(req.id)}"
-          aria-expanded="${open}" aria-controls="pred_${escapeHtml(req.id)}">
-          ${open ? 'Hide prediction' : 'Prediction available'}<span class="lg-inline-chev" aria-hidden="true">${open ? '⌄' : '›'}</span>
-        </button>`
-        + (open ? `<div class="lg-inline-body" id="pred_${escapeHtml(req.id)}">${
-            matchPredictionHtml(pred, { foot: 'Based on current Power Ratings · Admin only · Nothing is recorded.' })
-          }</div>` : '');
-    }
-  }
+// A recorded result, said the way the Games list says it.
+function fixtureResultLine(m){
+  const score = (m.sets && m.sets.length) ? m.sets.map(([a,b]) => `${a}-${b}`).join(', ') : '';
+  const verb = m.isDraw ? 'drew with' : 'def';
+  return `${escapeHtml(m.date)} · ${m.winners.map(escapeHtml).join(' &amp; ')} ${verb} ${m.losers.map(escapeHtml).join(' &amp; ')}${score ? ' · ' + escapeHtml(score) : ''}`;
+}
 
-  return `<div class="callout-card">
-    <div class="cc-title">${title}</div>
-    <div class="cc-detail">${requestWhenHtml(req, { tbc: !!o.agreed })}requested by ${escapeHtml(req.requestedBy)} (${fmtRelative(req.requestedAt)})</div>
-    ${fmtRequestConfirmations(req)}
-    ${prediction}
-    ${buttons}
+// Admin, on an Upcoming fixture that may already have been played: the
+// recorded results that could be it, and a human decision. Nothing here runs
+// on its own -- a fixture only closes when one of these buttons is pressed.
+function fixtureReconcileHtml(req, ctx){
+  if(!isUnlocked || !FixtureFlow.isUpcoming(req)) return '';
+  const cands = FixtureFlow.candidatesForFixture(req, ctx.results, { canon: playerIdFor, linkedResultIds: ctx.linked });
+  if(!cands.length) return '';
+  const id = escapeHtml(req.id);
+  return `<div class="fx-reconcile">
+    <div class="fx-reconcile-q">Does ${cands.length === 1 ? 'this recorded result' : 'one of these recorded results'} belong to this Upcoming game?</div>
+    ${cands.map(c => `<div class="fx-reconcile-row">
+      <div class="fx-reconcile-label">Result recorded</div>
+      <div>${fixtureResultLine(c.result)}</div>
+      <div class="fx-reconcile-why">${c.reasons.map(escapeHtml).join(' · ')}</div>
+      <button type="button" class="preset-btn fx-reconcile-yes" data-fixture-id="${id}" data-result-id="${escapeHtml(c.result.id)}">This was the game</button>
+    </div>`).join('')}
+    <button type="button" class="preset-btn fx-reconcile-no" data-fixture-id="${id}" data-result-ids="${escapeHtml(cands.map(c => c.result.id).join(','))}">${cands.length === 1 ? 'Upcoming game is still outstanding' : 'None — still outstanding'}</button>
   </div>`;
+}
+
+// An unconfirmed request, as Play > Requests shows it.
+function buildPendingRequestCardHtml(req){
+  const attention = FixtureFlow.cantPlayers(req);
+  return `<div class="callout-card fx-card${attention.length ? ' fx-attn' : ''}" data-fixture-id="${escapeHtml(req.id)}">
+    <div class="cc-title">${fixtureTeamsHtml(req)}</div>
+    <div class="cc-detail">${requestWhenHtml(req, { tbc: false })}requested by ${escapeHtml(req.requestedBy)} (${fmtRelative(req.requestedAt)})</div>
+    <div class="fx-count">${FixtureFlow.confirmedCount(req)}/${req.players.length} confirmed${attention.length ? ` · <span class="fx-tag fx-tag-attn">Needs attention</span>` : ''}</div>
+    ${fixturePlayersHtml(req)}
+    ${fixtureViewerActionsHtml(req)}
+    ${fixtureAdminRemoveHtml(req)}
+  </div>`;
+}
+
+// An Upcoming fixture: one line to scan when folded, everything when open.
+function buildUpcomingCardHtml(req, ctx){
+  const open = upcomingOpen.has(req.id);
+  const sum = FixtureFlow.summaryLine(req, requestTeams);
+  const attention = FixtureFlow.cantPlayers(req);
+  const submitted = ctx.submittedFor.has(req.id);
+  const past = !!req.preferredDate && req.preferredDate < ctx.today;
+  const tags = [];
+  if(attention.length) tags.push(`<span class="fx-tag fx-tag-attn">Needs attention</span>`);
+  if(submitted) tags.push(`<span class="fx-tag">Result submitted</span>`);
+  else if(past) tags.push(`<span class="fx-tag fx-tag-past">Date passed</span>`);
+  const id = escapeHtml(req.id);
+
+  let html = `<div class="callout-card fx-card fx-upcoming${attention.length ? ' fx-attn' : ''}${open ? ' is-open' : ''}" data-fixture-id="${id}">
+    <button type="button" class="fx-head" data-fixture-id="${id}" aria-expanded="${open}" aria-controls="fxBody_${id}">
+      <span class="fx-head-text">
+        <span class="fx-title">${escapeHtml(sum.title)}</span>
+        <span class="fx-meta">${escapeHtml(sum.when)} · ${escapeHtml(sum.confirmed)}${tags.length ? ' ' + tags.join(' ') : ''}</span>
+      </span>
+      <span class="fx-chev" aria-hidden="true">${open ? '⌄' : '›'}</span>
+    </button>`;
+  if(open){
+    html += `<div class="fx-body" id="fxBody_${id}">
+      <div class="cc-title">${fixtureTeamsHtml(req)}</div>
+      <div class="cc-detail">${requestWhenHtml(req, { tbc: true })}requested by ${escapeHtml(req.requestedBy)} (${fmtRelative(req.requestedAt)})</div>
+      ${fixturePlayersHtml(req)}
+      ${attention.length ? `<div class="fx-note fx-note-attn">${attention.map(escapeHtml).join(', ')} can't play — this game needs sorting out.</div>` : ''}
+      ${submitted ? `<div class="fx-note">A result has been submitted from this game and is waiting for an admin to approve it.</div>`
+        : (past ? `<div class="fx-note">The date has passed and no result is linked to this game yet.</div>` : '')}
+      <div class="fx-actions">
+        ${submitted ? '' : `<button type="button" class="preset-btn request-addresult-btn" data-request-id="${id}">Add result</button>`}
+      </div>
+      ${fixtureViewerActionsHtml(req)}
+      ${upcomingPredictionHtml(req)}
+      ${fixtureReconcileHtml(req, ctx)}
+      ${fixtureAdminRemoveHtml(req)}
+    </div>`;
+  }
+  return html + `</div>`;
+}
+
+// Admin-only, and gated on `isUnlocked` at the moment the card is built -- a
+// prediction is a view on how the club rates its players and is not for
+// general circulation through the Upcoming list.
+function upcomingPredictionHtml(req){
+  if(!isUnlocked) return '';
+  const [sideA, sideB] = requestTeams(req);
+  const open = !!upcomingPredictionOpen[req.id];
+  const pred = predictMatchup(sideA, sideB);
+  if(!pred.ok) return '';
+  return `<button type="button" class="lg-inline-fold request-pred-toggle" data-request-id="${escapeHtml(req.id)}"
+      aria-expanded="${open}" aria-controls="pred_${escapeHtml(req.id)}">
+      ${open ? 'Hide prediction' : 'Prediction available'}<span class="lg-inline-chev" aria-hidden="true">${open ? '⌄' : '›'}</span>
+    </button>`
+    + (open ? `<div class="lg-inline-body" id="pred_${escapeHtml(req.id)}">${
+        matchPredictionHtml(pred, { foot: 'Based on current Power Ratings · Admin only · Nothing is recorded.' })
+      }</div>` : '');
 }
 
 // One wiring for the prediction fold, wherever a card is drawn.
@@ -6839,6 +6967,81 @@ function wireRequestPredictions(box){
       const id = btn.dataset.requestId;
       upcomingPredictionOpen[id] = !upcomingPredictionOpen[id];
       renderUpcoming();
+    };
+  });
+}
+
+// Apply one fixture change and store it. The change is made through
+// FixtureFlow, which refuses anything the actor may not do; a failed save
+// puts every fixture back as it was.
+async function commitFixtureChange(change){
+  const before = JSON.stringify(gameRequestsState);
+  const result = change();
+  if(!result || !result.ok){
+    fixtureFlashMessage = result && result.reason === 'not-participant' ? 'Only the players in this game can answer for it.' : '';
+    dataChanged();
+    return result;
+  }
+  const ok = await saveGameRequests(gameRequestsState);
+  if(!ok){
+    gameRequestsState = JSON.parse(before);
+    fixtureFlashMessage = storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — try again.` : `Save failed — this page can't reach shared storage.`;
+  } else {
+    fixtureFlashMessage = '';
+  }
+  dataChanged();
+  return result;
+}
+
+// Every fixture control, on whichever screen drew it.
+function wireFixtureControls(box){
+  const find = (id) => gameRequestsState.find(r => r.id === id);
+  box.querySelectorAll('.fx-head').forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.dataset.fixtureId;
+      if(upcomingOpen.has(id)) upcomingOpen.delete(id); else upcomingOpen.add(id);
+      renderUpcoming();
+    };
+  });
+  box.querySelectorAll('.fx-respond').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const req = find(btn.dataset.fixtureId);
+      const actor = fixtureActor();
+      if(!req || !actor) return;
+      await commitFixtureChange(()=> FixtureFlow.respond(req, actor, btn.dataset.response));
+    };
+  });
+  box.querySelectorAll('.fx-remove-arm').forEach(btn=>{
+    btn.onclick = ()=>{ fixtureRemoveArmed = btn.dataset.fixtureId; renderActiveTab(); };
+  });
+  box.querySelectorAll('.fx-remove-no').forEach(btn=>{
+    btn.onclick = ()=>{ fixtureRemoveArmed = null; renderActiveTab(); };
+  });
+  box.querySelectorAll('.fx-remove-yes').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const req = find(btn.dataset.fixtureId);
+      if(!req || fixtureRemoveArmed !== req.id) return;
+      fixtureRemoveArmed = null;
+      await commitFixtureChange(()=> FixtureFlow.adminRemove(req, { isAdmin: isUnlocked, confirmed: true, by: fixtureAdminName() }));
+    };
+  });
+  box.querySelectorAll('.fx-reconcile-yes').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const req = find(btn.dataset.fixtureId);
+      if(!req) return;
+      await commitFixtureChange(()=> FixtureFlow.reconcile(req, { isAdmin: isUnlocked, resultId: btn.dataset.resultId, by: fixtureAdminName() }));
+    };
+  });
+  box.querySelectorAll('.fx-reconcile-no').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const req = find(btn.dataset.fixtureId);
+      if(!req) return;
+      const ids = (btn.dataset.resultIds || '').split(',').filter(Boolean);
+      await commitFixtureChange(()=>{
+        let last = { ok: false };
+        ids.forEach(resultId => { last = FixtureFlow.keepOutstanding(req, { isAdmin: isUnlocked, resultId, by: fixtureAdminName() }); });
+        return last;
+      });
     };
   });
 }
@@ -6991,6 +7194,7 @@ function wirePredictionToUpcoming(box){
       preferredTime: (box.querySelector('#predUpTime') || {}).value || '',
       location: ((box.querySelector('#predUpPlace') || {}).value || '').trim(),
       confirmations, status: 'confirmed',
+      history: [{ at: new Date().toISOString(), by: who, action: 'added-to-upcoming' }],
     };
     gameRequestsState.push(req);
     const ok = await saveGameRequests(gameRequestsState);
@@ -7038,7 +7242,7 @@ function renderWishlist(flashMessage, adminFlashMessage){
     { summary: 'name four players' });
   if(requestSectionOpen.request){
   html += `<div id="reqFoldRequestBody">`;
-  html += `<div class="section-sub">Name four players. Once all four confirm from their own profile, it moves to Upcoming automatically.</div>`;
+  html += `<div class="section-sub">Name four players. You're in as soon as you ask; the other three answer here under Pending, and once all four are in it moves to Upcoming.</div>`;
   html += identityLineHtml('Requesting');
   html += `<div class="fg-controls">
     <div class="fg-row"><label class="fg-label">Players</label>
@@ -7078,16 +7282,25 @@ function renderWishlist(flashMessage, adminFlashMessage){
     }
   }
 
-  html += foldHeading('reqFoldPending', `⏳ Pending (${pending.length})`, requestSectionOpen.pending);
+  // Requests waiting on the selected player come first, and the heading says
+  // how many there are -- the confirmations live here, not in anybody's
+  // profile.
+  const waitingOnMe = viewer ? pending.filter(r => {
+    const me = FixtureFlow.participantName(r, viewer.name);
+    return me && !(r.confirmations || {})[me] && !(r.cantPlay || {})[me];
+  }).length : 0;
+  html += foldHeading('reqFoldPending', `⏳ Pending (${pending.length})`, requestSectionOpen.pending,
+    waitingOnMe ? { summary: `${waitingOnMe} waiting on you` } : undefined);
   if(requestSectionOpen.pending){
     html += `<div id="reqFoldPendingBody">`;
+    if(fixtureFlashMessage) html += `<div class="section-sub" style="color:var(--gold-bright);">${escapeHtml(fixtureFlashMessage)}</div>`;
     if(pending.length === 0){
       html += `<div class="section-sub">No open requests right now.</div>`;
     } else {
       pending.slice().sort((a,b)=>
         requestRelevanceScore(b, viewer) - requestRelevanceScore(a, viewer) || (a.requestedAt < b.requestedAt ? 1 : -1)
       ).forEach(req=>{
-        html += buildRequestCardHtml(req, true, false);
+        html += buildPendingRequestCardHtml(req);
       });
     }
     html += `</div>`;
@@ -7096,6 +7309,7 @@ function renderWishlist(flashMessage, adminFlashMessage){
   box.innerHTML = html;
   wireRequestPlayerLinks(box);
   wireIdentityLines(box);
+  wireFixtureControls(box);
   wireChallengeControls(box, flashMessage, adminFlashMessage);
 
   [['reqFoldChallenges','challenges'], ['reqFoldRequest','request'],
@@ -7121,19 +7335,11 @@ function renderWishlist(flashMessage, adminFlashMessage){
     currentUserName = requestedBy;
     await saveMyName(requestedBy);
 
-    const confirmations = {};
-    names.forEach(n=> confirmations[n] = false);
-    // If the requester is one of the four, they're implicitly in.
-    const requesterMatch = names.find(n=>n.toLowerCase()===requestedBy.toLowerCase());
-    if(requesterMatch) confirmations[requesterMatch] = true;
-
-    const req = {
-      id: 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
-      requestedBy, requestedAt: new Date().toISOString(),
-      players: names, preferredDate: document.getElementById('reqDate').value || '',
-      confirmations,
-      status: Object.values(confirmations).every(v=>v) ? 'confirmed' : 'pending',
-    };
+    // The requester is in by asking, when they are one of the four.
+    const req = FixtureFlow.createRequest({
+      players: names, requestedBy,
+      preferredDate: document.getElementById('reqDate').value || '',
+    });
     gameRequestsState.push(req);
     const ok = await saveGameRequests(gameRequestsState);
     if(!ok){
@@ -7141,7 +7347,7 @@ function renderWishlist(flashMessage, adminFlashMessage){
       msg.textContent = storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — try again.` : `Save failed — this page can't reach shared storage.`;
       return;
     }
-    dataChanged({ redraw: ()=> renderWishlist('Requested! Each player can confirm from their own profile.') });
+    dataChanged({ redraw: ()=> renderWishlist('Requested! The other players answer here under Pending.') });
   }; });
 
   on('adminReqSubmit', (adminReqSubmit)=>{
@@ -7166,6 +7372,7 @@ function renderWishlist(flashMessage, adminFlashMessage){
         preferredTime: (document.getElementById('adminReqTime') || {}).value || '',
         location: ((document.getElementById('adminReqPlace') || {}).value || '').trim(),
         confirmations, status: 'confirmed',
+        history: [{ at: new Date().toISOString(), by: adminName, action: 'added-to-upcoming' }],
       };
       gameRequestsState.push(req);
       const ok = await saveGameRequests(gameRequestsState);
@@ -7178,34 +7385,32 @@ function renderWishlist(flashMessage, adminFlashMessage){
     };
   });
 
-  box.querySelectorAll('.request-remove-btn').forEach(btn=>{
-    btn.onclick = async ()=>{
-      const id = btn.dataset.requestId;
-      gameRequestsState = gameRequestsState.filter(r=>r.id!==id);
-      await saveGameRequests(gameRequestsState);
-      dataChanged();
-    };
-  });
 }
 
 function renderUpcoming(){
   const box = document.getElementById('upcomingView');
   const confirmed = gameRequestsState.filter(r=>r.status==='confirmed');
 
-  // The list is what the screen is for, so it opens. The explanation of how a
-  // game gets here and where it goes next is a paragraph the reader needs
-  // once, so it folds away.
+  // Every fixture folds to one line -- teams, when, where, how many are in --
+  // so the list reads like the fixture list it is. Each opens on its own.
   let html = foldHeading('upFoldList', `📅 Upcoming (${confirmed.length})`, upcomingSectionOpen.list);
   if(upcomingSectionOpen.list){
     html += `<div id="upFoldListBody">`;
+    if(fixtureFlashMessage) html += `<div class="section-sub" style="color:var(--gold-bright);">${escapeHtml(fixtureFlashMessage)}</div>`;
     if(confirmed.length === 0){
       html += `<div class="section-sub">Nothing agreed yet — a request becomes an Upcoming game once all four players confirm it, and an admin can add one straight here from Requests or from a prediction.</div>`;
     } else {
+      // Shared by every card: which fixtures already have a result waiting
+      // for approval, the recorded results an admin may reconcile against,
+      // and today's date.
+      const ctx = {
+        today: localIsoToday(),
+        submittedFor: new Set(extraMatchesState.filter(x => x.status === 'pending' && x.fixtureId).map(x => x.fixtureId)),
+        results: isUnlocked ? getAllApprovedMatches() : [],
+        linked: FixtureFlow.linkedResultIds(gameRequestsState),
+      };
       confirmed.slice().sort((a,b)=> a.requestedAt < b.requestedAt ? 1 : -1).forEach(req=>{
-        // `agreed` is what an Upcoming game is: a fixture. It says the
-        // schedule in TBC terms rather than leaving it blank, and it offers
-        // the admin the prediction behind it.
-        html += buildRequestCardHtml(req, true, true, { agreed: true });
+        html += buildUpcomingCardHtml(req, ctx);
       });
     }
     html += `</div>`;
@@ -7214,21 +7419,13 @@ function renderUpcoming(){
   box.innerHTML = html;
   wireRequestPlayerLinks(box);
   wireRequestPredictions(box);
+  wireFixtureControls(box);
 
   const fold = (id, key) => {
     const el = document.getElementById(id);
     if(el) el.onclick = ()=>{ upcomingSectionOpen[key] = !upcomingSectionOpen[key]; renderUpcoming(); };
   };
   fold('upFoldList', 'list');
-
-  box.querySelectorAll('.request-remove-btn').forEach(btn=>{
-    btn.onclick = async ()=>{
-      const id = btn.dataset.requestId;
-      gameRequestsState = gameRequestsState.filter(r=>r.id!==id);
-      await saveGameRequests(gameRequestsState);
-      dataChanged();
-    };
-  });
 
   box.querySelectorAll('.request-addresult-btn').forEach(btn=>{
     btn.onclick = ()=>{
@@ -8214,23 +8411,9 @@ function buildWhatsAppSummaryText(month, stats, groups){
 }
 
 
-function buildGameRequestsForPlayerSection(name){
-  const relevant = gameRequestsState.filter(r=> r.status==='pending' && r.players.includes(name) && !r.confirmations[name]);
-  if(relevant.length === 0) return '';
-  let html = `<div class="section-heading" style="margin-top:14px;">📋 Game requests involving you</div>`;
-  relevant.forEach(req=>{
-    const others = req.players.filter(n=>n!==name);
-    html += `<div class="callout-card">
-      <div class="cc-title">With ${others.join(', ')}</div>
-      <div class="cc-detail">Requested by ${req.requestedBy} (${fmtRelative(req.requestedAt)})${req.preferredDate ? ' · '+req.preferredDate : ''}</div>
-      ${fmtRequestConfirmations(req)}
-      <div class="difficulty-row" style="margin-top:8px;">
-        <button class="preset-btn confirm-request-btn" data-request-id="${req.id}" data-player="${name}" style="flex:1; color:var(--green); border-color:var(--green);">I'm in!</button>
-      </div>
-    </div>`;
-  });
-  return html;
-}
+// A player's game requests are answered in Play > Requests, by the player
+// selected on this device -- never from a profile, which would have let
+// whoever opened it answer for its owner (D2, 27 Sep 2026).
 
 // What the filters are set to, in the words the controls themselves use. It
 // reads the same module state the selects are built from, so it cannot say one
@@ -8757,6 +8940,9 @@ Player C &amp; Player D"></textarea>
   });
   const approveConfirm = document.getElementById('approveConfirmBtn');
   if(approveConfirm) approveConfirm.onclick = commitApproval;
+  box.querySelectorAll('input[name="fxChoice"]').forEach(r=>{
+    r.onchange = ()=>{ if(approvalPlan){ approvalPlan.fixtureChoice = r.value; renderGamesTab(); } };
+  });
   const approveCancel = document.getElementById('approveCancelBtn');
   if(approveCancel) approveCancel.onclick = ()=>{ approvalPlan = null; approvalMessage = 'Cancelled — nothing was rated.'; renderGamesTab(); };
   box.querySelectorAll('[data-reject]').forEach(btn=>{
@@ -8925,7 +9111,16 @@ async function prepareApproval(id){
       change: { type: 'append', match: pendingToEngineMatch(m, matchId) },
       provenance: { createdBy: name, recordedAt: new Date().toISOString(), source: 'Approved from a submission' },
     });
-    approvalPlan = { submissionId: id, matchId, planned, approvedBy: name };
+    // Upcoming games this result might be. Candidates only: an admin says
+    // which one, if any, before the game is rated. Same four players on
+    // their own never close a fixture (D3).
+    const fixtureCandidates = FixtureFlow.candidatesForResult(
+      { id: matchId, date: m.date, winners: m.winners, losers: m.losers },
+      gameRequestsState, { canon: playerIdFor, proposedFixtureId: m.fixtureId || null })
+      .map(c => ({ id: c.fixture.id, reasons: c.reasons }));
+    approvalPlan = { submissionId: id, matchId, planned, approvedBy: name,
+      fixtureCandidates, fixtureChoice: null,
+      result: { date: m.date, winners: m.winners.slice(), losers: m.losers.slice(), sets: m.sets, isDraw: !!m.isDraw } };
     approvalMessage = '';
   } catch(e){
     approvalMessage = e.message;
@@ -8936,6 +9131,11 @@ async function prepareApproval(id){
 async function commitApproval(){
   const a = approvalPlan;
   if(!a) return;
+  if(a.fixtureCandidates && a.fixtureCandidates.length && !a.fixtureChoice){
+    approvalMessage = 'Say whether this result belongs to an Upcoming game first.';
+    renderGamesTab();
+    return;
+  }
   approvalMessage = 'Rating it…';
   renderGamesTab();
   try {
@@ -8945,8 +9145,23 @@ async function commitApproval(){
     extraMatchesState = extraMatchesState.filter(x => x.id !== a.submissionId);
     await saveExtraMatches(extraMatchesState);
     approvalPlan = null;
+    // The admin's answer about Upcoming, applied only now the game is safely
+    // in the record. The chosen fixture becomes played and names this result;
+    // every other candidate remembers it was not this one.
+    let fixtureNote = '';
+    if(a.fixtureCandidates && a.fixtureCandidates.length){
+      a.fixtureCandidates.forEach(c => {
+        const f = gameRequestsState.find(r => r.id === c.id);
+        if(!f) return;
+        if(c.id === a.fixtureChoice) FixtureFlow.reconcile(f, { isAdmin: true, resultId: a.matchId, by: a.approvedBy });
+        else FixtureFlow.keepOutstanding(f, { isAdmin: true, resultId: a.matchId, by: a.approvedBy });
+      });
+      const saved = await saveGameRequests(gameRequestsState);
+      fixtureNote = !saved ? ' The Upcoming link could not be saved — reconcile it from the Upcoming card.'
+        : (a.fixtureChoice && a.fixtureChoice !== 'none' ? ' Its Upcoming game is marked played.' : ' Upcoming left as it was.');
+    }
     await loadV3State();
-    approvalMessage = `Rated as ${a.matchId}. ${a.planned.playersMoved.map(p=>`${p.playerId} ${p.delta>0?'+':''}${p.delta}`).join(', ')}.`;
+    approvalMessage = `Rated as ${a.matchId}. ${a.planned.playersMoved.map(p=>`${p.playerId} ${p.delta>0?'+':''}${p.delta}`).join(', ')}.${fixtureNote}`;
   } catch(e){
     approvalMessage = 'Nothing was rated: ' + e.message;
   }
@@ -8962,10 +9177,34 @@ function buildApprovalConfirmHtml(){
     <div class="section-sub" style="margin-top:4px;">It joins the record as <code>${a.matchId}</code> and moves these ratings:</div>
     <div class="section-sub" style="color:var(--text);">${a.planned.playersMoved.map(p=>`${p.playerId} <span class="${p.delta>0?'perf-pos':'perf-neg'}">${p.delta>0?'+':''}${p.delta}</span> → ${Math.round(p.to*10)/10}`).join(' &nbsp;·&nbsp; ')}</div>
     <div class="section-sub" style="font-size:10.5px;">${a.planned.documentsToWrite} documents. Nothing already in the record is rewritten — a new game only extends the sequence.</div>
+    ${approvalFixtureChoiceHtml(a)}
     <div class="difficulty-row" style="margin-top:8px;">
-      <button class="preset-btn" id="approveConfirmBtn" style="flex:1;">Rate it</button>
+      <button class="preset-btn" id="approveConfirmBtn" style="flex:1;"${a.fixtureCandidates && a.fixtureCandidates.length && !a.fixtureChoice ? ' disabled' : ''}>Rate it</button>
       <button class="preset-btn" id="approveCancelBtn" style="flex:1;">Cancel</button>
     </div>
+  </div>`;
+}
+
+// Does this result belong to an Upcoming game? Asked only when there is a
+// credible candidate, answered by the admin, and nothing is chosen for them.
+function approvalFixtureChoiceHtml(a){
+  const cands = (a.fixtureCandidates || []).map(c => ({ ...c, fixture: gameRequestsState.find(r => r.id === c.id) })).filter(c => c.fixture);
+  if(!cands.length) return '';
+  const r = a.result;
+  const score = (r.sets && r.sets.length) ? r.sets.map(([x,y]) => `${x}-${y}`).join(', ') : '';
+  const option = (value, body) => `<label class="fx-choice${a.fixtureChoice === value ? ' is-chosen' : ''}">
+      <input type="radio" name="fxChoice" value="${escapeHtml(value)}"${a.fixtureChoice === value ? ' checked' : ''}> <span>${body}</span></label>`;
+  return `<div class="fx-reconcile" style="margin-top:10px;">
+    <div class="fx-reconcile-q">Does this result belong to ${cands.length === 1 ? 'this Upcoming game' : 'one of these Upcoming games'}?</div>
+    <div class="fx-reconcile-label">Result entered</div>
+    <div>${escapeHtml(r.date)} · ${r.winners.map(escapeHtml).join(' &amp; ')} ${r.isDraw ? 'drew with' : 'def'} ${r.losers.map(escapeHtml).join(' &amp; ')}${score ? ' · ' + escapeHtml(score) : ''}</div>
+    <div class="fx-reconcile-label" style="margin-top:8px;">Possible Upcoming ${cands.length === 1 ? 'match' : 'matches'}</div>
+    ${cands.map(c => {
+      const f = c.fixture;
+      const sum = FixtureFlow.summaryLine(f, requestTeams);
+      return option(c.id, `<b>This was the game:</b> ${escapeHtml(sum.title)} · ${escapeHtml(sum.when)} · requested by ${escapeHtml(f.requestedBy)}<br><span class="fx-reconcile-why">${c.reasons.map(escapeHtml).join(' · ')}</span>`);
+    }).join('')}
+    ${option('none', cands.length === 1 ? '<b>Upcoming game is still outstanding</b> — this result is a different game' : '<b>None</b> — still outstanding / unrelated result')}
   </div>`;
 }
 

@@ -216,6 +216,10 @@ async function open(options = {}) {
         players: keyed(r.players),
         matches: keyed(r.matches),
         ratingJourney: keyed(r.ratingJourney || r.journey),
+        // `options.club` seeds the club's own documents (requests, submissions)
+        // as the app stores them: { key: value }, each saved as { value: JSON }.
+        moneypadel: Object.fromEntries(Object.entries(options.club || {})
+          .map(([k, v]) => [k, { value: JSON.stringify(v), updatedAt: 0 }])),
       };
     })(),
     failReads: !!options.failReads,
