@@ -60,8 +60,8 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Branch | `main` |
-| Last verified implementation commit | **`25191b8`** |
-| Tests | **625 / 625 passing** (181 of them drive a real browser) |
+| Last verified implementation commit | **`023a0f7`** |
+| Tests | **650 / 650 passing** (196 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -148,6 +148,21 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Fixture flow D1–D3 — DONE (`023a0f7`).** Shaun/CGPT decisions of 27 Sep,
+from the Phase 1 audit's defects:
+- **One record, request to result.** A fixture runs pending → Upcoming →
+  played, or removed, with every change in its `history`.
+- **D1.** Players can no longer delete a shared fixture. A participant can
+  say "I can't play" for themselves only, which flags the fixture as Needs
+  attention. Removal is Admin-only, behind a second confirmation.
+- **D2.** The requester starts confirmed. Each participant answers for the
+  selected player only, on the Pending card in Play › Requests.
+- **D3.** A result never closes a fixture by itself: the Admin says which
+  Upcoming game it was, if any.
+- **Upcoming.** Cards arrive folded to one line and open independently.
+
+See Section 2 for the rules and NEXT #15j for what remains (D4, D5).
 
 **Player Experience Reset, Phase 1 audit — DELIVERED (`0f9db42`).**
 Evidence only; the app is unchanged.
@@ -580,6 +595,45 @@ row showing the transition. The queued **Last 10** form table is a *results*
 table derived from already-rated matches: it is not a new rating metric, it
 opens no methodology question, and it must not touch Sequential-v1.
 
+**Fixture lifecycle (27 Sep, D1–D3).** A fixture is one record in
+`moneypadel_game_requests` from request to result. It is never copied when it
+changes state. The rules live in `fixtureFlow.js`, which is pure: the app
+supplies who is acting and whether they are an admin.
+
+- **Lifecycle:** `pending` (Requests) → `confirmed` (Upcoming) → `played`, or
+  `removed`. Every step appends to `history` as `{at, by, action}`. Fixtures
+  created before this change have no history until their next change.
+- **Responses:** the actor *is* the player responding; there is no "on behalf
+  of". The actor is the selected player (`getCurrentViewer()`).
+  - The requester is confirmed on creation.
+  - "I'm in" moves the record to Upcoming at 4/4.
+  - "Can't play" sets that player's own `cantPlay` entry and unconfirms them.
+    The fixture stays listed as **Needs attention**.
+  - "I'm in after all" clears it.
+- **Removal:** Admin only, in two steps ("Remove fixture…", then "Remove
+  fixture" / "Keep it"). It sets `status: 'removed'` with `removedBy` and
+  `removedAt`; nothing is erased.
+- **Results and fixtures:** a result is linked only by an Admin's answer.
+  - **Candidates** have the same four players (canonical ids) and are
+    Upcoming. The result's date must be no earlier than the day the fixture
+    was arranged. If the fixture has a date, the result must fall between 14
+    days before and 30 days after it; if not, within 45 days of the request.
+  - **Scoring** only orders the candidates. It uses same or different
+    partnerships, the date gap, and whether the result was submitted from that
+    card. It never decides the link.
+  - **At approval:** the Admin must pick a candidate or "None — still
+    outstanding" before Approve is enabled.
+    - "This was the game" sets `status: 'played'`, `playedMatchId`,
+      `reconciledBy` and `reconciledAt`.
+    - "Still outstanding" adds the result to `notResults`, so it is never
+      offered for that fixture again.
+  - **Stale fixtures:** an expanded Upcoming card gives an Admin the same
+    choice against recorded results. Nothing is closed in bulk or on load.
+  - **"Add result"** from a card records `fixtureId` on the submission as a
+    proposal. It no longer deletes the fixture.
+- **Trust:** the viewer is self-declared, as before. These rules stop the app
+  from offering the wrong action; they are not access control.
+
 **Storage:** `matches/{matchId}` · `ratingJourney/{eventId}` · `players/{playerId}`.
 Normal current-state rendering reads `players`; historical views use targeted
 `ratingJourney` reads, with only the session-cached Ranking Movement exception
@@ -659,6 +713,10 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Monthly Race (Best Month) is trialled as a fifth monthly story | **TRIAL DELIVERED `25191b8`.** Shaun, 26 Sep 2026 (NEXT #15i). Power-Rating-stakes monthly race: each tier spell starts at 0; stakes from partner/opponent pre-match Power Ratings with the scored player treated as an ordinary member of the tier; results-fitted curve 250; K 20; rank by race score; 5 matches qualify; mid-month movers can win in the tier they left; Tier C is never merged — "No qualifier this month"; League, Merit, Monthly Performance, Power Rating and sequential-v1 unchanged. |
 | More shows the deployed build, derived from the build itself | **DONE `fc8ebb6`; moved to the foot of Admin / Manage `28f3514`** (Shaun, 26 Sep, same day: *"put it at the bottom of admin/manage instead"* — supersedes the More placement only; shown locked or unlocked). Shaun, 26 Sep 2026. Originally the bottom of More, small muted text: `Money Padel Beta · 26 Sep 2026` / `Build a4c91e2`. The SHA is the short Git SHA of the deployed commit, **derived automatically at build time, never maintained in source**; the date is the build's date, never the runtime date; the identifier describes the code actually executing on the device, **never** the latest commit from GitHub. Tap copies `Money Padel Beta · 2026-09-26 · a4c91e2`. Mechanism chosen by CCode: GitHub Pages' existing Jekyll build (`site.github.build_revision`), so no deployment setting changes. An `Update available · Refresh` prompt was considered and **not added** — see NEXT #19. |
 | Meaningful Month — screens open on this month only once it has 5 games | **DONE `87368a1`.** Shaun, 26 Sep 2026. If the current calendar month has fewer than 5 unique completed matches, default to the most recently completed month; at 5+, default to the current month. Count canonical matches, not appearances; draws count. The current month stays manually selectable before 5. **Initial/default only** — never overrides an explicit selection, never jumps a reader mid-page when match #5 lands. Default and selection are separate, per feature, never one global. Rolling/current features (Last 10, current Power Rating, profile current state) are not forced onto the previous month. **Supersedes** Rankings' and League's "open on the last completed month" rule, and resolves NEXT #15e. CCode applied it to the Home monthly card too (it was not on the list) so Home and its View Full Review agree. |
+| D1 — players never delete a shared fixture | **DONE `023a0f7`.** Shaun/CGPT, 27 Sep 2026, from audit defect D1. The participant action is **"I can't play"**, meaning Needs attention, not deletion. It is for the participant themselves only: nobody marks another player unable to play, and non-participants get no withdrawal control. Admin keeps full removal, **never exposed as a player action** and always behind a confirmation. Attribution and state are preserved. **No larger cancellation or rescheduling workflow yet.** |
+| D2 — confirmations belong to the player responding | **DONE `023a0f7`.** Shaun/CGPT, 27 Sep 2026. The requester is auto-confirmed, so a request starts at 1/4. Each participant answers "I'm in" or "Can't play" for themselves, as the selected player, in Play (the Pending card under Requests), never through a profile. 4/4 moves the **same record** to Upcoming. Home is not redesigned by this. |
+| D3 — a result never silently closes an Upcoming fixture | **DONE `023a0f7`.** Shaun/CGPT, 27 Sep 2026: *"NEVER silently auto-match."* At approval, plausible outstanding fixtures are found and the Admin is asked *"Does this result belong to this Upcoming game?"*, with the result and the possible match shown. **"This was the game"** links it, marks it played and keeps provenance. **"Upcoming game is still outstanding"** keeps the result valid and the fixture listed, and that pair is never proposed again. With several candidates the Admin picks one or **"None — still outstanding / unrelated result"**. With no credible candidate, nothing is asked. Stale fixtures are **never bulk-closed**: they are reconciled one at a time, and a past fixture with no plausible result stays available. |
+| Upcoming cards arrive collapsed | **DONE `023a0f7`.** Shaun/CGPT, 27 Sep 2026. Collapsed by default on entering Upcoming. The one-line card reads "Erf & Eli vs Osh & Stormz / Date TBC · Venue TBC · 4/4 confirmed ›". Each game opens and closes independently; there is **no Collapse All**. The expanded card shows the teams, date/time/venue, requester, each player's confirmation, Add result, "I can't play" for a participant viewer, and Admin-only controls where appropriate. It must stay useful at 375px with a generous touch target. **Share Upcoming is future work, not built.** |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -2002,6 +2060,50 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 27 Sep 2026 (fixture flow D1–D3)
+
+`023a0f7`. **650/650 tests pass** (25 new). Browser tests 11–24 were run
+against the previous code and all fail there. Ratings are unchanged: an
+approval plan is identical with or without an Upcoming game, and the engine
+was not touched.
+
+- **Where it lives:** the rules are in `assets/js/fixtureFlow.js`; the rest
+  is wiring in `app.js`. Section 2 has the full lifecycle.
+- **Checked on the live beta** (read-only copy, 390px and 375px, 0 writes):
+  - The two 23 Sep games still listed show "Date passed".
+  - An Admin can close each from its expanded card; nothing closed them on
+    load.
+
+**Data-model findings and edge cases:**
+- **Matching evidence is thin.** A result has no time or venue, so matching
+  uses the players, partnerships and date only. Same-day repeats of the same
+  four players (they exist in September) produce more than one candidate.
+  The Admin chooses.
+- **Viewer identity is self-declared,** as before. Anyone can select a player
+  and answer as them. These rules remove the wrong buttons; they are not
+  security. That would need sign-in (a Phase 2 / Shaun matter).
+- **Last writer wins.** `moneypadel_game_requests` is one JSON array written
+  whole, so two people answering in the same moment can lose one answer.
+  - This is unchanged from before, but it now matters more because players
+    write to it.
+  - Per-fixture documents would fix it. That is a storage change, not
+    started.
+- **Removal is soft.** Removed and played fixtures stay in the array with
+  their history. Nothing prunes them yet; that is fine at club scale.
+- **Requests without sides.** "vs" splits the four players in the order they
+  were entered, as in Shaun's example.
+- **Home "Waiting on you".** `getViewerSnapshot` (in `shell.js`) already
+  computes pending requests and upcoming games for the selected player, but
+  Home does not show them. This was left for Phase 2 because "Don't redesign Home" was in
+  the brief.
+- **Challenges** still bridge into a request. It arrives with the challenger
+  and the challenged player confirmed (both agreed through the challenge)
+  and a `fromChallenge` history entry.
+
+**Baton → Shaun / CGPT.** D4 (visibility toggles; Find a Game predictions)
+and D5 (two tier ranks on a profile) remain for product discussion. Nothing
+is queued for CCode.
 
 ### CCode — 26 Sep 2026 (Player Experience Reset: Phase 1 audit)
 
@@ -5441,6 +5543,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `023a0f7` | Fixture flow D1–D3: `fixtureFlow.js` lifecycle (one record, history on every change). Player-visible Remove is gone; "I can't play" is for the viewer only (Needs attention); Admin removal takes two steps. The requester starts confirmed; Pending cards answer only for the selected player; the profile confirm button is removed. Approval asks which Upcoming game a result belongs to, if any, and nothing links silently; the Admin reconciles stale fixtures from the expanded card. Upcoming cards arrive folded and open independently. 25 tests (browser tests 11–24 fail against the previous code); 650/650. |
 | `0f9db42` | Player Experience Reset Phase 1 UX audit (evidence only): `PLAYER_UX_AUDIT.md`, 77 screenshots and an index in `docs/ux-audit/`, the journey tap-log, and `scripts/ux-audit-capture.js`; five defects recorded, not fixed (NEXT #15j) |
 | `25191b8` | Monthly Race (Best Month) trial: `monthlyRace.js` plus a fourth League-screen View, by tier with provisional players and "No qualifier this month", and an auditable drill-down per score; reconciled to the analysis on the live record (same order in every tier, largest difference 0.23 from per-match rounding); 21 tests, including proof that ratings, League, Merit and Monthly Performance are unchanged |
 | `28f3514` | Build stamp moved from More to the foot of Admin / Manage at Shaun's request, shown under the unlock form too; More no longer carries it |
@@ -5665,6 +5768,12 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
    CCode recommends deciding D1, D2 and D4 before Phase 2 redesigns the
    same flow.
+
+   **27 Sep: D1, D2 and D3 DONE (`023a0f7`)** per the Shaun/CGPT decisions in
+   Section 3, together with the collapsed Upcoming cards. **D4 and D5 remain
+   open, for product discussion; CCode has not started them.** The wider
+   Player Experience Reset is also not started. Findings for whoever designs
+   the next step are in the 27 Sep CCode handoff.
 
 15i. **APPROVED TRIAL — Best Month / Monthly Race** (Shaun, 26 Sep).
    Analysis is complete in [`BEST_MONTH_ANALYSIS.md`](./BEST_MONTH_ANALYSIS.md).
