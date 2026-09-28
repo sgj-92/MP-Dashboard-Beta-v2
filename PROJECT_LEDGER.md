@@ -60,8 +60,8 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Branch | `main` |
-| Last verified implementation commit | **`b12e837`** |
-| Tests | **697 / 697 passing** (214 of them drive a real browser) |
+| Last verified implementation commit | **`9cca86c`** |
+| Tests | **710 / 710 passing** (227 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -148,6 +148,17 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Audit fixes D4, D5, D6 — DONE (`9cca86c`).** Shaun, 28 Sep.
+- **D4.** Find a Game stays for players; its predictions (a predicted win %
+  or favourite call) are Admin-only everywhere. The visibility settings now
+  govern every route in the new shell.
+- **D5.** Tier Rank is one number, the player's place in the current Power
+  Rankings within their tier. Rishi's profile now reads **#8 of 8 in Tier A**
+  in both places; before, the header said "#8" and Player Analysis "#9 of 9".
+- **D6.** P / W / D / L in the League and Merit tables open the exact games
+  they count, like Hard and Fav.
+- **Heads-up:** Section 5 has three judgment calls for Shaun.
 
 **Fixture follow-up 2: My Requests, Add multiple games, archived call-outs —
 DONE (`b12e837`).** Shaun/CGPT, 27 Sep.
@@ -757,6 +768,68 @@ supplies who is acting and whether they are an admin.
 - **Trust:** the viewer is self-declared, as before. These rules stop the app
   from offering the wrong action; they are not access control.
 
+**Visibility and predictions (28 Sep, D4, `9cca86c`).**
+- **One map of screens to settings.** `TAB_VISIBILITY_KEY` maps each screen
+  to its setting, and `canSeeTab(tab)` answers for a reader. They are the
+  only rule, and every place that decides visibility reads them:
+  - the tab-switch guard, which every route to a screen passes through
+    (shell navigation, More, Home and profile shortcuts, buttons on other
+    screens);
+  - the shell's section sub-navigation, and the tab a section lands on;
+  - the More sheet;
+  - the Home and profile shortcuts, which follow their content's setting.
+    Match ideas and "Find This Game" follow Find a Game; "All Insights" and
+    "Match to Prove It" follow Call-Outs.
+- **Redraws.** Unlocking, locking or changing a setting calls
+  `onVisibilityChanged()`, which redraws the shell's navigation and moves a
+  reader off a screen they may no longer see.
+- **Defaults.** Find a Game now defaults to **Visible**. The live record
+  stores no visibility document, so the defaults are what players get.
+- **Predictions are a fixed rule, not a setting:** `canSeePredictions()`
+  is Admin only.
+  - **Gated:**
+    - Find a Game's best, alternative and "See all" cards. For players the
+      reason line says how far apart the team ratings are instead of who has
+      the edge.
+    - Home "Match to Make".
+    - The Challenge "Match ready" card.
+    - Already gated: the Upcoming "Prediction available" fold and Admin
+      Predict a Matchup.
+  - **Not gated (not predictions):** a recorded match's pre-match
+    expectation, which explains a rating already moved, and the Monthly Race
+    stakes (see Section 5).
+  - The prediction calculation is unchanged.
+
+**Tier Rank (28 Sep, D5, `9cca86c`).** `tierRankOf(name)` in `app.js`
+answers every "#N in Tier X".
+- **Pool:** players who are rankable (PlayerState RANKED; Idle and Inactive
+  are not ranked).
+- **Order:** current Power Rating, the Rankings list's own comparator over
+  the same player order, filtered to the player's current tier.
+- **Min games:** the list's min-games number is a display filter, not
+  eligibility, so it plays no part.
+- **Readers:** the profile header ("#N in Tier X"), Player Analysis
+  ("#N of M in Tier X"), the full-analysis text and Home.
+- **Removed:** `buildPlayers`' `tier_rank` / `tier_size`, which ranked every
+  tier member including Idle and Inactive players.
+- **Not Tier Rank:** other positions keep their own names (League, Merit,
+  Monthly Race, W/L, overall rank, and the monthly breakdown's month-end
+  position).
+
+**Table drill-downs (28 Sep, D6, `9cca86c`).** A League or Merit row now
+records its games in the same step that counts them: League `matchList`,
+Merit `games`, each game with its result for that player.
+- **One component** serves all six counts (P, W, D, L, Hard, Fav): a count
+  cell, a detail row straight under the player's row, and a game line.
+- **Heading:** player · count · month · tier section or "All together" ·
+  number of games.
+- **Correctness:** a cell reading 2 therefore lists exactly those 2 games,
+  under the same month, By tier / All together and split-month treatment
+  as the cell.
+- **Behaviour:** zero is never tappable, one detail is open at a time, and
+  changing month or view closes it. Hard and Fav keep their own wording and
+  order.
+
 **Storage:** `matches/{matchId}` · `ratingJourney/{eventId}` · `players/{playerId}`.
 Normal current-state rendering reads `players`; historical views use targeted
 `ratingJourney` reads, with only the session-cached Ranking Movement exception
@@ -848,6 +921,9 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Requests: For me / My Requests, newest first | **DONE `b12e837`.** Shaun/CGPT, 27 Sep 2026. **For me** holds the requests where I need to respond; **My Requests** holds the requests I created that are still waiting on others. A My Request card reads like "Shaun & PDM vs Rishi & Erf / 2/4 agreed · Waiting for Rishi, Erf / Requested today". These are views over the single fixture record, which leaves them naturally as it progresses. A rejection or can't-play is kept as Needs attention, never deleted. **No new bottom-nav destination.** Every request list sorts by creation time, newest first, explicitly. |
 | Add multiple games: parse, review, then create | **DONE `b12e837`.** Shaun/CGPT, 27 Sep 2026. Free-text list with common separators; "Me" is the selected player. Names resolve only against the directory: **no fuzzy match may invent a player, and no ambiguous name is chosen silently.** A mandatory review names ambiguous and unknown names, incomplete or malformed games, the wrong number of players, duplicate players and unparseable lines. Duplicate active matchups are a **warning, not a merge**. One deliberate "Create N requests" writes the requests, each entering the normal D2 lifecycle as a request by the selected player. |
 | Called Out archives after 14 days | **DONE `b12e837`.** Shaun/CGPT, 27 Sep 2026. **Archived call-outs** sits under Called Out, folded by default. It is **archive only**: not deletion, cancellation, rejection, or evidence either way about the game. The clock starts when a game first becomes Called Out, and that time is preserved explicitly. **Only an Admin Restore restarts it**; changing the proposed date, time or venue does not (Shaun's explicit tightening). Court booking made takes a game out of Called Out and its clock. Admin can **Archive call-out** and **Restore to Called Out** in Manage fixture; Restore keeps identity, requester, players, confirmations, details and history. Orders: Called Out newest or reactivated first; Archived most recently archived first; Upcoming soonest first, with TBC times after timed ones that day. |
+| D4 — Find a Game for players; predictions Admin-only everywhere | **DONE `9cca86c`.** Shaun, 28 Sep 2026. Find a Game stays in player navigation: it has not launched to the wider group, so low use is not evidence against it. Player-facing Find a Game recommends matchups but **never shows calculated win percentages or probabilities**; Admins keep the prediction layer. No route may leak a prediction a screen hides (Home, fixture cards, anything using the prediction engine). The visibility system must be authoritative wherever content is surfaced, fixed properly rather than patched for Find a Game. The prediction methodology is unchanged. |
+| D5 — one canonical Tier Rank | **DONE `9cca86c`.** Shaun, 28 Sep 2026. **Tier Rank = the player's position in the current Power Rankings among players in their current tier, using exactly the Power Rankings page's ranking and eligibility rules.** There is one source, and every display labelled Tier Rank consumes it. Other rankings (Monthly Race, League, Merit, W/L, overall Power Rank) may differ but must be labelled as what they are. The Power Rankings definition is authoritative; eligibility and methodology are not changed to make numbers agree. |
+| D6 — P / W / D / L open their games | **DONE `9cca86c`.** Shaun, 28 Sep 2026. In both the Merit and League tables, each player's P, W, D and L open the games behind them, like Hard and Fav. The detail says which player, which count and which month/table context. **"If the cell says 2, its drill-down explains exactly those 2 games,"** under the table's own filtering (month, By tier / All together, mid-month tier changes, split-month, history). Hard and Fav are unchanged, one drill-down component is shared, and mobile fit is kept. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -1777,6 +1853,55 @@ following as one coherent UI refactor, with no data/model changes:
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 28 Sep — audit fixes D4–D6: judgment calls for Shaun
+
+**1. Monthly Race still shows a win chance to players.**
+- **What it shows:** the Race's own drill-down says, per past match, "An
+  ordinary Tier X player wins this N% of the time".
+- **Why CCode left it visible:**
+  - It is the Race's stake. The Race was approved as a transparent,
+    auditable competition fact, "separate" from the Admin prediction (26 Sep
+    decision).
+  - It comes from the Race's own model, not the prediction engine.
+  - It describes games already played.
+- **If Shaun wants it hidden,** that is a one-line gate. It would weaken the
+  Race's promise that anyone can check their own score.
+
+**2. Recorded games still show their pre-match expectation.**
+- **What they show:** a played game's detail says "Expected N% of games".
+  The profile's rating explanation says "you were expected to win about N% of
+  the games".
+- **Why CCode left it:** these explain a rating that has already moved, from
+  stored rating data. They are not predictions about a game not yet played,
+  so they are outside D4.
+
+**3. What the visibility settings cover.**
+- **The Chemistry setting** is labelled "Partnership chemistry rankings".
+  It governs that ranking list; a player's own partnership figures on their
+  profile are not gated.
+- **Difficulty suggestions** remain Admin only, as before. They exist only
+  in a legacy profile block the new profile does not show.
+- **Call-Outs off** now also hides Home's "All Insights" link and the
+  profile's "Match to Prove It". **Find a Game off** hides Home's Match
+  ideas.
+- Say if any of these should be read differently.
+
+**4. What Tier Rank means in practice.**
+- **"Current" means today's ratings,** not the month-end view the Rankings
+  page opens on by default (its Meaningful Month). This is per the
+  definition.
+- **An Idle or Inactive player is "Unranked"** and is not counted in anyone
+  else's "of M".
+- **Rishi, live:** header and Player Analysis now both read **#8 of 8 in
+  Tier A**.
+- **The tier average is separate.** "N pts below tier average" still uses
+  the average of all tier members: it is not a rank.
+
+**5. Noticed, not changed.**
+- **Merit name wrap:** at 375px the Merit table wraps a name such as
+  "Manny" onto two lines, because every column is an equal width. It
+  measured the same (38px) before this change. A Phase 2 candidate.
+
 ### OPEN 27 Sep — fixture follow-up 2: what Shaun should know, and choices made
 
 **1. The six live call-outs archive themselves on 5 Oct.**
@@ -2286,6 +2411,52 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 28 Sep 2026 (audit fixes D4, D5, D6)
+
+`9cca86c`. **710/710 tests pass** (13 new, `tests/auditFixes.test.js`).
+- **Tested against the previous code:** 12 of the 13 fail there. The one
+  that passes checks that an Admin still sees predictions, which must stay
+  true.
+- **Existing tests:** none needed changing. The one that failed mid-way was
+  Hard/Fav's same-day order, which CCode had changed by accident and
+  restored.
+
+**How each was found and fixed:**
+- **D4, the leak.** The visibility settings hid only the legacy tab row,
+  which the new shell hides for everyone anyway, and nothing in the shell
+  consulted them. Predicted splits reached players from three places the
+  audit named plus one it didn't:
+  - Find a Game.
+  - Home Match to Make: the numbers were in the page even while folded.
+  - The Challenge ready card (the one the audit didn't name).
+  - **Fix:** one guard on the tab switch, which every route passes through,
+    plus the shell drawing its navigation from the same map; and one
+    prediction rule applied to each place that drew a split.
+- **D5, the two numbers.** The header ranked rankable players only. Player
+  Analysis ranked every tier member, Idle and Inactive included. One Idle
+  or Inactive Tier A player rated above Rishi made the difference.
+  **Fix:** one function, the old calculation removed.
+- **D6, the data.** League rows had only counts, and Merit rows kept games
+  for Hard/Fav only. **Fix:** both now record each game at the moment it is
+  counted, and the tests check every non-zero cell across three months ×
+  two views × both tables, against both the cell and an independent count
+  of the context.
+
+**Checked visually at 375px on a fresh read-only copy of the live record:**
+- Find a Game and Home as a player: no percentages.
+- Rishi's profile: #8 of 8 in Tier A.
+- League W open: "Rishi · Wins · September 2026 · Tier A · 2 games" with
+  exactly his two wins.
+- Merit P open.
+- No writes and no page errors.
+- One fix came out of it: the P counts had dimmed, because a button
+  doesn't inherit the table's text colour.
+
+**Baton → Shaun / CGPT.**
+- Section 5: three judgment calls.
+- Phase 2 is not started.
+- Nothing is queued for CCode.
 
 ### CCode — 27 Sep 2026 (fixture follow-up 2: My Requests, bulk entry, archive)
 
@@ -5848,6 +6019,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `9cca86c` | Audit fixes. **D4:** `canSeePredictions()` gates every predicted split and favourite call (Find a Game cards, Home Match to Make, Challenge ready card); `TAB_VISIBILITY_KEY` / `canSeeTab()` make the visibility settings govern the tab guard, shell sub-navigation and landing, More, and Home/profile shortcuts; Find a Game defaults to Visible. **D5:** `tierRankOf()` is the one Tier Rank, read by header, Player Analysis, full analysis and Home; the all-members calculation is removed. **D6:** League and Merit rows carry the games behind P/W/D/L, and one shared drill-down serves P/W/D/L/Hard/Fav. 13 tests (12 fail against the previous code); 710/710. |
 | `b12e837` | Fixture follow-up 2: For me / My Requests / Other requests (newest first; one list per request). `fixtureParse.js` plus an "Add multiple games" review: names are never guessed, problems are named, active duplicates are warned about, and one "Create N requests" writes them with a batch id. 14-day Called Out archive derived from `activeSince`, with no write; `calledOutAt` is preserved. Archive/Restore in Manage fixture. Explicit orders for every list. The D1–D3 tests pin their clock. 25 tests (the 19 on changed code all fail against it); 697/697. |
 | `0766d7b` | Fixture follow-up. Called Out vs Upcoming, split by an explicit Admin-set `courtBookingMade`. The Upcoming tab has Needs attention / Upcoming / Called Out sections, each collapsible, with "Called out Nd ago". Backing out (by the player or recorded by an Admin) goes to Needs attention with the booking kept. Admin replacement on the same fixture, where the newcomer starts unconfirmed and `formerPlayers` keeps provenance. Manage fixture edits players, sides, answers, date, time, venue and booking, and holds Remove. Legacy fixtures are not classified as booked; an Admin-only review list covers them. Admin-added games ask for the booking. 22 tests, all failing against the previous code; 672/672. |
 | `023a0f7` | Fixture flow D1–D3: `fixtureFlow.js` lifecycle (one record, history on every change). Player-visible Remove is gone; "I can't play" is for the viewer only (Needs attention); Admin removal takes two steps. The requester starts confirmed; Pending cards answer only for the selected player; the profile confirm button is removed. Approval asks which Upcoming game a result belongs to, if any, and nothing links silently; the Admin reconciles stale fixtures from the expanded card. Upcoming cards arrive folded and open independently. 25 tests (browser tests 11–24 fail against the previous code); 650/650. |
@@ -6090,6 +6262,11 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
    **27 Sep, later still: fixture follow-up 2 DONE (`b12e837`).** This covers
    My Requests, Add multiple games and archived call-outs (Section 3).
    **D4 and D5 are still open and not started.**
+
+   **28 Sep: D4 and D5 DONE (`9cca86c`)** with D6 (P/W/D/L drill-downs), per
+   Shaun's decisions in Section 3. All five audit defects are now closed.
+   **Phase 2 (the wider IA and redesign) is not started.** Baton with Shaun /
+   CGPT.
 
 15i. **APPROVED TRIAL — Best Month / Monthly Race** (Shaun, 26 Sep).
    Analysis is complete in [`BEST_MONTH_ANALYSIS.md`](./BEST_MONTH_ANALYSIS.md).
