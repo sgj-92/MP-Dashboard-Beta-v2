@@ -186,6 +186,10 @@
           // from the match would be a second opinion, and the two would
           // eventually disagree about a fixture nobody had thought about.
           hard: [], favoured: [],
+          // Every game behind P, each with its result for this player, pushed
+          // in the same step that counts it -- so P, W, D and L can each be
+          // opened and will always list exactly what they count.
+          games: [],
         });
         row.played++;
         row.merit += points;
@@ -198,6 +202,7 @@
         }
         if (lost) row.losses++;
         if (drew) row.draws++;
+        row.games.push({ ...detailOf(m, scored, points), isDraw: !!drew, result: won ? 'W' : lost ? 'L' : 'D' });
       };
 
       if (scored.isDraw) {

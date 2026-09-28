@@ -2364,3 +2364,15 @@ body { padding-bottom: calc(var(--shell-nav-height) + var(--shell-safe-bottom));
 .fx-bulk-side .fg-select{ min-width: 0; width: 100%; box-sizing: border-box; }
 .fx-bulk-open{ border-color: var(--gold-bright); }
 #bulkCreate[disabled]{ opacity: .45; cursor: not-allowed; }
+
+/* P / W / D / L counts that open their games (League and Merit). Same
+   component as Hard / Fav, quieter: the table's own weight, a dotted line to
+   say it can be opened, and a slightly larger hit area that does not widen
+   the column. */
+.merit-count.tbl-count{ font-weight: inherit; color: inherit; padding: 5px 4px; margin: -5px -2px; }
+.merit-drill-body{ white-space: normal; }
+/* The League table can scroll sideways; its detail stays in view. */
+.callout-card[style*="overflow-x"] .merit-drill-body{ position: sticky; left: 0; max-width: calc(100vw - 34px); box-sizing: border-box; }
+.tbl-result-W{ color: var(--green); }
+.tbl-result-L{ color: var(--red); }
+.tbl-result-D{ color: var(--text-dim); }

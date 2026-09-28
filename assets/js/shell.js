@@ -60,7 +60,9 @@ function goToSection(section){
   }
   const singleTab = SECTION_TAB_MAP[section];
   const subnav = SECTION_SUBNAV[section];
-  const targetTab = singleTab || (subnav && subnav[0].tab); // default to first subnav item
+  // default to the first subnav item this reader may see
+  const firstVisible = subnav && subnav.find(it => canSeeTab(it.tab));
+  const targetTab = singleTab || (firstVisible ? firstVisible.tab : (subnav && subnav[0].tab));
   if(targetTab){
     const btn = legacyTabBtn(targetTab);
     if(btn) btn.click(); // reuses 100% of existing tab-switch logic untouched
@@ -140,8 +142,9 @@ function syncHeaderSectionTitle(){
 // be discoverable, not hidden behind another tap" requirement.
 function renderSectionSubnav(){
   const container = document.getElementById('sectionSubnav');
-  const items = SECTION_SUBNAV[activeSection];
-  if(!items){ container.style.display = 'none'; container.innerHTML = ''; return; }
+  // Only the screens this reader may see (canSeeTab, app.js).
+  const items = (SECTION_SUBNAV[activeSection] || []).filter(it => canSeeTab(it.tab));
+  if(!items.length){ container.style.display = 'none'; container.innerHTML = ''; return; }
   container.style.display = 'grid';
   // minmax(0, 1fr), not plain 1fr -- a grid track's implicit min-width is
   // "auto" (its content's own minimum size) just like a flex item, so a
@@ -157,7 +160,23 @@ function renderSectionSubnav(){
   });
 }
 
+// Unlocking, locking or changing a visibility setting redraws the shell's own
+// navigation from the same rule, and moves a reader off a screen they may no
+// longer see.
+function onVisibilityChanged(){
+  if(typeof renderSectionSubnav === 'function' && document.getElementById('sectionSubnav')) renderSectionSubnav();
+  if(typeof activeTab !== 'undefined' && !canSeeTab(activeTab)){
+    const fb = legacyTabBtn(visibleFallbackTab(activeTab));
+    if(fb) fb.click();
+  }
+}
+
 function openMoreSheet(){
+  // More lists only what this reader may open.
+  document.querySelectorAll('#shellMoreSheet .shell-more-item[data-tab]').forEach(btn=>{
+    const tab = btn.dataset.tab;
+    if(tab && tab !== 'manage') btn.style.display = canSeeTab(tab) ? '' : 'none';
+  });
   document.getElementById('shellMoreSheet').classList.add('show');
 }
 function closeMoreSheet(){
@@ -1476,10 +1495,10 @@ function getViewerSnapshot(name){
   // with eight rated matches in the last thirty days -- saw "#– in Tier A ·
   // #– Overall" on their own profile. A display filter must never decide
   // whether somebody has a rank.
-  const eligibleOverall = PLAYERS.filter(x=>isRankingEligible(x.name)).sort((a,b)=>b.rating-a.rating);
-  const overallRank = eligibleOverall.findIndex(x=>x.name===name) + 1;
-  const eligibleInTier = eligibleOverall.filter(x=>x.tier===p.tier);
-  const tierRank = eligibleInTier.findIndex(x=>x.name===name) + 1;
+  // Both now come from the one Tier Rank definition (tierRankOf, app.js).
+  const tr = tierRankOf(name);
+  const overallRank = tr.overallRank || 0;
+  const tierRank = tr.rank || 0;
   const state = playerStateOf(name);
 
   const form = computeRecentForm(name, 10);
@@ -1517,6 +1536,7 @@ function getViewerSnapshot(name){
     name: p.name, tier: p.tier, rating: p.rating,
     overallRank: overallRank > 0 ? overallRank : null,
     tierRank: tierRank > 0 ? tierRank : null,
+    tierRankOf: tr.of,
     eligible: isRankingEligible(name),
     // The full state, so a surface can say WHY there is no rank rather than
     // printing a dash and leaving it looking like missing data.
@@ -1847,7 +1867,7 @@ function renderHomeDashboard(){
         <span class="tier-badge tier-${viewer.tier.toLowerCase()}" style="width:32px;height:32px;font-size:14px;">${viewer.tier}</span>
         <div class="home-tier-sub">${snap.eligible
           ? `#${snap.tierRank||'–'} in Tier ${viewer.tier} · #${snap.overallRank||'–'} Overall`
-          : `Tier ${viewer.tier} · <span class="${viewer.state && viewer.state.participation === 'INACTIVE' ? 'inactive-tag' : 'idle-tag'}">${viewer.state ? viewer.state.label : 'Idle'}</span>`
+          : `Tier ${viewer.tier} · <span class="${snap.state && snap.state.participation === 'INACTIVE' ? 'inactive-tag' : 'idle-tag'}">${snap.state ? snap.state.label : 'Idle'}</span>`
         }</div>
       </div>
       <div class="home-yourgame-divider"></div>
@@ -1868,14 +1888,17 @@ function renderHomeDashboard(){
       <div class="home-insight">${insight}</div>
     </div>
 
-    <div class="home-card-header home-section-header"><span>Club Pulse</span><button class="home-card-link" id="homeAllInsightsBtn">All Insights ›</button></div>
+    <div class="home-card-header home-section-header"><span>Club Pulse</span>${canSee('callouts') ? `<button class="home-card-link" id="homeAllInsightsBtn">All Insights ›</button>` : ''}</div>
     <div class="home-pulse-row">
       ${pulseCardHtml('#1 Ranked', pulse.topRanked, pulse.topRanked ? `${Math.round(pulse.topRanked.rating)}` : '', '')}
       ${pulseCardHtml('In Form', pulse.inForm, pulse.inForm ? `+${pulse.inForm.recent_form}%` : '', 'perf-pos')}
       ${pulseCardHtml('Promotion Watch', pulse.promotionWatch, pulse.promotionWatch ? `Tier ${pulse.promotionWatch.tier} · ${pulse.promotionWatch.gap} pts` : '', '')}
     </div>
 
-    <!-- Collapsed by default: occasionally useful, not worth permanent space. -->
+    <!-- Collapsed by default: occasionally useful, not worth permanent space.
+         Matchmaking is Find a Game's content, so it follows that setting;
+         its predicted split is Admin-only (canSeePredictions). -->
+    ${canSee('findgame') ? `
     <div class="mp-card-standard home-card home-ideas-head" id="homeIdeasToggle" role="button" tabindex="0" aria-expanded="${homeIdeasOpen}">
       <div class="home-ideas-icon">💡</div>
       <div class="home-ideas-text">
@@ -1889,8 +1912,8 @@ function renderHomeDashboard(){
     ${matchup ? `
       <div class="mp-card-standard home-card home-matchup-card">
         <div class="section-sub">A well-balanced matchup</div>
-        <div class="home-matchup-pct">${matchup.pctFor}% – ${matchup.pctAgainst}%</div>
-        <div class="section-sub" style="font-size:11px; margin-top:-4px; margin-bottom:10px;">${matchup.description}</div>
+        ${canSeePredictions() ? `<div class="home-matchup-pct">${matchup.pctFor}% – ${matchup.pctAgainst}%</div>
+        <div class="section-sub" style="font-size:11px; margin-top:-4px; margin-bottom:10px;">${matchup.description}</div>` : ''}
         <div class="home-matchup-players">
           <div class="home-player-block"><div class="home-avatar">${initials(viewer.name)}</div><div class="home-player-name">${viewer.name}</div></div>
           <div class="home-player-block"><div class="home-avatar">${initials(matchup.partner.name)}</div><div class="home-player-name">${matchup.partner.name}</div></div>
@@ -1902,7 +1925,7 @@ function renderHomeDashboard(){
       </div>
     ` : `<div class="mp-card-standard home-card"><div class="section-sub">Not enough eligible players to suggest a matchup right now.</div></div>`}
 
-    </div>
+    </div>` : ''}
 
     <!-- Built automatically from the player's own most recent RATED match.
          Upcoming is maintained by hand, so Home no longer depends on it; the
@@ -1923,7 +1946,8 @@ function renderHomeDashboard(){
   document.getElementById('homeViewProfileBtn').onclick = ()=> openSheet(viewer.name);
   // Insights is a long page. Arriving from Home used to inherit wherever the
   // tab had been left, which dropped the reader into the middle of it.
-  document.getElementById('homeAllInsightsBtn').onclick = ()=>{ openInsightsFromTop(); };
+  const insightsBtn = document.getElementById('homeAllInsightsBtn');
+  if(insightsBtn) insightsBtn.onclick = ()=>{ openInsightsFromTop(); };
   document.getElementById('homeFullReviewBtn').onclick = ()=> showFullMonthlyReview();
 
   const findMoreBtn = document.getElementById('homeFindMoreBtn');
@@ -2135,7 +2159,7 @@ function renderPremiumProfile(name, matchFilter){
       <div class="pp-hero-status">TIER ${p.tier} · ${riskInfo.text.toUpperCase()}</div>
       <div class="pp-hero-rating">${Math.round(p.rating)}</div>
       <div class="pp-hero-rating-label">Power Rating</div>
-      <div class="pp-hero-sub">${snap.tierRank ? `#${snap.tierRank} Tier` : 'Unranked'} · ${snap.overallRank ? `#${snap.overallRank} Overall` : 'Not currently ranked'} · ${p.wins}-${p.losses} · ${p.winpct}% Win Rate</div>
+      <div class="pp-hero-sub">${snap.tierRank ? `#${snap.tierRank} in Tier ${escapeHtml(p.tier)}` : 'Unranked'} · ${snap.overallRank ? `#${snap.overallRank} Overall` : 'Not currently ranked'} · ${p.wins}-${p.losses} · ${p.winpct}% Win Rate</div>
       ${buildProfileFactsHtml(p)}
     </div>
   `;
@@ -2165,7 +2189,7 @@ function renderPremiumProfile(name, matchFilter){
       <div class="pp-analysis-grid">
         <div class="pp-analysis-card">
           <div class="pp-ac-label">Position</div>
-          <div class="pp-ac-main">#${p.tier_rank} of ${p.tier_size} in Tier ${p.tier}</div>
+          <div class="pp-ac-main">${snap.tierRank ? `#${snap.tierRank} of ${snap.tierRankOf} in Tier ${p.tier}` : `Not ranked · Tier ${p.tier}`}</div>
           <div class="pp-ac-sub">${posNote}</div>
         </div>
         <div class="pp-analysis-card">
@@ -2207,7 +2231,9 @@ function renderPremiumProfile(name, matchFilter){
   `;
 
   // ---- Match to prove it ----
-  const matchup = getMatchToProveIt(name);
+  // Call-out content: it follows the Call-Outs setting, and its button leads to
+  // Find a Game, so the button follows that one.
+  const matchup = canSee('callouts') ? getMatchToProveIt(name) : null;
   const proveItHtml = matchup ? `
     <div class="pp-section">
       <div class="pp-section-label">Match to Prove It</div>
@@ -2216,7 +2242,7 @@ function renderPremiumProfile(name, matchFilter){
         <div class="pp-proveit-vs">VS</div>
         <div class="pp-proveit-team">${matchup.team2[0]} + ${matchup.team2[1]}</div>
         <div class="section-sub" style="margin-top:8px;">A matchup that could help settle ${name}'s position in the rankings.</div>
-        <button class="mp-btn-primary" id="ppProveItBtn" style="width:100%; margin-top:10px;">Find This Game ›</button>
+        ${canSee('findgame') ? `<button class="mp-btn-primary" id="ppProveItBtn" style="width:100%; margin-top:10px;">Find This Game ›</button>` : ''}
       </div>
     </div>
   ` : '';

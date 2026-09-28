@@ -132,7 +132,9 @@ const STORAGE_KEY_NS_RESULTS = 'moneypadel_north_south_results'; // shared: live
 
 // Sections an admin can hide from non-admin viewers. Admins always see everything.
 const VISIBILITY_DEFAULTS = {
-  findgame: false,      // Find a Game — matchmaking, hidden by default
+  // Find a Game is a player feature (Shaun, 28 Sep: D4). Its predictions are
+  // not -- see canSeePredictions -- so the tab itself defaults to visible.
+  findgame: true,       // Find a Game — matchmaking
   difficulty: false,    // Easy/Balanced/Hard suggestions on player profiles
   callouts: true,       // Call-Outs tab
   chemistry: true,      // Partnership chemistry rankings
@@ -160,6 +162,36 @@ function canSee(section){
   if(isUnlocked) return true;
   return visibilityState[section] !== false;
 }
+
+// Which setting governs each screen. The one map: the tab guard, the shell's
+// sub-navigation, the More sheet and every in-app shortcut read it, so a
+// screen switched to Admin only is hidden by every route to it, not just by
+// the legacy tab row nobody sees any more (audit D4).
+const TAB_VISIBILITY_KEY = {
+  power: 'power', callouts: 'callouts', findgame: 'findgame', games: 'games',
+  players: 'players', wishlist: 'wishlist', upcoming: 'upcoming',
+  // 'wl', 'summary', 'h2h' and 'manage' have no setting (manage is lock-gated).
+};
+function canSeeTab(tab){
+  const key = TAB_VISIBILITY_KEY[tab];
+  return !key || canSee(key);
+}
+// Where to go instead of a hidden screen: the first visible screen in the same
+// section of the shell, else Win/Loss, which has no setting.
+function visibleFallbackTab(tab){
+  const sec = (typeof TAB_TO_SECTION !== 'undefined') ? TAB_TO_SECTION[tab] : null;
+  const same = (sec && typeof SECTION_SUBNAV !== 'undefined' && SECTION_SUBNAV[sec])
+    ? SECTION_SUBNAV[sec].map(i => i.tab).filter(t => t !== tab && canSeeTab(t)) : [];
+  return same[0] || 'wl';
+}
+
+// Predictions -- a win percentage, or a favourite / underdog call, for a game
+// that has not been played -- are Admin-only, always, wherever they would
+// appear (Shaun, 21 Sep; restated 28 Sep, D4). A fixed rule, not a setting:
+// players could use them to dodge agreed games or cherry-pick easy ones.
+// Recorded matches keep their own expectation, which explains a rating
+// already moved and is not a prediction.
+function canSeePredictions(){ return !!isUnlocked; }
 
 async function loadVisibility(){
   try { const v = await fsGet(STORAGE_KEY_VISIBILITY); if(v) return {...VISIBILITY_DEFAULTS, ...JSON.parse(v)}; } catch(e){ console.error('load visibility failed', e); }
@@ -623,6 +655,38 @@ function playerStateOf(name, asOf){
   });
 }
 
+// ===================== TIER RANK: ONE DEFINITION =====================
+// Tier Rank is a player's position in the CURRENT Power Rankings among the
+// players in their current tier -- the same pool and the same order as the
+// Rankings list at All time:
+//   pool   players who are rankable (PlayerState RANKED; Idle and Inactive
+//          are not ranked). The min-games number on the list is a display
+//          filter, not eligibility, so it plays no part here.
+//   order  current Power Rating, highest first, the list's own comparator
+//          over the same PLAYERS order (so ties fall the same way).
+// Every surface that says "Tier" beside a rank reads it from here. There used
+// to be a second calculation that ranked every tier member, Idle and Inactive
+// included, which is how one profile said "#8" and "#9 of 9" at once.
+function currentPowerRankings(){
+  return PLAYERS.filter(p => { const st = playerStateOf(p.name); return !!(st && st.rankable); })
+    .sort((a,b)=> b.rating - a.rating);
+}
+function tierRankOf(name, list){
+  const ranked = list || currentPowerRankings();
+  const p = PLAYERS.find(x => x.name === name);
+  if(!p) return null;
+  const inTier = ranked.filter(x => x.tier === p.tier);
+  const idx = inTier.findIndex(x => x.name === name);
+  const overall = ranked.findIndex(x => x.name === name);
+  return {
+    tier: p.tier,
+    rank: idx >= 0 ? idx + 1 : null,      // null: not currently ranked
+    of: inTier.length,                    // ranked players in the tier
+    overallRank: overall >= 0 ? overall + 1 : null,
+    overallOf: ranked.length,
+  };
+}
+
 // Every game actually played, decided or drawn, newest-agnostic. For screens
 // that DESCRIBE history. Never for anything that calculates a rating, a win
 // percentage or a league point -- those read MATCHES, which is the rated set.
@@ -760,7 +824,6 @@ function buildPlayers(enrichedMatches, ratings, tierMap, activeMap){
         upset_wins: a.upset_wins, upset_losses: a.upset_losses,
         upset_total: a.upset_wins+a.upset_losses,
         upset_rate: total ? Math.round(1000*(a.upset_wins+a.upset_losses)/total)/10 : 0,
-        tier_rank: idx+1, tier_size: names.length,
         tier_avg_rating: Math.round(tierAvgRating[t]*10)/10,
         rating_vs_tier_avg: Math.round((ratings[name]-tierAvgRating[t])*10)/10,
         tier_avg_opp: Math.round(tierAvgOpp[t]*10)/10,
@@ -1673,7 +1736,7 @@ function computeMonthlySummaryStats(month, { splitByTier } = {}){
     // grouped view simply has no tier section to put it in.
     const key = splitByTier ? LeagueSplit.keyFor(name, tier || '') : name;
     if(!agg[key]){
-      agg[key] = {wins:0, losses:0, draws:0, doughnuts:0, strengths:[], games_w:0, games_l:0};
+      agg[key] = {wins:0, losses:0, draws:0, doughnuts:0, strengths:[], games_w:0, games_l:0, list:[]};
       identity[key] = { name, tier: splitByTier ? tier : null, dates: [] };
     }
     if(date) identity[key].dates.push(date);
@@ -1689,8 +1752,11 @@ function computeMonthlySummaryStats(month, { splitByTier } = {}){
     if(!enriched) return;
     const allNames = [...new Set([...raw.winners, ...raw.losers])];
     allNames.forEach(n => A(n, raw.date).strengths.push(enriched.match_strength));
-    raw.winners.forEach(n=>{ const a = A(n, raw.date); a.wins++; a.games_w += enriched.games_winner; a.games_l += enriched.games_loser; });
-    raw.losers.forEach(n=>{ const a = A(n, raw.date); a.losses++; a.games_w += enriched.games_loser; a.games_l += enriched.games_winner; });
+    // Each count and the game it counts, in one step: whatever opens a row's
+    // P, W, L or D reads this list, so it can only ever show what was counted.
+    const game = (result) => ({ id: raw.id, date: raw.date, winners: raw.winners.slice(), losers: raw.losers.slice(), sets: raw.sets, isDraw: false, result });
+    raw.winners.forEach(n=>{ const a = A(n, raw.date); a.wins++; a.games_w += enriched.games_winner; a.games_l += enriched.games_loser; a.list.push(game('W')); });
+    raw.losers.forEach(n=>{ const a = A(n, raw.date); a.losses++; a.games_w += enriched.games_loser; a.games_l += enriched.games_winner; a.list.push(game('L')); });
     raw.sets.forEach(([x,y])=>{
       if(y === 0) raw.losers.forEach(n=>A(n, raw.date).doughnuts++);
       if(x === 0) raw.winners.forEach(n=>A(n, raw.date).doughnuts++);
@@ -1708,8 +1774,9 @@ function computeMonthlySummaryStats(month, { splitByTier } = {}){
     allNames.forEach(n => A(n, m.date).strengths.push(strengthEstimate));
     const team1Games = m.sets.reduce((s,[x,y])=>s+x,0);
     const team2Games = m.sets.reduce((s,[x,y])=>s+y,0);
-    m.winners.forEach(n=>{ const a = A(n, m.date); a.draws++; a.games_w += team1Games; a.games_l += team2Games; });
-    m.losers.forEach(n=>{ const a = A(n, m.date); a.draws++; a.games_w += team2Games; a.games_l += team1Games; });
+    const drawn = { id: m.id, date: m.date, winners: m.winners.slice(), losers: m.losers.slice(), sets: m.sets, isDraw: true, result: 'D' };
+    m.winners.forEach(n=>{ const a = A(n, m.date); a.draws++; a.games_w += team1Games; a.games_l += team2Games; a.list.push(drawn); });
+    m.losers.forEach(n=>{ const a = A(n, m.date); a.draws++; a.games_w += team2Games; a.games_l += team1Games; a.list.push(drawn); });
     m.sets.forEach(([x,y])=>{
       if(y === 0) m.losers.forEach(n=>A(n, m.date).doughnuts++);
       if(x === 0) m.winners.forEach(n=>A(n, m.date).doughnuts++);
@@ -1728,6 +1795,8 @@ function computeMonthlySummaryStats(month, { splitByTier } = {}){
       // Present only when splitting; the tier this stretch of the month was
       // played in, and the dates it covers.
       segmentTier: who.tier, segmentDates: who.dates.slice(),
+      // The games behind P (and, by result, W / L / D).
+      matchList: a.list.slice(),
       points: a.wins*3 + a.draws*1,
       winpct: games ? Math.round(1000*a.wins/games)/10 : 0,
       losspct: games ? Math.round(1000*a.losses/games)/10 : 0,
@@ -1770,20 +1839,9 @@ function populateMonthSelect(selectEl, value){
 }
 
 function applyTabVisibility(){
-  const tabSectionMap = {
-    power: 'power',
-    callouts: 'callouts',
-    findgame: 'findgame',
-    games: 'games',
-    players: 'players',
-    wishlist: 'wishlist',
-    upcoming: 'upcoming',
-    // 'wl' and 'manage' are always available (manage is lock-gated on its own)
-  };
   document.querySelectorAll('#tabrow .tab-btn').forEach(btn=>{
     const tab = btn.dataset.tab;
-    const section = tabSectionMap[tab];
-    const visible = !section || canSee(section);
+    const visible = canSeeTab(tab);
     btn.style.display = visible ? '' : 'none';
     // if the active tab just got hidden, fall back to Win/Loss
     if(!visible && activeTab === tab){
@@ -1802,6 +1860,8 @@ function applyTabVisibility(){
       const sp = document.getElementById('sortbarPower'); if(sp) sp.style.display = 'none';
     }
   });
+  // The shell draws its own navigation from the same rule.
+  if(typeof onVisibilityChanged === 'function') onVisibilityChanged();
 }
 
 function rerenderCurrentTab(){
@@ -1823,6 +1883,14 @@ TIERS.forEach(t=>{
 
 document.querySelectorAll('#tabrow .tab-btn').forEach(b=>{
   b.onclick = ()=>{
+    // Every route to a screen -- shell navigation, More, Home shortcuts, a
+    // button on another screen -- arrives through here. A screen switched to
+    // Admin only is not drawn for a player however they got here.
+    if(!canSeeTab(b.dataset.tab)){
+      const fb = document.querySelector(`#tabrow .tab-btn[data-tab="${visibleFallbackTab(b.dataset.tab)}"]`);
+      if(fb && fb !== b) fb.click();
+      return;
+    }
     const arrivingFrom = activeTab;
     activeTab = b.dataset.tab;
     // Arrival is navigation, not redrawing. dataChanged() and every other
@@ -1888,7 +1956,7 @@ document.querySelectorAll('#tabrow .tab-btn').forEach(b=>{
       wl: 'Built from readable trophy-emoji results across the main group chat and Results Only, with names and tiers confirmed against the group. Excludes single-set/"money game" results, matches against non-members, and a couple of results with no opponent named or a disputed winner.',
       power: 'Ratings start from the tier each player is already known to sit in (S highest, C lowest) — the tiers are treated as real signal, not something the model has to rediscover from scratch. From there, results move you based on <b>games won within each match</b>, not just who won — a close 3-set loss barely costs anything, a 6-1 6-2 loss costs a lot. A player with few games stays close to their tier baseline since there isn\'t much evidence yet to move them; a player with a long track record can drift further from it. "Avg opp." is the average strength of everyone you\'ve played with and against. "Clutch %" compares your actual scorelines to what your tier and opponents would predict. "Upset wins/losses" count matches where the underdog won outright (or the favorite lost outright) by a meaningful ratings gap — a fast way to spot giant-killers and upset-prone favorites. Use the min-games filter below to hide anyone with too few games for these numbers to mean much. "Recent Form" sorts by wins over the last 10 games first, then by average overperformance as a tiebreaker — a faster-moving signal than the overall rating, useful for spotting who\'s trending right now.',
       callouts: 'Suggested matchups are full 2v2s — a wingman is added to each side, chosen to keep team strength balanced, so these are games you could actually go and organize. This spans every tier, not just the ones with the least data — S/A near-ties get surfaced the same way as small-sample C-tier players. Every player also has their own Easy / Balanced / Hard opponent suggestions on their profile page. The Data filter above changes which matches feed these ratings — defaults to June onwards only.',
-      findgame: '"Within my tier" keeps every suggested player inside your own tier — easy always means the weakest pair actually in your tier, hard the strongest, never a reach into a different tier. "Any tier" opens it up and targets a rating roughly 150 points below/above your own. Every recommendation is a full four-player match: the ranked opponent pair, plus the partner who\'d make it an even match (a proven-chemistry partner is used automatically when one is just as close). The percentage split uses the same rating-based expected-outcome formula used everywhere else in the app. Alternatives are only labeled Fresh Matchup, Proven Chemistry or Tougher Test when the data actually supports that read — "See all recommendations" has the full ranked list underneath. This is computed live, not a fixed list, so try different scopes and difficulties freely. Players who\'ve gone inactive are excluded from every suggestion here, though their history stays visible elsewhere.',
+      findgame: '"Within my tier" keeps every suggested player inside your own tier — easy always means the weakest pair actually in your tier, hard the strongest, never a reach into a different tier. "Any tier" opens it up and targets a rating roughly 150 points below/above your own. Every recommendation is a full four-player match: the ranked opponent pair, plus the partner who\'d make it an even match (a proven-chemistry partner is used automatically when one is just as close). Matchups are chosen from current Power Ratings; the predicted share of games behind them is shown to admins only. Alternatives are only labeled Fresh Matchup, Proven Chemistry or Tougher Test when the data actually supports that read — "See all recommendations" has the full ranked list underneath. This is computed live, not a fixed list, so try different scopes and difficulties freely. Players who\'ve gone inactive are excluded from every suggestion here, though their history stays visible elsewhere.',
       manage: 'This data is shared — anyone who opens this artifact sees the same games and tags. Ratings, tiers, and every suggestion above recompute from scratch the moment you add a game or change a tag.',
       games: 'Editing or deleting a game recalculates every rating instantly. Every change is recorded against whoever the app currently has you signed in as — the player shown in the header, which you can change from the Add a game panel.',
       h2h: 'Opponent record only counts matches where the two were on opposite teams; teammate record only counts matches where they played together.',
@@ -2432,8 +2500,9 @@ function buildProfileText(p){
     parts.push(`${p.total} games played — a solid track record, so this rating is largely earned rather than assumed from the tier.`);
   }
 
-  // position within tier
-  const rankText = `Ranked #${p.tier_rank} of ${p.tier_size} in Tier ${p.tier}`;
+  // position within tier -- the one Tier Rank, not a count of everyone in it
+  const tr = tierRankOf(p.name);
+  const rankText = tr && tr.rank ? `Ranked #${tr.rank} of ${tr.of} in Tier ${p.tier}` : `Not currently ranked in Tier ${p.tier}`;
   if(Math.abs(p.rating_vs_tier_avg) < 15){
     parts.push(`${rankText}, right around the tier average (${Math.round(p.tier_avg_rating)}).`);
   } else if(p.rating_vs_tier_avg > 0){
@@ -2918,12 +2987,15 @@ function buildCompleteMatchWithPartner(player, partner, oppCandidate){
     ? `a partnership with real chemistry (${partnership.wins}-${partnership.losses} together, ${partnership.avg_overperf>=0?'+':''}${partnership.avg_overperf}% overperformance)`
     : 'a fresh partnership combination';
   const whyLine = `${veryEven ? 'Very even ratings' : balanceDesc} with ${partnerClause}.`;
+  // The same reason without the favourite call, for players (canSeePredictions).
+  const ratingGap = Math.round(Math.abs(teamRating - oppRating));
+  const whyLinePublic = `${veryEven ? 'Very even ratings' : `Team ratings ${ratingGap} points apart`} with ${partnerClause}.`;
 
   return {
     player, partner, opponents, tiers: oppCandidate.tiers,
     teamRating: Math.round(teamRating*10)/10, oppRating,
     pctFor: pct, pctAgainst: 100-pct,
-    balanceDesc, whyLine, partnership, exposure,
+    balanceDesc, whyLine, whyLinePublic, partnership, exposure,
     gap: oppCandidate.gap, playedOpp: [oppCandidate.played_p, oppCandidate.played_q],
   };
 }
@@ -3025,10 +3097,10 @@ function renderBestMatchCard(m, label){
     : `${m.player.name} and ${m.partner.name} haven't built up a partnership record together yet.`;
   return `<div class="pm-best mp-card-prestige">
     <div class="pm-best-label">${label || 'Best Match'}</div>
-    <div class="pm-best-pct">${m.pctFor}% – ${m.pctAgainst}%</div>
-    <div class="pm-best-balance">${m.balanceDesc}</div>
+    ${canSeePredictions() ? `<div class="pm-best-pct">${m.pctFor}% – ${m.pctAgainst}%</div>
+    <div class="pm-best-balance">${m.balanceDesc}</div>` : ''}
     ${renderMatchTeams(m)}
-    <div class="pm-why">${m.whyLine}</div>
+    <div class="pm-why">${canSeePredictions() ? m.whyLine : m.whyLinePublic}</div>
     <div class="pm-actions">
       <button class="mp-btn-primary" id="pmRequestBtn">Request Game ›</button>
       <button class="mp-btn-secondary" id="pmDetailBtn">View Full Breakdown</button>
@@ -3052,7 +3124,7 @@ function renderAltCard(alt, idx){
       <span class="pm-alt-vs">vs</span>
       <span><b>${m.opponents[0].name} &amp; ${m.opponents[1].name}</b></span>
     </div>
-    <div class="pm-alt-pct">${m.pctFor}% – ${m.pctAgainst}% · ${m.balanceDesc.toLowerCase()}</div>
+    ${canSeePredictions() ? `<div class="pm-alt-pct">${m.pctFor}% – ${m.pctAgainst}% · ${m.balanceDesc.toLowerCase()}</div>` : ''}
     <button class="pm-alt-cta-btn" data-alt-idx="${idx}">Request this instead ›</button>
   </div>`;
 }
@@ -3060,7 +3132,7 @@ function renderAltCard(alt, idx){
 function renderSeeAllSection(matches){
   const rows = matches.map(m=>`<div class="pm-all-row">
       <span><b>${m.player.name} &amp; ${m.partner.name}</b> vs <b>${m.opponents[0].name} &amp; ${m.opponents[1].name}</b></span>
-      <span class="pm-all-pct">${m.pctFor}%–${m.pctAgainst}%</span>
+      ${canSeePredictions() ? `<span class="pm-all-pct">${m.pctFor}%–${m.pctAgainst}%</span>` : ''}
     </div>`).join('');
   return `<button class="pm-seeall-btn" id="pmSeeAllBtn">See all recommendations ›</button>
     <div class="pm-all-list" id="pmAllList" hidden>${rows}</div>`;
@@ -3415,8 +3487,8 @@ function renderChallengeCard(ch, viewer){
   return `<div class="chl-card">
     <div class="chl-tag">Challenge · Match ready</div>
     ${renderMatchTeams(mv)}
-    <div class="pm-best-pct" style="margin-top:8px;">${mv.pctFor}% – ${mv.pctAgainst}%</div>
-    <div class="pm-best-balance">${mv.balanceDesc}</div>
+    ${canSeePredictions() ? `<div class="pm-best-pct" style="margin-top:8px;">${mv.pctFor}% – ${mv.pctAgainst}%</div>
+    <div class="pm-best-balance">${mv.balanceDesc}</div>` : ''}
     ${linkedReq
       ? fmtRequestConfirmations(linkedReq)
       : `<div class="chl-restriction-line chl-ready">Couldn't finalize this into a request.</div><div class="chl-actions"><button class="mp-btn-primary chl-retry-bridge-btn" data-challenge-id="${ch.id}">Retry</button></div>`}
@@ -8059,6 +8131,93 @@ function leagueAppearances(){
   return out;
 }
 
+// ===================== TABLE DETAIL: THE GAMES BEHIND A COUNT =====================
+// One component for every count a League or Merit row lets you open -- P, W,
+// D, L, Hard and Fav. The cell is a button that opens a detail row straight
+// under the player's row; the detail lists the games the ROW ITSELF recorded
+// when it counted them (League: `matchList`, Merit: `games` / `hard` /
+// `favoured`), never a fresh query. So a cell reading 2 opens exactly those 2
+// games -- same month, same tier section, same split-month treatment -- and
+// nothing is re-derived that could disagree with it.
+const TABLE_COUNT_KINDS = {
+  played: { label: 'Played', of: (list) => list },
+  wins:   { label: 'Wins',   of: (list) => list.filter(g => g.result === 'W') },
+  draws:  { label: 'Draws',  of: (list) => list.filter(g => g.result === 'D') },
+  losses: { label: 'Losses', of: (list) => list.filter(g => g.result === 'L') },
+};
+function tableDrillKey(player, tier, kind){ return `${player}\u0000${tier || ''}\u0000${kind}`; }
+
+// A count that opens its games. Nothing to explain means nothing to tap: a
+// zero stays plain text (or the table's own dash), never an empty drawer.
+function tableCountCell(openKey, player, tier, kind, n, opts){
+  const o = opts || {};
+  if(!n) return o.zero !== undefined ? o.zero : `${n}`;
+  const key = tableDrillKey(player, tier, kind);
+  const open = openKey === key;
+  const label = TABLE_COUNT_KINDS[kind] ? TABLE_COUNT_KINDS[kind].label : kind;
+  return `<button type="button" class="merit-count${o.plain ? ' tbl-count' : ''}${open ? ' is-open' : ''}"
+    data-player="${escapeHtml(player)}" data-tier="${escapeHtml(tier || '')}" data-kind="${kind}"
+    ${o.colour ? `style="color:${o.colour};"` : ''} aria-expanded="${open}" aria-label="${escapeHtml(`${player}: ${n} ${label.toLowerCase()} — show the games`)}">${n}</button>`;
+}
+
+// Where the detail applies, said in the heading: which month and which table.
+function tableDrillContext(tier){
+  const month = summaryMonth === 'all' ? 'All Time' : monthLabel(summaryMonth);
+  return `${month} · ${tier ? `Tier ${tier}` : 'All together'}`;
+}
+
+// One game from the row's own side of it.
+function tableGameLineHtml(g, subject){
+  const mine = (g.winners || []).includes(subject) ? 'winners' : 'losers';
+  const team = (names) => names.map(escapeHtml).join(' &amp; ');
+  const side = (names, which) => which === mine ? `<b>${team(names)}</b>` : team(names);
+  const score = (g.sets && g.sets.length) ? g.sets.map(([a,b])=>`${a}-${b}`).join(' ') : '';
+  const word = g.result === 'W' ? 'Won' : g.result === 'L' ? 'Lost' : 'Drew';
+  const line = g.isDraw
+    ? `${side(g.winners, 'winners')} drew with ${side(g.losers, 'losers')}`
+    : `${side(g.winners, 'winners')} beat ${side(g.losers, 'losers')}`;
+  return `<div class="merit-drill-row">
+    <div class="merit-drill-top">
+      <span class="merit-drill-date">${escapeHtml(g.date)}</span>
+      <span class="merit-drill-pts tbl-result tbl-result-${g.result}">${word}</span>
+    </div>
+    <div class="merit-drill-teams">${line}</div>
+    ${score ? `<div class="merit-drill-meta">${escapeHtml(score)}</div>` : ''}
+  </div>`;
+}
+
+// The detail row itself, newest game first (same-day games in the order they
+// were recorded, unless a caller keeps an order of its own).
+const NEWEST_FIRST = (a,b)=> a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+function tableDrillRowHtml(cols, head, games, lineFn, order){
+  return `<tr class="merit-drill"><td colspan="${cols}" style="padding:0;">
+    <div class="merit-drill-body">
+      <div class="merit-drill-head">${head}</div>
+      ${games.slice().sort(order || NEWEST_FIRST).map(lineFn).join('')}
+    </div>
+  </td></tr>`;
+}
+
+// The P/W/D/L detail for one row, if it is the one open.
+function tableCountDrillHtml(openKey, cols, player, tier, list){
+  const kind = Object.keys(TABLE_COUNT_KINDS).find(k => openKey === tableDrillKey(player, tier, k));
+  if(!kind) return '';
+  const games = TABLE_COUNT_KINDS[kind].of(list || []);
+  const head = `${escapeHtml(player)} · ${TABLE_COUNT_KINDS[kind].label} · ${escapeHtml(tableDrillContext(tier))} · ${games.length} game${games.length === 1 ? '' : 's'}`;
+  return tableDrillRowHtml(cols, head, games, (g) => tableGameLineHtml(g, player));
+}
+
+// Taps on any count in a table: the same tap again closes it.
+function wireTableCounts(content, getOpen, setOpen, redraw){
+  content.querySelectorAll('.merit-count').forEach(btn=>{
+    btn.onclick = ()=>{
+      const key = tableDrillKey(btn.dataset.player, btn.dataset.tier, btn.dataset.kind);
+      setOpen(getOpen() === key ? null : key);
+      redraw();
+    };
+  });
+}
+
 // Order matters here: the league-calculation fields (P/W/L/D/GD/Pts) come
 // first so they're what's visible in an iPhone-width viewport without
 // scrolling; Avg Opp/Form are supporting context, not part of the points
@@ -8092,8 +8251,12 @@ function sortLeagueRows(rows){
   });
 }
 
+// Which League count is open, if any. One at a time, as in Merit.
+let leagueDrill = null;
+
 function buildLeagueTableHtml(rows, showTierColumn){
   const sorted = sortLeagueRows(rows);
+  const cols = showTierColumn ? 11 : 10;
   let html = `<div class="callout-card" style="padding:0; overflow-x:auto;">
     <table style="width:100%; border-collapse:collapse; font-size:11px; white-space:nowrap;">
       <thead><tr style="background:var(--bg2); text-align:left;">`;
@@ -8122,15 +8285,16 @@ function buildLeagueTableHtml(rows, showTierColumn){
       <td style="padding:7px 4px 7px 8px; color:var(--text-dim);">${i+1}</td>
       <td style="padding:7px 4px;"><span class="request-player-link" data-player="${r.name}" style="text-decoration:underline; cursor:pointer; font-weight:700;">${r.name}</span></td>
       ${showTierColumn ? `<td style="padding:7px 4px; text-align:center;"><span class="badge ${r.tier}" style="display:inline-flex; width:20px; height:20px; font-size:10px;">${r.tier}</span></td>` : ''}
-      <td style="padding:7px 4px; text-align:center;">${r.games}</td>
-      <td style="padding:7px 4px; text-align:center; color:var(--green);">${r.wins}</td>
-      <td style="padding:7px 4px; text-align:center; color:var(--red);">${r.losses}</td>
-      <td style="padding:7px 4px; text-align:center; color:var(--text-dim);">${r.draws}</td>
+      <td style="padding:7px 4px; text-align:center;">${tableCountCell(leagueDrill, r.name, r.segmentTier, 'played', r.games, { plain: true })}</td>
+      <td style="padding:7px 4px; text-align:center; color:var(--green);">${tableCountCell(leagueDrill, r.name, r.segmentTier, 'wins', r.wins, { plain: true, colour: 'var(--green)' })}</td>
+      <td style="padding:7px 4px; text-align:center; color:var(--red);">${tableCountCell(leagueDrill, r.name, r.segmentTier, 'losses', r.losses, { plain: true, colour: 'var(--red)' })}</td>
+      <td style="padding:7px 4px; text-align:center; color:var(--text-dim);">${tableCountCell(leagueDrill, r.name, r.segmentTier, 'draws', r.draws, { plain: true, colour: 'var(--text-dim)' })}</td>
       <td style="padding:7px 4px; text-align:center;">${r.gd>=0?'+':''}${r.gd}</td>
       <td style="padding:7px 8px 7px 4px; text-align:right; font-weight:700; color:var(--gold-bright);">${r.points}</td>
       <td class="league-context-col" style="padding:7px 4px; text-align:center;">${r.avg_opp}</td>
       <td style="padding:7px 4px; text-align:center;">${formHtml}</td>
     </tr>`;
+    html += tableCountDrillHtml(leagueDrill, cols, r.name, r.segmentTier, r.matchList);
   });
   html += `</tbody></table></div>`;
   return html;
@@ -8345,6 +8509,7 @@ function renderSummaryLeagueTable(){
 
   content.innerHTML = html;
   wireRequestPlayerLinks(content);
+  wireTableCounts(content, ()=> leagueDrill, (k)=>{ leagueDrill = k; }, renderSummaryLeagueTable);
 
   const setView = (lastTen, grouped)=>{
     // The two tables do not have the same columns, so a sort key picked on one
@@ -8357,6 +8522,7 @@ function renderSummaryLeagueTable(){
     // Arriving at By tier shows the tables. Whatever was collapsed on a
     // previous visit is not a preference worth restoring someone into.
     if(enteringByTier) resetLeagueTierSections();
+    leagueDrill = null;
     renderSummaryLeagueTable();
   };
   document.getElementById('leagueGroupedBtn').onclick = ()=> setView(false, true);
@@ -8423,16 +8589,12 @@ function meritMatches(month){
 // Column labels are deliberately terse. A ninth column on a 375px screen is
 // the difference between a table and a horizontal scroll, and the drill-down
 // underneath says in full what the header cannot.
-function meritDrillKey(row, kind){ return `${row.playerId}\u0000${row.tier || ''}\u0000${kind}`; }
+function meritDrillKey(row, kind){ return tableDrillKey(row.playerId, row.tier, kind); }
 
 function meritCountCell(row, kind){
   const n = kind === 'hard' ? row.hardWins : row.easyWins;
-  if(!n) return `<span style="color:var(--text-dim);">–</span>`;
-  const open = meritDrill === meritDrillKey(row, kind);
-  const colour = kind === 'hard' ? 'var(--green)' : 'var(--text-dim)';
-  return `<button type="button" class="merit-count${open ? ' is-open' : ''}"
-    data-player="${escapeHtml(row.playerId)}" data-tier="${escapeHtml(row.tier || '')}" data-kind="${kind}"
-    style="color:${colour};" aria-expanded="${open}">${n}</button>`;
+  return tableCountCell(meritDrill, row.playerId, row.tier, kind, n,
+    { zero: `<span style="color:var(--text-dim);">–</span>`, colour: kind === 'hard' ? 'var(--green)' : 'var(--text-dim)' });
 }
 
 // One qualifying match, said plainly enough that a reader can check the
@@ -8476,24 +8638,26 @@ function buildMeritTableHtml(rows, showTierColumn){
       <td style="padding:7px 2px 7px 7px; color:var(--text-dim);">${i+1}</td>
       <td style="padding:7px 2px;"><span class="request-player-link" data-player="${escapeHtml(r.playerId)}" style="text-decoration:underline; cursor:pointer; font-weight:700;">${escapeHtml(r.playerId)}</span></td>
       ${showTierColumn ? `<td style="padding:7px 2px; text-align:center;"><span class="badge ${r.tier}" style="display:inline-flex; width:20px; height:20px; font-size:10px;">${r.tier}</span></td>` : ''}
-      <td style="padding:7px 2px; text-align:center;">${r.played}</td>
-      <td style="padding:7px 2px; text-align:center; color:var(--green);">${r.wins}</td>
-      <td style="padding:7px 2px; text-align:center; color:var(--text-dim);">${r.draws}</td>
-      <td style="padding:7px 2px; text-align:center; color:var(--red);">${r.losses}</td>
+      <td style="padding:7px 2px; text-align:center;">${tableCountCell(meritDrill, r.playerId, r.tier, 'played', r.played, { plain: true })}</td>
+      <td style="padding:7px 2px; text-align:center; color:var(--green);">${tableCountCell(meritDrill, r.playerId, r.tier, 'wins', r.wins, { plain: true, colour: 'var(--green)' })}</td>
+      <td style="padding:7px 2px; text-align:center; color:var(--text-dim);">${tableCountCell(meritDrill, r.playerId, r.tier, 'draws', r.draws, { plain: true, colour: 'var(--text-dim)' })}</td>
+      <td style="padding:7px 2px; text-align:center; color:var(--red);">${tableCountCell(meritDrill, r.playerId, r.tier, 'losses', r.losses, { plain: true, colour: 'var(--red)' })}</td>
       <td style="padding:7px 3px; text-align:right; font-weight:700; color:var(--gold-bright);">${r.merit}</td>
       <td style="padding:7px 2px; text-align:center;">${meritCountCell(r, 'hard')}</td>
       <td style="padding:7px 7px 7px 2px; text-align:center;">${meritCountCell(r, 'favoured')}</td>
     </tr>`;
+    // Hard and Fav keep their own wording and lines; P/W/D/L use the plain
+    // game line. All of them are the same detail row.
     ['hard','favoured'].forEach(kind=>{
       if(meritDrill !== meritDrillKey(r, kind)) return;
       const list = kind === 'hard' ? r.hard : r.favoured;
-      html += `<tr class="merit-drill"><td colspan="${cols}" style="padding:0;">
-        <div class="merit-drill-body">
-          <div class="merit-drill-head">${escapeHtml(r.playerId)} · ${list.length} ${kind === 'hard' ? 'win' : 'win'}${list.length===1?'':'s'} against a ${kind === 'hard' ? 'stronger' : 'weaker'} pairing</div>
-          ${list.slice().sort((a,b)=> a.date < b.date ? 1 : -1).map(d=>meritDrillRowHtml(d, r.playerId)).join('')}
-        </div>
-      </td></tr>`;
+      html += tableDrillRowHtml(cols,
+        `${escapeHtml(r.playerId)} · ${list.length} win${list.length===1?'':'s'} against a ${kind === 'hard' ? 'stronger' : 'weaker'} pairing`,
+        list, (d)=> meritDrillRowHtml(d, r.playerId),
+        // Hard / Fav keep the order they have always listed in.
+        (a,b)=> a.date < b.date ? 1 : -1);
     });
+    html += tableCountDrillHtml(meritDrill, cols, r.playerId, r.tier, r.games);
   });
   html += `</tbody></table></div>`;
   return html;
@@ -8550,8 +8714,8 @@ function renderMeritTable(){
   content.innerHTML = html;
   wireRequestPlayerLinks(content);
 
-  document.getElementById('meritGroupedBtn').onclick = ()=>{ leagueGrouped = true; resetMeritTierSections(); renderMeritTable(); };
-  document.getElementById('meritAllBtn').onclick = ()=>{ leagueGrouped = false; renderMeritTable(); };
+  document.getElementById('meritGroupedBtn').onclick = ()=>{ leagueGrouped = true; meritDrill = null; resetMeritTierSections(); renderMeritTable(); };
+  document.getElementById('meritAllBtn').onclick = ()=>{ leagueGrouped = false; meritDrill = null; renderMeritTable(); };
   const ex = document.getElementById('meritExplainerToggle');
   if(ex) ex.onclick = ()=>{ meritExplainerOpen = !meritExplainerOpen; renderMeritTable(); };
   content.querySelectorAll('.lg-tier-head').forEach(btn=>{
@@ -8562,15 +8726,9 @@ function renderMeritTable(){
       renderMeritTable();
     };
   });
-  // Tapping a Hard or Favoured count opens the matches behind it; tapping the
-  // same one again closes it.
-  content.querySelectorAll('.merit-count').forEach(btn=>{
-    btn.onclick = ()=>{
-      const key = `${btn.dataset.player}\u0000${btn.dataset.tier}\u0000${btn.dataset.kind}`;
-      meritDrill = (meritDrill === key) ? null : key;
-      renderMeritTable();
-    };
-  });
+  // Tapping any count -- P, W, D, L, Hard or Fav -- opens the matches behind
+  // it; tapping the same one again closes it.
+  wireTableCounts(content, ()=> meritDrill, (k)=>{ meritDrill = k; }, renderMeritTable);
 }
 
 // ===================== MONTHLY RACE (Best Month) — trial =====================
@@ -8847,7 +9005,8 @@ function populateSummaryMonthSelect(){
   const months = getAvailableMonths();
   sel.innerHTML = `<option value="all">All time</option>` + months.map(m=>`<option value="${m}" ${m===summaryMonth?'selected':''}>${monthLabel(m)}</option>`).join('');
   sel.value = summaryMonth;
-  sel.onchange = (e)=>{ summaryMonthChoice = e.target.value; summaryMonth = e.target.value; renderSummary(); };
+  // A different month is a different set of games: close any open count.
+  sel.onchange = (e)=>{ summaryMonthChoice = e.target.value; summaryMonth = e.target.value; leagueDrill = null; meritDrill = null; renderSummary(); };
 }
 
 function buildWhatsAppSummaryText(month, stats, groups){
