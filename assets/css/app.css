@@ -1639,6 +1639,23 @@ body { padding-bottom: calc(var(--shell-nav-height) + var(--shell-safe-bottom));
 .doughnut-game-teams{ font-family: var(--font-interface); font-size: 11.5px; color: var(--text); }
 .doughnut-game-score{ font-family: var(--font-interface); font-size: 11px; color: var(--text-dim); }
 .doughnut-game-score b{ color: var(--gold-bright); }
+/* Doughnut List: each doughnut as a result, newest first. */
+.doughnut-controls{ margin-bottom: 4px; }
+.doughnut-list{ display: grid; gap: 6px; }
+.doughnut-list-count{ font-size: 11px; margin: 0 0 6px; }
+.doughnut-result{
+  display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; align-items: center; width: 100%;
+  min-height: 48px; padding: 8px 10px; text-align: left; cursor: pointer;
+  background: var(--surface-1); border: 1px solid var(--surface-border-soft); border-radius: var(--radius-sm);
+  color: var(--text); font-family: var(--font-interface);
+}
+.doughnut-result:active{ opacity: .7; }
+.doughnut-result-date{ font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+.doughnut-result-line{ font-size: 12.5px; line-height: 1.4; min-width: 0; overflow-wrap: anywhere; }
+.doughnut-result-score{ color: var(--text-dim); white-space: nowrap; }
+.doughnut-result-score .doughnut-set{ color: var(--gold-bright); }
+.doughnut-result-draw{ color: var(--text-dim); font-size: 11px; }
+.doughnut-empty{ padding: 18px 4px; text-align: center; color: var(--text-dim); font-family: var(--font-interface); font-size: 13px; }
 
 /* Monthly Rating Breakdown -- the shared "why is this rating what it is"
    screen opened from Kings of Tiers, the podium, and the full ranking list.

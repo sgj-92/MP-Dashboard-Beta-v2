@@ -328,6 +328,43 @@ function buildShellDom(){
   // each time it's opened, since (unlike the static About text) this data
   // changes as new matches are added.
   let doughnutSortMode = 'total'; // 'total' | 'given' | 'received'
+  // By Player or the Doughnut List -- two views of one month's doughnuts. The
+  // month is shared, so switching view never changes the period.
+  let doughnutView = 'player';    // 'player' | 'list'
+  // The same month rule as Rankings and League: a reader's choice is kept;
+  // otherwise the Meaningful Month, pinned when the sheet is opened.
+  let doughnutMonth = null, doughnutMonthChoice = null, doughnutMonthDefault = null;
+  function arriveAtDoughnuts(){
+    if(doughnutMonthChoice !== null && (doughnutMonthChoice === 'all' || getAvailableMonths().includes(doughnutMonthChoice))){
+      doughnutMonth = doughnutMonthChoice;
+      return;
+    }
+    doughnutMonthChoice = null;
+    doughnutMonthDefault = meaningfulMonthNow();
+    doughnutMonth = doughnutMonthDefault.month;
+  }
+  function chooseDoughnutMonth(m){ doughnutMonthChoice = m; doughnutMonth = m; renderDoughnutBody(); }
+
+  // "28 Sep" -- the list's date, the club's short form.
+  function doughnutDay(iso){
+    const [y, mo, d] = String(iso).split('-').map(Number);
+    return `${d} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo - 1]}`;
+  }
+
+  // One doughnut as a result: winners on the left (the card convention),
+  // the score between the sides with the shutout set picked out, and a draw
+  // said as a draw. Tapping it opens the game where every result opens: its
+  // card in Play › Games.
+  function doughnutListRowHtml(m){
+    const team = (names) => names.map(n => escapeHtml(n)).join(' &amp; ');
+    const score = m.sets.map(([x,y])=> m.shutoutSets.includes(`${x}-${y}`)
+      ? `<b class="doughnut-set">${x}–${y}</b>` : `${x}–${y}`).join(', ');
+    return `<button type="button" class="doughnut-result" data-match-id="${escapeHtml(m.id)}">
+      <span class="doughnut-result-date">${doughnutDay(m.date)}</span>
+      <span class="doughnut-result-line">${m.isDraw ? team(m.winners) : `<b>${team(m.winners)}</b>`} <span class="doughnut-result-score">${score}</span> ${team(m.losers)}${m.isDraw ? ' <span class="doughnut-result-draw">· Drawn</span>' : ''}</span>
+      <span class="doughnut-chev">›</span>
+    </button>`;
+  }
 
   // A doughnut can be handed out in a match nobody won: the list deliberately
   // includes draws (see computeDoughnutStats), and six of them are in the
@@ -344,14 +381,58 @@ function buildShellDom(){
   }
 
   function renderDoughnutBody(){
-    const stats = computeDoughnutStats();
-    const sorted = stats.slice().sort((a,b)=> b[doughnutSortMode] - a[doughnutSortMode]);
+    if(!doughnutMonth) arriveAtDoughnuts();
+    const month = doughnutMonth;
     const body = document.getElementById('doughnutModalBody');
-    if(sorted.length === 0){
-      body.innerHTML = `<div class="section-sub">No shutout sets yet this season.</div>`;
+    const months = getAvailableMonths();
+    // Month and view first, always: an empty month still offers the way out.
+    const controls = `
+      <div class="fg-controls lg-controls doughnut-controls">
+        <div class="fg-row"><label class="fg-label" for="doughnutMonthSelect">Month</label>
+          <select id="doughnutMonthSelect" class="fg-select">
+            <option value="all"${month === 'all' ? ' selected' : ''}>All time</option>
+            ${months.map(m => `<option value="${m}"${m === month ? ' selected' : ''}>${monthLabel(m)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      ${meaningfulMonthNoteHtml(doughnutMonthDefault, month, 'doughnutMonth')}
+      <div class="fg-toggle doughnut-view-toggle" style="margin:8px 0 12px;">
+        <button class="fg-toggle-btn ${doughnutView === 'player' ? 'active' : ''}" id="doughnutViewPlayer" aria-pressed="${doughnutView === 'player'}">By Player</button>
+        <button class="fg-toggle-btn ${doughnutView === 'list' ? 'active' : ''}" id="doughnutViewList" aria-pressed="${doughnutView === 'list'}">Doughnut List</button>
+      </div>`;
+    const wireControls = ()=>{
+      const sel = document.getElementById('doughnutMonthSelect');
+      if(sel) sel.onchange = (e)=> chooseDoughnutMonth(e.target.value);
+      wireMeaningfulMonthNote('doughnutMonth', chooseDoughnutMonth);
+      document.getElementById('doughnutViewPlayer').onclick = ()=>{ doughnutView = 'player'; renderDoughnutBody(); };
+      document.getElementById('doughnutViewList').onclick = ()=>{ doughnutView = 'list'; renderDoughnutBody(); };
+    };
+    const empty = `<div class="doughnut-empty">${month === 'all' ? 'No doughnuts yet.' : `No doughnuts in ${monthLabel(month)}.`} 🍩</div>`;
+
+    if(doughnutView === 'list'){
+      const list = doughnutMatches(month);
+      body.innerHTML = controls + (list.length
+        ? `<div class="doughnut-list-count section-sub">${list.length} doughnut${list.length === 1 ? '' : 's'} · newest first</div>
+           <div class="doughnut-list">${list.map(doughnutListRowHtml).join('')}</div>`
+        : empty);
+      wireControls();
+      body.querySelectorAll('.doughnut-result').forEach(btn=>{
+        btn.onclick = ()=>{
+          document.getElementById('doughnutModal').classList.remove('show');
+          openMatchInGames(btn.dataset.matchId);
+        };
+      });
       return;
     }
-    body.innerHTML = `
+
+    const stats = computeDoughnutStats(month);
+    const sorted = stats.slice().sort((a,b)=> b[doughnutSortMode] - a[doughnutSortMode]);
+    if(sorted.length === 0){
+      body.innerHTML = controls + empty;
+      wireControls();
+      return;
+    }
+    body.innerHTML = controls + `
       <div class="doughnut-sort-row">
         <button class="doughnut-sort-btn ${doughnutSortMode==='total'?'active':''}" data-sort="total">Total</button>
         <button class="doughnut-sort-btn ${doughnutSortMode==='given'?'active':''}" data-sort="given">Most Given</button>
@@ -372,6 +453,7 @@ function buildShellDom(){
       </div>
     `).join('');
 
+    wireControls();
     body.querySelectorAll('.doughnut-sort-btn').forEach(btn=>{
       btn.onclick = ()=>{ doughnutSortMode = btn.dataset.sort; renderDoughnutBody(); };
     });
@@ -393,12 +475,14 @@ function buildShellDom(){
       modal.id = 'doughnutModal';
       modal.innerHTML = `<div class="shell-more-panel">
         <h3>Doughnuts</h3>
-        <div class="section-sub" style="font-size:11.5px; margin-bottom:12px;">Every 6-0 (or similar shutout set), all time -- given and received. Tap a player to see the games.</div>
+        <div class="section-sub" style="font-size:11.5px; margin-bottom:12px;">Every 6-0 (or similar shutout set) -- given and received. By Player totals them; the Doughnut List shows each one. Tap a player or a result to see the games.</div>
         <div id="doughnutModalBody"></div>
       </div>`;
       document.body.appendChild(modal);
       modal.addEventListener('click', (e)=>{ if(e.target === modal) modal.classList.remove('show'); });
     }
+    // Arriving: the reader's month if they chose one, else the Meaningful Month.
+    arriveAtDoughnuts();
     renderDoughnutBody();
     modal.classList.add('show');
   }
@@ -1614,13 +1698,14 @@ function computeClubPulse(){
 // already used in the monthly Summary (a set lost 0-x) with its natural
 // missing other half, "doughnuts given" -- same underlying match data and
 // the same per-set shutout check, just crediting the opposite side too.
-function computeDoughnutStats(){
-  const agg = {};
-  function A(name){
-    if(!agg[name]) agg[name] = { given: 0, received: 0, givenMatches: [], receivedMatches: [] };
-    return agg[name];
-  }
+// THE doughnut definition, once: every match -- decided or drawn -- with at
+// least one set that finished with a side on 0, and in which direction. Both
+// Doughnuts views read it: By Player aggregates it, the Doughnut List shows it
+// as it is. `month` is 'YYYY-MM' or 'all'.
+function doughnutMatches(month){
+  const out = [];
   function processMatch(m){
+    if(month && month !== 'all' && m.date.slice(0,7) !== month) return;
     // Which shutout sets exist, and in which direction, within this one match --
     // deduped so a match with two 6-0 sets the same way still counts once per
     // player per category (same total-count logic as before, just also keeping
@@ -1634,8 +1719,26 @@ function computeDoughnutStats(){
     if(!winnersGaveShutout && !losersGaveShutout) return;
     // isDraw travels with the match. Without it the drill-down had no way to
     // know, and described every drawn game as a win for one side.
-    const matchInfo = { date: m.date, winners: m.winners, losers: m.losers,
-      isDraw: !!m.isDraw, sets: m.sets, shutoutSets };
+    out.push({ id: m.id, date: m.date, winners: m.winners, losers: m.losers,
+      isDraw: !!m.isDraw, sets: m.sets, shutoutSets, winnersGaveShutout, losersGaveShutout });
+  }
+  ALL_MATCHES.forEach(processMatch);
+  getAllApprovedMatches().filter(m=>m.isDraw).forEach(processMatch);
+  // Newest first; the same day's games by their id, the later-recorded first,
+  // so the order never depends on how storage happened to return them.
+  return out.sort((a,b)=> a.date !== b.date ? (a.date < b.date ? 1 : -1)
+    : String(b.id).localeCompare(String(a.id), undefined, { numeric: true }));
+}
+
+function computeDoughnutStats(month){
+  const agg = {};
+  function A(name){
+    if(!agg[name]) agg[name] = { given: 0, received: 0, givenMatches: [], receivedMatches: [] };
+    return agg[name];
+  }
+  doughnutMatches(month || 'all').forEach((matchInfo)=>{
+    const m = matchInfo;
+    const { winnersGaveShutout, losersGaveShutout } = matchInfo;
     if(winnersGaveShutout){
       m.losers.forEach(n=>{ A(n).received++; A(n).receivedMatches.push(matchInfo); });
       m.winners.forEach(n=>{ A(n).given++; A(n).givenMatches.push(matchInfo); });
@@ -1644,9 +1747,7 @@ function computeDoughnutStats(){
       m.winners.forEach(n=>{ A(n).received++; A(n).receivedMatches.push(matchInfo); });
       m.losers.forEach(n=>{ A(n).given++; A(n).givenMatches.push(matchInfo); });
     }
-  }
-  ALL_MATCHES.forEach(processMatch);
-  getAllApprovedMatches().filter(m=>m.isDraw).forEach(processMatch);
+  });
 
   return Object.keys(agg)
     .map(name => ({

@@ -113,6 +113,9 @@ maybe('the Doughnut drill-down says a drawn game was drawn', async () => {
       goToSection('more');
       const item = [...document.querySelectorAll('[data-special]')].find((b) => b.dataset.special === 'doughnuts');
       item.click();
+      // The sheet opens on a month now; this game is found across all time.
+      const sel = document.getElementById('doughnutMonthSelect');
+      sel.value = 'all'; sel.dispatchEvent(new Event('change'));
       const body = document.getElementById('doughnutModalBody');
       body.querySelectorAll('.doughnut-row').forEach((x) => x.click());
       const teams = [...body.querySelectorAll('.doughnut-game-teams')].map((x) => x.textContent.trim());
