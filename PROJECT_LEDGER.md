@@ -60,8 +60,8 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Branch | `main` |
-| Last verified implementation commit | **`9cca86c`** |
-| Tests | **710 / 710 passing** (227 of them drive a real browser) |
+| Last verified implementation commit | **`e4408ff`** |
+| Tests | **717 / 717 passing** (234 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -148,6 +148,13 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**D7 Doughnuts: Doughnut List and Month — DONE (`e4408ff`).** Shaun, 28 Sep.
+- **By Player** is unchanged.
+- **Doughnut List** is new: each doughnut as a result, newest first. Tapping
+  one opens the game in Play › Games.
+- **One Month control** serves both views. It opens on the Meaningful Month,
+  as Rankings and League do.
 
 **Audit fixes D4, D5, D6 — DONE (`9cca86c`).** Shaun, 28 Sep.
 - **D4.** Find a Game stays for players; its predictions (a predicted win %
@@ -830,6 +837,25 @@ Merit `games`, each game with its result for that player.
   changing month or view closes it. Hard and Fav keep their own wording and
   order.
 
+**Doughnuts (28 Sep, D7, `e4408ff`).**
+- **One definition.** `doughnutMatches(month)` (`shell.js`) is the one
+  doughnut definition: every rated match, decided or drawn, with a set that
+  finished with a side on 0, and in which direction. It is the existing rule,
+  lifted out of `computeDoughnutStats` unchanged.
+- **Two views of it.** By Player (`computeDoughnutStats(month)`, the
+  leaderboard, unchanged) aggregates it. The Doughnut List shows it as it is.
+- **List order:** date descending, then the same day's games by id,
+  later-recorded first.
+- **A list row:** "27 Sep · **Len & Tom** 5–7, 6–0, 6–1 Rocky & MK".
+  Winners first and bold, the shutout set in gold, a draw marked "Drawn".
+  Tapping it opens the game through `openMatchInGames` (Play › Games), the
+  same result detail Home's Last Time Out uses.
+- **The month** is shared by both views. It follows the Rankings/League rule
+  (`arriveAtDoughnuts`): the Meaningful Month on opening, a reader's
+  explicit choice kept, and the "taking shape" note. "All time" is still
+  available.
+- **Empty month:** "No doughnuts in <Month>. 🍩" in either view.
+
 **Storage:** `matches/{matchId}` · `ratingJourney/{eventId}` · `players/{playerId}`.
 Normal current-state rendering reads `players`; historical views use targeted
 `ratingJourney` reads, with only the session-cached Ranking Movement exception
@@ -924,6 +950,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | D4 — Find a Game for players; predictions Admin-only everywhere | **DONE `9cca86c`.** Shaun, 28 Sep 2026. Find a Game stays in player navigation: it has not launched to the wider group, so low use is not evidence against it. Player-facing Find a Game recommends matchups but **never shows calculated win percentages or probabilities**; Admins keep the prediction layer. No route may leak a prediction a screen hides (Home, fixture cards, anything using the prediction engine). The visibility system must be authoritative wherever content is surfaced, fixed properly rather than patched for Find a Game. The prediction methodology is unchanged. |
 | D5 — one canonical Tier Rank | **DONE `9cca86c`.** Shaun, 28 Sep 2026. **Tier Rank = the player's position in the current Power Rankings among players in their current tier, using exactly the Power Rankings page's ranking and eligibility rules.** There is one source, and every display labelled Tier Rank consumes it. Other rankings (Monthly Race, League, Merit, W/L, overall Power Rank) may differ but must be labelled as what they are. The Power Rankings definition is authoritative; eligibility and methodology are not changed to make numbers agree. |
 | D6 — P / W / D / L open their games | **DONE `9cca86c`.** Shaun, 28 Sep 2026. In both the Merit and League tables, each player's P, W, D and L open the games behind them, like Hard and Fav. The detail says which player, which count and which month/table context. **"If the cell says 2, its drill-down explains exactly those 2 games,"** under the table's own filtering (month, By tier / All together, mid-month tier changes, split-month, history). Hard and Fav are unchanged, one drill-down component is shared, and mobile fit is kept. |
+| D7 — Doughnuts: By Player and a Doughnut List, with a Month | **DONE `e4408ff`.** Shaun, 28 Sep 2026. Keep the player-based view and add a list of the doughnut results themselves, with an obvious By Player / Doughnut List switch. Each row reads like "28 Sep · Shaun & PDM 6–0, 6–3 Rishi & Erf" in the app's result conventions. The list uses the **existing doughnut definition and data**, with no new definition. Tapping a result uses the existing result detail. A **Month** selector (historical months included) applies to both views and survives switching between them, defaulting by the app's existing month convention. The list is newest first with a deterministic same-day order, and an empty month gets a deliberate empty state. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -1897,7 +1924,14 @@ following as one coherent UI refactor, with no data/model changes:
 - **The tier average is separate.** "N pts below tier average" still uses
   the average of all tier members: it is not a rank.
 
-**5. Noticed, not changed.**
+**5. D7: the Doughnuts month list includes months with no doughnuts to count.**
+With Data Range set to "all", the month list includes April and May 2026,
+the display-only history. Those months say "No doughnuts in April 2026",
+because that history never enters any count and doughnuts included (the
+existing definition). If Shaun wants the old April/May shutouts shown, that
+is a decision to count display-only history, not a doughnut change.
+
+**6. Noticed, not changed.**
 - **Merit name wrap:** at 375px the Merit table wraps a name such as
   "Manny" onto two lines, because every column is an equal width. It
   measured the same (38px) before this change. A Phase 2 candidate.
@@ -2411,6 +2445,35 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 28 Sep 2026 (D7 Doughnuts: list and month)
+
+`e4408ff`. **717/717 tests pass** (7 new, `tests/doughnuts.test.js`).
+- **Tested against the previous code:** 6 of the 7 fail there. The seventh
+  is the invariant that the definition and every total are unchanged: it
+  re-runs the pre-D7 rule inline and compares.
+- **Existing test updated:** the draw-wording test (`drawOutcome`) now picks
+  All time, because the sheet opens on a month.
+- **How:** the existing rule was lifted into `doughnutMatches(month)` and
+  both views read it. By Player's totals are therefore identical to before,
+  and the list can't disagree with them.
+- **Tests cover:**
+  - each month, All time included, against an independent scan of the
+    record;
+  - the month kept across views, and across closing and reopening;
+  - a historical month;
+  - newest-first, including a same-day tie;
+  - each row against its match;
+  - a tap landing on the game's expanded card in Games;
+  - the empty state in both views.
+- **Checked visually at 375px on the live record:** September's 5
+  doughnuts, including a drawn one, and By Player. No overflow, no writes,
+  no errors.
+
+**Baton → Shaun / CGPT.**
+- Section 5 (item 5) has one small note on April/May.
+- Phase 2 is not started.
+- Nothing is queued for CCode.
 
 ### CCode — 28 Sep 2026 (audit fixes D4, D5, D6)
 
@@ -6019,6 +6082,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `e4408ff` | D7 Doughnuts. `doughnutMatches(month)` is the one existing definition, lifted out unchanged. It adds a Doughnut List (newest first, ties by id, winners first, shutout set picked out, draws marked, tap opens the game in Play › Games) beside the unchanged By Player leaderboard, plus a Month control shared by both views (Meaningful Month default, choice kept) and an empty state. The draw-wording test now selects All time. 7 tests (6 fail against the previous code; one is the unchanged-definition invariant); 717/717. |
 | `9cca86c` | Audit fixes. **D4:** `canSeePredictions()` gates every predicted split and favourite call (Find a Game cards, Home Match to Make, Challenge ready card); `TAB_VISIBILITY_KEY` / `canSeeTab()` make the visibility settings govern the tab guard, shell sub-navigation and landing, More, and Home/profile shortcuts; Find a Game defaults to Visible. **D5:** `tierRankOf()` is the one Tier Rank, read by header, Player Analysis, full analysis and Home; the all-members calculation is removed. **D6:** League and Merit rows carry the games behind P/W/D/L, and one shared drill-down serves P/W/D/L/Hard/Fav. 13 tests (12 fail against the previous code); 710/710. |
 | `b12e837` | Fixture follow-up 2: For me / My Requests / Other requests (newest first; one list per request). `fixtureParse.js` plus an "Add multiple games" review: names are never guessed, problems are named, active duplicates are warned about, and one "Create N requests" writes them with a batch id. 14-day Called Out archive derived from `activeSince`, with no write; `calledOutAt` is preserved. Archive/Restore in Manage fixture. Explicit orders for every list. The D1–D3 tests pin their clock. 25 tests (the 19 on changed code all fail against it); 697/697. |
 | `0766d7b` | Fixture follow-up. Called Out vs Upcoming, split by an explicit Admin-set `courtBookingMade`. The Upcoming tab has Needs attention / Upcoming / Called Out sections, each collapsible, with "Called out Nd ago". Backing out (by the player or recorded by an Admin) goes to Needs attention with the booking kept. Admin replacement on the same fixture, where the newcomer starts unconfirmed and `formerPlayers` keeps provenance. Manage fixture edits players, sides, answers, date, time, venue and booking, and holds Remove. Legacy fixtures are not classified as booked; an Admin-only review list covers them. Admin-added games ask for the booking. 22 tests, all failing against the previous code; 672/672. |
@@ -6265,6 +6329,7 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
    **28 Sep: D4 and D5 DONE (`9cca86c`)** with D6 (P/W/D/L drill-downs), per
    Shaun's decisions in Section 3. All five audit defects are now closed.
+   **D7 (Doughnuts list and month) DONE (`e4408ff`).**
    **Phase 2 (the wider IA and redesign) is not started.** Baton with Shaun /
    CGPT.
 
