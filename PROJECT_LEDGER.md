@@ -149,6 +149,18 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Design mockups filed: `docs/design/claude-mobile-v1/` (28 Sep).** At
+Shaun's request, three Claude design canvas files were added as reference
+material for Phase 2. They are not built and not approved as a spec.
+- `Money_Padel_App.dc.html`: the player-app design exploration. It covers
+  the five-tab IA, Home heroes, Rankings, Play lifecycle, Me, Players,
+  Doughnuts, and Admin › Manage fixture.
+- `MPTabBar.dc.html` and `MPStatusBar.dc.html`: the components it imports.
+- **Caveats:** its sample numbers and assumptions (tier boundaries, Merit
+  scoring, venues) are illustrative, not the club's rules. The files need
+  their design tool's `support.js` / `image-slot.js`, so they will not
+  render as normal web pages.
+
 **D7 Doughnuts: Doughnut List and Month — DONE (`e4408ff`).** Shaun, 28 Sep.
 - **By Player** is unchanged.
 - **Doughnut List** is new: each doughnut as a result, newest first. Tapping

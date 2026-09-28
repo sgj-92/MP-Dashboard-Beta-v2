@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<script src="./image-slot.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E6E2D8;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#1a1916}
+a{color:#8a6d2c}a:hover{color:#5c4818}
+*::-webkit-scrollbar{display:none}
+.dv-turn{padding:64px 64px 40px}
+.dv-thd{display:flex;align-items:baseline;gap:12px;margin:0 0 40px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1916;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:400 52px/1 'Instrument Serif',serif;color:#1a1916}
+.dv-group{margin:0 0 88px}
+.dv-gh{font:400 38px/1 'Instrument Serif',serif;color:#1a1916;margin:0 0 10px}
+.dv-gsub{font:14px/1.55 Inter,sans-serif;color:rgba(26,25,22,.62);max-width:820px;margin:0 0 32px;text-wrap:pretty}
+.dv-opts{display:flex;flex-wrap:wrap;gap:56px 48px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:16px;width:412px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1916;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:600 13px/1.3 Inter,sans-serif;color:#1a1916;padding-left:11px}
+.dv-opt:target .dv-oid{background:#8a6d2c;color:#fff}
+.dv-note{font:13px/1.5 Inter,sans-serif;color:rgba(26,25,22,.62);max-width:392px;margin:0;padding-left:11px;text-wrap:pretty}
+.dv-next{margin:0;font:13px/1.5 Inter,sans-serif;color:rgba(26,25,22,.55)}
+</style>
+</helmet>
+<section class="dv-turn" id="t3" style="border-bottom:1px solid rgba(26,25,22,.1)">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Hero with club imagery</span></div>
+<p class="dv-gsub">A photo sits behind the Power Rating, darkened and slightly desaturated so the number stays readable. Faint court lines are layered on top so the hero looks like padel even before a photo is added. <b>Drag your own photos onto the slots</b> — a court from above at dusk, a racket on the glass, your club's venue. Real club photos will look far better than stock.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="3a">
+<div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Court photo · scoreboard</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<div style="position:absolute;left:0;right:0;top:0;height:400px;overflow:hidden;background:#15140F">
+<div style="position:absolute;inset:0;opacity:.55;filter:saturate(.55) contrast(1.05)"><image-slot id="mp-hero-court" shape="rect" placeholder="Drop a court photo (overhead or at night)"></image-slot></div>
+<div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(10,10,9,.55) 0%,rgba(10,10,9,.15) 35%,rgba(10,10,9,.55) 70%,#0A0A09 100%)"></div>
+<svg width="390" height="400" viewBox="0 0 390 400" fill="none" style="position:absolute;inset:0;pointer-events:none;opacity:.14"><rect x="46" y="-40" width="298" height="520" stroke="#F2EEE5" stroke-width="1.5"></rect><line x1="46" y1="210" x2="344" y2="210" stroke="#F2EEE5" stroke-width="2"></line><line x1="46" y1="100" x2="344" y2="100" stroke="#F2EEE5" stroke-width="1"></line><line x1="46" y1="320" x2="344" y2="320" stroke="#F2EEE5" stroke-width="1"></line><line x1="195" y1="100" x2="195" y2="320" stroke="#F2EEE5" stroke-width="1"></line></svg>
+</div>
+<div style="position:relative;pointer-events:none"><dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import></div>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none;pointer-events:none">
+<div style="position:relative;padding:8px 24px 0;height:340px;box-sizing:border-box;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10.5px;font-weight:600;letter-spacing:.24em;color:#D5B76E">MONEY PADEL</span><span style="font-size:14px;color:#D8D3C8">Evening, <span style="color:#F2EEE5">Shaun</span></span></div><span style="width:36px;height:36px;border-radius:50%;background:rgba(26,25,21,.7);border:1px solid rgba(213,183,110,.35);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:17px;color:#D5B76E">S</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+<div style="font-size:11px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#F0D58E">Power Rating</div>
+<div style="font-family:'Instrument Serif',serif;font-size:112px;line-height:.95;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums;text-shadow:0 4px 30px rgba(0,0,0,.6)">1,642</div>
+<div style="display:flex;align-items:center;gap:14px;margin-top:10px;font-size:14px;padding:6px 14px;border-radius:16px;background:rgba(10,10,9,.55)"><span style="color:#8FB996">▲ 12 this week</span><span style="width:1px;height:14px;background:rgba(242,238,229,.2)"></span><span><span style="color:#F2EEE5;font-weight:600">#3</span> <span style="color:#D8D3C8">in Tier 2</span></span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;padding-bottom:18px">
+<div style="position:relative;height:3px;border-radius:2px;background:rgba(242,238,229,.14)"><div style="width:42%;height:100%;border-radius:2px;background:#D5B76E"></div><span style="position:absolute;left:42%;top:-4px;width:11px;height:11px;margin-left:-5px;border-radius:50%;background:#F0D58E;box-shadow:0 0 0 4px rgba(240,213,142,.18)"></span></div>
+<div style="display:flex;justify-content:space-between;font-size:11.5px;color:#969188"><span>Tier 2 · 1,600</span><span style="color:#D8D3C8">58 to Tier 1</span><span>1,700</span></div>
+</div>
+</div>
+<div style="padding:18px 20px 120px;display:flex;flex-direction:column;gap:22px;background:#0A0A09;pointer-events:auto">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Needs you</span><span style="min-width:18px;height:18px;border-radius:9px;background:#D5B76E;color:#0A0A09;font-size:11px;font-weight:600;display:grid;place-items:center">2</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.28);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center"><div><div style="font-size:15px;font-weight:500">Rishi &amp; Erf <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> You &amp; KC</div><div style="font-size:12.5px;color:#969188;margin-top:2px">Rishi wants a game · 2h ago</div></div><span style="height:38px;padding:0 18px;border-radius:19px;background:#D5B76E;color:#0A0A09;font-size:14px;font-weight:600;display:flex;align-items:center">I'm in</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Next game</span><span style="font-size:12.5px;color:#969188">In 2 days</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:center"><div style="text-align:center;border-right:1px solid rgba(242,238,229,.07);padding-right:14px"><div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:#D5B76E">TUE</div><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1">30</div></div><div><div style="font-size:15.5px;font-weight:500">You &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Rishi &amp; Erf</div><div style="font-size:13px;color:#969188;margin-top:3px">8:00pm · PadelX Canary Wharf</div></div></div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="home" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">A full-bleed court photo that fades into the page. The court lines echo the photo, so the look stays consistent whatever image goes in. Best with an overhead or night shot of an empty court.</p>
+</div>
+
+<div class="dv-opt" id="3b">
+<div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Racket close-up · compact card</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;color:#969188">Sunday 28 September</div><div style="font-family:'Instrument Serif',serif;font-size:28px;line-height:1.1">Evening, Shaun</div></div><span style="width:40px;height:40px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:19px;color:#D5B76E">S</span></div>
+<div style="position:relative;height:236px;border-radius:22px;overflow:hidden;border:1px solid rgba(213,183,110,.22);background:#15140F">
+<div style="position:absolute;inset:0;opacity:.6;filter:saturate(.5)"><image-slot id="mp-hero-racket" shape="rect" placeholder="Drop a racket / ball close-up"></image-slot></div>
+<div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(10,10,9,.92) 0%,rgba(10,10,9,.7) 48%,rgba(10,10,9,.15) 100%)"></div>
+<div style="position:absolute;inset:0;padding:20px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none">
+<div style="font-size:10.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#D5B76E">Power Rating</div>
+<div><div style="font-family:'Instrument Serif',serif;font-size:80px;line-height:.9;font-variant-numeric:tabular-nums">1,642</div><div style="font-size:13px;color:#8FB996;margin-top:6px">▲ 12 this week · 4 wins in a row</div></div>
+<div style="display:flex;gap:18px;align-items:flex-end">
+<div><div style="font-size:11px;color:#969188">Tier Rank</div><div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1.1">#3 <span style="font-family:Inter,sans-serif;font-size:12px;color:#D8D3C8">in Tier 2</span></div></div>
+<div style="flex:1;max-width:120px;padding-bottom:7px"><div style="height:3px;border-radius:2px;background:rgba(242,238,229,.14)"><div style="width:42%;height:100%;border-radius:2px;background:#D5B76E"></div></div><div style="font-size:11px;color:#969188;margin-top:5px">58 to Tier 1</div></div>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Needs you</span><span style="min-width:18px;height:18px;border-radius:9px;background:#D5B76E;color:#0A0A09;font-size:11px;font-weight:600;display:grid;place-items:center">2</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.28);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center"><div><div style="font-size:15px;font-weight:500">Rishi &amp; Erf <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> You &amp; KC</div><div style="font-size:12.5px;color:#969188;margin-top:2px">Rishi wants a game · 2h ago</div></div><span style="height:38px;padding:0 18px;border-radius:19px;background:#D5B76E;color:#0A0A09;font-size:14px;font-weight:600;display:flex;align-items:center">I'm in</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px;height:58px;display:flex;align-items:center;gap:12px"><span style="width:8px;height:8px;border-radius:50%;background:#E0896B;flex:none"></span><div style="flex:1;font-size:14.5px"><span style="font-weight:500">Sat 4 Oct needs a 4th</span> <span style="color:#969188">· Tom backed out</span></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Next game</span><span style="font-size:12.5px;color:#969188">In 2 days</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:center"><div style="text-align:center;border-right:1px solid rgba(242,238,229,.07);padding-right:14px"><div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:#D5B76E">TUE</div><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1">30</div></div><div><div style="font-size:15.5px;font-weight:500">You &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Rishi &amp; Erf</div><div style="font-size:13px;color:#969188;margin-top:3px">8:00pm · PadelX Canary Wharf</div></div></div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="home" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">A contained card with the photo filling its right side and the numbers on a dark gradient to the left. This one is more compact than 3a: Needs you, the back-out alert and Next game all fit on the first screen. Suits a racket-and-ball still life.</p>
+</div>
+
+</div>
+</section>
+<section class="dv-turn" id="t2" style="border-bottom:1px solid rgba(26,25,22,.1)">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Home with a hero</span></div>
+<p class="dv-gsub">Three ways to make opening the app feel like an occasion while holding the hero to roughly a third of the screen, so Needs you and Next game are still visible without scrolling. Each one replaces the rating card in <a class="dv-oid" href="#1a">1a</a>; the rest of Home stays as it is. On open, the rating counts up from last visit's value and settles, taking about 600ms.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Scoreboard</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<div style="position:absolute;left:0;right:0;top:0;height:380px;background:#0E0D0B;border-bottom:1px solid rgba(213,183,110,.15);overflow:hidden">
+<svg width="390" height="380" viewBox="0 0 390 380" fill="none" style="position:absolute;inset:0;opacity:.09"><rect x="40" y="-60" width="310" height="520" stroke="#D5B76E" stroke-width="1.5"></rect><line x1="40" y1="200" x2="350" y2="200" stroke="#D5B76E" stroke-width="1.5"></line><line x1="40" y1="90" x2="350" y2="90" stroke="#D5B76E" stroke-width="1"></line><line x1="40" y1="310" x2="350" y2="310" stroke="#D5B76E" stroke-width="1"></line><line x1="195" y1="90" x2="195" y2="310" stroke="#D5B76E" stroke-width="1"></line></svg>
+</div>
+<div style="position:relative"><dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import></div>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="position:relative;padding:8px 24px 0;height:322px;box-sizing:border-box;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;color:#969188">Evening, <span style="color:#F2EEE5">Shaun</span></span><span style="width:36px;height:36px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:17px;color:#D5B76E">S</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+<div style="font-size:11px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#D5B76E">Power Rating</div>
+<div style="font-family:'Instrument Serif',serif;font-size:112px;line-height:.95;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums">1,642</div>
+<div style="display:flex;align-items:center;gap:14px;margin-top:10px;font-size:14px"><span style="color:#8FB996">▲ 12 this week</span><span style="width:1px;height:14px;background:rgba(242,238,229,.15)"></span><span><span style="color:#F2EEE5;font-weight:600">#3</span> <span style="color:#969188">in Tier 2</span></span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;padding-bottom:20px">
+<div style="position:relative;height:3px;border-radius:2px;background:rgba(242,238,229,.1)"><div style="width:42%;height:100%;border-radius:2px;background:#D5B76E"></div><span style="position:absolute;left:42%;top:-4px;width:11px;height:11px;margin-left:-5px;border-radius:50%;background:#F0D58E;box-shadow:0 0 0 4px rgba(240,213,142,.15)"></span></div>
+<div style="display:flex;justify-content:space-between;font-size:11.5px;color:#6B675F"><span>Tier 2 · 1,600</span><span style="color:#969188">58 to Tier 1</span><span>1,700</span></div>
+</div>
+</div>
+<div style="padding:22px 20px 120px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Needs you</span><span style="min-width:18px;height:18px;border-radius:9px;background:#D5B76E;color:#0A0A09;font-size:11px;font-weight:600;display:grid;place-items:center">2</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.28);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center"><div><div style="font-size:15px;font-weight:500">Rishi &amp; Erf <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> You &amp; KC</div><div style="font-size:12.5px;color:#969188;margin-top:2px">Rishi wants a game · 2h ago</div></div><span style="height:38px;padding:0 18px;border-radius:19px;background:#D5B76E;color:#0A0A09;font-size:14px;font-weight:600;display:flex;align-items:center">I'm in</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px;height:58px;display:flex;align-items:center;gap:12px"><span style="width:8px;height:8px;border-radius:50%;background:#E0896B;flex:none"></span><div style="flex:1;font-size:14.5px"><span style="font-weight:500">Sat 4 Oct needs a 4th</span> <span style="color:#969188">· Tom backed out</span></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Next game</span><span style="font-size:12.5px;color:#969188">In 2 days</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:center"><div style="text-align:center;border-right:1px solid rgba(242,238,229,.07);padding-right:14px"><div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:#D5B76E">TUE</div><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1">30</div></div><div><div style="font-size:15.5px;font-weight:500">You &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Rishi &amp; Erf</div><div style="font-size:13px;color:#969188;margin-top:3px">8:00pm · PadelX Canary Wharf</div></div></div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="home" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">The rating fills the hero like the main number on a scoreboard. Faint court lines give a sense of place without an illustration. The bar underneath turns "Tier 2" into a target: 58 points to go.</p>
+</div>
+
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Watch dial</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;color:#969188">Sunday 28 September</div><div style="font-family:'Instrument Serif',serif;font-size:28px;line-height:1.1">Evening, Shaun</div></div><span style="width:40px;height:40px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:19px;color:#D5B76E">S</span></div>
+<div style="position:relative;height:250px;display:flex;justify-content:center">
+<svg width="260" height="260" viewBox="0 0 260 260" fill="none" style="position:absolute;top:-6px">
+<circle cx="130" cy="130" r="127" stroke="rgba(213,183,110,.12)" stroke-width="1"></circle>
+<path d="{{ dial.ticks }}" stroke="#5F5B53" stroke-width="1.2" stroke-linecap="round"></path>
+<path d="{{ dial.track }}" stroke="rgba(242,238,229,.08)" stroke-width="4" stroke-linecap="round"></path>
+<path d="{{ dial.prog }}" stroke="#D5B76E" stroke-width="4" stroke-linecap="round"></path>
+<circle cx="{{ dial.kx }}" cy="{{ dial.ky }}" r="6" fill="#F0D58E" stroke="#0A0A09" stroke-width="3"></circle>
+</svg>
+<div style="position:absolute;top:58px;left:0;right:0;display:flex;flex-direction:column;align-items:center;text-align:center">
+<div style="font-size:10.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#969188">Power Rating</div>
+<div style="font-family:'Instrument Serif',serif;font-size:68px;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums">1,642</div>
+<div style="font-size:12.5px;color:#8FB996;margin-top:2px">▲ 12 this week</div>
+<div style="margin-top:12px;height:28px;padding:0 12px;border-radius:14px;border:1px solid rgba(213,183,110,.3);display:flex;align-items:center;gap:6px;font-size:12.5px"><span style="font-weight:600;color:#F0D58E">#3</span><span style="color:#D8D3C8">in Tier 2</span></div>
+</div>
+<div style="position:absolute;bottom:4px;left:62px;font-size:11px;color:#6B675F">1,600</div>
+<div style="position:absolute;bottom:4px;right:62px;font-size:11px;color:#6B675F">Tier 1</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Needs you</span><span style="min-width:18px;height:18px;border-radius:9px;background:#D5B76E;color:#0A0A09;font-size:11px;font-weight:600;display:grid;place-items:center">2</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.28);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center"><div><div style="font-size:15px;font-weight:500">Rishi &amp; Erf <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> You &amp; KC</div><div style="font-size:12.5px;color:#969188;margin-top:2px">Rishi wants a game · 2h ago</div></div><span style="height:38px;padding:0 18px;border-radius:19px;background:#D5B76E;color:#0A0A09;font-size:14px;font-weight:600;display:flex;align-items:center">I'm in</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px;height:58px;display:flex;align-items:center;gap:12px"><span style="width:8px;height:8px;border-radius:50%;background:#E0896B;flex:none"></span><div style="flex:1;font-size:14.5px"><span style="font-weight:500">Sat 4 Oct needs a 4th</span> <span style="color:#969188">· Tom backed out</span></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Next game</span><span style="font-size:12.5px;color:#969188">In 2 days</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:center"><div style="text-align:center;border-right:1px solid rgba(242,238,229,.07);padding-right:14px"><div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:#D5B76E">TUE</div><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1">30</div></div><div><div style="font-size:15.5px;font-weight:500">You &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Rishi &amp; Erf</div><div style="font-size:13px;color:#969188;margin-top:3px">8:00pm · PadelX Canary Wharf</div></div></div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="home" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">A watch-bezel gauge that runs from the bottom of Tier 2 to the start of Tier 1. The rating sits in the centre with Tier Rank directly below it. On open, the gold arc sweeps to your position. It's the most "luxury watch" of the three.</p>
+</div>
+
+<div class="dv-opt" id="2c">
+<div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>The moment (contextual headline)</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:column;gap:18px;padding:6px 4px 4px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#D5B76E">Sunday · 28 Sep</span><span style="width:36px;height:36px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:17px;color:#D5B76E">S</span></div>
+<div style="font-family:'Instrument Serif',serif;font-size:46px;line-height:1.02;letter-spacing:-.01em;text-wrap:balance">Four straight wins, Shaun. <span style="font-style:italic;color:#969188">Rishi &amp; Erf are next.</span></div>
+<div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;border-top:1px solid rgba(213,183,110,.25);border-bottom:1px solid rgba(242,238,229,.07)">
+<div style="padding:14px 0"><div style="font-size:11px;color:#969188">Power Rating</div><div style="display:flex;align-items:baseline;gap:6px;margin-top:2px"><span style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1">1,642</span><span style="font-size:11.5px;color:#8FB996">▲12</span></div></div>
+<div style="padding:14px 0 14px 14px;border-left:1px solid rgba(242,238,229,.07)"><div style="font-size:11px;color:#969188">Tier Rank</div><div style="display:flex;align-items:baseline;gap:5px;margin-top:2px"><span style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1">#3</span><span style="font-size:11.5px;color:#969188">T2</span></div></div>
+<div style="padding:14px 0 14px 14px;border-left:1px solid rgba(242,238,229,.07)"><div style="font-size:11px;color:#969188">Form</div><div style="display:flex;gap:4px;margin-top:14px"><span style="width:7px;height:7px;border-radius:50%;background:#F2EEE5"></span><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid #6B675F;box-sizing:border-box"></span><span style="width:7px;height:7px;border-radius:50%;background:#F2EEE5"></span><span style="width:7px;height:7px;border-radius:50%;background:#F2EEE5"></span><span style="width:7px;height:7px;border-radius:50%;background:#F2EEE5"></span></div></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Needs you</span><span style="min-width:18px;height:18px;border-radius:9px;background:#D5B76E;color:#0A0A09;font-size:11px;font-weight:600;display:grid;place-items:center">2</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.28);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center"><div><div style="font-size:15px;font-weight:500">Rishi &amp; Erf <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> You &amp; KC</div><div style="font-size:12.5px;color:#969188;margin-top:2px">Rishi wants a game · 2h ago</div></div><span style="height:38px;padding:0 18px;border-radius:19px;background:#D5B76E;color:#0A0A09;font-size:14px;font-weight:600;display:flex;align-items:center">I'm in</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px;height:58px;display:flex;align-items:center;gap:12px"><span style="width:8px;height:8px;border-radius:50%;background:#E0896B;flex:none"></span><div style="flex:1;font-size:14.5px"><span style="font-weight:500">Sat 4 Oct needs a 4th</span> <span style="color:#969188">· Tom backed out</span></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Next game</span><span style="font-size:12.5px;color:#969188">In 2 days</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:center"><div style="text-align:center;border-right:1px solid rgba(242,238,229,.07);padding-right:14px"><div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:#D5B76E">TUE</div><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1">30</div></div><div><div style="font-size:15.5px;font-weight:500">You &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Rishi &amp; Erf</div><div style="font-size:13px;color:#969188;margin-top:3px">8:00pm · PadelX Canary Wharf</div></div></div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="home" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">An editorial headline written fresh every time you open the app, e.g. "You beat Kaz &amp; Len. +12." · "Osh just passed you in Tier 2." · "Quiet week — 3 players looking for a game." The stats strip underneath stays the same. The excitement comes from the headline changing, not from decoration.</p>
+</div>
+
+</div>
+<p class="dv-next" style="margin-top:32px">Try next: "combine <a class="dv-oid" href="#2c">2c</a>'s headline with <a class="dv-oid" href="#2b">2b</a>'s dial" · "make <a class="dv-oid" href="#2a">2a</a> shorter" · "show the <a class="dv-oid" href="#2c">2c</a> headline in five different situations"</p>
+</section>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Money Padel — player app</span></div>
+
+<div class="dv-group">
+<h2 class="dv-gh">Structure &amp; system</h2>
+<p class="dv-gsub">Five tabs, each owning one human question. "More" is gone: its contents either became part of Me (settings, doughnuts, deep stats) or became contextual (admin). Every game — from a first request to the final score — lives in one place: Play.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:24px;max-width:1800px">
+
+<div style="background:#0B0B0A;border-radius:20px;padding:28px;color:#F2EEE5;grid-column:span 2">
+<div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Navigation · one question per tab</div>
+<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:20px">
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="font-family:'Instrument Serif',serif;font-size:26px;color:#F2EEE5">Home</div><div style="font-size:13px;color:#D5B76E">What do I need to know right now?</div><div style="font-size:12.5px;line-height:1.5;color:#969188">Rating + Tier Rank, anything waiting on me, next game, this month, latest result, club pulse.</div></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="font-family:'Instrument Serif',serif;font-size:26px;color:#F2EEE5">Rankings</div><div style="font-size:13px;color:#D5B76E">Where does everyone stand?</div><div style="font-size:12.5px;line-height:1.5;color:#969188">Power Rankings by tier. This month: Best Month, League, Merit. W/L and archives below the fold.</div></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="font-family:'Instrument Serif',serif;font-size:26px;color:#F2EEE5">Play</div><div style="font-size:13px;color:#D5B76E">What games am I in, and what's next?</div><div style="font-size:12.5px;line-height:1.5;color:#969188">One lifecycle list. Request, respond, book, play, score. Find a game. Badge = things waiting on you.</div></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="font-family:'Instrument Serif',serif;font-size:26px;color:#F2EEE5">Players</div><div style="font-size:13px;color:#D5B76E">Who is this person?</div><div style="font-size:12.5px;line-height:1.5;color:#969188">Search first. Directory, then a profile built around "how do I compare?"</div></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="font-family:'Instrument Serif',serif;font-size:26px;color:#F2EEE5">Me</div><div style="font-size:13px;color:#D5B76E">How am I really doing?</div><div style="font-size:12.5px;line-height:1.5;color:#969188">Personal dashboard + deep analysis. Doughnuts, settings and (for admins) Admin tools live at the bottom.</div></div>
+</div>
+</div>
+
+<div style="background:#0B0B0A;border-radius:20px;padding:28px;color:#F2EEE5;grid-column:span 2">
+<div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">The game lifecycle · what players see vs. the system state</div>
+<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin-top:22px;position:relative">
+<div style="display:flex;flex-direction:column;gap:8px;padding-right:12px"><div style="display:flex;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#D5B76E"></span><span style="width:8px;height:8px;border-radius:50%;background:#D5B76E"></span><span style="width:8px;height:8px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span><span style="width:8px;height:8px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span></div><div style="font-size:16px;font-weight:500">Waiting on players</div><div style="font-size:12px;color:#969188;line-height:1.45">Request · 1–3 of 4 agreed. Split into "Needs you" and "Waiting on others".</div></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding-right:12px"><div style="display:flex;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#D5B76E"></span><span style="width:8px;height:8px;border-radius:50%;background:#D5B76E"></span><span style="width:8px;height:8px;border-radius:50%;background:#D5B76E"></span><span style="width:8px;height:8px;border-radius:50%;background:#D5B76E"></span></div><div style="font-size:16px;font-weight:500">Called out</div><div style="font-size:12px;color:#969188;line-height:1.45">4/4 agreed, no court. Proposed time shown in italic + dashed "No court" pill. Action: "I've booked a court".</div></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding-right:12px"><div style="height:8px;display:flex;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:#8FB996"></span></div><div style="font-size:16px;font-weight:500">Upcoming</div><div style="font-size:12px;color:#969188;line-height:1.45">Court booked. Solid date block. Soonest first. The only state that shows on Home as "Next game".</div></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding-right:12px"><div style="height:8px;display:flex;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:#F2EEE5"></span></div><div style="font-size:16px;font-weight:500">Played</div><div style="font-size:12px;color:#969188;line-height:1.45">Enter score → result card with "Why it moved". Lives in history, Me and profiles.</div></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding-left:16px;border-left:1px dashed rgba(242,238,229,.14)"><div style="height:8px;display:flex;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:#E0896B"></span></div><div style="font-size:16px;font-weight:500">Side states</div><div style="font-size:12px;color:#969188;line-height:1.45"><span style="color:#E0896B">Needs attention</span> — someone backed out; fixture kept, one-tap replace. <span style="color:#F2EEE5">Archived</span> — call-outs idle 14 days, collapsed.</div></div>
+</div>
+</div>
+
+<div style="background:#0B0B0A;border-radius:20px;padding:28px;color:#F2EEE5">
+<div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Rankings hierarchy</div>
+<div style="display:flex;flex-direction:column;gap:14px;margin-top:20px">
+<div style="display:flex;gap:14px;align-items:baseline"><span style="font-family:'Instrument Serif',serif;font-size:30px;color:#D5B76E;width:22px">1</span><div><div style="font-size:16px;font-weight:500">Power Rankings <span style="color:#969188;font-weight:400">— default</span></div><div style="font-size:12.5px;color:#969188;margin-top:3px">"How good is everyone?" Grouped by tier; the number beside each name <em>is</em> Tier Rank.</div></div></div>
+<div style="display:flex;gap:14px;align-items:baseline"><span style="font-family:'Instrument Serif',serif;font-size:30px;color:#D5B76E;width:22px">2</span><div><div style="font-size:16px;font-weight:500">This month</div><div style="font-size:12.5px;color:#969188;margin-top:3px">Best Month ("who's having the best month?") leads; League and Merit sit beside it, each with its question written under the switch.</div></div></div>
+<div style="display:flex;gap:14px;align-items:baseline"><span style="font-family:'Instrument Serif',serif;font-size:30px;color:#969188;width:22px">3</span><div><div style="font-size:16px;font-weight:500">More tables</div><div style="font-size:12.5px;color:#969188;margin-top:3px">W/L record, past months, Doughnuts — a list at the end, not a tab.</div></div></div>
+</div>
+</div>
+
+<div style="background:#0B0B0A;border-radius:20px;padding:28px;color:#F2EEE5">
+<div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Key simplifications</div>
+<div style="display:flex;flex-direction:column;gap:10px;margin-top:18px;font-size:13.5px;line-height:1.5;color:#D8D3C8">
+<div>— Home shows <span style="color:#F2EEE5">one</span> rating card, not a hero. First viewport answers questions 1–5.</div>
+<div>— Requests, call-outs and fixtures are one list sorted by "what needs doing", not four databases.</div>
+<div>— Profiles lead with "You vs them"; rating-engine detail sits behind "More on Rishi".</div>
+<div>— Admin controls live in a single contextual "Manage" sheet. Win-probabilities appear only there.</div>
+<div>— Gold means "act here" or "this is you". Everything else is ivory on near-black.</div>
+</div>
+</div>
+
+<div style="background:#0B0B0A;border-radius:20px;padding:28px;color:#F2EEE5;grid-column:span 2">
+<div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">System</div>
+<div style="display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:32px;margin-top:20px">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#969188"><span style="width:52px;height:52px;border-radius:12px;background:#0A0A09;border:1px solid rgba(242,238,229,.12)"></span>Ground</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#969188"><span style="width:52px;height:52px;border-radius:12px;background:#11110F;border:1px solid rgba(213,183,110,.15)"></span>Card</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#969188"><span style="width:52px;height:52px;border-radius:12px;background:#181714"></span>Raised</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#969188"><span style="width:52px;height:52px;border-radius:12px;background:#D5B76E"></span>Gold</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#969188"><span style="width:52px;height:52px;border-radius:12px;background:#F2EEE5"></span>Ivory</div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#969188"><span style="width:52px;height:24px;border-radius:8px;background:#969188"></span>Muted</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#969188"><span style="width:52px;height:24px;border-radius:8px;background:#8FB996"></span>Booked</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#969188"><span style="width:52px;height:24px;border-radius:8px;background:#E0896B"></span>Attention</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#969188"><span style="width:52px;height:24px;border-radius:8px;background:#F0D58E"></span>Highlight</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="font-family:'Instrument Serif',serif;font-size:56px;line-height:.9">1,642</div>
+<div style="font-size:12px;color:#969188">Instrument Serif — numbers that matter, screen titles, scores. Tabular figures.</div>
+<div style="font-size:16px;font-weight:500;margin-top:6px">Shaun &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;color:#969188">v</span> Rishi &amp; Erf</div>
+<div style="font-size:12px;color:#969188">Inter 400/500/600 — everything you read or tap. 15px body, 11px caps labels.</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:12px"><span style="display:flex;gap:4px"><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span></span><span style="font-size:12.5px;color:#969188">Agreement — 2 of 4 in</span></div>
+<div style="display:flex;align-items:center;gap:12px"><span style="display:flex;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#F2EEE5"></span><span style="width:8px;height:8px;border-radius:50%;background:#F2EEE5"></span><span style="width:8px;height:8px;border-radius:50%;border:1.5px solid #6B675F;box-sizing:border-box"></span><span style="width:8px;height:8px;border-radius:50%;background:#F2EEE5"></span><span style="width:8px;height:8px;border-radius:50%;background:#F2EEE5"></span></span><span style="font-size:12.5px;color:#969188">Form — last 5, newest right</span></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="height:24px;padding:0 10px;border-radius:12px;border:1px dashed rgba(242,238,229,.3);font-size:11.5px;color:#D8D3C8;display:flex;align-items:center">No court</span><span style="height:24px;padding:0 10px;border-radius:12px;background:rgba(143,185,150,.12);font-size:11.5px;color:#8FB996;display:flex;align-items:center">Booked</span><span style="height:24px;padding:0 10px;border-radius:12px;background:rgba(224,137,107,.12);font-size:11.5px;color:#E0896B;display:flex;align-items:center">Needs a 4th</span></div>
+<div style="display:flex;gap:10px"><span style="height:44px;padding:0 20px;border-radius:22px;background:#D5B76E;color:#0A0A09;font-size:15px;font-weight:600;display:flex;align-items:center">I'm in</span><span style="height:44px;padding:0 20px;border-radius:22px;border:1px solid rgba(242,238,229,.18);color:#F2EEE5;font-size:15px;font-weight:500;display:flex;align-items:center">Can't play</span></div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next" style="margin-top:20px">Assumptions to check: Power Rating scale (~1,500–1,800), tier boundaries (1,700 / 1,600), Best Month = rating gained in the month (min. 3 games), Merit = hard win 3 pts / favoured win 1 pt, venue names. Me = Shaun throughout; today is Sun 28 Sep.</p>
+</div>
+
+<div class="dv-group">
+<h2 class="dv-gh">Home</h2>
+<p class="dv-gsub">The first viewport answers "how am I doing?", "is anyone waiting on me?" and "when am I playing next?" — in that order. No hero. Everything below the fold is a reason to scroll, not a requirement.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Home</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:26px">
+
+<div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px">
+<div><div style="font-size:13px;color:#969188">Sunday 28 September</div><div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:2px">Evening, Shaun</div></div>
+<span style="width:42px;height:42px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:20px;color:#D5B76E">S</span>
+</div>
+
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:18px 18px 14px">
+<div style="display:grid;grid-template-columns:1.25fr 1fr">
+<div><div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Power Rating</div><div style="font-family:'Instrument Serif',serif;font-size:52px;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums">1,642</div><div style="font-size:12.5px;color:#8FB996;margin-top:4px">▲ 12 this week</div></div>
+<div style="border-left:1px solid rgba(242,238,229,.07);padding-left:18px"><div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Tier Rank</div><div style="font-family:'Instrument Serif',serif;font-size:52px;line-height:1;margin-top:8px">#3</div><div style="font-size:12.5px;color:#969188;margin-top:4px">of 5 in Tier 2</div></div>
+</div>
+<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(242,238,229,.07);display:flex;align-items:center;justify-content:space-between;height:22px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12.5px;color:#969188">Form</span><span style="display:flex;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#F2EEE5"></span><span style="width:8px;height:8px;border-radius:50%;background:#F2EEE5"></span><span style="width:8px;height:8px;border-radius:50%;border:1.5px solid #6B675F;box-sizing:border-box"></span><span style="width:8px;height:8px;border-radius:50%;background:#F2EEE5"></span><span style="width:8px;height:8px;border-radius:50%;background:#F2EEE5"></span></span></div>
+<span style="font-size:12.5px;color:#969188">58 pts to Tier 1</span>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Needs you</span><span style="min-width:18px;height:18px;border-radius:9px;background:#D5B76E;color:#0A0A09;font-size:11px;font-weight:600;display:grid;place-items:center">2</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.28);border-radius:18px;padding:16px">
+<div style="font-size:13px;color:#969188"><span style="color:#F2EEE5;font-weight:500">Rishi</span> wants a game · 2h ago</div>
+<div style="display:grid;grid-template-columns:1fr auto;align-items:center;margin-top:10px;gap:12px">
+<div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:17px;font-weight:500">Rishi &amp; Erf</div><div style="font-size:17px;font-weight:500"><span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188;font-size:18px">v </span>You &amp; KC</div></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><span style="display:flex;gap:4px"><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span></span><span style="font-size:12px;color:#969188">2 of 4 in</span></div>
+</div>
+<div style="font-size:13px;color:#969188;margin-top:8px">Waiting for you and KC</div>
+<div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:14px"><span style="height:44px;border-radius:22px;border:1px solid rgba(242,238,229,.18);font-size:15px;font-weight:500;display:grid;place-items:center">Can't play</span><span style="height:44px;border-radius:22px;background:#D5B76E;color:#0A0A09;font-size:15px;font-weight:600;display:grid;place-items:center">I'm in</span></div>
+</div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px;height:64px;display:flex;align-items:center;gap:12px">
+<span style="width:8px;height:8px;border-radius:50%;background:#E0896B;flex:none"></span>
+<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:500">Sat 4 Oct needs a 4th</div><div style="font-size:13px;color:#969188;margin-top:2px">Tom backed out · You &amp; Osh v Kaz &amp; —</div></div>
+<svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Next game</span><span style="font-size:12.5px;color:#969188">In 2 days</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:center">
+<div style="text-align:center;border-right:1px solid rgba(242,238,229,.07);padding-right:14px"><div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:#D5B76E">TUE</div><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1">30</div><div style="font-size:11px;color:#969188">Sep</div></div>
+<div><div style="font-size:16px;font-weight:500">You &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Rishi &amp; Erf</div><div style="font-size:13px;color:#969188;margin-top:3px">8:00pm · PadelX Canary Wharf · Ct 3</div><div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#8FB996;margin-top:8px"><span style="width:6px;height:6px;border-radius:50%;background:#8FB996"></span>Court booked · all 4 in</div></div>
+</div>
+<div style="height:48px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-radius:14px;background:#0F0F0D;border:1px solid rgba(242,238,229,.06)"><span style="font-size:13.5px;color:#D8D3C8">2 of your requests are waiting on others</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Your September</span><span style="font-size:12.5px;color:#969188">5–2 · 2 days left</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<div style="padding:14px 14px 16px"><div style="font-size:12px;color:#969188">Best Month</div><div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:4px">4th</div><div style="font-size:12px;color:#8FB996;margin-top:2px">+18</div></div>
+<div style="padding:14px 14px 16px;border-left:1px solid rgba(242,238,229,.07)"><div style="font-size:12px;color:#969188">League</div><div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:4px">3rd</div><div style="font-size:12px;color:#969188;margin-top:2px">15 pts</div></div>
+<div style="padding:14px 14px 16px;border-left:1px solid rgba(242,238,229,.07)"><div style="font-size:12px;color:#969188">Merit</div><div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:4px">4th</div><div style="font-size:12px;color:#969188;margin-top:2px">9 pts</div></div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Latest result</span><span style="font-size:12.5px;color:#969188">Thu 25 Sep</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:16px">
+<div style="display:grid;grid-template-columns:1fr 26px 26px;row-gap:6px;align-items:center">
+<div style="font-size:15px;font-weight:500">You &amp; PDM</div><div style="font-family:'Instrument Serif',serif;font-size:24px;text-align:center">6</div><div style="font-family:'Instrument Serif',serif;font-size:24px;text-align:center">6</div>
+<div style="font-size:15px;color:#969188">Kaz &amp; Len</div><div style="font-family:'Instrument Serif',serif;font-size:24px;text-align:center;color:#6B675F">3</div><div style="font-family:'Instrument Serif',serif;font-size:24px;text-align:center;color:#6B675F">4</div>
+</div>
+<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(242,238,229,.07);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:#969188">Won · Power Rating <span style="color:#8FB996">+12</span></span><span style="font-size:13px;color:#D5B76E;font-weight:500">Why it moved ›</span></div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Around the club</span>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px">
+<div style="display:flex;align-items:center;gap:12px;height:56px"><span style="width:18px;height:18px;border-radius:50%;border:4px solid #D5B76E;box-sizing:border-box;flex:none"></span><div style="flex:1;font-size:14px;color:#D8D3C8"><span style="color:#F2EEE5;font-weight:500">Kaz &amp; Len</span> doughnutted Tom &amp; Dennis</div><span style="font-size:12px;color:#6B675F">1d</span></div>
+<div style="display:flex;align-items:center;gap:12px;height:56px;border-top:1px solid rgba(242,238,229,.07)"><span style="width:18px;text-align:center;color:#8FB996;font-size:13px;flex:none">▲</span><div style="flex:1;font-size:14px;color:#D8D3C8"><span style="color:#F2EEE5;font-weight:500">Osh</span> is now #1 in Tier 2</div><span style="font-size:12px;color:#6B675F">2d</span></div>
+<div style="display:flex;align-items:center;gap:12px;height:56px;border-top:1px solid rgba(242,238,229,.07)"><span style="width:18px;text-align:center;color:#969188;font-size:13px;flex:none">◷</span><div style="flex:1;font-size:14px;color:#D8D3C8"><span style="color:#F2EEE5;font-weight:500">6 games</span> booked this week</div><span style="font-size:12px;color:#6B675F">Today</span></div>
+</div>
+</div>
+
+</div>
+</div>
+<dc-import name="MPTabBar" active="home" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Rating and Tier Rank share one card with equal weight — they're the two numbers players care about. "Needs you" only exists when something does; the whole block disappears otherwise. Scroll the phone to see below the fold.</p>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Latest result → "Why it moved"</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="padding:12px 20px;display:flex;flex-direction:column;gap:20px"><div style="font-family:'Instrument Serif',serif;font-size:32px">Evening, Shaun</div><div style="height:150px;border-radius:18px;background:#11110F"></div><div style="height:200px;border-radius:18px;background:#11110F"></div></div>
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.62)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:120px;background:#131311;border-radius:28px 28px 0 0;border-top:1px solid rgba(213,183,110,.22);padding:10px 20px 34px;display:flex;flex-direction:column;gap:18px">
+<div style="width:36px;height:5px;border-radius:3px;background:#3A3832;align-self:center"></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Thu 25 Sep · PadelX</div><div style="font-family:'Instrument Serif',serif;font-size:36px;line-height:1.1;margin-top:6px">You won</div></div><span style="width:32px;height:32px;border-radius:50%;background:#1F1E1A;display:grid;place-items:center;color:#969188;font-size:15px">✕</span></div>
+<div style="display:grid;grid-template-columns:1fr 32px 32px;row-gap:8px;align-items:center;padding:14px 16px;border-radius:16px;background:#0B0B0A;border:1px solid rgba(242,238,229,.06)">
+<div style="font-size:16px;font-weight:500">You &amp; PDM</div><div style="font-family:'Instrument Serif',serif;font-size:30px;text-align:center">6</div><div style="font-family:'Instrument Serif',serif;font-size:30px;text-align:center">6</div>
+<div style="font-size:16px;color:#969188">Kaz &amp; Len</div><div style="font-family:'Instrument Serif',serif;font-size:30px;text-align:center;color:#6B675F">3</div><div style="font-family:'Instrument Serif',serif;font-size:30px;text-align:center;color:#6B675F">4</div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:12.5px;color:#969188">Your Power Rating</div><div style="font-family:'Instrument Serif',serif;font-size:30px;margin-top:2px;font-variant-numeric:tabular-nums"><span style="color:#969188">1,630</span> → 1,642</div></div><div style="font-family:'Instrument Serif',serif;font-size:40px;color:#8FB996;line-height:1">+12</div></div>
+<div style="display:flex;flex-direction:column;gap:0">
+<div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188;margin-bottom:6px">Why it moved</div>
+<div style="display:flex;gap:14px;padding:12px 0;border-bottom:1px solid rgba(242,238,229,.07)"><div style="flex:1"><div style="font-size:15px;font-weight:500">You beat a stronger pair</div><div style="font-size:12.5px;color:#969188;margin-top:2px">Kaz &amp; Len are both Tier 1</div></div><span style="font-size:15px;color:#8FB996;font-variant-numeric:tabular-nums">+8</span></div>
+<div style="display:flex;gap:14px;padding:12px 0;border-bottom:1px solid rgba(242,238,229,.07)"><div style="flex:1"><div style="font-size:15px;font-weight:500">Straight sets</div><div style="font-size:12.5px;color:#969188;margin-top:2px">A clear win counts a little more</div></div><span style="font-size:15px;color:#8FB996;font-variant-numeric:tabular-nums">+3</span></div>
+<div style="display:flex;gap:14px;padding:12px 0"><div style="flex:1"><div style="font-size:15px;font-weight:500">Lower-rated partner</div><div style="font-size:12.5px;color:#969188;margin-top:2px">You take slightly more of the credit</div></div><span style="font-size:15px;color:#8FB996;font-variant-numeric:tabular-nums">+1</span></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;height:48px;padding:0 16px;border-radius:14px;background:#181714"><span style="font-size:13.5px;color:#D8D3C8">Still #3 in Tier 2 · 58 pts to Tier 1</span></div>
+<div style="display:flex;justify-content:center;font-size:13.5px;color:#969188">See full calculation ›</div>
+</div>
+</div>
+<p class="dv-note">Rating change explained in three plain sentences. The engine's maths is one tap further for anyone who wants it. No win probabilities.</p>
+</div>
+
+</div>
+</div>
+
+<div class="dv-group">
+<h2 class="dv-gh">Rankings</h2>
+<p class="dv-gsub">Two top-level views, not five tabs: <b>Power</b> (skill, all-time) and <b>September</b> (this month's competitions). Each monthly table carries its question in words. W/L, past months and Doughnuts are demoted to a list at the bottom.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Power Rankings</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:14px">
+<div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1;padding-top:4px">Rankings</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;background:#141412;border:1px solid rgba(242,238,229,.06);border-radius:12px;padding:3px"><span style="height:36px;border-radius:9px;background:#26241E;display:grid;place-items:center;font-size:14px;font-weight:600">Power</span><span style="height:36px;display:grid;place-items:center;font-size:14px;font-weight:500;color:#969188">September</span></div>
+<div style="font-size:13px;line-height:1.5;color:#969188;text-wrap:pretty">Skill rating from every game. The number on the left is each player's <span style="color:#F2EEE5">Tier Rank</span> — their place within their tier.</div>
+<sc-for list="{{ tiers }}" as="tier" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 4px 8px"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#D5B76E">{{ tier.name }}</span><span style="font-size:12px;color:#6B675F">{{ tier.range }}</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:16px;overflow:hidden">
+<sc-for list="{{ tier.rows }}" as="r" hint-placeholder-count="4">
+<div style="display:grid;grid-template-columns:22px 30px minmax(0,1fr) auto 40px;align-items:center;gap:12px;height:54px;padding:0 14px;border-top:{{ r.bt }};background:{{ r.bg }}">
+<span style="font-family:'Instrument Serif',serif;font-size:22px;color:{{ r.rc }};text-align:center">{{ r.tr }}</span>
+<span style="width:30px;height:30px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.22);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:14px;color:#D5B76E">{{ r.ini }}</span>
+<div style="min-width:0"><div style="font-size:15px;font-weight:500;color:{{ r.nc }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div><div style="font-size:11.5px;color:#6B675F;margin-top:1px">Overall {{ r.overall }}</div></div>
+<span style="font-size:16px;font-weight:500;font-variant-numeric:tabular-nums">{{ r.rating }}</span>
+<span style="font-size:11.5px;font-variant-numeric:tabular-nums;color:{{ r.mvc }};text-align:right">{{ r.mv }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<div style="font-size:12px;color:#6B675F;line-height:1.5;padding:0 4px">Ranked players have 5+ games in the last 60 days. 3 members are currently unranked. Movement = last 7 days.</div>
+<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">More tables</span>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:16px;padding:0 16px">
+<div style="display:flex;align-items:center;height:58px;gap:12px"><div style="flex:1"><div style="font-size:15px;font-weight:500">Win / Loss</div><div style="font-size:12.5px;color:#969188">Plain record, all time</div></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;height:58px;gap:12px;border-top:1px solid rgba(242,238,229,.07)"><div style="flex:1"><div style="font-size:15px;font-weight:500">Past months</div><div style="font-size:12.5px;color:#969188">Winners and monthly summaries</div></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;height:58px;gap:12px;border-top:1px solid rgba(242,238,229,.07)"><div style="flex:1"><div style="font-size:15px;font-weight:500">Doughnuts</div><div style="font-size:12.5px;color:#969188">Every 6–0 set</div></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="rankings" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Grouping by tier makes Tier Rank self-evident — no separate column, no definition to learn. Overall position is small print. Your row is lit, not boxed.</p>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>September · Best Month</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:14px">
+<div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1;padding-top:4px">Rankings</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;background:#141412;border:1px solid rgba(242,238,229,.06);border-radius:12px;padding:3px"><span style="height:36px;display:grid;place-items:center;font-size:14px;font-weight:500;color:#969188">Power</span><span style="height:36px;border-radius:9px;background:#26241E;display:grid;place-items:center;font-size:14px;font-weight:600">September</span></div>
+<div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:2px;background:#1F1E1A;border-radius:1px;overflow:hidden"><div style="width:93%;height:100%;background:#969188"></div></div><span style="font-size:12px;color:#969188">2 days left</span></div>
+<div style="display:flex;gap:8px">
+<span style="height:36px;padding:0 16px;border-radius:18px;background:#F2EEE5;color:#0A0A09;font-size:13.5px;font-weight:600;display:flex;align-items:center">Best Month</span>
+<span style="height:36px;padding:0 16px;border-radius:18px;border:1px solid rgba(242,238,229,.14);font-size:13.5px;font-weight:500;color:#D8D3C8;display:flex;align-items:center">League</span>
+<span style="height:36px;padding:0 16px;border-radius:18px;border:1px solid rgba(242,238,229,.14);font-size:13.5px;font-weight:500;color:#D8D3C8;display:flex;align-items:center">Merit</span>
+</div>
+<div style="padding:4px 2px 0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;line-height:1.15">Who's having the best month?</div><div style="font-size:12.5px;color:#969188;margin-top:6px">Power Rating gained in September. Minimum 3 games.</div></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.28);border-radius:18px;padding:18px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center">
+<span style="width:52px;height:52px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.45);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:24px;color:#F0D58E">K</span>
+<div><div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#D5B76E">Leading</div><div style="font-size:19px;font-weight:500;margin-top:3px">Kaz</div><div style="font-size:12.5px;color:#969188;margin-top:1px">6–1 this month</div></div>
+<div style="font-family:'Instrument Serif',serif;font-size:40px;color:#8FB996">+41</div>
+</div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:16px;overflow:hidden">
+<sc-for list="{{ race }}" as="r" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:24px minmax(0,1fr) 44px 44px;gap:12px;align-items:center;height:50px;padding:0 16px;border-top:{{ r.bt }};background:{{ r.bg }}">
+<span style="font-family:'Instrument Serif',serif;font-size:20px;color:#969188;text-align:center">{{ r.pos }}</span>
+<span style="font-size:15px;font-weight:500;color:{{ r.nc }}">{{ r.name }}</span>
+<span style="font-size:13px;color:#969188;text-align:right;font-variant-numeric:tabular-nums">{{ r.rec }}</span>
+<span style="font-size:15px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums;color:{{ r.gc }}">{{ r.gain }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="rankings" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Three monthly competitions behind one switch, with the question each answers written as a headline. Best Month leads because it's the most human question.</p>
+</div>
+
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>September · Merit table</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:14px">
+<div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1;padding-top:4px">Rankings</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;background:#141412;border:1px solid rgba(242,238,229,.06);border-radius:12px;padding:3px"><span style="height:36px;display:grid;place-items:center;font-size:14px;font-weight:500;color:#969188">Power</span><span style="height:36px;border-radius:9px;background:#26241E;display:grid;place-items:center;font-size:14px;font-weight:600">September</span></div>
+<div style="display:flex;gap:8px">
+<span style="height:36px;padding:0 16px;border-radius:18px;border:1px solid rgba(242,238,229,.14);font-size:13.5px;font-weight:500;color:#D8D3C8;display:flex;align-items:center">Best Month</span>
+<span style="height:36px;padding:0 16px;border-radius:18px;border:1px solid rgba(242,238,229,.14);font-size:13.5px;font-weight:500;color:#D8D3C8;display:flex;align-items:center">League</span>
+<span style="height:36px;padding:0 16px;border-radius:18px;background:#F2EEE5;color:#0A0A09;font-size:13.5px;font-weight:600;display:flex;align-items:center">Merit</span>
+</div>
+<div style="padding:4px 2px 0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;line-height:1.15">Who's earning the toughest wins?</div><div style="font-size:12.5px;color:#969188;margin-top:6px;line-height:1.5">Hard win (beat a higher-rated pair) 3 pts · Favoured win 1 pt. Tap any number to see the games behind it.</div></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:16px;overflow:hidden">
+<div style="display:grid;grid-template-columns:18px minmax(0,1fr) repeat(4,34px) 38px;gap:4px;align-items:center;height:36px;padding:0 12px;font-size:10.5px;font-weight:600;letter-spacing:.08em;color:#6B675F;border-bottom:1px solid rgba(242,238,229,.07)"><span></span><span>PLAYER</span><span style="text-align:center">P</span><span style="text-align:center">W</span><span style="text-align:center">HW</span><span style="text-align:center">FW</span><span style="text-align:right">PTS</span></div>
+<sc-for list="{{ merit }}" as="m" hint-placeholder-count="9">
+<div style="display:grid;grid-template-columns:18px minmax(0,1fr) repeat(4,34px) 38px;gap:4px;align-items:center;height:48px;padding:0 12px;border-top:{{ m.bt }};background:{{ m.bg }};font-variant-numeric:tabular-nums">
+<span style="font-family:'Instrument Serif',serif;font-size:18px;color:#969188">{{ m.pos }}</span>
+<span style="font-size:14.5px;font-weight:500;color:{{ m.nc }}">{{ m.name }}</span>
+<span style="font-size:14px;color:#969188;text-align:center">{{ m.p }}</span>
+<span style="font-size:14px;text-align:center">{{ m.w }}</span>
+<span style="height:30px;border-radius:8px;display:grid;place-items:center;font-size:14px;font-weight:500;background:{{ m.hwBg }};color:{{ m.hwC }}">{{ m.hw }}</span>
+<span style="font-size:14px;text-align:center">{{ m.fw }}</span>
+<span style="font-family:'Instrument Serif',serif;font-size:21px;text-align:right">{{ m.pts }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="rankings" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Seven columns fit 350px without scrolling: short headers, tabular figures, points in serif as the scoreboard number. Shaun's HW cell is shown pressed → <a class="dv-oid" href="#1f">1f</a>.</p>
+</div>
+
+<div class="dv-opt" id="1f">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Cell drill-down: "2 hard wins"</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="padding:12px 20px;display:flex;flex-direction:column;gap:16px"><div style="font-family:'Instrument Serif',serif;font-size:34px">Rankings</div><div style="height:42px;border-radius:12px;background:#141412"></div><div style="height:400px;border-radius:16px;background:#11110F"></div></div>
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.62)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:250px;background:#131311;border-radius:28px 28px 0 0;border-top:1px solid rgba(213,183,110,.22);padding:10px 20px 34px;display:flex;flex-direction:column;gap:16px">
+<div style="width:36px;height:5px;border-radius:3px;background:#3A3832;align-self:center"></div>
+<div><div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">You · Merit · September</div><div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:6px">2 hard wins</div><div style="font-size:13px;color:#969188;margin-top:6px;line-height:1.5">Wins against a pair rated higher than yours. 3 pts each — 6 of your 9 merit points.</div></div>
+<div style="background:#0B0B0A;border:1px solid rgba(242,238,229,.06);border-radius:16px;padding:14px 16px">
+<div style="display:flex;justify-content:space-between;font-size:12.5px;color:#969188"><span>Thu 25 Sep · PadelX</span><span style="color:#D5B76E;font-weight:500">+3 pts</span></div>
+<div style="display:grid;grid-template-columns:1fr 24px 24px;row-gap:4px;margin-top:10px;align-items:center"><span style="font-size:15px;font-weight:500">You &amp; PDM</span><span style="font-family:'Instrument Serif',serif;font-size:22px;text-align:center">6</span><span style="font-family:'Instrument Serif',serif;font-size:22px;text-align:center">6</span><span style="font-size:15px;color:#969188">Kaz &amp; Len</span><span style="font-family:'Instrument Serif',serif;font-size:22px;text-align:center;color:#6B675F">3</span><span style="font-family:'Instrument Serif',serif;font-size:22px;text-align:center;color:#6B675F">4</span></div>
+<div style="font-size:12px;color:#6B675F;margin-top:8px">Their pair 1,750 avg · yours 1,643</div>
+</div>
+<div style="background:#0B0B0A;border:1px solid rgba(242,238,229,.06);border-radius:16px;padding:14px 16px">
+<div style="display:flex;justify-content:space-between;font-size:12.5px;color:#969188"><span>Tue 9 Sep · Rocket Padel</span><span style="color:#D5B76E;font-weight:500">+3 pts</span></div>
+<div style="display:grid;grid-template-columns:1fr 24px 24px;row-gap:4px;margin-top:10px;align-items:center"><span style="font-size:15px;font-weight:500">You &amp; KC</span><span style="font-family:'Instrument Serif',serif;font-size:22px;text-align:center">7</span><span style="font-family:'Instrument Serif',serif;font-size:22px;text-align:center">6</span><span style="font-size:15px;color:#969188">Rishi &amp; Erf</span><span style="font-family:'Instrument Serif',serif;font-size:22px;text-align:center;color:#6B675F">5</span><span style="font-family:'Instrument Serif',serif;font-size:22px;text-align:center;color:#6B675F">4</span></div>
+<div style="font-size:12px;color:#6B675F;margin-top:8px">Their pair 1,748 avg · yours 1,628</div>
+</div>
+</div>
+</div>
+<p class="dv-note">Every number in League and Merit opens the exact games that produced it — here, the two hard wins, with the rating gap that qualified them.</p>
+</div>
+
+</div>
+</div>
+
+<div class="dv-group">
+<h2 class="dv-gh">Play</h2>
+<p class="dv-gsub">One list, ordered by what needs doing: things waiting on you → booked games (soonest first) → agreed games with no court → your open requests → archive. Players never see the words "state" or "status" — they see <i>Needs you</i>, <i>Booked</i>, <i>No court</i>, <i>Waiting for Tom</i>.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1g">
+<div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Play · My games</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1;padding-top:4px">Play</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><span style="height:48px;border-radius:24px;background:#D5B76E;color:#0A0A09;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:20px;font-weight:400;line-height:1">+</span>Request</span><span style="height:48px;border-radius:24px;border:1px solid rgba(242,238,229,.18);font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center">Find a game</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;background:#141412;border:1px solid rgba(242,238,229,.06);border-radius:12px;padding:3px"><span style="height:36px;border-radius:9px;background:#26241E;display:grid;place-items:center;font-size:14px;font-weight:600">My games</span><span style="height:36px;display:grid;place-items:center;font-size:14px;font-weight:500;color:#969188">Club</span></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Needs you</span><span style="min-width:18px;height:18px;border-radius:9px;background:#D5B76E;color:#0A0A09;font-size:11px;font-weight:600;display:grid;place-items:center">2</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.28);border-radius:18px;padding:16px">
+<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start"><div><div style="font-size:16px;font-weight:500">Rishi &amp; Erf <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> You &amp; KC</div><div style="font-size:13px;color:#969188;margin-top:3px">Waiting for you and KC · 2h ago</div></div><span style="display:flex;gap:4px;margin-top:6px"><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span></span></div>
+<div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:14px"><span style="height:44px;border-radius:22px;border:1px solid rgba(242,238,229,.18);font-size:15px;font-weight:500;display:grid;place-items:center">Can't play</span><span style="height:44px;border-radius:22px;background:#D5B76E;color:#0A0A09;font-size:15px;font-weight:600;display:grid;place-items:center">I'm in</span></div>
+</div>
+<div style="background:#11110F;border:1px solid rgba(224,137,107,.3);border-radius:18px;padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="height:24px;padding:0 10px;border-radius:12px;background:rgba(224,137,107,.12);font-size:11.5px;font-weight:500;color:#E0896B;display:flex;align-items:center">Needs a 4th</span><span style="font-size:12.5px;color:#969188">Sat 4 Oct · 10am · PadelX</span></div>
+<div style="font-size:16px;font-weight:500;margin-top:10px">You &amp; Osh <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Kaz &amp; <span style="color:#6B675F">—</span></div>
+<div style="font-size:13px;color:#969188;margin-top:3px">Tom backed out yesterday. Court is still booked.</div>
+<div style="display:grid;grid-template-columns:1fr;margin-top:14px"><span style="height:44px;border-radius:22px;border:1px solid rgba(242,238,229,.18);font-size:15px;font-weight:500;display:grid;place-items:center">Find a replacement</span></div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Upcoming</span><span style="font-size:12.5px;color:#6B675F">Court booked</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:12px 16px;display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center">
+<div style="text-align:center"><div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;color:#D5B76E">TUE</div><div style="font-family:'Instrument Serif',serif;font-size:30px;line-height:1">30</div></div>
+<div style="min-width:0"><div style="font-size:15px;font-weight:500">You &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Rishi &amp; Erf</div><div style="font-size:13px;color:#969188;margin-top:2px">8:00pm · PadelX Canary Wharf</div></div>
+<span style="width:8px;height:8px;border-radius:50%;background:#8FB996"></span>
+</div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:12px 16px;display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center">
+<div style="text-align:center"><div style="font-size:10.5px;font-weight:600;letter-spacing:.1em;color:#D5B76E">MON</div><div style="font-family:'Instrument Serif',serif;font-size:30px;line-height:1">6</div></div>
+<div style="min-width:0"><div style="font-size:15px;font-weight:500">You &amp; Len <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Osh &amp; KC</div><div style="font-size:13px;color:#969188;margin-top:2px">7:30pm · Rocket Padel Wimbledon</div></div>
+<span style="width:8px;height:8px;border-radius:50%;background:#8FB996"></span>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Called out</span><span style="font-size:12.5px;color:#6B675F">Agreed · needs a court</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:14px 16px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:15px;font-weight:500">You &amp; KC <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Len &amp; Eli</span><span style="height:22px;padding:0 9px;border-radius:11px;border:1px dashed rgba(242,238,229,.3);font-size:11px;color:#D8D3C8;display:flex;align-items:center;flex:none">No court</span></div>
+<div style="font-size:13px;color:#969188;margin-top:4px"><span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:14px">Proposed</span> Thu 2 Oct · 7pm · Rocket Padel</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Waiting on others</span><span style="font-size:12.5px;color:#6B675F">Newest first</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px">
+<div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:14px 0"><div><div style="font-size:15px;font-weight:500">You &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Tom &amp; Osh</div><div style="font-size:13px;color:#969188;margin-top:3px">Waiting for Tom, Osh · today</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px"><span style="display:flex;gap:4px"><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span></span><span style="font-size:11.5px;color:#6B675F">2/4</span></div></div>
+<div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:14px 0;border-top:1px solid rgba(242,238,229,.07)"><div><div style="font-size:15px;font-weight:500">You &amp; Eli <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Kaz &amp; Dennis</div><div style="font-size:13px;color:#969188;margin-top:3px">Waiting for Dennis · 3d ago</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px"><span style="display:flex;gap:4px"><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid #5F5B53;box-sizing:border-box"></span></span><span style="font-size:11.5px;color:#6B675F">3/4</span></div></div>
+</div>
+</div>
+
+<div style="height:48px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-radius:14px;border:1px solid rgba(242,238,229,.06)"><span style="font-size:13.5px;color:#969188">Archived call-outs · 3</span><svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;justify-content:center;font-size:13.5px;color:#969188">Played games &amp; results ›</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="play" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Requests you must answer get buttons inline — no need to open anything. Booked games get a solid date block; agreed-but-unbooked games get a dashed "No court" pill and italic "Proposed". You can tell them apart at a glance.</p>
+</div>
+
+<div class="dv-opt" id="1h">
+<div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Play · Club · Called out</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:16px">
+<div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1;padding-top:4px">Play</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;background:#141412;border:1px solid rgba(242,238,229,.06);border-radius:12px;padding:3px"><span style="height:36px;display:grid;place-items:center;font-size:14px;font-weight:500;color:#969188">My games</span><span style="height:36px;border-radius:9px;background:#26241E;display:grid;place-items:center;font-size:14px;font-weight:600">Club</span></div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+<div style="height:64px;border-radius:14px;border:1px solid rgba(242,238,229,.07);display:flex;flex-direction:column;justify-content:center;padding:0 10px"><span style="font-family:'Instrument Serif',serif;font-size:24px;line-height:1;color:#E0896B">1</span><span style="font-size:11.5px;color:#969188;margin-top:4px">Attention</span></div>
+<div style="height:64px;border-radius:14px;border:1px solid rgba(242,238,229,.07);display:flex;flex-direction:column;justify-content:center;padding:0 10px"><span style="font-family:'Instrument Serif',serif;font-size:24px;line-height:1">4</span><span style="font-size:11.5px;color:#969188;margin-top:4px">Upcoming</span></div>
+<div style="height:64px;border-radius:14px;background:#1C1A14;border:1px solid rgba(213,183,110,.45);display:flex;flex-direction:column;justify-content:center;padding:0 10px"><span style="font-family:'Instrument Serif',serif;font-size:24px;line-height:1;color:#F0D58E">6</span><span style="font-size:11.5px;color:#F2EEE5;margin-top:4px">Called out</span></div>
+<div style="height:64px;border-radius:14px;border:1px solid rgba(242,238,229,.07);display:flex;flex-direction:column;justify-content:center;padding:0 10px"><span style="font-family:'Instrument Serif',serif;font-size:24px;line-height:1">5</span><span style="font-size:11.5px;color:#969188;margin-top:4px">Requests</span></div>
+</div>
+<div style="font-size:13px;color:#969188;line-height:1.5">Everyone's agreed to these. Somebody needs to book a court. Newest first.</div>
+
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.32);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><div style="font-size:16px;font-weight:500">You &amp; KC <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Len &amp; Eli</div><div style="display:flex;align-items:center;gap:8px;margin-top:5px"><span style="display:flex;gap:4px"><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span><span style="width:7px;height:7px;border-radius:50%;background:#D5B76E"></span></span><span style="font-size:12.5px;color:#969188">All 4 agreed · called out 1d ago</span></div></div><svg width="12" height="7" viewBox="0 0 12 7" fill="none" style="margin-top:8px"><path d="M1 6l5-5 5 5" stroke="#969188" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1.3fr;border-radius:12px;background:#181714;padding:12px 14px;gap:8px">
+<div><div style="font-size:11px;color:#6B675F">Proposed</div><div style="font-size:14px;font-weight:500;margin-top:3px">Thu 2 Oct</div></div>
+<div><div style="font-size:11px;color:#6B675F">Time</div><div style="font-size:14px;font-weight:500;margin-top:3px">7:00pm</div></div>
+<div><div style="font-size:11px;color:#6B675F">Venue</div><div style="font-size:14px;font-weight:500;margin-top:3px">Rocket Padel</div></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="height:24px;padding:0 10px;border-radius:12px;border:1px dashed rgba(242,238,229,.3);font-size:11.5px;color:#D8D3C8;display:flex;align-items:center">Court not booked</span><span style="font-size:12px;color:#6B675F">Archives in 13 days</span></div>
+<div style="display:grid;grid-template-columns:1fr 1.5fr;gap:10px"><span style="height:44px;border-radius:22px;border:1px solid rgba(242,238,229,.18);font-size:14.5px;font-weight:500;display:grid;place-items:center">Change plan</span><span style="height:44px;border-radius:22px;background:#D5B76E;color:#0A0A09;font-size:14.5px;font-weight:600;display:grid;place-items:center">I've booked a court</span></div>
+</div>
+
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px">
+<div style="padding:14px 0"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:15px;font-weight:500">Kaz &amp; Tom <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Osh &amp; Dennis</span><span style="font-size:12px;color:#6B675F;flex:none">4d</span></div><div style="font-size:13px;color:#969188;margin-top:3px">No time proposed yet</div></div>
+<div style="padding:14px 0;border-top:1px solid rgba(242,238,229,.07)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:15px;font-weight:500">Rishi &amp; Ant Slicer <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> PDM &amp; Erf</span><span style="font-size:12px;color:#6B675F;flex:none">6d</span></div><div style="font-size:13px;color:#969188;margin-top:3px"><span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:14px">Proposed</span> Sun 5 Oct · 11am · PadelX</div></div>
+<div style="padding:14px 0;border-top:1px solid rgba(242,238,229,.07)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:15px;font-weight:500">Len &amp; KC <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Eli &amp; Tom</span><span style="font-size:12px;color:#6B675F;flex:none">11d</span></div><div style="font-size:13px;color:#C9A56A;margin-top:3px">Archives in 3 days</div></div>
+<div style="height:48px;display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(242,238,229,.07);font-size:13.5px;color:#969188">Show 2 more</div>
+</div>
+<div style="height:48px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-radius:14px;border:1px solid rgba(242,238,229,.06)"><span style="font-size:13.5px;color:#969188">Archived call-outs · 3</span><svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="play" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Club view: the four counters are the lifecycle and the filter. Called-out rows collapse to two lines so the group can scan; one tap expands a card with the proposal and a single obvious action.</p>
+</div>
+
+<div class="dv-opt" id="1i">
+<div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>"I've booked a court" → Upcoming</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="padding:12px 20px;display:flex;flex-direction:column;gap:16px"><div style="font-family:'Instrument Serif',serif;font-size:34px">Play</div><div style="height:42px;border-radius:12px;background:#141412"></div><div style="height:64px;border-radius:14px;background:#11110F"></div><div style="height:260px;border-radius:18px;background:#11110F"></div></div>
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.62)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:190px;background:#131311;border-radius:28px 28px 0 0;border-top:1px solid rgba(213,183,110,.22);padding:10px 20px 34px;display:flex;flex-direction:column;gap:18px">
+<div style="width:36px;height:5px;border-radius:3px;background:#3A3832;align-self:center"></div>
+<div><div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1">Court booked</div><div style="font-size:14px;color:#969188;margin-top:4px">You &amp; KC v Len &amp; Eli</div></div>
+<div style="background:#0B0B0A;border:1px solid rgba(242,238,229,.07);border-radius:16px;padding:0 16px">
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px"><span style="font-size:14.5px;color:#969188">Date</span><span style="font-size:15px;font-weight:500">Thu 2 Oct</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-size:14.5px;color:#969188">Time</span><span style="font-size:15px;font-weight:500">7:00pm</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-size:14.5px;color:#969188">Venue</span><span style="font-size:15px;font-weight:500">Rocket Padel Wimbledon</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-size:14.5px;color:#969188">Court</span><span style="font-size:15px;color:#6B675F">Optional</span></div>
+</div>
+<div style="font-size:12.5px;color:#969188;line-height:1.5;padding:0 2px">Filled in from the proposal. Confirming tells all four players and moves this game to <span style="color:#8FB996">Upcoming</span>.</div>
+<div style="flex:1"></div>
+<span style="height:52px;border-radius:26px;background:#D5B76E;color:#0A0A09;font-size:16px;font-weight:600;display:grid;place-items:center">Confirm booking</span>
+<div style="position:absolute;left:20px;right:20px;top:-150px;height:56px;border-radius:16px;background:#1D2A20;border:1px solid rgba(143,185,150,.35);display:flex;align-items:center;gap:12px;padding:0 16px;box-shadow:0 10px 30px rgba(0,0,0,.4)"><span style="width:22px;height:22px;border-radius:50%;background:#8FB996;color:#0A0A09;display:grid;place-items:center;font-size:12px;font-weight:700">✓</span><span style="font-size:14px;flex:1"><b style="font-weight:600">Moved to Upcoming</b> · Thu 2 Oct</span><span style="font-size:13px;color:#8FB996;font-weight:500">View</span></div>
+</div>
+</div>
+<p class="dv-note">Booking is one confirm, pre-filled from the proposal. The toast (shown floating above, post-confirm) closes the loop: this game is now real.</p>
+</div>
+
+<div class="dv-opt" id="1j">
+<div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>Game (booked)</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:4px 20px 120px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;justify-content:space-between;align-items:center;height:44px"><span style="font-size:16px;color:#D5B76E;display:flex;align-items:center;gap:6px"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L2 7.5 8 14" stroke="#D5B76E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Play</span><span style="width:44px;height:44px;display:grid;place-items:center;color:#969188;font-size:20px;letter-spacing:1px">···</span></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:3px;border-radius:2px;background:#D5B76E"></span><span style="font-size:11px;color:#969188">Requested</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:3px;border-radius:2px;background:#D5B76E"></span><span style="font-size:11px;color:#969188">Agreed</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:3px;border-radius:2px;background:#8FB996"></span><span style="font-size:11px;color:#8FB996;font-weight:600">Booked</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="height:3px;border-radius:2px;background:#26241E"></span><span style="font-size:11px;color:#6B675F">Played</span></div>
+</div>
+<div><div style="font-family:'Instrument Serif',serif;font-size:42px;line-height:1.05">Tuesday 30 Sep</div><div style="font-size:15px;color:#969188;margin-top:6px">8:00pm · in 2 days</div></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:16px">
+<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:16px;color:#D5B76E">S</span><div><div style="font-size:14.5px;font-weight:500">You</div><div style="font-size:11.5px;color:#8FB996">✓ In</div></div></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:16px;color:#D5B76E">P</span><div><div style="font-size:14.5px;font-weight:500">PDM</div><div style="font-size:11.5px;color:#8FB996">✓ In</div></div></div>
+</div>
+<span style="font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;color:#6B675F">v</span>
+<div style="display:flex;flex-direction:column;gap:12px;align-items:flex-end">
+<div style="display:flex;align-items:center;gap:10px;flex-direction:row-reverse;text-align:right"><span style="width:34px;height:34px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:16px;color:#D5B76E">R</span><div><div style="font-size:14.5px;font-weight:500">Rishi</div><div style="font-size:11.5px;color:#8FB996">✓ In</div></div></div>
+<div style="display:flex;align-items:center;gap:10px;flex-direction:row-reverse;text-align:right"><span style="width:34px;height:34px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:16px;color:#D5B76E">E</span><div><div style="font-size:14.5px;font-weight:500">Erf</div><div style="font-size:11.5px;color:#8FB996">✓ In</div></div></div>
+</div>
+</div>
+</div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px">
+<div style="display:flex;align-items:center;gap:12px;height:62px"><div style="flex:1"><div style="font-size:15px;font-weight:500">PadelX Canary Wharf</div><div style="font-size:12.5px;color:#969188;margin-top:2px">Court 3 · booked by PDM on 26 Sep</div></div><span style="height:34px;padding:0 14px;border-radius:17px;border:1px solid rgba(242,238,229,.18);font-size:13px;display:flex;align-items:center">Directions</span></div>
+<div style="display:flex;align-items:center;gap:12px;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="flex:1;font-size:15px">Add to calendar</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+<div style="font-size:13px;color:#969188;text-align:center">Score entry opens here after 8:00pm on Tuesday.</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:6px"><span style="height:44px;padding:0 20px;display:flex;align-items:center;font-size:14.5px;color:#E0896B;font-weight:500">I can't make it</span><span style="font-size:12px;color:#6B675F">The game stays — the others can find a replacement.</span></div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="play" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">The four-step bar is the only place the lifecycle is spelled out — and it's for orientation, not operation. Backing out is available but quiet, and it never deletes the fixture.</p>
+</div>
+
+<div class="dv-opt" id="1k">
+<div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>Request a game</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.62)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:58px;background:#131311;border-radius:28px 28px 0 0;border-top:1px solid rgba(213,183,110,.22);padding:10px 20px 34px;display:flex;flex-direction:column;gap:18px">
+<div style="width:36px;height:5px;border-radius:3px;background:#3A3832;align-self:center"></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-family:'Instrument Serif',serif;font-size:30px">Request a game</div><span style="font-size:15px;color:#969188">Cancel</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;background:#0B0B0A;border:1px solid rgba(242,238,229,.06);border-radius:12px;padding:3px"><span style="height:36px;border-radius:9px;background:#26241E;display:grid;place-items:center;font-size:14px;font-weight:600">One game</span><span style="height:36px;display:grid;place-items:center;font-size:14px;font-weight:500;color:#969188">Paste a list</span></div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Your team</span>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="height:56px;border-radius:14px;background:#181714;display:flex;align-items:center;gap:10px;padding:0 12px"><span style="width:32px;height:32px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:15px;color:#D5B76E">S</span><div><div style="font-size:14.5px;font-weight:500">You</div><div style="font-size:11px;color:#8FB996">Confirmed</div></div></div>
+<div style="height:56px;border-radius:14px;background:#181714;display:flex;align-items:center;gap:10px;padding:0 12px"><span style="width:32px;height:32px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:15px;color:#D5B76E">P</span><span style="font-size:14.5px;font-weight:500;flex:1">PDM</span><span style="color:#6B675F;font-size:13px">✕</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Opponents</span>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="height:56px;border-radius:14px;background:#181714;display:flex;align-items:center;gap:10px;padding:0 12px"><span style="width:32px;height:32px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:15px;color:#D5B76E">R</span><span style="font-size:14.5px;font-weight:500;flex:1">Rishi</span><span style="color:#6B675F;font-size:13px">✕</span></div>
+<div style="height:56px;border-radius:14px;border:1px solid rgba(213,183,110,.55);background:#1C1A14;display:flex;align-items:center;gap:8px;padding:0 12px"><span style="font-size:14.5px;color:#969188">Add player</span><span style="width:1.5px;height:18px;background:#D5B76E"></span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:12.5px;color:#969188">Good fits to face you &amp; PDM with Rishi</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="height:40px;padding:0 14px 0 5px;border-radius:20px;background:#181714;border:1px solid rgba(242,238,229,.08);display:flex;align-items:center;gap:8px;font-size:14px"><span style="width:30px;height:30px;border-radius:50%;background:#0B0B0A;display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:14px;color:#D5B76E">E</span>Erf</span>
+<span style="height:40px;padding:0 14px 0 5px;border-radius:20px;background:#181714;border:1px solid rgba(242,238,229,.08);display:flex;align-items:center;gap:8px;font-size:14px"><span style="width:30px;height:30px;border-radius:50%;background:#0B0B0A;display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:14px;color:#D5B76E">T</span>Tom</span>
+<span style="height:40px;padding:0 14px 0 5px;border-radius:20px;background:#181714;border:1px solid rgba(242,238,229,.08);display:flex;align-items:center;gap:8px;font-size:14px"><span style="width:30px;height:30px;border-radius:50%;background:#0B0B0A;display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:14px;color:#D5B76E">D</span>Dennis</span>
+<span style="height:40px;padding:0 14px;border-radius:20px;border:1px solid rgba(242,238,229,.08);display:flex;align-items:center;font-size:14px;color:#969188">Search…</span>
+</div>
+</div>
+<div style="height:52px;padding:0 16px;border-radius:14px;border:1px solid rgba(242,238,229,.07);display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:14.5px">Suggest a time &amp; place</div><div style="font-size:12px;color:#6B675F">Optional</div></div><span style="font-size:20px;color:#969188">+</span></div>
+<div style="flex:1"></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="height:52px;border-radius:26px;background:#26241E;color:#6B675F;font-size:16px;font-weight:600;display:grid;place-items:center">Add 1 more player</span><span style="font-size:12px;color:#6B675F;text-align:center">You're confirmed automatically. The other three get a request.</span></div>
+</div>
+</div>
+<p class="dv-note">Four slots, not a form. Suggestions come from the same logic as Find Game — balanced picks, no percentages. The button label says exactly what's missing.</p>
+</div>
+
+<div class="dv-opt" id="1l">
+<div class="dv-olabel"><a class="dv-oid" href="#1l">1l</a>Paste a list</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.62)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:58px;background:#131311;border-radius:28px 28px 0 0;border-top:1px solid rgba(213,183,110,.22);padding:10px 20px 34px;display:flex;flex-direction:column;gap:18px">
+<div style="width:36px;height:5px;border-radius:3px;background:#3A3832;align-self:center"></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-family:'Instrument Serif',serif;font-size:30px">Request games</div><span style="font-size:15px;color:#969188">Cancel</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;background:#0B0B0A;border:1px solid rgba(242,238,229,.06);border-radius:12px;padding:3px"><span style="height:36px;display:grid;place-items:center;font-size:14px;font-weight:500;color:#969188">One game</span><span style="height:36px;border-radius:9px;background:#26241E;display:grid;place-items:center;font-size:14px;font-weight:600">Paste a list</span></div>
+<div style="background:#0B0B0A;border:1px solid rgba(213,183,110,.35);border-radius:16px;padding:16px;font-size:15.5px;line-height:1.9;color:#F2EEE5;min-height:240px;box-sizing:border-box">
+<div>Me &amp; PDM vs Rishi &amp; Erf</div>
+<div>Shaun/PDM v Tom/Osh</div>
+<div>Me and KC against Len and E</div>
+<div>Kaz &amp; Dennis v Ant &amp; Tom</div>
+<div style="display:flex;align-items:center">Me + Eli vs Kaz and Len<span style="width:1.5px;height:19px;background:#D5B76E;margin-left:1px"></span></div>
+</div>
+<div style="font-size:12.5px;color:#969188;line-height:1.55">One game per line. Write it however you like — <span style="color:#D8D3C8">me, &amp;, /, and, +, v, vs, against</span> all work. Nicknames are fine.</div>
+<div style="flex:1"></div>
+<span style="height:52px;border-radius:26px;background:#D5B76E;color:#0A0A09;font-size:16px;font-weight:600;display:grid;place-items:center">Read 5 games</span>
+</div>
+</div>
+<p class="dv-note">Same sheet, second mode. The field accepts a WhatsApp-style list verbatim; the button counts lines so you know it understood the shape before parsing names.</p>
+</div>
+
+<div class="dv-opt" id="1m">
+<div class="dv-olabel"><a class="dv-oid" href="#1m">1m</a>Review before sending</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:4px 20px 150px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:center;height:44px"><span style="font-size:16px;color:#D5B76E;display:flex;align-items:center;gap:6px"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L2 7.5 8 14" stroke="#D5B76E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Edit list</span></div>
+<div><div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1">5 games found</div><div style="font-size:13.5px;color:#969188;margin-top:4px">3 ready · <span style="color:#F0D58E">1 name to check</span> · 1 duplicate</div></div>
+
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.45);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:#6B675F">"Me and KC against Len and E"</span></div>
+<div style="font-size:15.5px;font-weight:500">You &amp; KC <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Len &amp; <span style="color:#F0D58E">?</span></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:#D8D3C8;margin-right:4px">Who's "E"?</span><span style="height:36px;padding:0 16px;border-radius:18px;border:1px solid rgba(242,238,229,.2);font-size:14px;display:flex;align-items:center">Eli</span><span style="height:36px;padding:0 16px;border-radius:18px;border:1px solid rgba(242,238,229,.2);font-size:14px;display:flex;align-items:center">Erf</span></div>
+</div>
+
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:16px;padding:0 16px">
+<div style="display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 0"><span style="width:20px;height:20px;border-radius:50%;background:rgba(143,185,150,.18);color:#8FB996;font-size:11px;display:grid;place-items:center;flex:none">✓</span><div style="flex:1"><div style="font-size:15px;font-weight:500">You &amp; PDM <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Rishi &amp; Erf</div></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 0;border-top:1px solid rgba(242,238,229,.07)"><span style="width:20px;height:20px;border-radius:50%;background:rgba(143,185,150,.18);color:#8FB996;font-size:11px;display:grid;place-items:center;flex:none">✓</span><div style="flex:1"><div style="font-size:15px;font-weight:500">Kaz &amp; Dennis <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Ant Slicer &amp; Tom</div><div style="font-size:12px;color:#969188;margin-top:2px">"Ant" → Ant Slicer · You're not playing — all 4 get asked</div></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 0;border-top:1px solid rgba(242,238,229,.07)"><span style="width:20px;height:20px;border-radius:50%;background:rgba(143,185,150,.18);color:#8FB996;font-size:11px;display:grid;place-items:center;flex:none">✓</span><div style="flex:1"><div style="font-size:15px;font-weight:500">You &amp; Eli <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Kaz &amp; Len</div></div></div>
+</div>
+
+<div style="background:#11110F;border:1px solid rgba(242,238,229,.06);border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;opacity:.75">
+<span style="width:20px;height:20px;border-radius:50%;border:1px solid #5F5B53;color:#969188;font-size:11px;display:grid;place-items:center;flex:none">–</span>
+<div style="flex:1"><div style="font-size:15px;font-weight:500;color:#969188">You &amp; PDM v Tom &amp; Osh</div><div style="font-size:12px;color:#6B675F;margin-top:2px">You already requested this today · skipped</div></div>
+<span style="font-size:13px;color:#D5B76E">Include</span>
+</div>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 20px 34px;background:linear-gradient(to top,#0A0A09 70%,rgba(10,10,9,0));display:flex;flex-direction:column;gap:8px">
+<span style="height:52px;border-radius:26px;background:#26241E;color:#969188;font-size:16px;font-weight:600;display:grid;place-items:center">Pick "E" to send 4 requests</span>
+</div>
+</div>
+<p class="dv-note">Problems float to the top; confident matches collapse to a single line with a tick. Fuzzy matches show their reasoning ("Ant" → Ant Slicer). Duplicates are skipped by default, never silently.</p>
+</div>
+
+</div>
+</div>
+
+<div class="dv-group">
+<h2 class="dv-gh">Me, Players &amp; Profile</h2>
+<p class="dv-gsub">"Understanding myself" and "looking someone up" are different jobs. Me is a personal dashboard with a path to depth; a profile is built around the question "how do I compare with them?". Both keep the rating engine one level down.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1n">
+<div class="dv-olabel"><a class="dv-oid" href="#1n">1n</a>Me</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:center;gap:14px;padding-top:4px">
+<span style="width:52px;height:52px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.4);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:24px;color:#D5B76E">S</span>
+<div style="flex:1"><div style="font-family:'Instrument Serif',serif;font-size:30px;line-height:1.05">Shaun</div><div style="font-size:12.5px;color:#969188;margin-top:2px">Member since 2023 · 148 games</div></div>
+<span style="width:44px;height:44px;border-radius:50%;display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#969188" stroke-width="1.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></span>
+</div>
+
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:18px 16px 14px">
+<div style="display:flex;justify-content:space-between;align-items:flex-end">
+<div><div style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Power Rating</div><div style="display:flex;align-items:baseline;gap:10px;margin-top:6px"><span style="font-family:'Instrument Serif',serif;font-size:52px;line-height:1">1,642</span><span style="font-size:12.5px;color:#8FB996">▲ 52 since April</span></div></div>
+<div style="text-align:right"><div style="font-family:'Instrument Serif',serif;font-size:30px;line-height:1">#3</div><div style="font-size:12px;color:#969188;margin-top:3px">in Tier 2</div></div>
+</div>
+<svg width="100%" height="104" viewBox="0 0 318 104" preserveAspectRatio="none" style="display:block;margin-top:14px;overflow:visible">
+<defs><linearGradient id="mpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D5B76E" stop-opacity=".18"></stop><stop offset="1" stop-color="#D5B76E" stop-opacity="0"></stop></linearGradient></defs>
+<line x1="0" y1="7" x2="318" y2="7" stroke="#969188" stroke-width="1" stroke-dasharray="3 4" opacity=".5"></line>
+<path d="M0 83 L53 75 L106 69 L159 78 L212 60 L265 55 L318 47 L318 90 L0 90Z" fill="url(#mpg)"></path>
+<polyline points="0,83 53,75 106,69 159,78 212,60 265,55 318,47" fill="none" stroke="#D5B76E" stroke-width="1.6" stroke-linejoin="round"></polyline>
+<circle cx="318" cy="47" r="3.5" fill="#F0D58E"></circle>
+</svg>
+<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#6B675F;margin-top:6px"><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-size:13px;color:#969188">Tier 1 starts at 1,700</span><span style="font-size:13px;color:#F2EEE5;font-weight:500">58 to go</span></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">September</span><span style="font-size:12.5px;color:#969188">5–2 · won 4 in a row</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<div style="padding:14px"><div style="font-size:12px;color:#969188">Best Month</div><div style="font-family:'Instrument Serif',serif;font-size:30px;line-height:1.1;margin-top:4px">4th</div></div>
+<div style="padding:14px;border-left:1px solid rgba(242,238,229,.07)"><div style="font-size:12px;color:#969188">League</div><div style="font-family:'Instrument Serif',serif;font-size:30px;line-height:1.1;margin-top:4px">3rd</div></div>
+<div style="padding:14px;border-left:1px solid rgba(242,238,229,.07)"><div style="font-size:12px;color:#969188">Merit</div><div style="font-family:'Instrument Serif',serif;font-size:30px;line-height:1.1;margin-top:4px">4th</div></div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Partners &amp; rivals</span>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:14px"><div style="font-size:12px;color:#969188">Best partner</div><div style="display:flex;align-items:center;gap:8px;margin-top:10px"><span style="width:30px;height:30px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:14px;color:#D5B76E">P</span><span style="font-size:16px;font-weight:500">PDM</span></div><div style="font-family:'Instrument Serif',serif;font-size:24px;margin-top:8px">9–3 <span style="font-family:Inter,sans-serif;font-size:12px;color:#969188">together</span></div></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:14px"><div style="font-size:12px;color:#969188">Toughest rival</div><div style="display:flex;align-items:center;gap:8px;margin-top:10px"><span style="width:30px;height:30px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.3);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:14px;color:#D5B76E">K</span><span style="font-size:16px;font-weight:500">Kaz</span></div><div style="font-family:'Instrument Serif',serif;font-size:24px;margin-top:8px">3–5 <span style="font-family:Inter,sans-serif;font-size:12px;color:#969188">against</span></div></div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Recent matches</span><span style="font-size:12.5px;color:#969188">All ›</span></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px">
+<div style="display:grid;grid-template-columns:22px 1fr auto 34px;gap:10px;align-items:center;height:56px"><span style="font-family:'Instrument Serif',serif;font-size:18px">W</span><div><div style="font-size:14.5px;font-weight:500">w/ PDM v Kaz &amp; Len</div><div style="font-size:12px;color:#6B675F">Thu 25 Sep</div></div><span style="font-size:13px;color:#969188;font-variant-numeric:tabular-nums">6–3 6–4</span><span style="font-size:13px;color:#8FB996;text-align:right">+12</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr auto 34px;gap:10px;align-items:center;height:56px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-family:'Instrument Serif',serif;font-size:18px">W</span><div><div style="font-size:14.5px;font-weight:500">w/ Len v Osh &amp; Eli</div><div style="font-size:12px;color:#6B675F">Mon 22 Sep</div></div><span style="font-size:13px;color:#969188;font-variant-numeric:tabular-nums">6–4 3–6 6–2</span><span style="font-size:13px;color:#8FB996;text-align:right">+5</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr auto 34px;gap:10px;align-items:center;height:56px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-family:'Instrument Serif',serif;font-size:18px;color:#6B675F">L</span><div><div style="font-size:14.5px;font-weight:500">w/ KC v Kaz &amp; Rishi</div><div style="font-size:12px;color:#6B675F">Thu 18 Sep</div></div><span style="font-size:13px;color:#969188;font-variant-numeric:tabular-nums">4–6 5–7</span><span style="font-size:13px;color:#C98470;text-align:right">−4</span></div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Go deeper</span>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px">
+<div style="display:flex;align-items:center;gap:12px;height:60px"><div style="flex:1"><div style="font-size:15px;font-weight:500">Performance vs expectation</div><div style="font-size:12.5px;color:#969188">Winning more often than your rating predicts</div></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;gap:12px;height:60px;border-top:1px solid rgba(242,238,229,.07)"><div style="flex:1"><div style="font-size:15px;font-weight:500">Reliability</div><div style="font-size:12.5px;color:#969188">Turned up for 47 of 48 booked games</div></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;gap:12px;height:60px;border-top:1px solid rgba(242,238,229,.07)"><div style="flex:1"><div style="font-size:15px;font-weight:500">All partnerships &amp; head-to-heads</div><div style="font-size:12.5px;color:#969188">Every player you've played with or against</div></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;gap:12px;height:60px;border-top:1px solid rgba(242,238,229,.07)"><div style="flex:1"><div style="font-size:15px;font-weight:500">Rating calculations</div><div style="font-size:12.5px;color:#969188">Game-by-game maths</div></div><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+</div>
+
+<div style="background:#0F0F0D;border:1px solid rgba(242,238,229,.06);border-radius:18px;padding:0 16px">
+<div style="display:flex;align-items:center;gap:12px;height:52px"><span style="width:16px;height:16px;border-radius:50%;border:4px solid #D5B76E;box-sizing:border-box"></span><span style="flex:1;font-size:15px">Doughnuts</span><span style="font-size:12.5px;color:#969188">2 this year</span></div>
+<div style="display:flex;align-items:center;gap:12px;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="width:16px"></span><span style="flex:1;font-size:15px">Settings &amp; notifications</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;gap:12px;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="width:16px"></span><span style="flex:1;font-size:15px">Admin tools</span><span style="font-size:10px;font-weight:600;letter-spacing:.1em;color:#969188;border:1px solid rgba(242,238,229,.15);border-radius:4px;padding:2px 5px">ADMIN</span></div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="me" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">The rating journey with the Tier 1 line gives a goal, not just a number. Advanced analysis is described in plain words ("turned up for 47 of 48") before you open it. Admin tools only render for admins.</p>
+</div>
+
+<div class="dv-opt" id="1o">
+<div class="dv-olabel"><a class="dv-oid" href="#1o">1o</a>Players</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:8px 20px 120px;display:flex;flex-direction:column;gap:18px">
+<div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1;padding-top:4px">Players</div>
+<div style="height:46px;border-radius:14px;background:#141412;border:1px solid rgba(242,238,229,.08);display:flex;align-items:center;gap:10px;padding:0 14px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#969188" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><span style="font-size:15px;color:#6B675F">Search 15 members</span></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Played with recently</span>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:50px;height:50px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.25);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:21px;color:#D5B76E">P</span><span style="font-size:12px;color:#D8D3C8">PDM</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:50px;height:50px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.25);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:21px;color:#D5B76E">K</span><span style="font-size:12px;color:#D8D3C8">Kaz</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:50px;height:50px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.25);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:21px;color:#D5B76E">L</span><span style="font-size:12px;color:#D8D3C8">Len</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:50px;height:50px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.25);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:21px;color:#D5B76E">O</span><span style="font-size:12px;color:#D8D3C8">Osh</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:50px;height:50px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.25);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:21px;color:#D5B76E">E</span><span style="font-size:12px;color:#D8D3C8">Eli</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Everyone</span><div style="display:flex;background:#141412;border-radius:10px;padding:2px"><span style="height:28px;padding:0 12px;border-radius:8px;background:#26241E;font-size:12.5px;font-weight:600;display:flex;align-items:center">A–Z</span><span style="height:28px;padding:0 12px;font-size:12.5px;color:#969188;display:flex;align-items:center">Rating</span></div></div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;overflow:hidden">
+<sc-for list="{{ dir }}" as="p" hint-placeholder-count="12">
+<div style="display:grid;grid-template-columns:38px minmax(0,1fr) auto 7px;gap:12px;align-items:center;height:62px;padding:0 16px;border-top:{{ p.bt }};background:{{ p.bg }}">
+<span style="width:38px;height:38px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.22);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:17px;color:#D5B76E">{{ p.ini }}</span>
+<div style="min-width:0"><div style="font-size:15.5px;font-weight:500;color:{{ p.nc }}">{{ p.name }}</div><div style="font-size:12.5px;color:#969188;margin-top:1px">{{ p.sub }}</div></div>
+<span style="font-family:'Instrument Serif',serif;font-size:21px;font-variant-numeric:tabular-nums">{{ p.rating }}</span>
+<svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="players" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Search is the first thing on the screen. Rows carry identity plus exactly one competitive fact each — tier, tier rank, rating. No sparklines, no W/L columns.</p>
+</div>
+
+<div class="dv-opt" id="1p">
+<div class="dv-olabel"><a class="dv-oid" href="#1p">1p</a>Player profile · Rishi</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:4px 20px 120px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;align-items:center;height:44px"><span style="font-size:16px;color:#D5B76E;display:flex;align-items:center;gap:6px"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L2 7.5 8 14" stroke="#D5B76E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Players</span></div>
+<div style="display:flex;align-items:center;gap:16px">
+<span style="width:68px;height:68px;border-radius:50%;background:#1A1915;border:1px solid rgba(213,183,110,.4);display:grid;place-items:center;font-family:'Instrument Serif',serif;font-size:32px;color:#D5B76E">R</span>
+<div><div style="font-family:'Instrument Serif',serif;font-size:38px;line-height:1">Rishi</div><div style="font-size:13px;color:#969188;margin-top:6px">Tier 1 · #1 in tier · #1 overall</div></div>
+</div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;display:grid;grid-template-columns:1.2fr 1fr 1fr">
+<div style="padding:14px 14px 16px"><div style="font-size:12px;color:#969188">Power Rating</div><div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:4px">1,784</div><div style="font-size:11.5px;color:#8FB996">▲ 6</div></div>
+<div style="padding:14px 14px 16px;border-left:1px solid rgba(242,238,229,.07)"><div style="font-size:12px;color:#969188">Record</div><div style="font-family:'Instrument Serif',serif;font-size:32px;line-height:1.1;margin-top:4px">64–31</div></div>
+<div style="padding:14px 14px 16px;border-left:1px solid rgba(242,238,229,.07)"><div style="font-size:12px;color:#969188">Form</div><div style="display:flex;gap:4px;margin-top:16px"><span style="width:7px;height:7px;border-radius:50%;background:#F2EEE5"></span><span style="width:7px;height:7px;border-radius:50%;background:#F2EEE5"></span><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid #6B675F;box-sizing:border-box"></span><span style="width:7px;height:7px;border-radius:50%;background:#F2EEE5"></span><span style="width:7px;height:7px;border-radius:50%;background:#F2EEE5"></span></div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">You &amp; Rishi</span>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.28);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div><div style="font-size:12px;color:#969188">Against him</div><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1;margin-top:2px">2–4</div><div style="font-size:12px;color:#969188">He leads</div></div>
+<div><div style="font-size:12px;color:#969188">As partners</div><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1;margin-top:2px">3–1</div><div style="font-size:12px;color:#8FB996">Works well</div></div>
+</div>
+<div style="font-size:13px;color:#D8D3C8;padding-top:12px;border-top:1px solid rgba(242,238,229,.07)">Last met Tue 9 Sep — you &amp; KC won 7–5 6–4. Next: Tue 30 Sep.</div>
+<span style="height:46px;border-radius:23px;background:#D5B76E;color:#0A0A09;font-size:15px;font-weight:600;display:grid;place-items:center">Request a game with Rishi</span>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">Recent results</span>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px">
+<div style="display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;height:54px"><span style="font-family:'Instrument Serif',serif;font-size:18px">W</span><div><div style="font-size:14.5px;font-weight:500">w/ Kaz v You &amp; KC</div><div style="font-size:12px;color:#6B675F">Thu 18 Sep</div></div><span style="font-size:13px;color:#969188">6–4 7–5</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;height:54px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-family:'Instrument Serif',serif;font-size:18px">W</span><div><div style="font-size:14.5px;font-weight:500">w/ Erf v KC &amp; Dennis</div><div style="font-size:12px;color:#6B675F">Tue 16 Sep</div></div><span style="font-size:13px;color:#969188">6–0 6–0</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;height:54px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-family:'Instrument Serif',serif;font-size:18px;color:#6B675F">L</span><div><div style="font-size:14.5px;font-weight:500">w/ Erf v You &amp; KC</div><div style="font-size:12px;color:#6B675F">Tue 9 Sep</div></div><span style="font-size:13px;color:#969188">5–7 4–6</span></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#969188">More on Rishi</span>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px">
+<div style="display:flex;align-items:center;height:52px;gap:12px"><span style="flex:1;font-size:15px">Partnerships &amp; rivals</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;height:52px;gap:12px;border-top:1px solid rgba(242,238,229,.07)"><span style="flex:1;font-size:15px">Rating journey</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;height:52px;gap:12px;border-top:1px solid rgba(242,238,229,.07)"><span style="flex:1;font-size:15px">Reliability &amp; vs expectation</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;height:52px;gap:12px;border-top:1px solid rgba(242,238,229,.07)"><span style="flex:1;font-size:15px;color:#969188">Rating calculations</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="players" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Four answers before any scrolling: who, how good, how playing, how you compare. "You &amp; Rishi" replaces head-to-head tables and carries the natural next action. 14 former modules collapse into four rows.</p>
+</div>
+
+</div>
+</div>
+
+<div class="dv-group">
+<h2 class="dv-gh">Supporting</h2>
+<p class="dv-gsub">Find a game, Doughnuts, and how admin controls appear without leaking into the player's mental model.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1q">
+<div class="dv-olabel"><a class="dv-oid" href="#1q">1q</a>Find a game</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:4px 20px 120px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;align-items:center;height:44px"><span style="font-size:16px;color:#D5B76E;display:flex;align-items:center;gap:6px"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L2 7.5 8 14" stroke="#D5B76E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Play</span></div>
+<div><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1">Find a game</div><div style="font-size:13.5px;color:#969188;margin-top:6px;line-height:1.5">Matchups built from who's active and who'd make a good game.</div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<span style="height:44px;border-radius:14px;background:#F2EEE5;color:#0A0A09;font-size:14px;font-weight:600;display:grid;place-items:center">Close game</span>
+<span style="height:44px;border-radius:14px;border:1px solid rgba(242,238,229,.14);font-size:14px;font-weight:500;color:#D8D3C8;display:grid;place-items:center">New partner</span>
+<span style="height:44px;border-radius:14px;border:1px solid rgba(242,238,229,.14);font-size:14px;font-weight:500;color:#D8D3C8;display:grid;place-items:center">Rematch</span>
+<span style="height:44px;border-radius:14px;border:1px solid rgba(242,238,229,.14);font-size:14px;font-weight:500;color:#D8D3C8;display:grid;place-items:center">Step up</span>
+</div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="height:22px;padding:0 9px;border-radius:11px;background:#181714;font-size:11.5px;color:#D8D3C8;display:flex;align-items:center">Evenly matched</span><span style="font-size:12px;color:#6B675F">Best fit</span></div>
+<div style="font-size:16.5px;font-weight:500">You &amp; Len <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Osh &amp; Erf</div>
+<div style="font-size:13px;color:#969188;line-height:1.5">You haven't partnered Len since July — you won 5 of 7 together.</div>
+<div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px"><span style="height:44px;border-radius:22px;border:1px solid rgba(242,238,229,.18);font-size:14.5px;font-weight:500;display:grid;place-items:center">Swap a player</span><span style="height:44px;border-radius:22px;background:#D5B76E;color:#0A0A09;font-size:14.5px;font-weight:600;display:grid;place-items:center">Request</span></div>
+</div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="height:22px;padding:0 9px;border-radius:11px;background:#181714;font-size:11.5px;color:#D8D3C8;display:flex;align-items:center">Evenly matched</span><span style="font-size:13px;color:#D5B76E;font-weight:500">Request</span></div>
+<div style="font-size:16px;font-weight:500">You &amp; Eli <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> PDM &amp; KC</div>
+<div style="font-size:13px;color:#969188">All four played this week.</div>
+</div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="height:22px;padding:0 9px;border-radius:11px;background:#181714;font-size:11.5px;color:#D8D3C8;display:flex;align-items:center">A stretch</span><span style="font-size:13px;color:#D5B76E;font-weight:500">Request</span></div>
+<div style="font-size:16px;font-weight:500">You &amp; Tom <span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#969188">v</span> Kaz &amp; Rishi</div>
+<div style="font-size:13px;color:#969188">A chance to reverse the 18 Sep result.</div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="play" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Recommendations are explained in human terms — "evenly matched", "a stretch", a reason you'd want to play. The prediction engine drives the ranking but never shows a percentage to players.</p>
+</div>
+
+<div class="dv-opt" id="1r">
+<div class="dv-olabel"><a class="dv-oid" href="#1r">1r</a>Doughnuts · List</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="position:absolute;top:50px;left:0;right:0;bottom:0;overflow-y:auto;scrollbar-width:none">
+<div style="padding:4px 20px 120px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;align-items:center;height:44px"><span style="font-size:16px;color:#D5B76E;display:flex;align-items:center;gap:6px"><svg width="9" height="15" viewBox="0 0 9 15" fill="none"><path d="M8 1L2 7.5 8 14" stroke="#D5B76E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Rankings</span></div>
+<div style="display:flex;align-items:center;gap:12px"><span style="width:30px;height:30px;border-radius:50%;border:8px solid #D5B76E;box-sizing:border-box"></span><div style="font-family:'Instrument Serif',serif;font-size:34px;line-height:1.1">Doughnuts</div></div>
+<div style="display:flex;gap:10px;align-items:center">
+<span style="height:40px;padding:0 14px;border-radius:12px;border:1px solid rgba(242,238,229,.14);font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;flex:none">September 2026<svg width="10" height="6" viewBox="0 0 12 7" fill="none"><path d="M1 1l5 5 5-5" stroke="#969188" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<div style="flex:1;display:grid;grid-template-columns:1fr 1fr;background:#141412;border:1px solid rgba(242,238,229,.06);border-radius:12px;padding:3px"><span style="height:32px;display:grid;place-items:center;font-size:13.5px;font-weight:500;color:#969188">By player</span><span style="height:32px;border-radius:9px;background:#26241E;display:grid;place-items:center;font-size:13.5px;font-weight:600">List</span></div>
+</div>
+<div style="font-size:13px;color:#969188">5 doughnuts in 4 matches · newest first</div>
+<div style="background:#11110F;border:1px solid rgba(213,183,110,.15);border-radius:18px;padding:0 16px">
+<div style="display:grid;grid-template-columns:40px 1fr;gap:14px;padding:16px 0"><div><div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1">27</div><div style="font-size:11px;color:#969188;margin-top:2px">Sep</div></div><div style="display:grid;grid-template-columns:1fr auto;row-gap:4px;align-items:center"><span style="font-size:15px;font-weight:500">Kaz &amp; Len</span><span style="font-size:14px;font-variant-numeric:tabular-nums"><span style="color:#F0D58E;font-weight:600">6–0</span> 6–3</span><span style="font-size:14px;color:#969188">Tom &amp; Dennis</span><span></span></div></div>
+<div style="display:grid;grid-template-columns:40px 1fr;gap:14px;padding:16px 0;border-top:1px solid rgba(242,238,229,.07)"><div><div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1">23</div><div style="font-size:11px;color:#969188;margin-top:2px">Sep</div></div><div style="display:grid;grid-template-columns:1fr auto;row-gap:4px;align-items:center"><span style="font-size:15px;font-weight:500">Osh &amp; PDM</span><span style="font-size:14px;font-variant-numeric:tabular-nums">6–2 <span style="color:#F0D58E;font-weight:600">6–0</span></span><span style="font-size:14px;color:#969188">Eli &amp; Ant Slicer</span><span></span></div></div>
+<div style="display:grid;grid-template-columns:40px 1fr;gap:14px;padding:16px 0;border-top:1px solid rgba(242,238,229,.07)"><div><div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1">16</div><div style="font-size:11px;color:#969188;margin-top:2px">Sep</div></div><div style="display:grid;grid-template-columns:1fr auto;row-gap:4px;align-items:center"><span style="font-size:15px;font-weight:500">Rishi &amp; Erf</span><span style="font-size:14px;font-variant-numeric:tabular-nums"><span style="color:#F0D58E;font-weight:600">6–0 6–0</span></span><span style="font-size:14px;color:#969188">KC &amp; Dennis</span><span style="font-size:11px;color:#D5B76E;letter-spacing:.06em;text-align:right">DOUBLE</span></div></div>
+<div style="display:grid;grid-template-columns:40px 1fr;gap:14px;padding:16px 0;border-top:1px solid rgba(242,238,229,.07)"><div><div style="font-family:'Instrument Serif',serif;font-size:26px;line-height:1">4</div><div style="font-size:11px;color:#969188;margin-top:2px">Sep</div></div><div style="display:grid;grid-template-columns:1fr auto;row-gap:4px;align-items:center"><span style="font-size:15px;font-weight:500;color:#F0D58E">You &amp; PDM</span><span style="font-size:14px;font-variant-numeric:tabular-nums"><span style="color:#F0D58E;font-weight:600">6–0</span> 6–4</span><span style="font-size:14px;color:#969188">Tom &amp; Ant Slicer</span><span></span></div></div>
+</div>
+</div>
+</div>
+<dc-import name="MPTabBar" active="rankings" badge="2" hint-size="390px,84px" style="position:absolute;left:0;bottom:0;width:390px;height:84px"></dc-import>
+</div>
+<p class="dv-note">Reached from Rankings › More tables and from Me. The month picker sits outside the By player / List switch, so the month stays selected across both. The 6–0 set is the only gold on the page.</p>
+</div>
+
+<div class="dv-opt" id="1s">
+<div class="dv-olabel"><a class="dv-oid" href="#1s">1s</a>Admin · Manage fixture</div>
+<div style="width:390px;height:844px;background:#0A0A09;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 10px #1B1A18,0 0 0 11px #2E2C28,0 30px 60px rgba(0,0,0,.25);margin:11px;font-family:Inter,sans-serif;color:#F2EEE5">
+<dc-import name="MPStatusBar" hint-size="390px,50px"></dc-import>
+<div style="padding:12px 20px;display:flex;flex-direction:column;gap:16px"><div style="height:44px"></div><div style="font-family:'Instrument Serif',serif;font-size:42px">Tuesday 30 Sep</div><div style="height:150px;border-radius:18px;background:#11110F"></div></div>
+<div style="position:absolute;inset:0;background:rgba(0,0,0,.62)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:150px;background:#131311;border-radius:28px 28px 0 0;border-top:1px solid rgba(213,183,110,.22);padding:10px 20px 34px;display:flex;flex-direction:column;gap:16px">
+<div style="width:36px;height:5px;border-radius:3px;background:#3A3832;align-self:center"></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:10px;font-weight:600;letter-spacing:.1em;color:#969188;border:1px solid rgba(242,238,229,.15);border-radius:4px;padding:2px 5px">ADMIN</span></div><div style="font-family:'Instrument Serif',serif;font-size:30px;margin-top:6px">Manage fixture</div></div></div>
+<div style="background:#0B0B0A;border:1px solid rgba(242,238,229,.07);border-radius:16px;padding:14px 16px">
+<div style="font-size:12px;color:#969188">Prediction · visible to admins only</div>
+<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:10px;gap:2px"><span style="width:46%;background:#D8D3C8"></span><span style="flex:1;background:#4A4740"></span></div>
+<div style="display:flex;justify-content:space-between;font-size:13.5px;margin-top:8px;font-variant-numeric:tabular-nums"><span>Shaun &amp; PDM <span style="color:#969188">46%</span></span><span>Rishi &amp; Erf <span style="color:#969188">54%</span></span></div>
+</div>
+<div style="background:#0B0B0A;border:1px solid rgba(242,238,229,.07);border-radius:16px;padding:0 16px">
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px"><span style="font-size:15px">Court booking</span><span style="font-size:13.5px;color:#8FB996">Booked ›</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-size:15px">Replace a player</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-size:15px">Record a back-out</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-size:15px">Edit result</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:52px;border-top:1px solid rgba(242,238,229,.07)"><span style="font-size:15px">Archive or remove…</span><svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#5F5B53" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+<div style="font-size:12px;color:#6B675F;line-height:1.5">Opened from ··· on any game. Players see only "Add to calendar" and "Share" there. Remove lives one level deeper, behind a confirmation.</div>
+</div>
+</div>
+<p class="dv-note">Admin power is a sheet, not a mode. The same game screen serves everyone; admins just get more in the ··· menu. Win probability exists only here.</p>
+</div>
+
+</div>
+<p class="dv-next" style="margin-top:40px">Try next: "explore a bolder Home with the rating as a watch-dial" · "design the score entry + result flow" · "show empty / first-week states for a new member"</p>
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  renderVals() {
+    const P = [['Rishi','R',1784,1,6],['Kaz','K',1761,1,14],['Len','L',1738,1,-9],['Erf','E',1712,1,-3],['Osh','O',1668,2,21],['PDM','P',1655,2,4],['Shaun','S',1642,2,12],['KC','KC',1630,2,-7],['Eli','El',1611,2,0],['Tom','T',1574,3,17],['Dennis','D',1552,3,-11],['Ant Slicer','AS',1531,3,-2]];
+    const fmt = n => n.toLocaleString('en-GB');
+    const mvS = m => m > 0 ? '▲ ' + m : m < 0 ? '▼ ' + Math.abs(m) : '—';
+    const mvC = m => m > 0 ? '#8FB996' : m < 0 ? '#C98470' : '#5F5B53';
+    const tierCount = {}; 
+    const all = P.map((p, i) => {
+      tierCount[p[3]] = (tierCount[p[3]] || 0) + 1;
+      const me = p[0] === 'Shaun';
+      return { name: me ? 'Shaun (you)' : p[0], short: p[0], ini: p[1], rating: fmt(p[2]), tier: p[3], tr: tierCount[p[3]], overall: '#' + (i + 1), mv: mvS(p[4]), mvc: mvC(p[4]), me,
+        bg: me ? '#1C1A14' : 'transparent', nc: me ? '#F0D58E' : '#F2EEE5', rc: me ? '#D5B76E' : '#F2EEE5' };
+    });
+    const ranges = { 1: '1,700 +', 2: '1,600 – 1,699', 3: 'Under 1,600' };
+    const tiers = [1, 2, 3].map(t => ({ name: 'Tier ' + t, range: ranges[t], rows: all.filter(r => r.tier === t).map((r, i) => ({ ...r, bt: i ? '1px solid rgba(242,238,229,.06)' : 'none' })) }));
+    const dir = [...all].sort((a, b) => a.short.localeCompare(b.short)).map((r, i) => ({ ...r, sub: 'Tier ' + r.tier + ' · #' + r.tr + ' in tier', bt: i ? '1px solid rgba(242,238,229,.06)' : 'none' }));
+    const R = [['Kaz',41,'6–1'],['Osh',33,'5–1'],['Tom',27,'4–2'],['Shaun',18,'5–2'],['Rishi',11,'4–3'],['PDM',6,'3–3'],['Eli',0,'2–2'],['KC',-12,'2–4'],['Len',-19,'1–4']];
+    const ord = n => n + (['th','st','nd','rd'][(n % 100 - 20) % 10] || ['th','st','nd','rd'][n % 100] || 'th');
+    const race = R.slice(1).map((r, i) => { const me = r[0] === 'Shaun'; return { pos: i + 2, name: me ? 'You' : r[0], rec: r[2], gain: r[1] > 0 ? '+' + r[1] : r[1] === 0 ? '0' : '−' + Math.abs(r[1]), gc: r[1] > 0 ? '#8FB996' : r[1] < 0 ? '#C98470' : '#969188', bg: me ? '#1C1A14' : 'transparent', nc: me ? '#F0D58E' : '#F2EEE5', bt: i ? '1px solid rgba(242,238,229,.06)' : 'none' }; });
+    const M = [['Tom',6,4,4,0,12],['Osh',6,5,3,2,11],['Kaz',7,6,2,4,10],['Shaun',7,5,2,3,9],['PDM',6,3,2,1,7],['Rishi',7,4,0,4,4],['Eli',4,2,1,1,4],['KC',6,2,0,2,2],['Len',5,1,0,1,1]];
+    const merit = M.map((m, i) => { const me = m[0] === 'Shaun'; return { pos: i + 1, name: me ? 'You' : m[0], p: m[1], w: m[2], hw: m[3], fw: m[4], pts: m[5], bg: me ? '#1C1A14' : 'transparent', nc: me ? '#F0D58E' : '#F2EEE5', bt: i ? '1px solid rgba(242,238,229,.06)' : 'none',
+      hwBg: me ? '#D5B76E' : 'transparent', hwC: me ? '#0A0A09' : '#F2EEE5' }; });
+    const cx = 130, cy = 130, rad = a => (a - 90) * Math.PI / 180;
+    const pt = (r, a) => [cx + r * Math.cos(rad(a)), cy + r * Math.sin(rad(a))];
+    let ticks = '';
+    for (let i = 0; i <= 50; i++) { const a = -135 + i * 5.4; const [x1, y1] = pt(i % 5 ? 118 : 114, a); const [x2, y2] = pt(124, a); ticks += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`; }
+    const arc = (r, a0, a1) => { const [x0, y0] = pt(r, a0); const [x1, y1] = pt(r, a1); return `M${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
+    const pa = -135 + 270 * 0.42; const [kx, ky] = pt(104, pa);
+    const dial = { ticks, track: arc(104, -135, 135), prog: arc(104, -135, pa), kx: kx.toFixed(1), ky: ky.toFixed(1) };
+    return { tiers, dir, race, merit, dial };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:relative;width:100%;height:84px;background:rgba(12,12,11,.96);border-top:1px solid rgba(242,238,229,.07);display:flex;padding:7px 8px 0;box-sizing:border-box;font-family:Inter,sans-serif">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:48px;position:relative">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ t.ic }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ t.d }}"></path></svg>
+<span style="font-size:10.5px;font-weight:500;letter-spacing:.01em;color:{{ t.lc }}">{{ t.label }}</span>
+<sc-if value="{{ t.badge }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:0;left:calc(50% + 5px);min-width:17px;height:17px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:#D5B76E;color:#0A0A09;font-size:10.5px;font-weight:600;display:grid;place-items:center;border:2px solid #0C0C0B">{{ t.badge }}</span></sc-if>
+</div>
+</sc-for>
+<div style="position:absolute;left:50%;bottom:8px;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:#F2EEE5;opacity:.85"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:84},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;rankings&quot;,&quot;play&quot;,&quot;players&quot;,&quot;me&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;badge&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const a = this.props.active ?? 'home';
+    const badge = this.props.badge ?? '';
+    const defs = [
+      ['home', 'Home', 'M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z'],
+      ['rankings', 'Rankings', 'M5 20v-7M12 20V5M19 20v-10'],
+      ['play', 'Play', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM5.6 5.8c3.2 2.8 3.2 9.6 0 12.4M18.4 5.8c-3.2 2.8-3.2 9.6 0 12.4'],
+      ['players', 'Players', 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c.8-3.5 3.3-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.6a3.5 3.5 0 0 1 0 6.4M18 14.8c1.8.6 3 2.4 3.5 5.2'],
+      ['me', 'Me', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20.5c1-4 4-6 7.5-6s6.5 2 7.5 6']
+    ];
+    return {
+      tabs: defs.map(([k, label, d]) => ({
+        label, d,
+        ic: k === a ? '#D5B76E' : '#6B675F',
+        lc: k === a ? '#F2EEE5' : '#6B675F',
+        badge: k === 'play' && badge ? String(badge) : false
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>
