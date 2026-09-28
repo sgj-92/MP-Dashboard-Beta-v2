@@ -74,7 +74,7 @@ Questions that need a decision are numbered **DQ1–DQ30** in Section 6. Each ar
 
 **The biggest structural risks:**
 - **Routing and tests.** Tests drive navigation through the hidden legacy `#tabrow .tab-btn`, 101 references. Keep that router; restyle on top of it.
-- **More's eleven entry points.** They need new homes (Section 5).
+- **More's eight destinations (six items, My Player and Admin).** They need new homes (Section 5).
 - **Rankings month.** The design's Power view is "today", but Rankings opens on the Meaningful Month (DQ3).
 
 **Recommended order** (Section 7):
@@ -1128,9 +1128,11 @@ In every case, the real rule is kept until someone decides otherwise.
 - **DQ27.** Admin prediction wording is a share of games, never "probability".
 - **DQ28.** "Edit result" in the Admin sheet links to Games' Historical Match Correction.
 
-**Found while mapping (for CChat)**
+**Found while mapping (for CGPT to confirm)**
 
-- **Kings / podium basis.** The Ledger has two statements: "Monthly Performance is the podium/Kings basis" (17 Sep, CGPT) and "Both rank on rating" (18 Sep, CCode copy correction). Any redesigned podium or Kings copy must not assert either until this is confirmed against the code.
+- **Kings / podium basis.** The Ledger has two statements: "Monthly Performance is the podium/Kings basis" (17 Sep, CGPT) and "Both rank on rating" (18 Sep, CCode copy correction).
+- The code ranks both on **Power Rating**: month-end Power Rating in a month view (`computeRankingsPodiumTop3`, `computeKingsOfTiers`). Monthly Performance is not used.
+- Redesigned copy follows the code unless CGPT says the 17 Sep direction was meant.
 
 ---
 

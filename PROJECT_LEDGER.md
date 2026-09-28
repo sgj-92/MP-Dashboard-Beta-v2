@@ -149,6 +149,28 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Claude Design implementation map — DELIVERED (`08712d4`, mapping only).**
+Shaun, 28 Sep: *"implementation mapping only … Stop and return the baton to
+Shaun/CGPT."*
+- **The map:**
+  [`docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md`](./docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md).
+  It covers all 18 areas the brief named, each with its nine questions
+  answered, plus the primitives to build first and a phased order.
+- **Nothing in the app changed.**
+- **Headline:** almost every number the design shows already has one
+  canonical function behind it, so the work is presentation and routing, not
+  calculation. The exceptions are rules the mockup invents, which stay out:
+  - tier numbers and rating boundaries;
+  - Best Month as rating gained;
+  - Merit as 3 / 1;
+  - "5 games in 60 days";
+  - 7-day movement;
+  - fuzzy name auto-accept;
+  - Reliability meaning attendance.
+- **Decisions needed:** Section 5 lists what needs Shaun and what CGPT can
+  lead (DQ1–DQ30).
+- **Baton → Shaun / CGPT.**
+
 **Design mockups filed: `docs/design/claude-mobile-v1/` (28 Sep).** At
 Shaun's request, three Claude design canvas files were added as reference
 material for Phase 2. They are not built and not approved as a spec.
@@ -446,7 +468,8 @@ calendar. Each such screen keeps two things, never one global:
 | Games | **All time** · own local selection (`gamesMonth`) |
 | Compare | **All time** · own local selection (`h2hMonth`) |
 | Player Profile | **All time** match log · own control (`profileMonth`); current state is **rolling** |
-| Last 10, current Power Rating, Home Your Game, Doughnuts, Call-outs, Directory | **Rolling / current / all-time** — never month-scoped |
+| Doughnuts (By Player and Doughnut List share it) | **Meaningful Month** · own choice (`doughnutMonthChoice`), kept across views and reopening — D7, `e4408ff` |
+| Last 10, current Power Rating, Home Your Game, Call-outs, Directory | **Rolling / current / all-time** — never month-scoped |
 | Monthly rating breakdown | follows the month its caller passes |
 
 The note shows only while the default is the fallback, the reader is looking
@@ -985,6 +1008,21 @@ Tom/Fatch audit (`838ca66`), the Players Directory refresh (`43401f8`), the
 League refinement (`3e326e1`) and Shaun's disclosure correction to it
 (`11ed091`). **Nothing is queued for CCode.** The open product questions are in
 Section 8.
+
+**28 Sep: the Claude Design mapping is delivered (`08712d4`) — baton with
+Shaun / CGPT.** The design in `docs/design/claude-mobile-v1/` is mapped onto
+the app in
+[`docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md`](./docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md).
+- **The proposed phases:**
+  - 0: tokens and primitives, no visible change;
+  - 1: the shell, where More becomes Me;
+  - 2: Play;
+  - 3: Home;
+  - 4: Rankings;
+  - 5: Players, Profile and Me;
+  - 6: the rest.
+- **No phase is approved.** The decisions each phase waits on are in
+  Section 5 (*OPEN 28 Sep — Claude Design migration*).
 
 ---
 
@@ -1892,6 +1930,54 @@ following as one coherent UI refactor, with no data/model changes:
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 28 Sep — Claude Design migration: decisions before any phase starts
+
+Full reasoning and the numbering (DQ1–DQ30) are in Section 6 of
+[`docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md`](./docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md).
+In every case the real rule stays until someone decides otherwise.
+
+**For Shaun: product behaviour, permissions, rules, data.**
+
+| # | Question | CCode's recommendation |
+|---|---|---|
+| DQ1 | The design makes the next tier a target: a "58 pts to Tier 1" bar and a threshold line on the journey. Tiers are board decisions, not rating thresholds. | No bar or line. Keep today's one-line gap, worded as "N pts below the lowest-rated Tier A player". |
+| DQ3 | The design's Power view is today's ratings. Rankings opens on the Meaningful Month's month-end view. | Power shows today, which matches Tier Rank (D5). Month-end history moves to the Month segment. |
+| DQ4 | The monthly switch leads with Best Month (the Monthly Race), which is still a trial. | League · Merit · Race until the trial is confirmed. |
+| DQ6 | Can a participant record "Court booked"? This has been open since 27 Sep, and the design assumes yes. | Yes for the four players, attributed and reversible by an Admin. The Admin review list stays. |
+| DQ7 | Can a player "Find a replacement"? Today only an Admin can. | Keep Admin-only. |
+| DQ8 | Can a player "Change plan" (date, time, venue)? | Not in the first Play phase. |
+| DQ9 | Should a plain request carry a time and venue? (NEXT #18) | Yes, optional. The fields already exist. |
+| DQ10 | Court number, "booked by", Directions, Add to calendar, Share. | Leave all out for now. A court number would be a schema change. |
+| DQ15 | The design uses "Reliability" to mean attendance ("turned up for 47 of 48"). | Never. Reliability means rating evidence, and attendance is not recorded. |
+| DQ18 | The podium and Kings of Tiers have no place in the design, but are accepted surfaces. | Keep them, either above the tier groups or under More tables. |
+| DQ19 | Home hero: none (`1a`) or one of five heroes. `3a`/`3b` need club photos. | Build `1a` first; a hero is a later increment. |
+| DQ26 | Find a Game labels each card "Evenly matched" / "A stretch", which is a favourite call (D4). | Keep filters; no per-card verdicts. |
+
+**CGPT may lead (presentation within agreed intent):**
+- **DQ2:** the period the movement indicator covers. Recommended: this month on Rankings and Me; the last game on Home.
+- **DQ5:** first run without a chosen player.
+- **DQ11:** Add result from a fixture, pre-filled, with no time gate.
+- **DQ20:** tokens and fonts. Recommended: the design's champagne gold, and Instrument Serif + Inter self-hosted, while keeping the Ledger's contrast levels. Booked needs its own hue.
+- **DQ21:** where H2H lives.
+- **DQ22:** Games history and Challenges.
+- **DQ24:** tier-labelled monthly positions.
+- **DQ29:** the Play badge rule.
+- **DQ30:** "Around the club" items.
+
+**Mock assumptions kept out, with the real rule preserved.** No decision is needed on these:
+- the parser never auto-accepts "Ant" → Ant Slicer, and duplicates are warned, not skipped;
+- Merit is tier-step based with P/W/D/L;
+- "Why it moved" uses `RatingExplainer`, not invented +8/+3/+1 items;
+- no gendered copy ("He leads");
+- records show draws;
+- the eligibility rule is 2 in 30 days;
+- the Admin prediction is worded as a share of games, never a probability.
+
+**For CGPT: confirm the code is the intent.**
+- **Kings / podium basis.** The Ledger holds two statements: "Monthly Performance remains the podium/Kings basis" (17 Sep, CGPT) and "both rank on rating" (18 Sep, CCode).
+- **The code, checked 28 Sep, ranks both on Power Rating:** month-end Power Rating in a month view (`computeRankingsPodiumTop3` / `computeKingsOfTiers` in `shell.js`), and neither uses Monthly Performance.
+- If rating is intended, the 17 Sep line is stale. If not, it is a product change, and nothing is changed until someone says which.
+
 ### OPEN 28 Sep — audit fixes D4–D6: judgment calls for Shaun
 
 **1. Monthly Race still shows a win chance to players.**
@@ -2036,6 +2122,9 @@ Whether a participant should be able to say "I've booked the court" is a
 product question. It is not built.
 
 **6. Smaller points.**
+- *(Superseded 27 Sep by `b12e837`: Called Out is now **newest, or newly
+  restored, first** — `calledOutOrder`, per the Decisions Log. Corrected 28 Sep
+  while mapping the design. The original note follows.)*
 - **Ordering:** Called Out is oldest first, so the game most likely to be
   forgotten is on top. Upcoming is soonest first.
 - **Admin-added games** (Requests form and Predict a Matchup) now ask for
@@ -2457,6 +2546,75 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 28 Sep 2026 (Claude Design → implementation map)
+
+`08712d4` delivers
+[`docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md`](./docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md).
+The Ledger commit that follows it makes one small correction to the map: the
+Kings / podium note. **No production code, CSS, data or tests changed**, so
+the tests stay at 717/717 on `e4408ff`.
+
+**What was read:**
+- this Ledger in full;
+- all three design files;
+- `index.html`, `shell.js`, `app.js`, `app.css`, `tokens.css` and the
+  modules behind every designed number;
+- every browser test's DOM hooks.
+
+**What the map says, briefly:**
+- **The calculations already exist.** Each designed figure is traced to its
+  one canonical function: `tierRankOf`, `playerStateOf`, `FixtureFlow`,
+  `MeritTable`, `MonthlyRace`, `RatingExplainer`, `doughnutMatches` and the
+  others.
+- **The migration is a presentation and routing change**, plus one new pure
+  view-model (`playView.js`). It gives Play, Home and the tab badge one
+  viewer-centred list of games built from `FixtureFlow.stage()`. Home's
+  "Next game" must use stage UPCOMING, not `getViewerSnapshot().upcomingGames`,
+  which includes Called Out.
+- **What must not be copied:**
+  - the prototype runtime (`x-dc`, `sc-for`, `DCLogic`);
+  - the mock status bar and home-indicator bar;
+  - the fabricated data;
+  - every rule the mockup illustrates rather than knows. The list is in
+    Section 5 and the map.
+- **The shell is the riskiest change.** More has eight destinations that
+  need new homes (the map's Section 5).
+  - **Keep `#tabrow` as the internal router.** 101 test references drive
+    navigation through it.
+  - The design's "Structure & system" board is otherwise consistent with the
+    visibility rules. Every new route must go through `canSeeTab`.
+- **The styling is not all in CSS.** Inline styles in `app.js` / `shell.js`
+  (H2H, League/Race tables, Games cards, journey SVG) mean several screens
+  need template changes; CSS alone will not re-skin them. The map's
+  Section 6a lists this and the other architectural constraints.
+
+**Corrections made on the way, in place:**
+- **Section 2's month table** listed Doughnuts as never month-scoped. D7 made
+  it Meaningful Month with its own choice, and the row now says so.
+- **Section 5's 27 Sep note** said Called Out is oldest first. `b12e837` made
+  it newest or newly restored first, which is what the code does. The note is
+  marked superseded, not deleted.
+- **Kings / podium basis:** the code ranks both on Power Rating. The 17 Sep
+  CGPT note says Monthly Performance. This is flagged for CGPT to confirm; no
+  change was made.
+
+**Accessibility, noticed:**
+- The design's inactive tab colour `#6B675F` is about 3.4:1, below AA for its
+  10.5px labels.
+- The design's muted text is below the contrast the Ledger raised on purpose.
+
+The map recommends keeping the Ledger's levels (DQ20).
+
+**Baton → Shaun / CGPT.**
+- **To start:** Phase 0 needs DQ20 (tokens and fonts).
+- **Phase 1 needs:**
+  - DQ5 (first run without a chosen player);
+  - DQ18 (where the podium, Kings and other More items go);
+  - DQ22 (Games history and Challenges);
+  - DQ29 (the Play badge rule).
+- **Phase 2's permission questions** (DQ6–DQ9) are Shaun's.
+- **CCode is not implementing any of it until a phase is approved.**
 
 ### CCode — 28 Sep 2026 (D7 Doughnuts: list and month)
 
@@ -6094,6 +6252,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `08712d4` | Claude Design → implementation map (mapping only). `docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md` maps all 18 areas the brief named, each against its nine questions. It also covers the prototype-to-production translation, the token and primitive layer, the features the design gives no home, architecture constraints, 30 decision questions and a seven-phase order. No production change; 717/717 unchanged. |
 | `e4408ff` | D7 Doughnuts. `doughnutMatches(month)` is the one existing definition, lifted out unchanged. It adds a Doughnut List (newest first, ties by id, winners first, shutout set picked out, draws marked, tap opens the game in Play › Games) beside the unchanged By Player leaderboard, plus a Month control shared by both views (Meaningful Month default, choice kept) and an empty state. The draw-wording test now selects All time. 7 tests (6 fail against the previous code; one is the unchanged-definition invariant); 717/717. |
 | `9cca86c` | Audit fixes. **D4:** `canSeePredictions()` gates every predicted split and favourite call (Find a Game cards, Home Match to Make, Challenge ready card); `TAB_VISIBILITY_KEY` / `canSeeTab()` make the visibility settings govern the tab guard, shell sub-navigation and landing, More, and Home/profile shortcuts; Find a Game defaults to Visible. **D5:** `tierRankOf()` is the one Tier Rank, read by header, Player Analysis, full analysis and Home; the all-members calculation is removed. **D6:** League and Merit rows carry the games behind P/W/D/L, and one shared drill-down serves P/W/D/L/Hard/Fav. 13 tests (12 fail against the previous code); 710/710. |
 | `b12e837` | Fixture follow-up 2: For me / My Requests / Other requests (newest first; one list per request). `fixtureParse.js` plus an "Add multiple games" review: names are never guessed, problems are named, active duplicates are warned about, and one "Create N requests" writes them with a batch id. 14-day Called Out archive derived from `activeSince`, with no write; `calledOutAt` is preserved. Archive/Restore in Manage fixture. Explicit orders for every list. The D1–D3 tests pin their clock. 25 tests (the 19 on changed code all fail against it); 697/697. |
@@ -6173,8 +6332,12 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
 ## 8. NEXT
 
-**The approved queue is empty.** Baton with Shaun / CGPT. `63b4ea7`,
-**561 / 561 tests (158 browser)**.
+**The approved queue is empty.** Baton with Shaun / CGPT.
+- **Implementation:** `e4408ff`, **717 / 717 tests** (234 browser).
+- **Design map:** `08712d4`.
+
+*(The line this replaces read "`63b4ea7`, 561 / 561 tests (158 browser)",
+stale since 26 Sep.)*
 
 1. **DONE (`838ca66`).** Tom/Fatch integrity audit — record verified correct.
 2. **DONE (`43401f8`).** Players Directory visual refresh.
@@ -6344,6 +6507,22 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
    **D7 (Doughnuts list and month) DONE (`e4408ff`).**
    **Phase 2 (the wider IA and redesign) is not started.** Baton with Shaun /
    CGPT.
+
+15k. **Claude Design implementation map DELIVERED (`08712d4`). Baton →
+   Shaun / CGPT to approve a phase.**
+   - This is the mapping step of Phase 2 of the Player Experience Reset
+     (15j).
+   - **Proposed order:**
+     - 0: tokens and primitives;
+     - 1: shell, where More becomes Me;
+     - 2: Play;
+     - 3: Home;
+     - 4: Rankings;
+     - 5: Players, Profile and Me;
+     - 6: the rest.
+   - **Decisions each phase waits on:** Section 5, *OPEN 28 Sep — Claude
+     Design migration*.
+   - **Nothing is implemented.**
 
 15i. **APPROVED TRIAL — Best Month / Monthly Race** (Shaun, 26 Sep).
    Analysis is complete in [`BEST_MONTH_ANALYSIS.md`](./BEST_MONTH_ANALYSIS.md).
