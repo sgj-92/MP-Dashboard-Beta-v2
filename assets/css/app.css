@@ -2235,6 +2235,28 @@ body { padding-bottom: calc(var(--shell-nav-height) + var(--shell-safe-bottom));
 }
 .gp-remove:active{ opacity: .6; }
 
+/* One player's record over the listed games. A line, not a card: no border,
+   no fill, just a gold hairline tying it to the list it counts. */
+.gp-record{
+  margin: 2px 0 8px; padding: 4px 0 4px 10px;
+  border-left: 2px solid var(--gold-hairline);
+  font-family: var(--font-interface);
+}
+.gp-record-context{
+  font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.gp-record-line{
+  margin-top: 2px; font-size: 13px; color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.gp-record-line b{ color: var(--text); font-weight: 600; }
+.gp-record-pct{
+  margin-top: 1px; font-size: 12px; color: var(--gold-soft);
+  font-variant-numeric: tabular-nums;
+}
+.gp-record-empty .gp-record-line{ color: var(--text-dim); }
+
 /* ===================== PROFILE: RESULTS AND THEIR MONTH =====================
    The month belongs to the profile and sits on the heading it scopes, like
    Clear all on the Games player filter. Quiet: a caption-sized select, not a

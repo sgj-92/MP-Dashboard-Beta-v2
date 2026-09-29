@@ -9080,16 +9080,86 @@ function gamesPlayerLabels(){
   return gamesPlayerIds.map(id => displayNameFor(id));
 }
 
+// The game type as the select names it. One function, so the collapsed
+// heading and the record line can never call the same filter two things.
+function gamesTypeLabel(typeOptions){
+  if(gamesType === 'all') return 'All game types';
+  const found = typeOptions
+    ? (typeOptions.categories || []).concat(typeOptions.matchups || []).find(o => o.value === gamesType)
+    : null;
+  return found ? found.label : gamesType;
+}
+
+function gamesMonthText(){
+  return gamesMonth === 'all' ? 'All time' : monthLabel(gamesMonth);
+}
+
 function gamesFilterSummary(typeOptions){
-  const monthPart = gamesMonth === 'all' ? 'All time' : monthLabel(gamesMonth);
   const playerPart = PlayerFilter.summary(gamesPlayerLabels()) || 'All players';
-  let typePart = 'All game types';
-  if(gamesType !== 'all' && typeOptions){
-    const found = (typeOptions.categories || []).concat(typeOptions.matchups || [])
-      .find(o => o.value === gamesType);
-    typePart = found ? found.label : gamesType;
+  return [gamesMonthText(), playerPart, gamesTypeLabel(typeOptions)].map(escapeHtml).join(' · ');
+}
+
+// The selected player's record over EXACTLY the games listed beneath it.
+//
+// It is handed the list the rows are drawn from -- after month, game type and
+// player have all been applied -- and counts nothing else, so P is the number
+// of rows by construction and cannot drift from them the way a second query
+// over a broader set would. Each row's result is read by MatchOutcome from the
+// recorded outcome: a draw is a draw whichever side the player was filed on,
+// and which side is stored first never decides a win.
+//
+// The player is found by canonical id, as the filter found them, so a rename
+// cannot leave a listed game uncounted.
+//
+// Win rate is wins over games played, draws included, rounded to 0.1 -- the
+// definition the League table already uses for its monthly win percentage.
+// Nothing here is a rating, a League or Merit figure, or a new classification:
+// it is a count of the rows on screen.
+function gamesFocusRecord(matches){
+  if(gamesPlayerIds.length !== 1) return null;
+  const id = String(gamesPlayerIds[0]).toLowerCase();
+  const rec = { played: 0, wins: 0, draws: 0, losses: 0, winpct: null };
+  (matches || []).forEach(m => {
+    const name = (m.winners || []).concat(m.losers || [])
+      .find(n => String(playerIdFor(n)).toLowerCase() === id);
+    const o = name ? MatchOutcome.outcomeFor(m, name) : null;
+    rec.played++;
+    if(o === MatchOutcome.WIN) rec.wins++;
+    else if(o === MatchOutcome.DRAW) rec.draws++;
+    else if(o === MatchOutcome.LOSS) rec.losses++;
+  });
+  if(rec.played) rec.winpct = Math.round(1000 * rec.wins / rec.played) / 10;
+  return rec;
+}
+
+// One compact line under the list heading, not another card. It names the
+// filters it describes, so a number is never read without its context, and
+// with nothing to count it says so rather than printing 0% as if it meant
+// something.
+function gamesRecordHtml(rec, typeOptions){
+  if(!rec) return '';
+  const context = [gamesFocusName()]
+    .concat(gamesType === 'all' ? [] : [gamesTypeLabel(typeOptions)])
+    .concat([gamesMonthText()])
+    .map(escapeHtml).join(' · ');
+  const attrs = `data-played="${rec.played}" data-wins="${rec.wins}" data-draws="${rec.draws}" data-losses="${rec.losses}"`;
+  if(!rec.played){
+    return `<div class="gp-record gp-record-empty" id="gamesRecord" ${attrs}>
+      <div class="gp-record-context">${context}</div>
+      <div class="gp-record-line">No games match these filters</div>
+    </div>`;
   }
-  return [monthPart, playerPart, typePart].map(escapeHtml).join(' · ');
+  const count = (n, one, many) => `<b>${n}</b> ${n === 1 ? one : many}`;
+  return `<div class="gp-record" id="gamesRecord" ${attrs} data-winpct="${rec.winpct}">
+    <div class="gp-record-context">${context}</div>
+    <div class="gp-record-line">${[
+      count(rec.played, 'played', 'played'),
+      count(rec.wins, 'win', 'wins'),
+      count(rec.draws, 'draw', 'draws'),
+      count(rec.losses, 'loss', 'losses'),
+    ].join(' · ')}</div>
+    <div class="gp-record-pct">${rec.winpct}% win rate</div>
+  </div>`;
 }
 
 function renderGamesTab(){
@@ -9269,6 +9339,8 @@ Player C &amp; Player D"></textarea>
       ? `📋 Games with ${escapeHtml(groupLabel)} (${display.length})`
       : `📋 All games (${display.length})`);
   html += `<div class="section-heading">${gamesHeading}</div>`;
+  // Counted from `display` itself -- the list drawn below -- never re-queried.
+  html += gamesRecordHtml(gamesFocusRecord(display), gamesTypeOptions);
   html += `<div class="section-sub">Newest first, grouped by day. Tap a game to see the full breakdown.</div>`;
   const idToIdx = {};
   ALL_MATCHES.forEach((m,i)=>{ idToIdx[m.id] = i; });
