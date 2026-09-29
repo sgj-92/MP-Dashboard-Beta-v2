@@ -1,5 +1,5 @@
 {
-  "name": "mp-dashboard-newratings",
+  "name": "mp-dashboard-beta-v2",
   "private": true,
   "description": "Money Padel Prestige v3 beta — static dashboard plus the sequential-v1 rating engine.",
   "scripts": {

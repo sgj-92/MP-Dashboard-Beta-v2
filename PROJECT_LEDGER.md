@@ -59,6 +59,7 @@ rating chokepoint now reads v3 persisted state.
 
 | | |
 |---|---|
+| Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
 | Branch | `main` |
 | Last verified implementation commit | **`fa60180`** |
 | Tests | **738 / 738 passing** (245 of them drive a real browser) |
@@ -148,6 +149,22 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Repository renamed to `MP-Dashboard-Beta-v2` (Shaun, 29 Sep).**
+- **Pages URL:** the GitHub Pages site is now
+  `https://sgj-92.github.io/MP-Dashboard-Beta-v2/`. GitHub does **not**
+  redirect the old Pages path, so old links and home-screen shortcuts need
+  the new address.
+  - A device's saved My Player choice survives, because the host
+    (`sgj-92.github.io`) is unchanged.
+- **What the rename did not touch:**
+  - The app hard-codes no repository name or URL.
+  - Vercel follows GitHub renames.
+- **Git:** GitHub redirects the old git URLs. CCode's remote now points at
+  the new name.
+- **`package.json`:** its `name` is updated to match.
+- **Pages builds resumed:** the "pages build and deployment" run 133 deployed
+  `6a311c6` at 13:53 UTC. That resolves the stopped-builds note in Section 5.
 
 **Build stamp now works on Vercel as well as GitHub Pages — DONE (`fa60180`).**
 Shaun, 29 Sep.
@@ -1999,6 +2016,11 @@ That is honest, but the commit is missing.
   to the root.
 - **Nothing has been deployed to Vercel by CCode,** so the first live proof
   is the Admin / Manage foot on the first Vercel deploy.
+
+**RESOLVED 29 Sep, 13:53 UTC: Pages builds resumed.** Run 133 deployed
+`6a311c6`, the head at the time, around Shaun's rename of the repository to
+`MP-Dashboard-Beta-v2`. Everything below it is live on Pages, including the
+Games record and the Vercel-ready stamp. The original note is kept below.
 
 **Also for Shaun: GitHub Pages stopped building after `751c161` (00:42 UTC,
 29 Sep).**
