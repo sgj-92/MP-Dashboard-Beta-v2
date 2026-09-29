@@ -60,8 +60,8 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Branch | `main` |
-| Last verified implementation commit | **`d348c56`** |
-| Tests | **729 / 729 passing** (244 of them drive a real browser) |
+| Last verified implementation commit | **`fa60180`** |
+| Tests | **738 / 738 passing** (245 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -148,6 +148,16 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Build stamp now works on Vercel as well as GitHub Pages — DONE (`fa60180`).**
+Shaun, 29 Sep.
+- **The answer to "is it platform-agnostic?": it was not.** The SHA came
+  only from GitHub Pages' Jekyll run. On Vercel every device would have read
+  "local build / Build dev". That is safe, because it never shows a wrong
+  commit, but it never shows the right one either.
+- **The fix:** Vercel now stamps the same line from its own deploy SHA, via
+  `vercel.json` and `scripts/stamp-build.js`. GitHub Pages is unchanged.
+- **Heads-up:** Section 5 has one Vercel setting to confirm.
 
 **Games: one player's filtered record — DONE (`d348c56`).** Shaun, 29 Sep.
 - **What it does:** with exactly one player in the Games filter, a compact
@@ -531,6 +541,24 @@ date. **The stamp must never be fetched or asked of GitHub** — it is loaded in
 the same page load as the code it describes. If the site ever moves to an
 Actions workflow or adds `.nojekyll`, the stamp must move with it (the tests
 guard the template and the exclude, not the Pages setting).
+
+**On Vercel (29 Sep, `fa60180`).** Vercel runs no Jekyll, so the template never
+renders there.
+- **Config:** `vercel.json` sets no framework preset (the repo root is the
+  site, as on Pages) and the build command `node scripts/stamp-build.js`.
+- **What the script does:** it rewrites `assets/js/buildInfo.js` in Vercel's
+  own build checkout.
+  - The SHA comes from `VERCEL_GIT_COMMIT_SHA`. Any other host can opt in
+    with `MP_BUILD_SHA`.
+  - The date is the build date in Europe/London, and the line is exactly
+    what the Pages template renders.
+- **The same rules as Pages:**
+  - the stamp is written by the deploy and never fetched;
+  - without a believable SHA, the placeholder is left alone and the deploy
+    is not failed;
+  - the script reads only the environment and the clock.
+- **Pages ignores the Vercel machinery:** `_config.yml` excludes
+  `vercel.json`. `buildStamp.js` does not know which host built it.
 
 *Update lifecycle, audited:* no service worker is registered and the manifest
 is an inline data URL, so an installed home-screen app has no offline copy —
@@ -1953,6 +1981,25 @@ following as one coherent UI refactor, with no data/model changes:
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 29 Sep — Vercel: one setting to confirm when the project is connected
+
+The stamp needs Vercel's system environment variables at build time.
+**"Automatically expose System Environment Variables"** is on by default for
+a Vercel project. If it has been turned off, the stamp reads "local build".
+That is honest, but the commit is missing.
+- **Two cases that read "local build" by design:** deploys made with the
+  Vercel CLI from a folder, rather than from Git, carry no commit SHA; so do
+  deploys where the SHA is absent.
+- **Settings `vercel.json` makes for the project:** no framework, and the
+  build command.
+- **Output Directory:** CCode left it unset. For a project with no framework,
+  Vercel serves the repo root when there is no `public/` folder, and this
+  repo has none.
+- **If the dashboard has an Output Directory override,** clear it or set it
+  to the root.
+- **Nothing has been deployed to Vercel by CCode,** so the first live proof
+  is the Admin / Manage foot on the first Vercel deploy.
+
 ### OPEN 29 Sep — Games filtered record: three choices CCode made
 
 1. **Win rate counts draws as games played.**
@@ -2594,6 +2641,48 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 29 Sep 2026 (build stamp on Vercel)
+
+`fa60180`. **738/738 tests** (9 new in `tests/buildStamp.test.js`; 245 of the
+738 are browser tests).
+
+**Finding.** The in-app indicator was GitHub Pages-specific.
+- Its only source was `{{ site.github.build_revision }}` in
+  `buildInfo.pages.js`, rendered by Pages' Jekyll run.
+- On Vercel it would have served the committed placeholder, and every
+  device would have read "local build / Build dev". That is safe but never
+  correct.
+- `buildStamp.js` itself was always host-neutral: it formats whatever
+  `window.MP_BUILD` holds.
+
+**Change.**
+- `vercel.json`: no framework preset, and a build command,
+  `node scripts/stamp-build.js`.
+- **The script writes the same line the Pages template renders:**
+  - from `VERCEL_GIT_COMMIT_SHA`, or `MP_BUILD_SHA` for any other host;
+  - dated Europe/London, as Pages is;
+  - into the deploy's own copy of `assets/js/buildInfo.js`.
+- **Without a believable SHA it writes nothing and fails nothing.** A test
+  runs it with no SHA and proves the committed placeholder is untouched.
+- `_config.yml` keeps `vercel.json` out of the Pages site.
+
+**Verified.**
+- **Vercel:** a clean export of the repo, running the exact `vercel.json`
+  build command with `VERCEL_GIT_COMMIT_SHA` set, changed only
+  `buildInfo.js`. It stamped `751c161 · 2026-09-29`.
+- **Pages:** a local github-pages 232 build still renders the stamp
+  (Jekyll's `build_revision`). `vercel.json` is not published, and
+  `index.html` and `buildStamp.js` are byte-identical.
+  - The GitHub metadata plugin was pointed at an unreachable local API,
+    because this sandbox's proxy forbids that GitHub endpoint.
+- **In the app:** Admin / Manage renders a Vercel-stamped build exactly as a
+  Pages one: "Money Padel Beta · 26 Sep 2026 / Build a4c91e2".
+
+**Not verified:** a live Vercel deploy. None exists from CCode's side.
+Section 5 lists the one project setting it depends on.
+
+Baton → Shaun / CGPT.
 
 ### CCode — 29 Sep 2026 (Games: one player's filtered record)
 
@@ -6355,6 +6444,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `fa60180` | Build stamp on Vercel. The stamp was GitHub Pages-only (Jekyll's `build_revision`), so Vercel would have shown "local build". `vercel.json` now runs `scripts/stamp-build.js`, which writes the same line from `VERCEL_GIT_COMMIT_SHA` (Europe/London date) and never touches the placeholder without a real SHA. Pages is unchanged and verified with a local github-pages 232 build. 9 tests; 738/738. |
 | `d348c56` | Games: one selected player's filtered record. Played / W / D / L / win % above the list, counted from the same `display` array the rows are drawn from (P = rows, W+D+L = P). Month, game type (historical tiers) and player all apply. Draws come from the recorded outcome, whichever side is stored. Win % uses the League's definition. The zero state never shows 0%. 12 tests (9 fail against the previous code; 3 invariants); 729/729. |
 | `08712d4` | Claude Design → implementation map (mapping only). `docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md` maps all 18 areas the brief named, each against its nine questions. It also covers the prototype-to-production translation, the token and primitive layer, the features the design gives no home, architecture constraints, 30 decision questions and a seven-phase order. No production change; 717/717 unchanged. |
 | `e4408ff` | D7 Doughnuts. `doughnutMatches(month)` is the one existing definition, lifted out unchanged. It adds a Doughnut List (newest first, ties by id, winners first, shutout set picked out, draws marked, tap opens the game in Play › Games) beside the unchanged By Player leaderboard, plus a Month control shared by both views (Meaningful Month default, choice kept) and an empty state. The draw-wording test now selects All time. 7 tests (6 fail against the previous code; one is the unchanged-definition invariant); 717/717. |
@@ -6437,7 +6527,7 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ## 8. NEXT
 
 **The approved queue is empty.** Baton with Shaun / CGPT.
-- **Implementation:** `d348c56`, **729 / 729 tests** (244 browser).
+- **Implementation:** `fa60180`, **738 / 738 tests** (245 browser).
 - **Design map:** `08712d4`.
 
 *(Shaun/CGPT's queued header, 29 Sep, kept: the increment it names is now delivered.)*
@@ -6617,6 +6707,10 @@ stale since 26 Sep.)*
    **D7 (Doughnuts list and month) DONE (`e4408ff`).**
    **Phase 2 (the wider IA and redesign) is not started.** Baton with Shaun /
    CGPT.
+
+15m. **DONE (`fa60180`).** The build stamp works on Vercel as well as GitHub
+   Pages. Section 5 has the one Vercel setting to confirm when the project
+   is connected.
 
 15l. **DONE (`d348c56`).** Games: one selected player's filtered record.
    Section 5 has three small choices (draws in the win rate, pending
