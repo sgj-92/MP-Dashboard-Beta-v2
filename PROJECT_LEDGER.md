@@ -149,6 +149,15 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Games filtered player record summary — APPROVED / NEXT (29 Sep).** Shaun/CGPT.
+- In **Play › Games**, when exactly one player is selected, show a compact aggregate record above the historical results for the **same final filtered match set**.
+- Example: `PDM · AB vs AB · September` → `5 played · 3 wins · 0 draws · 2 losses` plus win %.
+- The summary must reconcile exactly to the rows underneath: **P = displayed qualifying matches** and **W + D + L = P**. Do not run a second broader stats query.
+- It inherits every active compatible Games filter (player, month/date, tier matchup and other existing result filters). Tier matchup uses the **canonical historical match-date tier classification**, never the player's current tier.
+- Player perspective is side-independent: win/loss/draw is determined from the selected player's team regardless of stored left/right orientation.
+- Show only for **one selected player**; zero matches get a deliberate empty state rather than a meaningless `0%`.
+- Scope is deliberately small: no new navigation destination, no new player-statistics engine, and no rating/League/Merit/Monthly Race/matchup-classification changes.
+
 **Claude Design implementation map — DELIVERED (`08712d4`, mapping only).**
 Shaun, 28 Sep: *"implementation mapping only … Stop and return the baton to
 Shaun/CGPT."*
@@ -6332,9 +6341,10 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
 ## 8. NEXT
 
-**The approved queue is empty.** Baton with Shaun / CGPT.
-- **Implementation:** `e4408ff`, **717 / 717 tests** (234 browser).
-- **Design map:** `08712d4`.
+**One approved product increment is queued.** Baton with Claude Code after Shaun/CGPT handoff.
+- **Current implementation:** `e4408ff`, **717 / 717 tests** (234 browser).
+- **Design map:** `08712d4` — delivered; mapping only, no production UI changed.
+- **Approved next:** Games filtered player record summary (29 Sep): with exactly one player selected in Play › Games, show P/W/D/L + win % for the exact filtered match set above the historical rows. Historical matchup classification remains authoritative.
 
 *(The line this replaces read "`63b4ea7`, 561 / 561 tests (158 browser)",
 stale since 26 Sep.)*
