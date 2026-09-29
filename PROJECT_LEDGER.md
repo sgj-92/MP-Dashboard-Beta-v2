@@ -60,8 +60,8 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Branch | `main` |
-| Last verified implementation commit | **`e4408ff`** |
-| Tests | **717 / 717 passing** (234 of them drive a real browser) |
+| Last verified implementation commit | **`d348c56`** |
+| Tests | **729 / 729 passing** (244 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -149,7 +149,20 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
-**Games filtered player record summary — APPROVED / NEXT (29 Sep).** Shaun/CGPT.
+**Games: one player's filtered record — DONE (`d348c56`).** Shaun, 29 Sep.
+- **What it does:** with exactly one player in the Games filter, a compact
+  line sits above the list. For example:
+  *"Rishi · BB vs BB · July 2026 — 8 played · 5 wins · 0 draws · 3 losses —
+  62.5% win rate"*.
+- **How it counts:** from the very list the rows are drawn from. P is the
+  number of rows, and W + D + L = P.
+- **Filters:** month, game type and player all apply. Tier matchups use the
+  tiers held on the day.
+- **Other states:** no player or a group shows no record. No games reads
+  "No games match these filters".
+- **Heads-up:** Section 5 has three small judgment calls.
+
+**Games filtered player record summary — APPROVED / NEXT (29 Sep).** Shaun/CGPT. *(Delivered `d348c56`, see the entry above. The brief is kept as queued.)*
 - In **Play › Games**, when exactly one player is selected, show a compact aggregate record above the historical results for the **same final filtered match set**.
 - Example: `PDM · AB vs AB · September` → `5 played · 3 wins · 0 draws · 2 losses` plus win %.
 - The summary must reconcile exactly to the rows underneath: **P = displayed qualifying matches** and **W + D + L = P**. Do not run a second broader stats query.
@@ -994,6 +1007,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | D4 — Find a Game for players; predictions Admin-only everywhere | **DONE `9cca86c`.** Shaun, 28 Sep 2026. Find a Game stays in player navigation: it has not launched to the wider group, so low use is not evidence against it. Player-facing Find a Game recommends matchups but **never shows calculated win percentages or probabilities**; Admins keep the prediction layer. No route may leak a prediction a screen hides (Home, fixture cards, anything using the prediction engine). The visibility system must be authoritative wherever content is surfaced, fixed properly rather than patched for Find a Game. The prediction methodology is unchanged. |
 | D5 — one canonical Tier Rank | **DONE `9cca86c`.** Shaun, 28 Sep 2026. **Tier Rank = the player's position in the current Power Rankings among players in their current tier, using exactly the Power Rankings page's ranking and eligibility rules.** There is one source, and every display labelled Tier Rank consumes it. Other rankings (Monthly Race, League, Merit, W/L, overall Power Rank) may differ but must be labelled as what they are. The Power Rankings definition is authoritative; eligibility and methodology are not changed to make numbers agree. |
 | D6 — P / W / D / L open their games | **DONE `9cca86c`.** Shaun, 28 Sep 2026. In both the Merit and League tables, each player's P, W, D and L open the games behind them, like Hard and Fav. The detail says which player, which count and which month/table context. **"If the cell says 2, its drill-down explains exactly those 2 games,"** under the table's own filtering (month, By tier / All together, mid-month tier changes, split-month, history). Hard and Fav are unchanged, one drill-down component is shared, and mobile fit is kept. |
+| Games — one selected player's filtered record | **DONE `d348c56`.** Shaun, 29 Sep 2026. When exactly one player is selected in the Games Player filter, show Played / Wins / Draws / Losses / Win % above the filtered list, **calculated from exactly the same final filtered match set the rows display**, never independently from a broader dataset: P = displayed rows and W + D + L = P, recomputed on every filter change. Tier matchups keep the canonical classification and historical tier on the match date; notation and order unchanged. Win from the player's own side whichever stored side they are on; a recorded draw is a draw. Win % = wins / played unless a canonical alternative exists (the League's monthly win % is exactly that, draws included, so it is reused). Zero games gets a deliberate state, not 0%. One player only; no multi-player summaries, no new navigation, no new statistics engine. |
 | D7 — Doughnuts: By Player and a Doughnut List, with a Month | **DONE `e4408ff`.** Shaun, 28 Sep 2026. Keep the player-based view and add a list of the doughnut results themselves, with an obvious By Player / Doughnut List switch. Each row reads like "28 Sep · Shaun & PDM 6–0, 6–3 Rishi & Erf" in the app's result conventions. The list uses the **existing doughnut definition and data**, with no new definition. Tapping a result uses the existing result detail. A **Month** selector (historical months included) applies to both views and survives switching between them, defaulting by the app's existing month convention. The list is newest first with a deterministic same-day order, and an empty month gets a deliberate empty state. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
@@ -1939,6 +1953,31 @@ following as one coherent UI refactor, with no data/model changes:
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 29 Sep — Games filtered record: three choices CCode made
+
+1. **Win rate counts draws as games played.**
+   - 3 wins, 1 draw and 1 loss reads **60%**, not 75%.
+   - This is the brief's wins / played. It is also the League's existing
+     monthly win-percentage definition, so the two can never disagree about
+     the same games.
+   - The older all-time `winpct` on player records is computed without
+     draws, because draws were never in that dataset. It is not a competing
+     definition, but a player comparing the two may notice.
+2. **Pending submissions are not counted.**
+   - They sit in their own "Pending approval" section above the list and are
+     not yet part of the record.
+   - The record describes the approved list it sits on.
+3. **With Data Range "all", April and May are counted,** because they are
+   listed. The display-only April / May history appears in the Games list
+   then, so the record includes it; the rule was "exactly the rows shown".
+   - Those games never enter a rating, League or Merit figure.
+   - On the seeded record, 34 of the 50 also get a tier matchup from the
+     existing historical-tier resolver, so they can appear under a matchup
+     filter too. That is how the Games filter already behaved; this task did
+     not change it.
+   - If Shaun wants them left out of the record, the honest fix is to leave
+     them out of the list too.
+
 ### OPEN 28 Sep — Claude Design migration: decisions before any phase starts
 
 Full reasoning and the numbering (DQ1–DQ30) are in Section 6 of
@@ -2555,6 +2594,61 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 29 Sep 2026 (Games: one player's filtered record)
+
+`d348c56`. **729/729 tests pass** (12 new, `tests/gamesRecord.test.js`;
+244 of the 729 are browser tests).
+- **Verified against the old code:** 9 of the 12 fail. The other 3 are
+  invariants that hold either way: no record without exactly one player,
+  nothing else changes, and matchup notation is unchanged.
+
+**How it reconciles.**
+- `renderGamesTab()` already built one array, `display`, after month, game
+  type and player. The rows are drawn from it.
+- `gamesFocusRecord(display)` counts that array and nothing else, so P equals
+  the number of rows by construction.
+- Each result comes from `MatchOutcome.outcomeFor`:
+  - a draw is checked first;
+  - otherwise the stored side decides, which is correct for a decided match.
+- The player is found by canonical id (`playerIdFor`), as the filter finds
+  them, so a renamed player's games are all counted.
+- A source test pins that the function reads no rating, table, race or match
+  collection, and is handed `display` itself.
+
+**What the tests prove, on the seeded record:**
+- One player shows the record; none, or a group, does not.
+- P / W / D / L equal the rendered rows, checked row by row against the
+  stored matches.
+- The win % is correct.
+- Each month's record matches its rows, and the months add back up to All
+  time.
+- Each tier matchup's record matches its rows.
+- The busiest player + month + matchup combination equals the three-way
+  intersection computed from the record.
+- Both players from opposite stored sides of the same draw are credited the
+  draw.
+- Synthetic games on both stored sides give exactly 1 W / 2 D / 2 L.
+- The empty state never shows a %.
+- A match played before a tier change is found under the matchup of the
+  tiers on the day, not today's.
+- Classifications, ratings and the League table are byte-identical after
+  drawing it.
+
+**Shared label.** `gamesTypeLabel()` is now shared by the collapsed filter
+heading and the record, so both name a game type the same way. The heading's
+text is unchanged.
+
+**Visual.** Checked at 375px:
+- one line of context in caps, one line of counts, and the win rate in quiet
+  gold;
+- a gold hairline, no border, no card;
+- no page overflow.
+
+The screenshot shows Rishi's July BB vs BB record, with Rishi as (B) on the
+day.
+
+**Baton → Shaun / CGPT.** Section 5 has the three small choices.
 
 ### CCode — 28 Sep 2026 (Claude Design → implementation map)
 
@@ -6261,6 +6355,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `d348c56` | Games: one selected player's filtered record. Played / W / D / L / win % above the list, counted from the same `display` array the rows are drawn from (P = rows, W+D+L = P). Month, game type (historical tiers) and player all apply. Draws come from the recorded outcome, whichever side is stored. Win % uses the League's definition. The zero state never shows 0%. 12 tests (9 fail against the previous code; 3 invariants); 729/729. |
 | `08712d4` | Claude Design → implementation map (mapping only). `docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md` maps all 18 areas the brief named, each against its nine questions. It also covers the prototype-to-production translation, the token and primitive layer, the features the design gives no home, architecture constraints, 30 decision questions and a seven-phase order. No production change; 717/717 unchanged. |
 | `e4408ff` | D7 Doughnuts. `doughnutMatches(month)` is the one existing definition, lifted out unchanged. It adds a Doughnut List (newest first, ties by id, winners first, shutout set picked out, draws marked, tap opens the game in Play › Games) beside the unchanged By Player leaderboard, plus a Month control shared by both views (Meaningful Month default, choice kept) and an empty state. The draw-wording test now selects All time. 7 tests (6 fail against the previous code; one is the unchanged-definition invariant); 717/717. |
 | `9cca86c` | Audit fixes. **D4:** `canSeePredictions()` gates every predicted split and favourite call (Find a Game cards, Home Match to Make, Challenge ready card); `TAB_VISIBILITY_KEY` / `canSeeTab()` make the visibility settings govern the tab guard, shell sub-navigation and landing, More, and Home/profile shortcuts; Find a Game defaults to Visible. **D5:** `tierRankOf()` is the one Tier Rank, read by header, Player Analysis, full analysis and Home; the all-members calculation is removed. **D6:** League and Merit rows carry the games behind P/W/D/L, and one shared drill-down serves P/W/D/L/Hard/Fav. 13 tests (12 fail against the previous code); 710/710. |
@@ -6341,10 +6436,15 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
 ## 8. NEXT
 
-**One approved product increment is queued.** Baton with Claude Code after Shaun/CGPT handoff.
-- **Current implementation:** `e4408ff`, **717 / 717 tests** (234 browser).
-- **Design map:** `08712d4` — delivered; mapping only, no production UI changed.
-- **Approved next:** Games filtered player record summary (29 Sep): with exactly one player selected in Play › Games, show P/W/D/L + win % for the exact filtered match set above the historical rows. Historical matchup classification remains authoritative.
+**The approved queue is empty.** Baton with Shaun / CGPT.
+- **Implementation:** `d348c56`, **729 / 729 tests** (244 browser).
+- **Design map:** `08712d4`.
+
+*(Shaun/CGPT's queued header, 29 Sep, kept: the increment it names is now delivered.)*
+> **One approved product increment is queued.** Baton with Claude Code after Shaun/CGPT handoff.
+> - **Current implementation:** `e4408ff`, **717 / 717 tests** (234 browser).
+> - **Design map:** `08712d4` — delivered; mapping only, no production UI changed.
+> - **Approved next:** Games filtered player record summary (29 Sep): with exactly one player selected in Play › Games, show P/W/D/L + win % for the exact filtered match set above the historical rows. Historical matchup classification remains authoritative.
 
 *(The line this replaces read "`63b4ea7`, 561 / 561 tests (158 browser)",
 stale since 26 Sep.)*
@@ -6517,6 +6617,10 @@ stale since 26 Sep.)*
    **D7 (Doughnuts list and month) DONE (`e4408ff`).**
    **Phase 2 (the wider IA and redesign) is not started.** Baton with Shaun /
    CGPT.
+
+15l. **DONE (`d348c56`).** Games: one selected player's filtered record.
+   Section 5 has three small choices (draws in the win rate, pending
+   submissions excluded, and April/May counted when listed).
 
 15k. **Claude Design implementation map DELIVERED (`08712d4`). Baton →
    Shaun / CGPT to approve a phase.**
