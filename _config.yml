@@ -1,6 +1,7 @@
 # GitHub Pages builds this site with Jekyll on every push to main. This file
 # exists for one purpose: stamping the deployed build, so the foot of Admin /
-# Manage can say exactly which commit a device is running.
+# Manage can say exactly which commit a device is running. (On Vercel, which
+# runs no Jekyll, scripts/stamp-build.js does the same job -- see vercel.json.)
 #
 # assets/js/buildInfo.pages.js is a Liquid template rendered to
 # assets/js/buildInfo.js with the commit being built. The committed
@@ -12,3 +13,6 @@ timezone: Europe/London
 
 exclude:
   - assets/js/buildInfo.js
+  # Vercel's build settings and stamping script (scripts/stamp-build.js) do the
+  # same job there that this file does here; Pages has no use for the config.
+  - vercel.json

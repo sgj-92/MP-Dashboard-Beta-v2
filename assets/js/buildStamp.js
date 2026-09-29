@@ -2,9 +2,11 @@
 // Turns the build a device is running into the quiet line at the bottom of
 // More, and the one-line version that tapping it copies for a bug report.
 //
-// The input is window.MP_BUILD, which comes from assets/js/buildInfo.js: on
-// GitHub Pages that file is rendered by the Jekyll build with the commit being
-// deployed (buildInfo.pages.js); locally it is a placeholder with no SHA. It
+// The input is window.MP_BUILD, which comes from assets/js/buildInfo.js. Each
+// host writes that file at deploy time with the commit being deployed -- on
+// GitHub Pages the Jekyll build renders buildInfo.pages.js, on Vercel
+// scripts/stamp-build.js writes it -- and locally it is a placeholder with no
+// SHA. This module does not know or care which host built it. It
 // is loaded in the same page load as the rest of the app, never fetched later
 // or asked of GitHub -- a device running an old build must say it is running
 // the old build, and GitHub only knows the newest.

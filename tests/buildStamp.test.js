@@ -192,3 +192,108 @@ maybe('tapping the stamp copies a one-line version for a bug report', async () =
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
+
+// --- on Vercel ----------------------------------------------------------------
+// Vercel runs no Jekyll, so the Pages template never renders there. Its build
+// command (vercel.json) runs scripts/stamp-build.js, which writes the same line
+// from the commit Vercel says it is deploying. Without it, every device on a
+// Vercel deploy would read "local build".
+
+const os = require('node:os');
+const Stamp = require('../scripts/stamp-build.js');
+
+// A throwaway copy of the one file the script writes, so no test can touch the
+// committed placeholder.
+function sandboxRoot() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mp-stamp-'));
+  fs.mkdirSync(path.join(root, 'assets', 'js'), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, 'assets/js/buildInfo.js'), path.join(root, Stamp.TARGET));
+  return root;
+}
+const loadStamp = (src) => { const sb = { window: {} }; vm.runInNewContext(src, sb); return { ...sb.window.MP_BUILD }; };
+
+test('Vercel: the deployed commit is stamped, and the app reads it as a deployed build', () => {
+  const root = sandboxRoot();
+  const r = Stamp.run({ root, env: { VERCEL: '1', VERCEL_GIT_COMMIT_SHA: SHA }, now: new Date('2026-09-26T10:00:00Z') });
+  assert.strictEqual(r.written, true);
+  const info = loadStamp(fs.readFileSync(path.join(root, Stamp.TARGET), 'utf8'));
+  assert.deepStrictEqual(info, { sha: SHA, date: '2026-09-26' });
+  const b = BuildStamp.describe(info);
+  assert.strictEqual(b.build, 'Build a4c91e2');
+  assert.strictEqual(b.title, 'Money Padel Beta · 26 Sep 2026');
+});
+
+test('Vercel writes exactly the line the Pages template renders', () => {
+  const pages = read('assets/js/buildInfo.pages.js')
+    .replace(/^---\n[\s\S]*?\n---\n/, '')
+    .replace(/\{\{\s*site\.github\.build_revision\s*\}\}/, SHA)
+    .replace(/\{\{\s*site\.time[^}]*\}\}/, '2026-09-26');
+  assert.strictEqual(Stamp.stampSource(SHA, '2026-09-26'), pages, 'one format, whichever host built it');
+});
+
+test('Vercel dates the build in the club\'s time zone, as Pages does', () => {
+  // 23:30 UTC on 29 Sep is 00:30 on 30 Sep in London (BST)...
+  assert.strictEqual(Stamp.clubDate(new Date('2026-09-29T23:30:00Z')), '2026-09-30');
+  // ...and in winter London is on UTC.
+  assert.strictEqual(Stamp.clubDate(new Date('2026-12-31T23:30:00Z')), '2026-12-31');
+  assert.match(read('_config.yml'), /^timezone:\s*Europe\/London\s*$/m, 'the zone Pages uses');
+  assert.strictEqual(Stamp.TIME_ZONE, 'Europe/London');
+});
+
+test('no believable deploy SHA: the placeholder is left alone and reads as a local build', () => {
+  for (const env of [{}, { VERCEL: '1' }, { VERCEL_GIT_COMMIT_SHA: '' }, { VERCEL_GIT_COMMIT_SHA: 'main' },
+    { VERCEL_GIT_COMMIT_SHA: '$VERCEL_GIT_COMMIT_SHA' }]) {
+    const root = sandboxRoot();
+    const before = fs.readFileSync(path.join(root, Stamp.TARGET), 'utf8');
+    const r = Stamp.run({ root, env, now: new Date('2026-09-26T10:00:00Z') });
+    assert.strictEqual(r.written, false, JSON.stringify(env));
+    const after = fs.readFileSync(path.join(root, Stamp.TARGET), 'utf8');
+    assert.strictEqual(after, before, 'untouched');
+    assert.strictEqual(BuildStamp.describe(loadStamp(after)).build, 'Build dev');
+  }
+});
+
+test('another host can opt in with MP_BUILD_SHA; Vercel\'s own value wins when both are set', () => {
+  assert.deepStrictEqual(Stamp.deploySha({ MP_BUILD_SHA: SHA }), { sha: SHA, source: 'MP_BUILD_SHA' });
+  assert.strictEqual(Stamp.deploySha({ VERCEL_GIT_COMMIT_SHA: SHA, MP_BUILD_SHA: 'b'.repeat(40) }).source,
+    'VERCEL_GIT_COMMIT_SHA');
+});
+
+test('vercel.json runs the stamp as the build and serves the site as plain static files', () => {
+  const cfg = JSON.parse(read('vercel.json'));
+  assert.strictEqual(cfg.buildCommand, 'node scripts/stamp-build.js');
+  assert.strictEqual(cfg.framework, null, 'no framework preset: the repo root is the site, as on Pages');
+  // The stamp script reads nothing but the environment and the clock --
+  // never the network, never git, never GitHub.
+  const src = read('scripts/stamp-build.js').replace(/\/\/.*$/gm, '');
+  assert.doesNotMatch(src, /require\(['"](https?|child_process|net)['"]\)|fetch\(|api\.github|git rev-parse/);
+});
+
+test('each host ignores the other host\'s machinery', () => {
+  // Pages must not publish Vercel's config...
+  assert.match(read('_config.yml'), /^\s+-\s+vercel\.json\s*$/m);
+  // ...and the Pages exclude of the placeholder is still the first entry.
+  assert.match(read('_config.yml'), /^exclude:\s*\n\s+-\s+assets\/js\/buildInfo\.js\s*$/m);
+});
+
+test('running the script with no deploy SHA cannot dirty the committed placeholder', () => {
+  const { execFileSync } = require('node:child_process');
+  const before = read('assets/js/buildInfo.js');
+  const env = { ...process.env };
+  Stamp.SHA_VARS.forEach((k) => { delete env[k]; });
+  const out = execFileSync(process.execPath, [path.join(ROOT, 'scripts/stamp-build.js')], { env, encoding: 'utf8' });
+  assert.match(out, /placeholder left as it is/);
+  assert.strictEqual(read('assets/js/buildInfo.js'), before);
+});
+
+maybe('a Vercel-stamped build shows in Admin / Manage like a Pages one', async () => {
+  const root = sandboxRoot();
+  Stamp.run({ root, env: { VERCEL_GIT_COMMIT_SHA: SHA }, now: new Date('2026-09-26T10:00:00Z') });
+  const app = await H.open({ files: { 'assets/js/buildInfo.js': fs.readFileSync(path.join(root, Stamp.TARGET), 'utf8') } });
+  try {
+    await app.run(openManage, true);
+    const r = await app.run(readStamp);
+    assert.deepStrictEqual(r.lines, ['Money Padel Beta · 26 Sep 2026', 'Build a4c91e2']);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
