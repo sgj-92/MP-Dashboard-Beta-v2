@@ -2000,6 +2000,22 @@ That is honest, but the commit is missing.
 - **Nothing has been deployed to Vercel by CCode,** so the first live proof
   is the Admin / Manage foot on the first Vercel deploy.
 
+**Also for Shaun: GitHub Pages stopped building after `751c161` (00:42 UTC,
+29 Sep).**
+- **What happened:** neither the git push of `7aa7255` nor a commit made
+  through the GitHub API (`9c532f8`) started a "pages build and deployment"
+  run.
+- **Why it matters:** the API fallback has always worked before (NEXT #15h).
+- **Likely cause:** that points to the Pages setting itself, perhaps switched
+  off or re-sourced as part of moving to Vercel.
+- **What CCode cannot do:** see Pages settings from its sandbox.
+- **Decision needed:**
+  - **If Pages was retired on purpose,** nothing is needed. The Pages
+    wiring is harmless and can stay as the fallback, or be removed later.
+  - **If not,** check *Settings › Pages* on the repo.
+- **Until then:** the Pages site is still serving `751c161`, so this change
+  and the Games record (`d348c56`) are not live there.
+
 ### OPEN 29 Sep — Games filtered record: three choices CCode made
 
 1. **Win rate counts draws as games played.**
