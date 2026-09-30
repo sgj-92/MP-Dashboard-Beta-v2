@@ -281,10 +281,10 @@ script (`tests/helpers/appSource.js`), so moving code cannot switch one off.
 
 ## 7. The branching point
 
-**The redesign branch is cut from the commit that adds
-`tests/architecture.test.js` and this Result section.** The Ledger records
-its hash. Every structural change is in its ancestry; later commits on
-`main` touch only `PROJECT_LEDGER.md`.
+**The redesign branch is cut from `f75a493`**, the commit that adds
+`tests/architecture.test.js` and this Result section. Every structural
+change is in its ancestry; the commits after it on `main` change only
+documentation (this line and `PROJECT_LEDGER.md`).
 
 The redesign branch is to be created **only after Shaun confirms the
 product / IA Keep / Simplify / Move / Merge / Hide / Remove review is
