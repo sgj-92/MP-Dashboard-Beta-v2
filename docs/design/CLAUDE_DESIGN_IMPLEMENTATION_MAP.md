@@ -242,7 +242,7 @@ Existing families are named, so they are extended rather than duplicated.
 | Ivory (text) | `#F2EEE5` | `--text #f1e9d8` | Same role. |
 | Muted | `#969188` | `--text-dim #bcb096` | **DQ20.** The Ledger raised `--text-dim` to 8.2:1 on purpose. The design muted is about 5.9:1 on Card, which is still AA. Recommend keeping the Ledger's contrast. |
 | Inactive tab | `#6B675F` | none | **About 3.4:1: fails AA for 10.5px text.** Use it for icons only; labels use `--text-dim`. CCode will do this unless CGPT objects. |
-| Booked | `#8FB996` | none | New `--state-booked`. **It collides** with `--tier-b-text #9db8a8` (Tier B sage) and with positive movement, which also uses `#8FB996`. See DQ20. |
+| Booked | `#8FB996` | none | `--state-booked`. The design's green collided with Tier B sage and with positive movement, so **Phase 0 set it to steel blue `#8FB3D9`** (8.6:1; well over 45° of hue from both), per DQ20. |
 | Attention | `#E0896B` | none (`--red #b5453f` means loss) | New `--state-attention`. It must stay distinct from loss red. |
 | Movement up / down | `#8FB996` / `#C98470` | `--green` / `--red` mean **win / loss** | New `--move-up` / `--move-down`, so movement is never read as a result. The Ledger rule is that negative movement renders the same as positive: same weight, only the sign and colour differ. |
 
@@ -254,7 +254,7 @@ Existing families are named, so they are extended rather than duplicated.
 
 | Role | Design | Existing | Proposal |
 |---|---|---|---|
-| Scoreboard numbers (rating, points, scores), screen titles | Instrument Serif, tabular figures | `--font-prestige` (Georgia) · `.mp-numeral`, `.mp-display-title` | Keep the roles. The face is DQ20. **Verify** that Instrument Serif has tabular figures before choosing it; if not, figures use Inter `tnum`. |
+| Scoreboard numbers (rating, points, scores), screen titles | Instrument Serif, tabular figures | `--font-prestige` (Georgia) · `.mp-numeral`, `.mp-display-title` | Keep the roles. The face is DQ20. **Checked in Phase 0: Instrument Serif has no tabular figures** (no `tnum`, and its digits differ in width). So aligned numbers use Inter `tnum` (`--font-figures`, `.mp-figures`), and the serif is for display text and single display numerals. |
 | Everything read or tapped | Inter 400/500/600, 15px body | `--font-interface` (Helvetica Neue) | Same roles, face per DQ20. |
 | Caps labels | Inter 11px caps | `.mp-section-label` | Reuse. |
 | Player names on public surfaces | Serif (1p header), sans in rows | Directory uses the public serif (Ledger) | Keep the Ledger's rule. Admin lists stay sans. |
@@ -1374,7 +1374,7 @@ are kept until the new ones are accepted.
 
 | Phase | Scope | Why this order | Blocked on |
 |---|---|---|---|
-| **0 — Foundations** | Tokens in `tokens.css`; fonts if chosen; the primitive CSS in `components.css`; a primitives reference page in `docs/design/`. **No visible change.** | Every later phase uses these. | — (DQ20 resolved). Awaiting its go-ahead |
+| **0 — Foundations** | Tokens in `tokens.css`; fonts if chosen; the primitive CSS in `components.css`; a primitives reference page in `docs/design/`. **No visible change.** | Every later phase uses these. | **DONE `cd844f6`** on `ux/player-reset-v2` (30 Sep) |
 | **1 — Shell** | Five tabs (More → Me). Me as the home of the former More destinations and the viewer header. Section entry points: Rankings **Power \| This Month** with a More tables list; Play **My Games \| Club** with Arrange a Game; Players Directory. Play badge (count only). System Back. `#tabrow` stays the router. | Every other phase needs the entry points; high routing risk, so do it alone. | — (DQ5, DQ29 resolved) |
 | **2 — Play** | `playView.js` view-model; My Games (lifecycle sections, Challenges); Club (counters); **Arrange a Game** (find / request / paste a list, Match Ideas); game detail; Admin Manage sheet; booking sheet; toast; Played Games & Results entry. | Fixes the audit's worst finding, and builds the view-model Home needs. | DQ6, DQ7, DQ8, DQ9 (Shaun) |
 | **3a — Home hierarchy** | The IA order with a **plain, text-first hero**: This Month position → Needs You → Next Game → Last Time Out → light Around the Club; the demoted standing line; "Why it moved" sheet. | Depends on Phase 2's view-model. Gets the hierarchy right before the visuals. | DQ1 (Shaun) |
