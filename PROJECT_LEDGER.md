@@ -152,6 +152,53 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Player Experience Reset — Phase 2 (Play) DONE on `ux/player-reset-v2`
+(`6291cdc`), with the rules on `main` (`7d70cc0`, `86beb59`).** Shaun,
+30 Sep: DQ6–DQ9 agreed as recommended, and the go-ahead given.
+- **The rules, on `main`:**
+  - **DQ6:** a player in the game may record the court as booked.
+    - It is attributed to them (`byPlayer` in the history).
+    - It needs an agreed game they are still in, and one that is not
+      archived.
+    - Only an Admin can take it back.
+  - **DQ7 and DQ8:** unchanged. Replacement stays Admin-only, and players
+    get no change of plan.
+  - **DQ9:** a request may carry an optional time and venue.
+  - **Asking for a game has one path, `submitGameRequest`,** used by the
+    old form and the new sheet alike.
+  - **`domain/fixtures/playView.js`** is the view-model. The Play badge is
+    now My Games' "Needs you", counted, so there is one definition.
+- **The screens, on the branch:**
+  - Play opens on **My Games | Club**, with **Arrange a Game** beside the
+    switch.
+  - **My Games:**
+    - its sections are Needs you (answer in place), Upcoming, Called out,
+      Waiting on others and Archived;
+    - below them sit Challenges and Played games & results.
+  - **Club:**
+    - four counters that are also the filter;
+    - an Admin answers unrecorded bookings here.
+  - **The game sheet:**
+    - the stepper;
+    - the existing fixture card, with answers, Add result pre-filled
+      (DQ11), and for an Admin the prediction, reconciliation and
+      Manage fixture;
+    - **"I've booked a court"** for a player, through a confirmation.
+  - **Arrange a Game:**
+    - **Find a game:** Match Ideas as "Suggested for you" (DQ32), and the
+      full finder.
+    - **Request:** four players, with an optional date, time and venue.
+    - **Paste a list:** hands off to Add multiple games.
+- **Kept, deliberately:**
+  - The previous Upcoming and Requests screens are reachable from Club
+    ("as before") until Shaun accepts the new lists.
+  - Find a Game, Paste a list and Challenges open their existing screens.
+    Their restyle is Phase 6.
+- **Evidence:**
+  - With the chrome left out, all 38 existing screen states are
+    **identical** at 390px and 360px.
+  - **816 / 816** on the branch; **780 / 780** on `main`.
+
 **Player Experience Reset — Phase 1 (shell) DONE on `ux/player-reset-v2`
 (`0772379`), with the functional pieces on `main` (`a3f6939`).** Shaun's
 go-ahead, 30 Sep.
@@ -1311,6 +1358,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Power shows current ratings; month-end history moves to More tables (DQ3) | Shaun, 30 Sep 2026, confirming CCode's reading of the IA. Rankings › Power stops opening on the Meaningful Month's month-end view (the 26 Sep default) and shows today's ratings, so it agrees with Tier Rank everywhere (D5). Month-end Power history is reached from Rankings › More tables › Past months. The Meaningful Month still decides which month **This Month** opens on. It ships with Phase 4 on `ux/player-reset-v2`, not before; `main` is unchanged until Shaun releases the redesign. |
 | Booked is steel blue `#8FB3D9`; aligned numbers use Inter, not Instrument Serif | CCode, 30 Sep 2026, Phase 0. Both are implementation choices within DQ20 (Shaun/CGPT). DQ20 asked for Booked to get a distinct hue: `#8FB3D9` is 8.6:1 on cards and over 45° of hue from Tier B sage, upward movement, attention and the accent. The map asked whether Instrument Serif has tabular figures before using it for numbers: it has none, so tables, points, scores and counts use Inter with `tabular-nums`. Either is a one-token change if CGPT prefers otherwise. |
 | Play badge: "genuinely act on" read strictly; interim Play / Players entries | CCode, 30 Sep 2026, Phase 1, implementing DQ29 and the IA. **The badge** counts For me requests plus Needs attention games the player is in, **but not a game they backed out of themselves**, since nothing is left for them to do on it (an Admin replaces them). It is hidden whenever Requests or Upcoming is hidden from the reader (D4: it never points at a screen they cannot open). **Play and Players keep their existing entries in Phase 1**: My Games \| Club, Arrange a Game and Directory → Profile are new screens, so they arrive with Phases 2 and 5 rather than as relabelled old screens. Any of this is quick to change if CGPT prefers otherwise. |
+| DQ6–DQ9 as recommended | Shaun, 30 Sep 2026, before Phase 2. **DQ6:** a player in the game may record that the court is booked. It is attributed to them, only on an agreed game they are still in and that is not archived, and only an Admin can undo it. The Admin review of unrecorded bookings stays. **DQ7:** replacing a player stays Admin-only. **DQ8:** players get no "Change plan"; date, time and venue stay Admin edits. **DQ9:** a plain request may carry an optional time and venue, as a suggestion, never a booking. Implemented in `fixtureFlow.js` on `main` (`7d70cc0`). |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -3082,6 +3130,55 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Player Experience Reset: Phase 2 Play)
+
+**On `main`, the functional side:**
+- **`7d70cc0`:**
+  - DQ6 in `FixtureFlow.setCourtBooking`, with the old "only an admin
+    books" assertion updated deliberately and 4 tests;
+  - DQ9 in `createRequest`;
+  - `domain/fixtures/playView.js`;
+  - `playActionCount` = `needsYou.length`.
+- **`86beb59`:** `submitGameRequest`, the one path for a request. The old
+  form uses it and behaves identically.
+- **`5264d3e`:** the snapshot tool treats My Games, Club and their sheets
+  as chrome.
+- **Tests:** 12 new; 780 / 780.
+
+**On `ux/player-reset-v2`, `6291cdc`:**
+- **`features/play/playScreens.js`:** My Games, Club, the game sheet, the
+  DQ6 confirmation and the toast.
+- **`features/play/arrangeScreen.js`:** Arrange a Game.
+- **The shell:** shell screens generalised from Me; Play's switch and the
+  Arrange button; history carries which screen you are on.
+- **`fixtureCardContext()`:** factored out of Upcoming so the sheet builds
+  cards exactly as Upcoming does.
+- **Home's Match ideas buttons** open Find a Game directly.
+
+**Tests:**
+- The D4 Play tests now reach Find a Game through Arrange a Game. They
+  also check My Games, Arrange and the game sheet for prediction leaks.
+- 9 new in `playScreens`, including a player's booking (attributed and
+  saved), the button saying what is missing, visibility, Back and 44px.
+  Two guards were checked by breaking them.
+- **816 / 816.**
+
+**Proof of no change to existing screens:** the content-only snapshot is
+identical in all 38 states at 390px and 360px. Screenshots at 375px were
+checked, and Club's counter labels were fixed to wrap rather than
+truncate.
+
+**For Shaun:**
+1. **Accept the new Play lists?** Then CCode removes "Upcoming, as
+   before" and "Requests, as before".
+2. **Phase 3a (Home) needs DQ1** (promotion as a goal) and its
+   go-ahead. The recommendation is no progress bar or threshold line:
+   keep today's one-line gap, worded as "N pts below the lowest-rated
+   Tier A player", because tiers are board decisions, not rating
+   thresholds.
+
+Baton → Shaun.
 
 ### CCode — 30 Sep 2026 (Player Experience Reset: Phase 1 shell)
 
@@ -7161,6 +7258,9 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `6291cdc` (`ux/player-reset-v2`) | Phase 2 Play. My Games \| Club with Arrange a Game; My Games by what needs doing, with answers in place; Club counters; the game sheet with the stepper and the existing fixture card; a player's "I've booked a court" (DQ6); Arrange a Game (Suggested for you, Request with optional time and venue, Paste a list). Existing screens are unchanged (content snapshot identical, 38 states × 2 widths). 9 tests; 816/816 on the branch. |
+| `86beb59` | `submitGameRequest`: one path for asking for a game, carrying DQ9's optional time and venue. The Requests form behaves as before. 2 tests; 780/780. |
+| `7d70cc0` | DQ6 (player court booking, attributed, Admin-only reversal), DQ9 (request time and venue), `domain/fixtures/playView.js` (My Games / Club / stepper); the Play badge now counts My Games' Needs you. 10 tests; 778/778. |
 | `0772379` (`ux/player-reset-v2`) | Phase 1 shell. Five tabs with More → Me (settings, guides, Admin, "Who are you?"), Rankings Power \| This Month + More tables, one segmented control per section, the Play badge, and system Back (sheets, screens, Home's Full Review). Screen content is identical in all 38 states at 390 and 360 (content-mode snapshot). 15 tests; 795/795 on the branch. |
 | `a3f6939` | `playActionCount` (the Play badge's count, DQ29) and the behaviour-snapshot tool committed as `scripts/behaviour-snapshot.js` / `behaviour-diff.js`, with content-only mode. 6 tests; 768/768. |
 | `cd844f6` (`ux/player-reset-v2`) | Phase 0 foundations. Tokens (champagne accent, steel-blue Booked, attention, movement, danger, type roles, touch, z-scale), self-hosted Instrument Serif + Inter (OFL, unused by the app so not downloaded), the primitive CSS under new names, presentation-only HTML helpers, and `docs/design/primitives.html`. Snapshot identical at 390 and 360. 18 tests; 780/780 on the branch. |
@@ -7254,6 +7354,25 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Sep: Phase 2 (Play) is DONE on `ux/player-reset-v2` (`6291cdc`).
+Baton → Shaun.**
+1. **Accept the new Play lists?** If yes, CCode retires "Upcoming, as
+   before" and "Requests, as before" from Club.
+2. **DQ1:** promotion as a goal. The recommendation is no bar and no
+   threshold line; keep the one-line gap, worded as "N pts below the
+   lowest-rated Tier A player".
+3. **Then the Phase 3a (Home) go-ahead.** In order:
+   - the live This Month hero, text-first (DQ31);
+   - Needs You;
+   - Next Game (Upcoming only);
+   - Last Time Out;
+   - a light Around the Club.
+   Power Rating, Tier Rank and form are demoted to one line. Match Ideas
+   leaves Home, since it now lives in Arrange a Game.
+- **Review on the branch's Vercel preview at `/preview`:** Play › My
+  Games, Club, a game's sheet, and Arrange a Game.
+- **`main`:** `5264d3e`, 780 / 780.
 
 **CCode, 30 Sep: Phase 1 is DONE on `ux/player-reset-v2` (`0772379`), with
 no screen's content changed. Baton → Shaun.**
