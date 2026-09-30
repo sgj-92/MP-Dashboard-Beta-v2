@@ -1,0 +1,87 @@
+/* ==========================================================================
+   Games: the result feed, its filters and the one-player record line.
+   Moved out of app.css unchanged (docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md).
+   ========================================================================== */
+
+/* The Play history is a results feed, not an admin console. The correction
+   controls exist for exactly one person and are folded away behind a small
+   per-card affordance that only an unlocked admin ever sees. */
+.game-card-head{ display:flex; align-items:flex-start; gap:8px; }
+/* The matchup gets the whole card width. Manage shares the submission line,
+   which is short and muted, so four names never wrap around a button. */
+.cc-meta-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; margin-top:2px;
+}
+.cc-meta-row .cc-meta{ min-width:0; flex:1; }
+.game-manage-btn{
+  flex:none; align-self:center;
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:10px;
+  letter-spacing:.03em; color:var(--text-dim);
+  background:transparent; border:1px solid var(--line); border-radius:8px;
+  padding:3px 8px; cursor:pointer; white-space:nowrap;
+}
+.game-manage-btn.open{ color:var(--gold-bright); border-color:var(--gold-dim); }
+.game-manage-body{
+  margin-top:8px; padding-top:8px;
+  border-top:1px solid var(--surface-border-soft);
+}
+
+/* Correct vs remove: two actions, each saying what it does. The destructive
+   one is marked as destructive rather than relying on a hidden arming click. */
+.match-action{ text-align:left; line-height:1.3; padding:7px 10px; }
+.match-action-sub{ display:block; font-size:9.5px; color:var(--text-dim); margin-top:2px; font-weight:400; }
+.match-action-destructive{ color:#e8a5a1; border-color:var(--red); }
+.match-action-destructive .match-action-sub{ color:#c8918d; }
+
+/* ===================== GAMES: PLAYERS IN MATCH =====================
+   The heading owns the clear, which is the only place it makes sense: it
+   belongs to these four fields and to nothing else on the panel. Month and
+   Game type are not its business. */
+.gp-head{
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin-bottom: 5px;
+}
+/* Secondary on purpose. It is an undo, not an action -- a filled button here
+   would compete with the search it exists to cancel. */
+.gp-clear-all{
+  background: none; border: none; padding: 0;
+  font-family: var(--font-interface); font-size: 11px; letter-spacing: .02em;
+  color: var(--text-dim); text-decoration: underline; cursor: pointer;
+}
+.gp-clear-all:active{ opacity: .6; }
+
+/* One field and its own remove, which is what lets a four-player search be
+   corrected by one name rather than retyped. */
+.gp-slot{ position: relative; margin-bottom: 6px; }
+.gp-slot .gp-field{ padding-right: 34px; }   /* room for the × */
+.gp-remove{
+  position: absolute; right: 2px; top: 0; bottom: 0;
+  width: 32px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-dim); font-size: 17px; line-height: 1;
+}
+.gp-remove:active{ opacity: .6; }
+
+/* One player's record over the listed games. A line, not a card: no border,
+   no fill, just a gold hairline tying it to the list it counts. */
+.gp-record{
+  margin: 2px 0 8px; padding: 4px 0 4px 10px;
+  border-left: 2px solid var(--gold-hairline);
+  font-family: var(--font-interface);
+}
+.gp-record-context{
+  font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.gp-record-line{
+  margin-top: 2px; font-size: 13px; color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.gp-record-line b{ color: var(--text); font-weight: 600; }
+.gp-record-pct{
+  margin-top: 1px; font-size: 12px; color: var(--gold-soft);
+  font-variant-numeric: tabular-nums;
+}
+.gp-record-empty .gp-record-line{ color: var(--text-dim); }

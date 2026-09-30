@@ -1,0 +1,141 @@
+/* ==========================================================================
+   Admin / Manage: the accordion, player tags, the audit trail and the build stamp.
+   Moved out of app.css unchanged (docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md).
+   ========================================================================== */
+
+/* Build stamp: which deployed build this device runs, at the foot of Admin /
+   Manage. A debugging aid, not a feature -- small, muted, centred, below
+   everything that does something. */
+.build-stamp{
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  width: 100%; margin: var(--space-5) 0 var(--space-3); padding: 6px 0;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-interface); font-size: 10.5px; line-height: 1.4;
+  color: var(--text-dim); opacity: 0.7; letter-spacing: 0.02em;
+  -webkit-tap-highlight-color: transparent;
+}
+.build-stamp:active{ opacity: 1; }
+.build-stamp-sha{ font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+
+/* Audit trail rows in Historical Club Adjustment. Every event stays visible;
+   the live one is bright, superseded ones recede without disappearing. */
+.audit-row{ display:flex; gap:8px; align-items:flex-start; padding:7px 0; border-bottom:1px solid var(--surface-border-soft); }
+.audit-row:last-of-type{ border-bottom:none; }
+.audit-row-superseded{ opacity:0.55; }
+.audit-dot{
+  flex:none; width:8px; height:8px; border-radius:50%;
+  background:var(--gold-bright); margin-top:5px;
+}
+.audit-row-superseded .audit-dot{ background:var(--text-dim); }
+.audit-body{ min-width:0; }
+.audit-head{
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:12px; font-weight:700;
+  color:var(--text); display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+}
+.audit-facts{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:11.5px; color:var(--text-soft); margin-top:2px; }
+.audit-meta{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; color:var(--text-dim); margin-top:2px; }
+.audit-badge{
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:9.5px; font-weight:700;
+  letter-spacing:0.04em; text-transform:none;
+  padding:1px 7px; border-radius:999px; border:1px solid var(--line);
+}
+.audit-badge-active{ color:var(--green); border-color:rgba(90,156,90,0.5); }
+.audit-badge-correction{ color:var(--gold-bright); border-color:var(--gold-dim); }
+.audit-badge-superseded{ color:var(--text-dim); }
+
+/* ===================== ADMIN ACCORDION =====================
+   Admin/Manage is a long screen of maintenance controls that a phone has to
+   scroll through to reach anything. One consistent section, collapsed on
+   arrival, so the screen opens as a short list of what is available rather
+   than a wall of forms.
+
+   Every section is the same component deliberately: a parallel visual system
+   for "the new bits" is how an admin screen stops looking like one product. */
+.admin-acc{
+  border:1px solid var(--surface-border-soft);
+  border-radius:12px;
+  background:var(--surface);
+  margin:10px 0;
+  overflow:hidden;
+}
+.admin-acc + .admin-acc{ margin-top:8px; }
+.admin-acc-head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; padding:13px 14px;
+  background:transparent; border:0; cursor:pointer; text-align:left;
+  font-family:'Helvetica Neue', Arial, sans-serif;
+}
+.admin-acc-title{
+  font-size:13px; font-weight:700; color:var(--text);
+  letter-spacing:.01em; min-width:0;
+}
+/* The chevron is the only moving part, so it carries the state. */
+.admin-acc-chev{
+  flex:none; color:var(--text-dim); font-size:12px; line-height:1;
+  transition:transform .18s ease;
+}
+.admin-acc[open] .admin-acc-chev,
+.admin-acc.is-open .admin-acc-chev{ transform:rotate(180deg); color:var(--gold-bright); }
+.admin-acc.is-open .admin-acc-title{ color:var(--gold-bright); }
+.admin-acc-body{ padding:0 14px 14px; }
+.admin-acc-body > .section-sub:first-child{ margin-top:0; }
+/* Inside a section the heading has already been said by the header row. */
+.admin-acc-body .section-heading:first-child{ margin-top:0; }
+
+/* ===================== PLAYER TAGS =====================
+   One row per player, reading as a record rather than a form: name, what they
+   are, and a chevron. The controls are there when asked for. */
+.ptag-row{
+  border-top:1px solid var(--surface-border-soft);
+}
+.ptag-row:first-child{ border-top:0; }
+.ptag-summary{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; padding:11px 2px;
+  background:transparent; border:0; cursor:pointer; text-align:left;
+  font-family:'Helvetica Neue', Arial, sans-serif;
+}
+/* Deliberately NOT the public serif player-name treatment: this is a
+   maintenance list, and borrowing the player-facing styling made it read like
+   a leaderboard. */
+.ptag-name{
+  display:block;
+  font-family:'Helvetica Neue', Arial, sans-serif;
+  font-size:13px; font-weight:600; color:var(--text); min-width:0;
+}
+.ptag-meta{
+  display:block;
+  font-size:11px; color:var(--text-dim); margin-top:2px;
+  font-family:'Helvetica Neue', Arial, sans-serif;
+}
+.ptag-right{ display:flex; align-items:center; gap:8px; flex:none; }
+.ptag-state{
+  font-size:10px; letter-spacing:.04em; text-transform:uppercase;
+  padding:3px 7px; border-radius:999px; white-space:nowrap;
+  border:1px solid var(--line); color:var(--text-dim);
+}
+.ptag-state.is-active{ color:var(--gold-bright); border-color:var(--gold-dim); }
+.ptag-chev{ color:var(--text-dim); font-size:11px; transition:transform .18s ease; }
+.ptag-row.is-open .ptag-chev{ transform:rotate(180deg); color:var(--gold-bright); }
+.ptag-controls{ padding:0 2px 12px; display:flex; flex-wrap:wrap; gap:8px; }
+/* Current tier and status share a row; the starting-tier control takes its own,
+   because "Started: same as now" has nowhere to truncate to that still means
+   anything. */
+.ptag-controls .ptag-tier{ flex:1 1 110px; min-width:0; }
+.ptag-controls .ptag-active{ flex:1 1 110px; min-width:0; }
+.ptag-controls .ptag-starting{ flex:1 1 100%; min-width:0; }
+
+/* Rename sits inside the player row that is already open, below the tier and
+   status controls — a label change, presented as one. */
+.ptag-rename{ margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--surface-border); }
+.ptag-rename .fg-label{ display:block; margin-bottom: 5px; }
+.ptag-rename-input{ width: 100%; margin-bottom: 8px; }
+.ptag-rename-confirm{
+  background: var(--surface-2); border: 1px solid var(--surface-border);
+  border-radius: 10px; padding: 10px 12px; font-size: 12.5px;
+}
+.ptag-rename-note{
+  font-family: var(--font-interface); font-size: 11px; color: var(--text-dim);
+  margin-top: 6px; line-height: 1.45;
+}
+.ptag-rename-note.is-bad{ color: var(--red); }

@@ -1,0 +1,147 @@
+/* ==========================================================================
+   Home: the personalised dashboard.
+   Moved out of app.css unchanged (docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md).
+   ========================================================================== */
+
+#homeDashboard{ padding-bottom: 16px; }
+/* Hero -- reserved area for the production artwork ChatGPT will provide.
+   Explicit min-height (not content-driven) so the space is stable once the
+   image lands; background-size:cover + top-right position matches the same
+   strategy already used for the Rankings hero image, for consistency.
+   Once the asset exists: add `url("../../home/home-hero.webp") top right/cover
+   no-repeat` as the last layer of the background shorthand below. */
+/* Hero -- production artwork from ChatGPT. Composition is dark-left/warm-
+   right by design, so two overlay gradients stack: a left-to-right darkening
+   for greeting readability (fades out before the racket/ball), and a
+   top/bottom fade so the image blends into the page rather than reading as
+   a rectangular photo card. No border/radius -- it's meant to feel like part
+   of the page, not a framed image. */
+.home-hero{
+  position: relative; min-height: 280px; box-sizing: border-box;
+  padding: var(--space-5) var(--space-4) var(--space-3);
+  display: flex; flex-direction: column; justify-content: center;
+  background:
+    linear-gradient(90deg, rgba(10,10,9,0.88) 0%, rgba(10,10,9,0.55) 45%, rgba(10,10,9,0.08) 72%, transparent 100%),
+    linear-gradient(180deg, rgba(10,10,9,0.05) 0%, rgba(10,10,9,0.3) 50%, var(--surface-0) 82%, var(--surface-0) 100%),
+    url("../../home/home-hero-padel.png") right 42% / cover no-repeat,
+    var(--surface-0);
+}
+.home-greeting{ font-size: 28px; line-height: 1.2; margin-top: 6px; }
+.home-greeting-name{ color: var(--gold-bright); }
+.home-hero-sub{ font-family: var(--font-interface); font-size: 11px; letter-spacing: 0.06em; color: var(--text-dim); margin-top: 8px; text-transform: uppercase; }
+.home-hero-tagline{ font-family: var(--font-interface); font-size: 9.5px; letter-spacing: 0.1em; color: var(--gold-soft); margin-top: 10px; text-transform: uppercase; }
+
+.home-card{ margin: 0 var(--space-4) var(--space-4); padding: var(--space-4); }
+.home-card-header{
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-interface); font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text); margin-bottom: var(--space-2);
+}
+/* Extra top space specifically between major Home sections (Your Game ->
+   Club Pulse -> Match to Make -> Next on Court -> Monthly Review) without
+   making the cards themselves any taller. */
+.home-section-header{ padding: 0 4px; margin-top: 30px; }
+.home-card-link{ background: none; border: none; color: var(--gold-soft); font-family: var(--font-interface); font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* Your Game -- three deliberate stacked groups (tier/rank, rating, recent
+   form), separated by subtle dividers, rather than everything competing on
+   one horizontal line. */
+.home-yourgame-group{ display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+.home-yourgame-divider{ border-top: 1px solid var(--surface-border-soft); }
+.home-tier-sub{ font-family: var(--font-interface); font-size: 11.5px; color: var(--text-dim); }
+.home-yourgame-rating{ flex-direction: column; align-items: flex-start; gap: 2px; }
+.home-rating-num{ font-family: var(--font-interface); font-weight: 700; font-size: 30px; color: var(--text); }
+/* Recent Form needs its own vertical layout (label, then dots+record) --
+   the shared .home-yourgame-group flex-row (used for the Tier badge+text
+   pairing above) was being applied here too, squeezing the label, dots and
+   record text into one fighting-for-space row -- the actual cause of the
+   wrapping on players with a full 10-game window. */
+.home-yourgame-form{ flex-direction: column; align-items: flex-start; gap: 6px; }
+.home-form-row{
+  display: flex; align-items: center; flex-wrap: wrap; row-gap: 4px; column-gap: 10px;
+}
+.home-form-dots{ display: flex; gap: 4px; flex-wrap: nowrap; flex-shrink: 0; }
+.home-form-record{ font-family: var(--font-interface); font-size: 10.5px; color: var(--text-dim); white-space: nowrap; }
+.home-insight{
+  margin-top: var(--space-3); padding: 10px 12px; background: var(--surface-2); border-radius: var(--radius-sm);
+  font-family: var(--font-interface); font-size: 12px; color: var(--text);
+}
+
+.home-pulse-row{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 0 var(--space-4) var(--space-4); }
+.home-pulse-card{ padding: var(--space-4) var(--space-2); text-align: center; }
+.home-pulse-title{ font-family: var(--font-interface); font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; opacity: 0.75; }
+.home-pulse-name{ font-family: var(--font-prestige); font-size: 16px; color: var(--text); font-weight: 400; }
+/* ---- Home: Club Pulse cards are doors, not posters --------------------- */
+.home-pulse-clickable{
+  position: relative; text-align: left; cursor: pointer;
+  border: 1px solid var(--line); background: var(--bg1);
+  font: inherit; color: inherit; width: 100%;
+}
+.home-pulse-chev{
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--gold-soft); font-size: 16px; line-height: 1;
+}
+
+/* ---- Home: Match ideas, collapsed by default --------------------------- */
+.home-ideas-head{
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+}
+.home-ideas-icon{ font-size: 20px; flex: none; }
+.home-ideas-text{ min-width: 0; flex: 1; }
+.home-ideas-title{ font-family: var(--font-interface); font-size: 15px; font-weight: 700; color: var(--text); }
+.home-ideas-cta{
+  flex: none; font-family: var(--font-interface); font-size: 11.5px; font-weight: 600;
+  color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px;
+}
+.home-ideas-chev{ color: var(--gold-soft); }
+
+/* ---- Home: Last Time Out ----------------------------------------------- */
+.home-lastresult{ display: flex; gap: 12px; align-items: stretch; }
+.lr-stamp{
+  flex: none; width: 92px; border-radius: 10px; border: 1px solid var(--line);
+  background: rgba(212,175,55,.04); padding: 10px 8px; text-align: center;
+  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+}
+.lr-date{ font-family: var(--font-interface); font-size: 10px; letter-spacing: .04em; color: var(--text); }
+.lr-tier{ font-family: var(--font-interface); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); }
+.lr-body{ min-width: 0; flex: 1; }
+.lr-headline{ font-family: var(--font-interface); font-size: 13.5px; color: var(--text); line-height: 1.4; }
+.lr-vs{ color: var(--text-dim); font-weight: 400; }
+.lr-score{ font-family: var(--font-interface); font-size: 14px; font-weight: 700; color: var(--text); margin-top: 4px; letter-spacing: .04em; }
+.lr-note{ font-family: var(--font-interface); font-size: 11.5px; color: var(--text-soft); line-height: 1.5; margin-top: 6px; }
+.lr-foot{ display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.lr-delta{ font-family: var(--font-interface); font-size: 16px; font-weight: 700; }
+.lr-arrow{ font-size: 11px; }
+.lr-view{ flex: none; }
+
+.home-pulse-sub{ font-family: var(--font-interface); font-size: 11.5px; color: var(--gold-soft); margin-top: 3px; font-weight: 600; }
+
+.home-matchup-card{ padding: var(--space-3) var(--space-4); }
+.home-matchup-pct{ font-family: var(--font-interface); font-weight: 700; font-size: 22px; color: var(--gold-bright); margin: 2px 0 0; }
+/* Horizontal: each player gets their own circle+name (not stacked pairs),
+   grouped around a compact VS -- "S R  VS  D R" with names underneath. */
+.home-matchup-players{ display: flex; align-items: flex-start; justify-content: center; gap: 6px; }
+.home-player-block{ display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; min-width: 0; }
+.home-avatar{
+  width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--surface-border);
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-interface); font-size: 11px; font-weight: 700; color: var(--text);
+  flex-shrink: 0;
+}
+.home-player-name{ font-family: var(--font-interface); font-size: 10.5px; color: var(--text-dim); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.home-matchup-vs{
+  font-family: var(--font-interface); font-size: 10px; font-weight: 700; color: var(--text-dim);
+  align-self: center; padding: 0 2px; flex: 0 0 auto;
+}
+
+.home-nextcourt{ display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+.home-monthly-grid{ display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; text-align: center; }
+.home-monthly-stat{ padding: 4px 0; }
+.home-monthly-num{ font-family: var(--font-interface); font-weight: 700; font-size: 20px; color: var(--gold-bright); margin-bottom: 2px; }
+
+@media (max-width: 380px){
+  .home-pulse-row{ grid-template-columns: 1fr; }
+  .home-monthly-grid{ grid-template-columns: 1fr 1fr; row-gap: 14px; }
+
+}
+.home-section-header + .mm-note{ margin: -4px 2px 8px; }

@@ -1,0 +1,390 @@
+/* ==========================================================================
+   Shared components: primitives, cards, headings, buttons, pills, form controls, sheets and disclosures used by more than one screen.
+   Moved out of app.css unchanged (docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md).
+   ========================================================================== */
+
+  .tierbtn{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    flex:0 0 auto;
+    padding:8px 14px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--bg1);
+    color:var(--text-dim);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.02em;
+    white-space:nowrap;
+  }
+  .tierbtn.active{
+    border-color:var(--gold);
+    color:var(--bg0);
+    background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+  }
+  .sortbtn{
+    flex:1;
+    padding:7px 4px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--text-dim);
+    font-size:11.5px;
+  }
+  .sortbtn.active{color:var(--gold-bright); border-color:var(--gold-dim);}
+  .badge{
+    width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-weight:700;font-size:11px;
+    color:#0b0a08;
+  }
+  .badge.S{background:linear-gradient(180deg,#fff3c4,#d4af37);}
+  .badge.A{background:linear-gradient(180deg,#e8c98a,#b8842e);}
+  .badge.B{background:linear-gradient(180deg,#9fdc9f,#4c8a4c);color:#0b0a08;}
+  .badge.C{background:linear-gradient(180deg,#e2938d,#a5433c);color:#1a0f0d;}
+  .badge.Unranked{background:linear-gradient(180deg,#7d7d7d,#4a4a4a);color:#eee;}
+  .tab-btn{
+    flex:0 0 auto;
+    padding:10px 14px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--bg1);
+    color:var(--text-dim);
+    font-size:13px; font-weight:700;
+    white-space:nowrap;
+  }
+  .tab-btn.active{
+    color:var(--bg0);
+    background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+    border-color:var(--gold);
+  }
+  .rating-big{font-size:16px; font-weight:700; color:var(--gold-bright);}
+  .rating-sub{font-size:10.5px; color:var(--text-dim); margin-top:2px;}
+  .perf-pos{color:var(--green);}
+  .perf-neg{color:var(--red);}
+  .strength-pill{
+    display:inline-block;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:10.5px;
+    padding:2px 8px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+  }
+  /* The tier a player held on the day of the match, not today's. */
+  .hist-tier{ color:var(--text-dim); font-weight:400; font-size:0.85em; }
+  .stateFilterGroup{ display:flex; align-items:center; gap:7px; }
+  .stateFilterLabel{
+    font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px;
+    color:var(--text-dim); white-space:nowrap;
+  }
+  .preset-btn{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    padding:5px 10px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--text-dim);
+    font-size:11.5px;
+  }
+  .preset-btn.active{ color:var(--gold-bright); border-color:var(--gold-dim); }
+  /* An impossible action must not look pressable. Without this a disabled
+     button was indistinguishable from an available one. */
+  .preset-btn:disabled,
+  .preset-btn[disabled]{
+    opacity:0.45;
+    color:var(--text-dim);
+    border-style:dashed;
+    cursor:not-allowed;
+  }
+  .reason-note{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:10.5px; color:var(--text-dim);
+    border:1px solid var(--line); border-radius:8px;
+    padding:6px 8px; margin-top:4px; line-height:1.45;
+  }
+
+  .callout-card{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    background:var(--bg1); border:1px solid var(--line); border-radius:10px;
+    padding:12px; margin-bottom:10px;
+  }
+  .callout-card .cc-title{ font-size:13.5px; font-weight:700; color:var(--gold-bright); margin-bottom:4px; }
+  .callout-card .cc-detail{ font-size:11.5px; color:var(--text-dim); line-height:1.5; }
+  /* The submission line reads at the same weight it always did, now that it
+     is its own row rather than a second line inside cc-detail. */
+  .callout-card .cc-meta{ font-size:11.5px; color:var(--text-dim); line-height:1.5; }
+  .section-heading{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:13px; font-weight:700; color:var(--text);
+    margin:16px 0 8px; padding-top:6px;
+  }
+  .section-sub{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:11.5px; color:var(--text-dim); margin-bottom:10px; line-height:1.5;
+  }
+  .alpha-row{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 2px;
+    border-bottom:1px solid var(--line);
+  }
+  .alpha-letter{
+    width:20px; font-family:Georgia,serif; font-size:13px; color:var(--gold-soft); flex:0 0 auto;
+  }
+  .alpha-name{ font-size:14.5px; font-weight:600; flex:1; }
+  .alpha-tier{ font-size:11px; color:var(--text-dim); font-family:'Helvetica Neue', Arial, sans-serif; }
+  .matchup-vs{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:12.5px; color:var(--text); line-height:1.6;
+    background:var(--bg2); border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; margin-top:4px;
+  }
+  .difficulty-row{ display:flex; gap:6px; margin-top:8px; }
+  .difficulty-pill{
+    flex:1; text-align:center;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:10.5px; font-weight:700;
+    padding:6px 4px; border-radius:8px;
+    border:1px solid var(--line);
+  }
+  .diff-easy{ color:var(--green); border-color:var(--green); }
+  .diff-balanced{ color:var(--gold-bright); border-color:var(--gold-dim); }
+  .diff-hard{ color:#e8a5a1; border-color:var(--red); }
+
+  .fg-controls{
+    background:var(--bg1); border:1px solid var(--line); border-radius:10px;
+    padding:12px; margin:12px 0;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+  }
+  .fg-row{ margin-bottom:10px; }
+  .fg-row:last-child{ margin-bottom:0; }
+  .fg-label{
+    display:block; font-size:11px; color:var(--text-dim);
+    text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px;
+  }
+  .fg-select{
+    width:100%; background:var(--bg2); border:1px solid var(--line); border-radius:8px;
+    color:var(--text); font-size:14px; padding:8px 10px;
+  }
+  .fg-toggle{ display:flex; gap:6px; }
+  .fg-toggle-btn{
+    flex:1; padding:8px 6px; border-radius:8px; border:1px solid var(--line);
+    background:transparent; color:var(--text-dim); font-size:12px; font-weight:600;
+  }
+  .fg-toggle-btn.active{ background:var(--bg2); color:var(--text); border-color:var(--gold-dim); }
+  .fg-toggle-btn.diff-easy.active{ color:var(--green); border-color:var(--green); background:rgba(90,156,90,.12); }
+  .fg-toggle-btn.diff-balanced.active{ color:var(--gold-bright); border-color:var(--gold-dim); background:rgba(212,175,55,.12); }
+  .fg-toggle-btn.diff-hard.active{ color:#e8a5a1; border-color:var(--red); background:rgba(181,69,63,.12); }
+  #buildMatchPanel{ margin-top:8px; padding-top:8px; border-top:1px solid var(--surface-border-soft); }
+  .empty{
+    text-align:center; color:var(--text-dim);
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    padding:30px 10px; font-size:13px;
+  }
+
+  .footer-note{
+    padding:18px 20px 4px;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:11px; color:var(--text-dim);
+    line-height:1.6;
+    text-align:center;
+  }
+
+/* Tier insignia -- restrained badge identity, distinct from win/loss colors.
+   The letter is live HTML text (never baked into an asset), so a visual
+   frame SVG can drop in later without any markup change. */
+.tier-badge{
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 25px; height: 25px; border-radius: var(--radius-sm);
+  font-family: var(--font-interface); font-weight: 700; font-size: 11px;
+  border: 1px solid var(--surface-border); background: var(--surface-1); color: var(--text-dim);
+}
+.tier-badge.tier-s{ color: var(--tier-s-text); border-color: var(--tier-s-border); background: var(--tier-s-bg); }
+.tier-badge.tier-a{ color: var(--tier-a-text); border-color: var(--tier-a-border); background: var(--tier-a-bg); }
+.tier-badge.tier-b{ color: var(--tier-b-text); border-color: var(--tier-b-border); background: var(--tier-b-bg); }
+.tier-badge.tier-c{ color: var(--tier-c-text); border-color: var(--tier-c-border); background: var(--tier-c-bg); }
+/* Two different facts, two different tags. Idle is temporary and says nothing
+   about the player; Inactive is a club status. They deliberately do not look
+   the same. */
+.inactive-tag,
+.idle-tag{
+  display: inline-block; font-family: var(--font-interface); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim);
+  border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: 6px; vertical-align: middle;
+}
+.idle-tag{ color: var(--gold-soft); border-color: var(--gold-dim); }
+
+/* ==========================================================================
+   PRESTIGE VISUAL SYSTEM v1 — reusable primitives
+   These are the tokens for the shared vocabulary this design pass established.
+   Meant to be reused as-is when redesigning Player Profile, Home and Play,
+   rather than each screen inventing its own title/label/divider treatment.
+   ========================================================================== */
+
+/* Section eyebrow label -- small caps sans-serif, used above a display title. */
+.mp-section-label{
+  font-family: var(--font-interface); font-size: 10.5px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+
+/* Display title -- serif, for major screen titles only (never controls/stats).
+   Ivory, not gold -- gold is reserved for selected/champion states specifically. */
+.mp-display-title{
+  font-family: var(--font-prestige); color: var(--text); font-weight: 400;
+  line-height: 1.15;
+}
+
+/* Prestige stat numeral -- serif, for ranking numbers / championship figures. */
+.mp-numeral{ font-family: var(--font-prestige); font-weight: 400; }
+
+/* Subtle divider -- the only kind of horizontal rule the system should use. */
+.mp-divider{ border: none; border-top: 1px solid var(--surface-border-soft); margin: var(--space-3) 0; }
+
+/* Standard card -- neutral elevated surface, used for ordinary content. */
+.mp-card-standard{
+  background: var(--surface-1); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+}
+
+/* Prestige card -- reserved for championship/podium-tier content only. */
+.mp-card-prestige{
+  background: var(--surface-1); background-image: var(--gold-illumination);
+  border: 1px solid var(--surface-border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-podium);
+}
+/* Smaller, unlabelled dots -- less visually dominant than the earlier
+   lettered-circle treatment; color alone communicates win/loss. */
+/* A dot with no state is a dot with no result behind it, and it has to LOOK
+   like one. Before this it had no background at all, so an unclassified dot
+   was invisible rather than obviously wrong -- the failure mode that let ten
+   losses render as ten wins would at least have shown as ten gaps. */
+.form-dot{
+  width: 13px; height: 13px; border-radius: 50%;
+  background: transparent; border: 1px solid var(--line);
+}
+.form-dot.w{ background: var(--green); border-color: var(--green); }
+.form-dot.l{ background: var(--red); border-color: var(--red); }
+/* Neither, and borrowing neither colour. Matches the draw treatment used by
+   the profile's form letters and the League table's Last 10 column. */
+.form-dot.d{ background: var(--line); border-color: var(--line); }
+
+/* Reusable primary CTA -- champagne/gold fill, dark text, restrained depth.
+   For the flagship actions (View Matchup, Find a Game), not every button. */
+.mp-btn-primary{
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  border: none; border-radius: var(--radius-sm);
+  color: #1a1408; font-family: var(--font-interface); font-size: 13px; font-weight: 700;
+  height: 38px; padding: 0 16px; cursor: pointer;
+  box-shadow: 0 1px 4px rgba(212,175,55,0.18);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Secondary CTA -- outlined, restrained. Pairs with .mp-btn-primary wherever
+   a card needs a lighter second action (e.g. Play's BEST MATCH card). */
+.mp-btn-secondary{
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  background: transparent; border: 1px solid var(--gold-hairline); border-radius: var(--radius-sm);
+  color: var(--text); font-family: var(--font-interface); font-size: 13px; font-weight: 600;
+  height: 38px; padding: 0 14px; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* "Why your rating moved" -- the plain-English reading of facts already on the
+   card. Set apart so it reads as explanation, not as another statistic. */
+.why-moved{
+  margin-top:8px; padding:8px 10px;
+  border-left:2px solid var(--gold-soft); border-radius:0 8px 8px 0;
+  background:rgba(212,175,55,.05);
+}
+.why-moved-head{
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:9.5px;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--gold-soft); font-weight:700;
+}
+.why-moved-body{
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:11.5px;
+  color:var(--text-soft); line-height:1.55; margin-top:3px;
+}
+.why-moved-body b{ color:var(--text); }
+.why-moved-note{
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:10px;
+  color:var(--text-dim); line-height:1.45; margin-top:5px;
+}
+
+/* The decimals, one level down. In front of anyone who asks, in front of
+   nobody who does not. */
+.wm-calc{ margin-top:6px; }
+.wm-calc-summary{
+  list-style:none; cursor:pointer;
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px;
+  color:var(--gold-soft); font-weight:600;
+}
+.wm-calc-summary::-webkit-details-marker{ display:none; }
+.wm-calc-summary::after{ content:' \203A'; }
+.wm-calc[open] > .wm-calc-summary::after{ content:' \2304'; }
+.wm-calc-body{ margin-top:5px; }
+.wm-calc-label{
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:9.5px;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--text-dim);
+  margin:7px 0 2px;
+}
+.wm-calc-label:first-child{ margin-top:0; }
+.wm-calc-row{
+  display:flex; justify-content:space-between; gap:10px; padding:3px 0;
+  border-bottom:1px solid var(--surface-border-soft);
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:11px; color:var(--text-dim);
+}
+.wm-calc-row b{ color:var(--text); }
+.wm-calc-sum{
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px;
+  color:var(--gold-soft); margin-top:5px;
+}
+.wm-calc-note{
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:10px;
+  color:var(--text-dim); line-height:1.45; margin-top:5px;
+}
+
+/* A folded section says what it is hiding. Quiet enough to read as a caption
+   on the heading rather than a second heading beside it -- a filter summary
+   that competed with "Filters" for attention would be worse than the panel it
+   replaced. */
+.fold-summary{
+  font-family: var(--font-interface); font-weight: 400;
+  font-size: 11px; color: var(--text-dim); letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Who the app thinks you are, inside a flow that is about to record it.
+   Small, contextual and only where identity actually matters -- it replaced a
+   full-width card that sat above every screen of the Games tab saying the
+   same thing. */
+.identity-line{
+  display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+  margin: 0 0 8px; font-family: var(--font-interface);
+  font-size: 11.5px; color: var(--text-dim);
+}
+.identity-line b{ color: var(--text); font-weight: 600; }
+.identity-line .identity-change{
+  background: none; border: none; padding: 0;
+  font-family: var(--font-interface); font-size: 11.5px;
+  color: var(--gold-soft); cursor: pointer; text-decoration: underline;
+}
+.identity-line .identity-change:active{ opacity: .7; }
+
+/* ===================== MEANINGFUL MONTH NOTE =====================
+   Why a monthly view opened on last month: "October is taking shape · 3 of 5
+   games". A caption, not a banner -- it answers a question the reader may not
+   have asked, so it must not compete with the table it sits above. The month
+   name is a quiet way into the current month. */
+.mm-note{
+  font-family: var(--font-interface); font-size: 11px; color: var(--text-dim);
+  margin: 2px 2px 8px; line-height: 1.4;
+}
+.mm-note-link{
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-family: var(--font-interface); font-size: 11px; font-weight: 600;
+  color: var(--gold-soft); text-decoration: underline; text-underline-offset: 2px;
+}
+.mm-note-link:active{ opacity: .7; }
+#approveConfirmBtn[disabled]{ opacity: .45; cursor: not-allowed; }
+#bulkCreate[disabled]{ opacity: .45; cursor: not-allowed; }

@@ -1,0 +1,317 @@
+/* ==========================================================================
+   Players: the Directory and the player profile (legacy sheet and premium profile).
+   Moved out of app.css unchanged (docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md).
+   ========================================================================== */
+
+  .risk-badge{
+    display:inline-block;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:10px; font-weight:700;
+    padding:2px 8px; border-radius:999px;
+    letter-spacing:.03em; text-transform:uppercase;
+  }
+  .risk-promotion{ background:rgba(90,156,90,.18); color:var(--green); border:1px solid var(--green); }
+  .risk-demotion{ background:rgba(181,69,63,.18); color:#e8a5a1; border:1px solid var(--red); }
+  .risk-unproven{ background:rgba(168,156,130,.15); color:var(--text-dim); border:1px solid var(--line); }
+  .risk-stable{ background:rgba(212,175,55,.1); color:var(--gold-soft); border:1px solid var(--gold-dim); }
+
+  .profile-box{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:12.5px; line-height:1.65; color:var(--text);
+    background:var(--bg2); border:1px solid var(--line); border-radius:10px;
+    padding:12px; margin:10px 0;
+  }
+
+  /* detail overlay */
+  .overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.75);
+    display:none; align-items:flex-end; justify-content:center;
+    z-index:20;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--bg1); width:100%; max-width:480px;
+    border-radius:18px 18px 0 0; border:1px solid var(--line); border-bottom:none;
+    max-height:80vh; overflow-y:auto; padding:18px 18px 26px;
+  }
+  .sheet h2{margin:0 0 2px; font-size:20px; color:var(--gold-bright);}
+  .sheet .stat-row{
+    display:flex; gap:14px; margin:10px 0 14px;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+  }
+  .sheet .stat-row div{
+    background:var(--bg2); border:1px solid var(--line); border-radius:10px;
+    padding:8px 12px; font-size:12px; color:var(--text-dim); flex:1; text-align:center;
+  }
+  .sheet .stat-row b{display:block; font-size:16px; color:var(--text); font-family:Georgia,serif;}
+  .match{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:12.5px;
+    padding:9px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .match .top{display:flex; justify-content:space-between; color:var(--text-dim); font-size:11px; margin-bottom:3px;}
+  .match .teams{color:var(--text);}
+  .match .teams b{color:var(--gold-bright);}
+  .match .score{color:var(--text-dim); margin-top:2px;}
+  .close-btn{
+    display:block; margin:14px auto 0; padding:9px 20px;
+    border-radius:999px; border:1px solid var(--gold-dim);
+    background:transparent; color:var(--gold-bright);
+    font-family:'Helvetica Neue', Arial, sans-serif; font-size:13px;
+  }
+
+/* ==========================================================================
+   PLAYER PROFILE -- premium dossier
+   ========================================================================== */
+.pp-viewer-tag{
+  font-family: var(--font-interface); font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--gold-soft); padding: 12px 16px 0;
+}
+.pp-hero{ padding: 4px 16px 16px; text-align: center; }
+.pp-hero-name{ font-family: var(--font-prestige); font-size: 26px; color: var(--text); letter-spacing: 0.02em; }
+.pp-hero-status{ font-family: var(--font-interface); font-size: 10.5px; letter-spacing: 0.06em; color: var(--text-dim); margin-top: 4px; }
+.pp-hero-rating{ font-family: var(--font-interface); font-weight: 700; font-size: 44px; color: var(--gold-bright); margin-top: 10px; line-height: 1; }
+.pp-hero-rating-label{ font-family: var(--font-interface); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-top: 2px; }
+.pp-hero-sub{ font-family: var(--font-interface); font-size: 11.5px; color: var(--text-dim); margin-top: 8px; }
+
+/* Hero facts -- tier, reliability, games, joined. Reliability lives here, not
+   beside rank or win rate, because it measures evidence and not ability. */
+.pp-hero-facts{
+  display: flex; justify-content: center; gap: 0;
+  margin-top: 14px; padding: 10px 0;
+  border-top: 1px solid var(--surface-border-soft);
+  border-bottom: 1px solid var(--surface-border-soft);
+}
+.pp-fact{ flex: 1; min-width: 0; padding: 0 6px; }
+.pp-fact + .pp-fact{ border-left: 1px solid var(--surface-border-soft); }
+.pp-fact-label{
+  font-family: var(--font-interface); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.pp-fact-value{ font-family: var(--font-interface); font-size: 17px; font-weight: 700; color: var(--text); margin-top: 3px; line-height: 1.1; }
+.pp-fact-value-gold{ color: var(--gold-bright); }
+.pp-fact-value-small{ font-size: 12.5px; font-weight: 600; padding: 3px 0; }
+.pp-fact-unavailable{ color: var(--text-dim); }
+.pp-fact-note{ font-family: var(--font-interface); font-size: 9.5px; color: var(--text-dim); margin-top: 1px; line-height: 1.2; }
+
+.pp-section{ padding: var(--space-4) 16px; border-top: 1px solid var(--surface-border-soft); }
+.pp-section-label{
+  font-family: var(--font-interface); font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px;
+}
+
+/* Recent form -- letters, not tiny dots, per the brief's explicit example */
+.pp-form-seq{ display: flex; gap: 6px; }
+.pp-form-letter{
+  width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-interface); font-size: 11px; font-weight: 700; color: #0b0a08;
+}
+.pp-form-letter.w{ background: var(--green); }
+.pp-form-letter.l{ background: var(--red); }
+.pp-form-letter.d{ background: var(--line); color: var(--text-dim); }
+.pp-form-record{ font-family: var(--font-interface); font-size: 13px; color: var(--text); margin-top: 8px; font-weight: 600; }
+.pp-form-clutch{ margin-top: 2px; }
+
+/* Analysis cards */
+.pp-analysis-grid{ display: flex; flex-direction: column; gap: 8px; }
+.pp-analysis-card, .pp-partner-card, .pp-rivals-card, .pp-proveit-card{
+  background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.pp-ac-label{ font-family: var(--font-interface); font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-dim); opacity: 0.8; }
+.pp-ac-main{ font-family: var(--font-prestige); font-size: 16px; color: var(--text); margin-top: 3px; }
+.pp-ac-sub{ font-family: var(--font-interface); font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.pp-summary-sentence{ font-family: var(--font-interface); font-size: 12.5px; color: var(--text); line-height: 1.5; margin-top: 12px; }
+
+/* Partnerships & rivals */
+.pp-partner-card{ margin-bottom: 8px; }
+.pp-rival-row{ font-family: var(--font-interface); font-size: 12.5px; color: var(--text); padding: 4px 0; }
+.pp-rival-self{
+  text-align: center; font-family: var(--font-prestige); color: var(--gold-bright); font-weight: 400;
+  padding: 6px 0; margin: 4px 0; border-top: 1px solid var(--surface-border-soft); border-bottom: 1px solid var(--surface-border-soft);
+}
+
+/* Match to prove it */
+.pp-proveit-team{ font-family: var(--font-prestige); font-size: 14.5px; color: var(--text); text-align: center; }
+.pp-proveit-vs{ font-family: var(--font-interface); font-size: 9.5px; color: var(--text-dim); text-align: center; margin: 4px 0; }
+
+/* Rating journey */
+.pp-journey-headline{ font-family: var(--font-interface); font-weight: 700; font-size: 18px; color: var(--text); }
+
+/* Viewer-relative grid */
+.pp-viewer-rel-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+
+/* Recent results -- collapsed row + reparented full detail */
+.pp-match-row{ cursor: pointer; border-bottom: 1px solid var(--surface-border-soft); padding: 10px 0; }
+.pp-match-summary{ display: flex; align-items: center; gap: 8px; font-family: var(--font-interface); font-size: 11.5px; flex-wrap: wrap; }
+.pp-match-result{ font-weight: 700; font-size: 10px; letter-spacing: 0.03em; flex-shrink: 0; }
+.pp-match-result.w{ color: var(--green); }
+.pp-match-result.l{ color: var(--red); }
+/* Neither, and it must not borrow either colour: a drawn game read as a red
+   LOSS is the bug this row was carrying. */
+.pp-match-result.d{ color: var(--text-dim); }
+.pp-match-date{ color: var(--text-dim); flex-shrink: 0; }
+.pp-match-teams{ color: var(--text); font-weight: 600; }
+.pp-match-score{ color: var(--text-dim); }
+.pp-match-opp{ color: var(--text-dim); }
+.pp-match-chev{ margin-left: auto; color: var(--text-dim); flex-shrink: 0; }
+.pp-match-detail{ display: none; margin-top: 8px; }
+
+/* ===================== PLAYERS DIRECTORY =====================
+   A public-facing directory, not an admin list. The filter panel used to take
+   nearly half the first screen on a phone -- three stacked rows of controls
+   above the first player -- and the tier chips ran off the right edge. The
+   secondary filters now fold away behind a summary that says what is on.
+
+   Player identity leads; tier and rating follow it, quietly. Active is the
+   normal state and no longer announces itself on every row; inactive still
+   does, because that is the one worth noticing. */
+.pdir-bar{ display:none; }   /* retired: the controls no longer stack in a block */
+
+/* ---- The filter: a line you can tap, not a card ------------------------ */
+.pdir-filter-line{
+  display:flex; align-items:baseline; gap:6px; flex-wrap:wrap;
+  width:100%; margin:12px 0 2px; padding:4px 2px;
+  background:none; border:none; cursor:pointer; text-align:left;
+  font-family:var(--font-interface); font-size:12px; color:var(--text-dim);
+}
+.pdir-filter-line .pdir-filter-state{ color:var(--text); font-weight:600; }
+.pdir-filter-line.is-on .pdir-filter-state{ color:var(--gold-bright); }
+.pdir-filter-line:active{ opacity:.7; }
+
+/* Open: two rows of small chips on a faint surface. Same controls, same ids,
+   a fraction of the height -- they were the Rankings tier pills and the
+   full-width form toggles, only folded away. */
+.pdir-filters{
+  border:1px solid var(--surface-border-soft); border-radius:12px;
+  background:var(--surface); padding:10px 12px; margin:6px 0 4px;
+}
+.pdir-filters .fg-label{
+  display:block; margin:0 0 6px;
+  font-family:var(--font-interface); font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--text-dim);
+}
+.pdir-filters .fg-row + .fg-row{ margin-top:10px; }
+/* Wrapping, not scrolling: a chip that runs off the right edge is a chip
+   nobody knows is there. */
+.pdir-tierbar{ display:flex; flex-wrap:wrap; gap:6px; padding:0; }
+.pdir-filters .tierbtn,
+.pdir-filters .fg-toggle .fg-toggle-btn{
+  flex:0 0 auto; padding:5px 11px; min-height:0;
+  border-radius:999px; font-family:var(--font-interface);
+  font-size:11.5px; font-weight:600; line-height:1.3;
+}
+.pdir-filters .fg-toggle{ display:flex; flex-wrap:wrap; gap:6px; }
+/* One "selected" look across every control on this screen. The tier pills
+   brought Rankings' solid gold fill with them and the status toggles brought
+   the form outline, so the same panel said "chosen" two different ways. */
+.pdir-filters .tierbtn,
+.pdir-filters .fg-toggle .fg-toggle-btn{
+  background:transparent; color:var(--text-dim);
+  border:1px solid var(--surface-border);
+}
+.pdir-filters .tierbtn.active,
+.pdir-filters .fg-toggle .fg-toggle-btn.active{
+  background:var(--gold-wash); color:var(--gold-bright);
+  border-color:var(--gold-hairline); box-shadow:none;
+}
+
+/* ---- Count and sort share one slim line --------------------------------- */
+.pdir-countbar{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin:8px 2px 4px;
+}
+.pdir-count{
+  font-family:var(--font-interface);
+  font-size:11px; color:var(--text-dim);
+}
+/* A compact segmented control. Primary, because sort is the one control a
+   reader of a directory actually changes -- but sized like a caption, not a
+   form. */
+.pdir-seg{
+  display:inline-flex; flex:none; padding:2px; gap:2px;
+  border:1px solid var(--surface-border); border-radius:999px;
+  background:var(--surface);
+}
+.pdir-seg .fg-toggle-btn{
+  flex:none; padding:4px 11px; min-height:0; border:none; border-radius:999px;
+  background:transparent; color:var(--text-dim);
+  font-family:var(--font-interface); font-size:11px; font-weight:600; line-height:1.3;
+}
+.pdir-seg .fg-toggle-btn.active{
+  background:var(--gold-wash); color:var(--gold-bright);
+  box-shadow:inset 0 0 0 1px var(--gold-hairline);
+}
+
+.pdir-letter{
+  font-family:var(--font-interface);
+  font-size:11px; font-weight:700; letter-spacing:.12em; color:var(--gold-soft);
+  margin:14px 2px 6px;
+}
+.pdir-letter:first-of-type{ margin-top:6px; }
+
+/* ---- A player card ------------------------------------------------------- */
+.pdir-row{
+  display:flex; align-items:center; gap:12px;
+  width:100%; padding:9px 12px; margin-bottom:6px;
+  background:var(--surface); border:1px solid var(--surface-border-soft);
+  border-radius:14px; cursor:pointer; text-align:left;
+  transition:border-color .15s ease;
+}
+.pdir-row:active{ border-color:var(--gold-hairline); }
+/* The initials avatar Home already uses, tinted by the tier tokens. */
+.pdir-avatar{
+  width:34px; height:34px; border-radius:50%; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-interface); font-size:11px; font-weight:700; letter-spacing:.02em;
+  background:var(--surface-2); border:1px solid var(--surface-border); color:var(--text);
+}
+.pdir-tier-s .pdir-avatar{ background:var(--tier-s-bg); border-color:var(--tier-s-border); color:var(--tier-s-text); }
+.pdir-tier-a .pdir-avatar{ background:var(--tier-a-bg); border-color:var(--tier-a-border); color:var(--tier-a-text); }
+.pdir-tier-b .pdir-avatar{ background:var(--tier-b-bg); border-color:var(--tier-b-border); color:var(--tier-b-text); }
+.pdir-tier-c .pdir-avatar{ background:var(--tier-c-bg); border-color:var(--tier-c-border); color:var(--tier-c-text); }
+/* The row is a <button>, so its children are spans; they have to be made
+   block-level or the name and its tier/rating run together on one line. */
+.pdir-main{ display:block; flex:1; min-width:0; }
+/* Identity in the public serif, the same as the profile and rankings it leads
+   to. Everything else is interface. */
+.pdir-name{
+  display:block;
+  font-family:var(--font-prestige);
+  font-size:16px; color:var(--text); line-height:1.2;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.pdir-meta{
+  display:block;
+  font-family:var(--font-interface);
+  font-size:11.5px; color:var(--text-dim); margin-top:2px;
+}
+.pdir-meta b{ color:var(--gold-soft); font-weight:600; }
+.pdir-right{ display:flex; align-items:center; gap:8px; flex:none; }
+.pdir-inactive{
+  font-family:var(--font-interface);
+  font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text-dim); border:1px solid var(--line);
+  border-radius:999px; padding:3px 7px; white-space:nowrap;
+}
+/* Inactive still reads at a glance -- the badge says it, the row quietens --
+   without Active having to say anything at all. */
+.pdir-row.is-inactive .pdir-avatar,
+.pdir-row.is-inactive .pdir-name,
+.pdir-row.is-inactive .pdir-meta{ opacity:.55; }
+.pdir-chev{ color:var(--text-dim); font-size:15px; line-height:1; }
+
+/* ===================== PROFILE: RESULTS AND THEIR MONTH =====================
+   The month belongs to the profile and sits on the heading it scopes, like
+   Clear all on the Games player filter. Quiet: a caption-sized select, not a
+   control that competes with the results under it. */
+.pp-results-head{
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 8px;
+}
+.pp-month-select{
+  background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--text-dim); font-family: var(--font-interface); font-size: 11px;
+  padding: 4px 10px; max-width: 55%;
+}
