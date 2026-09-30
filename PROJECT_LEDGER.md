@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`8e1c91e`** (desktop phone preview). The redesign branching point is still **`f75a493`**. |
-| Tests | **762 / 762 passing** (250 of them drive a real browser) |
+| Last verified implementation commit | **`9e4a5e6`** (Admin Monthly Board Pack, on `app-features-fixes` = `main`, 30 Sep). The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **795 / 795 on `main`** (30 Sep, after the Board Pack); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,44 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Admin Monthly Board Pack — DONE on `app-features-fixes` = `main`
+(`9e4a5e6`), 30 Sep.** Shaun's brief; no redesign-branch change.
+- **Where:** Admin / Manage › Monthly Board Pack. Admin only, like the
+  rest of Manage.
+- **What an admin does:** choose a month; select or deselect modules;
+  order them with Move up / Move down; set each module's options; add
+  commentary sections (title + body); preview; save. Export / print is
+  not built.
+- **Commentary is marked** "Admin commentary" in the pack, and is shown
+  as text, never markup.
+- **Monthly Information is unchanged** and stays the players' month
+  review. The pack can include it as a module.
+- **19 modules**, each drawn from the function the app's own screen uses:
+  - Month overview (games, players active, draws), Monthly Information;
+  - Power Rankings at month end, Kings of Tiers;
+  - League, Merit, Monthly Race;
+  - Most wins & points, Best win %, Most games;
+  - Power Rating risers & fallers, ranking climbers & sliders, Monthly
+    Performance, crossovers;
+  - Form at month end (Last 10), Hard & favoured wins, Doughnuts,
+    Partnerships of the month, Tier movements.
+  - Options are presentation only: top 3 / 5 / 10 / all, all tiers or
+    one, which half (risers, fallers or both, and so on), qualifiers only
+    or with provisional (Race).
+- **Selectors moved out of renderers**, so the screens and the pack read
+  one derivation:
+  - `monthlyInformation`, `monthlyStories` (`monthlyStoryData.js`);
+  - `rankingPool`, `kingsOfTiersFor`, `tierAtMonthClose`
+    (`rankingsData.js`);
+  - `leagueSplitRows`, `lastTenAtMonthEnd`, and sort orders callable
+    without the screen's state (`monthlyTablesData.js`).
+  - **Proof:** the behaviour snapshot against `21a2de2` is identical in
+    37 of 38 states, including Rankings, League, Merit, Race and
+    Information. The one difference, Manage with every section open, is
+    the new section.
+- **Storage:** Section 5, "Board Pack: saved figures or live ones?".
+  Stats left out for want of a canonical source are listed there.
 
 **Player Experience Reset — Phase 2 (Play) DONE on `ux/player-reset-v2`
 (`6291cdc`), with the rules on `main` (`7d70cc0`, `86beb59`).** Shaun,
@@ -1359,6 +1397,8 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Booked is steel blue `#8FB3D9`; aligned numbers use Inter, not Instrument Serif | CCode, 30 Sep 2026, Phase 0. Both are implementation choices within DQ20 (Shaun/CGPT). DQ20 asked for Booked to get a distinct hue: `#8FB3D9` is 8.6:1 on cards and over 45° of hue from Tier B sage, upward movement, attention and the accent. The map asked whether Instrument Serif has tabular figures before using it for numbers: it has none, so tables, points, scores and counts use Inter with `tabular-nums`. Either is a one-token change if CGPT prefers otherwise. |
 | Play badge: "genuinely act on" read strictly; interim Play / Players entries | CCode, 30 Sep 2026, Phase 1, implementing DQ29 and the IA. **The badge** counts For me requests plus Needs attention games the player is in, **but not a game they backed out of themselves**, since nothing is left for them to do on it (an Admin replaces them). It is hidden whenever Requests or Upcoming is hidden from the reader (D4: it never points at a screen they cannot open). **Play and Players keep their existing entries in Phase 1**: My Games \| Club, Arrange a Game and Directory → Profile are new screens, so they arrive with Phases 2 and 5 rather than as relabelled old screens. Any of this is quick to change if CGPT prefers otherwise. |
 | DQ6–DQ9 as recommended | Shaun, 30 Sep 2026, before Phase 2. **DQ6:** a player in the game may record that the court is booked. It is attributed to them, only on an agreed game they are still in and that is not archived, and only an Admin can undo it. The Admin review of unrecorded bookings stays. **DQ7:** replacing a player stays Admin-only. **DQ8:** players get no "Change plan"; date, time and venue stay Admin edits. **DQ9:** a plain request may carry an optional time and venue, as a suggestion, never a booking. Implemented in `fixtureFlow.js` on `main` (`7d70cc0`). |
+| Accept all: the new Play lists, DQ1 as recommended, and the Phase 3a (Home) go-ahead | Shaun, 30 Sep 2026 ("Accept all"). **Play lists accepted:** "Upcoming, as before" and "Requests, as before" are to be retired from Club on `ux/player-reset-v2`. **DQ1:** no promotion bar and no threshold line; keep the one-line gap, worded "N pts below the lowest-rated Tier A player". **Phase 3a (Home) approved.** Shaun's same message said the Board Pack must not touch the redesign branch, so both are queued behind it (NEXT). |
+| Admin Monthly Board Pack: a stored choice, figures drawn live | Shaun's brief, 30 Sep 2026; implementation choices CCode's. **DONE `9e4a5e6`.** A per-month document `moneypadel_board_pack_YYYY-MM` holds only the admin's choice: modules (id, on/off, options) and commentary in one ordered list, who saved it and when, plus a fingerprint of the month's record. It is read when an admin opens that month, never at start-up. Figures are never stored. Whether a finalised pack should freeze its figures is Shaun's call (Section 5). |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -2311,6 +2351,56 @@ with Shaun.**
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 30 Sep — Board Pack: saved figures or live ones?
+
+**For Shaun. Nothing is blocked; the pack works as built.**
+- **What is stored:** only the admin's choice for the month (Section 3).
+  Every figure is recomputed from the record each time the pack is
+  opened.
+- **So a past month's pack can change afterwards.** Any of these would do
+  it:
+  - a late result approved into that month;
+  - an edit or deletion of one of its matches;
+  - a club decision or reassessment that moves a month-end rating;
+  - a correction to a tier change.
+- **What CCode added so it is never silent:**
+  - a saved pack carries a fingerprint of the month's matches, month-end
+    ratings and tier changes;
+  - when that no longer matches, the section says so: "The record for
+    August 2026 has changed since this pack was saved…";
+  - no figures are stored.
+- **The question:** should the board be able to **finalise** a pack?
+  That would freeze a copy of the figures as presented.
+- **CCode's recommendation:** stay live for now. Add a "Finalise" action
+  that stores a frozen copy only when the pack becomes something the
+  board formally signs off or circulates. A frozen copy is a second
+  record of the figures, so it should exist only where a signed-off
+  version is actually needed.
+
+**Stats not included, for want of a canonical source.** A new selector
+or definition would be needed first, and the brief ruled out a new stat
+engine.
+- **Head-to-head and rivalries for a month:** `H2H` is all-time only;
+  nothing is scoped to a month.
+- **Notable results:** there is no definition of a notable result.
+  - Hard wins, Merit's own classification of beating a stronger pairing,
+    are included instead.
+  - Upset counts exist per player on Rankings, but not as a list of
+    matches.
+
+**How some included modules are sourced**, recorded so nobody reads them
+as something else:
+- **Form** is Last 10 **as it stood at the month's close**
+  (`LastTen.build` on the record up to that day). It is not the League's
+  "Form (10g)" column, which is today's form.
+- **Power Rankings at month end** is the podium's pool: the month-end
+  rating, the tier at the month's close, and 5+ games that month. It
+  deliberately leaves out the Rankings list's current Ranked / Idle
+  filter, which is a statement about today.
+- **Partnerships** use the Insights chemistry function (`buildPartnerships`)
+  over that month's rated games, 2+ together. Tiers are not shown, because
+  that function's tiers are today's.
+
 ### OPEN 30 Sep — redesign branch: waiting on Shaun's IA review
 
 **RESOLVED 30 Sep: `ux/player-reset-v2` created.** Shaun gave the
@@ -2476,7 +2566,7 @@ In every case the real rule stays until someone decides otherwise.
 
 | # | Question | CCode's recommendation |
 |---|---|---|
-| DQ1 | The design makes the next tier a target: a "58 pts to Tier 1" bar and a threshold line on the journey. Tiers are board decisions, not rating thresholds. | No bar or line. Keep today's one-line gap, worded as "N pts below the lowest-rated Tier A player". |
+| DQ1 | **RESOLVED 30 Sep (Shaun: as recommended).** The design makes the next tier a target: a "58 pts to Tier 1" bar and a threshold line on the journey. Tiers are board decisions, not rating thresholds. | No bar or line. Keep today's one-line gap, worded as "N pts below the lowest-rated Tier A player". |
 | DQ3 | The design's Power view is today's ratings. Rankings opens on the Meaningful Month's month-end view. | Power shows today, which matches Tier Rank (D5). Month-end history moves to the Month segment. |
 | DQ4 | The monthly switch leads with Best Month (the Monthly Race), which is still a trial. | League · Merit · Race until the trial is confirmed. |
 | DQ6 | Can a participant record "Court booked"? This has been open since 27 Sep, and the design assumes yes. | Yes for the four players, attributed and reversible by an Admin. The Admin review list stays. |
@@ -3130,6 +3220,51 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Admin Monthly Board Pack)
+
+**On `app-features-fixes` = `main`, `9e4a5e6`. Nothing on
+`ux/player-reset-v2`.**
+- **New files:**
+  - `domain/boardPack/boardPackConfig.js` holds the stored choice. It is
+    pure and extensible: a module added later arrives switched off, and
+    an unknown id is kept.
+  - `features/admin/boardPackData.js` holds what each module shows, the
+    save path (Admin only) and the record fingerprint.
+  - `features/admin/boardPackScreen.js` holds the section and the
+    preview.
+  - `features/rankings/monthlyStoryData.js`.
+- **Selectors extracted, with the screens now using them:**
+  - Information and the Power Rankings stories;
+  - the Rankings podium and Kings, via `rankingPool` / `kingsOfTiersFor`;
+  - the League's By tier rows.
+  - **Proof:** 37 of 38 snapshot states are identical to `21a2de2`;
+    `manage-admin` differs only by the new section.
+- **Storage:** `moneypadel_board_pack_YYYY-MM`, one document per month,
+  read lazily. It holds only the choice, the stamp and the fingerprint.
+- **Tests: 15 new.**
+  - `boardPackConfig`: 9.
+  - `boardPack`: 6, in the browser. They cover:
+    - Admin-only access, and no read at start-up;
+    - month choice, select / deselect, ordering, options and commentary;
+    - the saved pack reloading exactly;
+    - the drift warning;
+    - a canonical-source proof against the screens' own functions for
+      every month (podium, Kings, the Information tab's text, the
+      stories, League, Merit, Race, Doughnuts, the game count, tier
+      changes);
+    - historical tiers: Fatch is Tier C in July's pack and B today;
+    - month scoping, and Form at the month's close;
+    - no effect on ratings, League, Merit or Race.
+  - All 15 fail on the old code. Five deliberate breakages were each
+    caught.
+  - **Full suite: 795 / 795.**
+- **Recorded:** Shaun's "Accept all" (Section 3; DQ1 resolved). The
+  redesign follow-ups are queued in NEXT, not started, per the brief.
+- **For Shaun:** the finalise / snapshot question, and the stats left out
+  (Section 5).
+
+Baton → Shaun / CGPT.
 
 ### CCode — 30 Sep 2026 (Player Experience Reset: Phase 2 Play)
 
@@ -7354,6 +7489,28 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Sep: the Admin Monthly Board Pack is DONE on `main`
+(`9e4a5e6`, 795 / 795). Baton → Shaun / CGPT.**
+- **Review it:** Admin / Manage › Monthly Board Pack, on the production
+  deployment of `main`.
+- **For Shaun (Section 5):**
+  - Should a finalised pack freeze its figures? The recommendation is
+    not yet.
+  - Two stats were left out for want of a canonical source: monthly
+    head-to-head and "notable results".
+- **Approved and queued for CCode, on `ux/player-reset-v2`:** Shaun
+  accepted all three on 30 Sep. They wait only because the Board Pack
+  brief said to leave the redesign branch alone. The next `Ledger CCode`
+  starts them in this order:
+  1. Retire "Upcoming, as before" and "Requests, as before" from Club
+     (the new Play lists are accepted).
+  2. **Phase 3a (Home)**, with DQ1 as resolved: no bar or threshold line;
+     the one-line gap reads "N pts below the lowest-rated Tier A player".
+     The sections are the live This Month hero (DQ31), Needs You, Next
+     Game, Last Time Out and Around the Club. Power Rating, Tier Rank and
+     form become one line, and Match Ideas leaves Home.
+  - Merge `main` into the branch first, so the Board Pack comes with it.
 
 **CCode, 30 Sep: Phase 2 (Play) is DONE on `ux/player-reset-v2` (`6291cdc`).
 Baton → Shaun.**
