@@ -152,6 +152,18 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Product idea backlog — APPROVED STRUCTURE / NOT AN IMPLEMENTATION QUEUE (Shaun/CGPT, 30 Sep).**
+- Money Padel needs a permanent GitHub home for **unapproved / exploratory product ideas** so ideas from chats are not lost and can be revisited later.
+- This is deliberately separate from `PROJECT_LEDGER.md`:
+  - `PROJECT_LEDGER.md` remains the coordination record for approved decisions, current state, implementation truth and handoffs;
+  - the idea backlog is a parking lot and **an entry appearing there does not authorise implementation**.
+- Preferred home: `docs/product/IDEA_BACKLOG.md`, with a lightweight `docs/product/IDEA_TEMPLATE.md` if useful.
+- Suggested idea lifecycle labels: **Idea · Explore · Approved · Building · Delivered · Parked · Rejected**. Moving an idea to Approved still requires the normal Shaun/CGPT decision and Ledger handoff.
+- Seed the backlog from known Money Padel discussions where the idea is genuinely identifiable, preserving uncertainty instead of converting old brainstorming into decisions.
+- **New idea to capture:** a **Video Highlights & Moments** feature. Store video externally (not in GitHub) and keep Money Padel references/metadata that can link a clip/moment to a canonical match and to players. Candidate metadata includes match ID, video/storage URL, timestamp, title/description, participating player IDs, featured player IDs, tags and creator. Potential surfaces include Match Detail, Player Profile, Me / My Highlights, Around the Club and future season/year recap. This is an idea only; storage provider, schema and UX are not approved.
+- Other historical brainstorms may be recovered into the backlog, but CCode must distinguish **already-approved features**, **parked/open Ledger questions**, and **pure ideas** rather than duplicating or changing their status.
+- When implemented, the backlog should have a short usage note explaining how Shaun/CGPT/CCode add ideas and when an item is promoted into the Ledger.
+
 **Player Experience Reset — IA / Keep-Simplify-Move-Merge-Hide-Remove review COMPLETE (Shaun/CGPT, 30 Sep).**
 - **Core rule:** each primary tab answers one obvious player question; secondary analysis, settings and Admin controls move deeper/contextually rather than competing at the top level.
 - **Final top-level player IA:** **Home · Rankings · Play · Players · Me**.
