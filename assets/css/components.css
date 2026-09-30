@@ -388,3 +388,224 @@
 .mm-note-link:active{ opacity: .7; }
 #approveConfirmBtn[disabled]{ opacity: .45; cursor: not-allowed; }
 #bulkCreate[disabled]{ opacity: .45; cursor: not-allowed; }
+
+/* ==========================================================================
+   REDESIGN PRIMITIVES -- Player Experience Reset, Phase 0 (30 Sep 2026)
+   docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md §3.4. Reference page:
+   docs/design/primitives.html. HTML helpers: assets/js/ui/components/primitives.js.
+   New class names only -- no existing selector is touched, so every current
+   screen renders exactly as before. Each later phase adopts these as it
+   rebuilds a screen, and retires the one-off classes they replace
+   (.fx-tag, .fg-toggle, .shell-more-item ...) in the same commit.
+   Every tappable primitive is at least --touch-min (44px) tall.
+   Colour is never the only signal: states are also said in words.
+   ========================================================================== */
+
+/* ---- Type roles ---- */
+/* Display text: screen titles, names, a single prestige numeral. */
+.mp-serif-display{ font-family: var(--font-display); font-weight: 400; line-height: 1.1; letter-spacing: -0.005em; }
+/* Numbers that must line up: tables, points, scores, counts. */
+.mp-figures{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; }
+
+/* ---- Cards: the "you" card is lit, never boxed in gold; quiet has no chrome. ---- */
+.mp-card-self{
+  background: var(--row-self); border: 1px solid var(--accent-hairline);
+  border-radius: var(--radius-md);
+}
+.mp-card-quiet{ background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+
+/* ---- Section heading: title + count + right-aligned meta (+ optional chevron). ---- */
+.mp-section-head{
+  display: flex; align-items: center; gap: var(--space-2);
+  margin: var(--space-5) 0 var(--space-2);
+  font-family: var(--font-ui);
+}
+.mp-section-head-title{
+  margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text);
+}
+.mp-section-head-meta{ margin-left: auto; font-size: 12px; color: var(--text-dim); }
+/* Collapsible: the chevron is the only control affordance (Ledger rule). */
+button.mp-section-head{
+  width: 100%; min-height: var(--touch-min); padding: 0;
+  background: none; border: 0; color: inherit; text-align: left; cursor: pointer;
+}
+button.mp-section-head::after{
+  content: ""; width: 7px; height: 7px; margin-left: var(--space-2); flex: none;
+  border-right: 1.5px solid var(--text-dim); border-bottom: 1.5px solid var(--text-dim);
+  transform: rotate(45deg) translateY(-2px); transition: transform .15s ease;
+}
+button.mp-section-head[aria-expanded="false"]::after{ transform: rotate(-45deg); }
+button.mp-section-head .mp-section-head-meta{ margin-left: auto; }
+
+/* ---- Buttons: modifiers on the existing .mp-btn-primary / .mp-btn-secondary. ---- */
+.mp-btn-touch{ height: auto; min-height: var(--touch-min); padding-top: 0; padding-bottom: 0; font-family: var(--font-ui); font-size: 15px; }
+.mp-btn-accent{
+  background: var(--accent); color: var(--accent-ink); box-shadow: none;
+}
+/* Quiet: a text button, for the backing-out kind of action ("I can't make it"). */
+.mp-btn-quiet{
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: var(--touch-min); padding: 0 var(--space-3);
+  background: none; border: 0; color: var(--text-dim);
+  font-family: var(--font-ui); font-size: 14px; font-weight: 500;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+/* Destructive: always one level deeper and behind a confirmation. */
+.mp-btn-danger{ background: transparent; border: 1px solid var(--danger-border); color: var(--danger-text); box-shadow: none; }
+
+/* ---- Pills: state tags. The word carries the state; colour repeats it. ---- */
+.mp-pill{
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: var(--radius-pill);
+  border: 1px solid var(--surface-border); background: var(--surface-2);
+  font-family: var(--font-ui); font-size: 11px; font-weight: 500; line-height: 16px;
+  color: var(--text-soft); white-space: nowrap;
+}
+.mp-pill-booked{ color: var(--state-booked); background: var(--state-booked-bg); border-color: var(--state-booked-border); }
+.mp-pill-nocourt{ color: var(--text-dim); background: transparent; border-style: dashed; border-color: var(--text-dim); }
+.mp-pill-attention{ color: var(--state-attention); background: var(--state-attention-bg); border-color: var(--state-attention-border); }
+.mp-pill-admin{ color: var(--accent); background: transparent; border-color: var(--accent-hairline); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ---- Segmented control (role="tablist"): Power | This Month, My Games | Club ... ---- */
+.mp-seg{
+  display: flex; gap: 2px; padding: 3px;
+  background: var(--surface-1); border: 1px solid var(--surface-border);
+  border-radius: var(--radius-pill);
+}
+.mp-seg-item{
+  flex: 1 1 0; min-width: 0; min-height: calc(var(--touch-min) - 8px);
+  padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill);
+  background: transparent; color: var(--text-dim); cursor: pointer;
+  font-family: var(--font-ui); font-size: 14px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mp-seg-item[aria-selected="true"]{ background: var(--surface-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--accent-hairline); }
+.mp-seg-item:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+/* The container is 3px + item + 3px + borders: the whole control is 44px. */
+
+/* ---- Count badge: a gold dot with a number. Never shown at 0 (the helper
+   returns nothing; :empty is the belt to that brace). ---- */
+.mp-count-badge{
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-pill);
+  background: var(--accent); color: var(--accent-ink);
+  font-family: var(--font-figures); font-variant-numeric: tabular-nums;
+  font-size: 11px; font-weight: 600; line-height: 1;
+}
+.mp-count-badge:empty{ display: none; }
+
+/* ---- Lifecycle counter row: counters that are also filters. ---- */
+.mp-counter-row{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+.mp-counter{
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px;
+  min-height: 56px; padding: var(--space-2) var(--space-3);
+  background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+  color: var(--text); text-align: left; cursor: pointer; font-family: var(--font-ui);
+}
+.mp-counter-num{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 600; line-height: 1; }
+.mp-counter-label{ font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mp-counter[aria-pressed="true"]{ border-color: var(--accent-hairline); background: var(--accent-wash); }
+
+/* ---- Date block: solid = booked; dashed + italic = proposed. The state is
+   also written under the date. ---- */
+.mp-date-block{
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 52px; min-height: 58px; padding: 4px 0; flex: none;
+  background: var(--surface-2); border: 1px solid var(--surface-border); border-radius: var(--radius-block);
+  font-family: var(--font-ui); color: var(--text); text-align: center;
+}
+.mp-date-dow{ font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+.mp-date-day{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 19px; font-weight: 600; line-height: 1.1; }
+.mp-date-mon{ font-size: 10px; color: var(--text-dim); }
+.mp-date-state{ font-size: 9px; letter-spacing: 0.04em; color: var(--state-booked); }
+.mp-date-block-proposed{ background: transparent; border-style: dashed; border-color: var(--text-dim); font-style: italic; }
+.mp-date-block-proposed .mp-date-state{ color: var(--text-dim); }
+
+/* ---- Game row: date block · teams / meta · chevron. Collapsed form is two lines. ---- */
+.mp-game-row{
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3);
+  width: 100%; min-height: var(--touch-min); padding: var(--space-3) 0;
+  background: none; border: 0; border-bottom: 1px solid var(--surface-border-soft);
+  color: var(--text); text-align: left; font-family: var(--font-ui); cursor: pointer;
+}
+.mp-game-row-teams{ font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-game-row-meta{ margin-top: 2px; font-size: 12.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Player row: rank · avatar · name / meta · value. The viewer's row is lit. ---- */
+.mp-player-row{
+  display: grid; grid-template-columns: 28px 36px minmax(0, 1fr) auto; align-items: center; gap: var(--space-3);
+  min-height: 56px; padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--surface-border-soft); font-family: var(--font-ui);
+}
+.mp-player-row.is-self{ background: var(--row-self); border-radius: var(--radius-sm); border-bottom-color: transparent; }
+.mp-player-row-rank{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 15px; color: var(--text-dim); text-align: right; }
+.mp-player-row-name{ font-family: var(--font-display); font-size: 18px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-player-row.is-self .mp-player-row-name{ color: var(--accent-bright); }
+.mp-player-row-meta{ font-size: 12px; color: var(--text-dim); }
+.mp-player-row-value{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 600; text-align: right; }
+
+/* ---- Movement: same weight both ways; only sign and colour differ. ---- */
+.mp-move-up{ color: var(--move-up); }
+.mp-move-down{ color: var(--move-down); }
+
+/* ---- List row with chevron: the navigation-list primitive that replaces More. ---- */
+.mp-list-row{
+  display: flex; align-items: center; gap: var(--space-3);
+  width: 100%; min-height: 52px; padding: 0 var(--space-4);
+  background: none; border: 0; border-bottom: 1px solid var(--surface-border-soft);
+  color: var(--text); text-align: left; text-decoration: none; cursor: pointer;
+  font-family: var(--font-ui); font-size: 15px;
+}
+.mp-list-row-label{ flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-list-row-meta{ flex: none; font-size: 13px; color: var(--text-dim); }
+.mp-list-row-chevron{
+  flex: none; width: 7px; height: 7px;
+  border-right: 1.5px solid var(--text-dim); border-top: 1.5px solid var(--text-dim);
+  transform: rotate(45deg);
+}
+
+/* ---- Stepper: orientation only (Requested · Agreed · Booked · Played). ---- */
+.mp-stepper{ display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; font-family: var(--font-ui); }
+.mp-step{
+  flex: 1 1 0; min-width: 0; padding-top: 8px;
+  border-top: 3px solid var(--surface-2);
+  font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mp-step.is-done{ border-top-color: var(--accent-hairline); color: var(--text-soft); }
+.mp-step.is-current{ border-top-color: var(--accent); color: var(--text); font-weight: 600; }
+
+/* ---- Sheet: handle, title, close, scroll body, sticky actions. Above the tab
+   bar on one z-scale. Hidden until a phase shows it. ---- */
+.mp-sheet-backdrop{ position: fixed; inset: 0; z-index: var(--z-sheet); background: rgba(0,0,0,0.55); }
+.mp-sheet{
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sheet);
+  display: flex; flex-direction: column; max-height: 88vh; max-height: 88dvh;
+  background: var(--surface-1); border-top: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding-bottom: var(--shell-safe-bottom); font-family: var(--font-ui);
+}
+.mp-sheet-handle{ width: 36px; height: 4px; margin: 8px auto 0; border-radius: 2px; background: var(--surface-border); flex: none; }
+.mp-sheet-head{ display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); flex: none; }
+.mp-sheet-title{ margin: 0; flex: 1 1 auto; font-family: var(--font-display); font-weight: 400; font-size: 22px; color: var(--text); }
+.mp-sheet-close{
+  min-width: var(--touch-min); min-height: var(--touch-min);
+  background: none; border: 0; color: var(--text-dim); font-size: 22px; line-height: 1; cursor: pointer;
+}
+.mp-sheet-body{ flex: 1 1 auto; overflow-y: auto; padding: 0 var(--space-4) var(--space-4); -webkit-overflow-scrolling: touch; }
+.mp-sheet-actions{
+  flex: none; display: flex; gap: var(--space-2); padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--surface-border-soft); background: var(--surface-1);
+}
+
+/* ---- Toast: confirms what the module said happened; never invents it. ---- */
+.mp-toast{
+  position: fixed; left: var(--space-4); right: var(--space-4); z-index: var(--z-toast);
+  bottom: calc(var(--shell-nav-height) + var(--shell-safe-bottom) + var(--space-3));
+  display: flex; align-items: center; gap: var(--space-3);
+  min-height: var(--touch-min); padding: var(--space-2) var(--space-4);
+  background: var(--surface-2); border: 1px solid var(--surface-border); border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  color: var(--text); font-family: var(--font-ui); font-size: 14px;
+}
+.mp-toast-action{ margin-left: auto; background: none; border: 0; min-height: var(--touch-min); color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }

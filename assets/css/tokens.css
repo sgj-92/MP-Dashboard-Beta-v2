@@ -84,3 +84,137 @@
   --font-prestige: 'Georgia', 'Iowan Old Style', serif;
   --font-interface: 'Helvetica Neue', Arial, sans-serif;
 }
+
+/* ==========================================================================
+   Self-hosted web fonts -- Player Experience Reset, Phase 0 (DQ20, 30 Sep 2026)
+   Instrument Serif (display) and Inter (interface, figures), SIL OFL 1.1,
+   from Fontsource 5.3.0; licences beside the files in assets/fonts/.
+   Declaring a face downloads nothing: a browser fetches a file only when a
+   rendered element uses the family, and nothing in the app does until a
+   phase adopts --font-display / --font-ui / --font-figures. No third-party
+   request, ever. Latin + Latin Extended subsets, split by unicode-range, so
+   only the subset a page's text needs is fetched.
+   ========================================================================== */
+@font-face{
+  font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("../fonts/instrument-serif/instrument-serif-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; font-display: swap;
+  src: url("../fonts/instrument-serif/instrument-serif-latin-400-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("../fonts/inter/inter-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("../fonts/inter/inter-latin-500-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("../fonts/inter/inter-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("../fonts/instrument-serif/instrument-serif-latin-ext-400-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; font-display: swap;
+  src: url("../fonts/instrument-serif/instrument-serif-latin-ext-400-italic.woff2") format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("../fonts/inter/inter-latin-ext-400-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("../fonts/inter/inter-latin-ext-500-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face{
+  font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("../fonts/inter/inter-latin-ext-600-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
+/* ==========================================================================
+   Redesign foundations -- Player Experience Reset, Phase 0 (30 Sep 2026)
+   docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md §3 and DQ20. New names
+   only: no token above changes value, and nothing in the app reads these
+   yet, so no current screen changes. Each later phase adopts them as it
+   rebuilds a screen; the primitives in components.css already do.
+   Contrast figures are WCAG ratios on --bg1 (the card surface).
+   ========================================================================== */
+:root{
+  /* ---- Accent: the design's champagne gold (DQ20). Same role as --gold --
+     "act here" / "this is you" -- and nothing else. --gold keeps its value
+     until the screens that use it are rebuilt. ---- */
+  --accent: #D5B76E;                    /* 9.6:1 */
+  --accent-bright: #F0D58E;             /* the "you" highlight, 13.0:1 */
+  --accent-ink: #14110a;                /* text on an accent fill */
+  --accent-hairline: rgba(213,183,110,0.26);
+  --accent-wash: rgba(213,183,110,0.08);
+
+  /* ---- The viewer's own row: lit, never boxed. ---- */
+  --row-self: #1C1A14;
+
+  /* ---- Text: the Ledger's contrast is kept (DQ20). The design's lighter
+     muted (#969188, 6.0:1) is NOT adopted; muted text stays --text-dim
+     (8.7:1). The design's inactive grey fails AA for text, so it is for
+     icons only (3.3:1 clears the 3:1 non-text minimum). ---- */
+  --icon-inactive: #6B675F;
+
+  /* ---- Fixture states. Booked has its own hue (DQ20): steel blue, far from
+     Tier B sage (--tier-b-text) and from upward movement, which the design
+     had all sharing one green. Attention is distinct from loss red. State
+     is always said in words as well as colour. ---- */
+  --state-booked: #8FB3D9;              /* 8.6:1 */
+  --state-booked-bg: rgba(143,179,217,0.10);
+  --state-booked-border: rgba(143,179,217,0.35);
+  --state-attention: #E0896B;           /* 7.1:1 */
+  --state-attention-bg: rgba(224,137,107,0.10);
+  --state-attention-border: rgba(224,137,107,0.38);
+
+  /* ---- Rating movement -- never the win/loss colours, so a movement is
+     never read as a result. Up and down render at the same weight; only the
+     sign and the colour differ. The period is always labelled (DQ2). ---- */
+  --move-up: #8FB996;                   /* 8.5:1 */
+  --move-down: #C98470;                 /* 6.2:1 */
+
+  /* ---- Destructive actions: the soft red text the app already uses for
+     removal, now named. Loss red (--red) is too dark for text (3.5:1). ---- */
+  --danger-text: #e8a5a1;               /* 9.2:1 */
+  --danger-border: rgba(181,69,63,0.55);
+
+  /* ---- Type roles for the redesign (DQ20). Instrument Serif has NO
+     tabular figures (its digits differ in width -- checked in the font
+     files), so it is for display text and single display numerals only.
+     Any number that must line up -- tables, points, scores, counts -- uses
+     --font-figures with font-variant-numeric: tabular-nums (Inter has
+     tnum). The Ledger's rule stands: serif for titles, names and prestige
+     numerals; sans for everything read or tapped. ---- */
+  --font-display: 'Instrument Serif', 'Georgia', 'Iowan Old Style', serif;
+  --font-ui: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-figures: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+
+  /* ---- Shape and touch ---- */
+  --radius-block: 10px;                 /* date blocks */
+  --touch-min: 44px;                    /* every tappable primitive */
+  --tab-bar-content: 56px;              /* Phase 1 replaces --shell-nav-height with this + the safe area */
+
+  /* ---- One z-scale (map §6a.4). The values are today's; Phase 1 moves the
+     existing rules onto these names. ---- */
+  --z-header: 40;
+  --z-nav: 50;
+  --z-sheet: 60;
+  --z-toast: 70;
+}

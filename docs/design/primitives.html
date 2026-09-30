@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Money Padel · Primitives</title>
+<!-- The app's own stylesheets, in the app's order -- this page shows exactly
+     what a screen gets. Not part of the app: index.html never links here. -->
+<link rel="stylesheet" href="../../assets/css/tokens.css">
+<link rel="stylesheet" href="../../assets/css/app.css">
+<link rel="stylesheet" href="../../assets/css/components.css">
+<style>
+  /* Page layout only. Nothing here styles a primitive. */
+  body{ padding: 0 16px 64px; font-family: var(--font-ui); }
+  .ref{ max-width: 430px; margin: 0 auto; }
+  .ref h1{ font-family: var(--font-display); font-weight: 400; font-size: 34px; margin: 28px 0 4px; color: var(--text); }
+  .ref h2{ font-family: var(--font-ui); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin: 36px 0 10px; }
+  .ref p, .ref li{ color: var(--text-soft); font-size: 13.5px; line-height: 1.5; }
+  .ref code{ font-size: 12px; color: var(--accent); }
+  .swatches{ display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+  .swatch{ display: flex; gap: 10px; align-items: center; padding: 8px; background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: 10px; }
+  .swatch i{ width: 28px; height: 28px; border-radius: 6px; flex: none; }
+  .swatch b{ display: block; font-size: 12px; color: var(--text); font-weight: 600; }
+  .swatch span{ font-size: 11px; color: var(--text-dim); }
+  .row{ display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .stack > * + *{ margin-top: 10px; }
+  .demo{ padding: 12px; background: var(--surface-0); border: 1px dashed var(--surface-border); border-radius: 12px; }
+  .num-demo{ display: grid; grid-template-columns: auto 1fr; gap: 2px 16px; font-size: 22px; }
+  .num-demo small{ font-size: 11px; color: var(--text-dim); align-self: center; }
+  .sheet-demo{ position: relative; height: 330px; overflow: hidden; border-radius: 12px; border: 1px dashed var(--surface-border); }
+  .sheet-demo .mp-sheet-backdrop, .sheet-demo .mp-sheet, .sheet-demo .mp-toast{ position: absolute; }
+  .sheet-demo .mp-toast{ bottom: 12px; }
+</style>
+</head>
+<body>
+<main class="ref">
+  <h1>Primitives</h1>
+  <p>Player Experience Reset, Phase 0. These are the tokens, type and components the redesign builds with (<code>tokens.css</code>, <code>components.css</code>, helpers in <code>assets/js/ui/components/primitives.js</code>). Nothing in the app uses them yet; each phase adopts them as it rebuilds a screen. Sample names and numbers only.</p>
+
+  <h2>Colour tokens</h2>
+  <div class="swatches">
+    <div class="swatch"><i style="background:var(--accent)"></i><div><b>--accent</b><span>#D5B76E · 9.6:1 · act here / you</span></div></div>
+    <div class="swatch"><i style="background:var(--accent-bright)"></i><div><b>--accent-bright</b><span>#F0D58E · 13.0:1 · your name</span></div></div>
+    <div class="swatch"><i style="background:var(--row-self)"></i><div><b>--row-self</b><span>#1C1A14 · your row fill</span></div></div>
+    <div class="swatch"><i style="background:var(--state-booked)"></i><div><b>--state-booked</b><span>#8FB3D9 · 8.6:1 · court booked</span></div></div>
+    <div class="swatch"><i style="background:var(--state-attention)"></i><div><b>--state-attention</b><span>#E0896B · 7.1:1 · needs attention</span></div></div>
+    <div class="swatch"><i style="background:var(--move-up)"></i><div><b>--move-up</b><span>#8FB996 · 8.5:1 · rating up</span></div></div>
+    <div class="swatch"><i style="background:var(--move-down)"></i><div><b>--move-down</b><span>#C98470 · 6.2:1 · rating down</span></div></div>
+    <div class="swatch"><i style="background:var(--danger-text)"></i><div><b>--danger-text</b><span>#e8a5a1 · 9.2:1 · remove</span></div></div>
+    <div class="swatch"><i style="background:var(--icon-inactive)"></i><div><b>--icon-inactive</b><span>#6B675F · icons only</span></div></div>
+    <div class="swatch"><i style="background:var(--tier-b-text)"></i><div><b>--tier-b-text</b><span>unchanged · Booked is not this</span></div></div>
+  </div>
+  <p>Contrast is on the card surface (<code>--bg1</code>). Muted text stays <code>--text-dim</code> (8.7:1); the design's lighter grey is not adopted (DQ20).</p>
+
+  <h2>Type</h2>
+  <div class="stack">
+    <div class="mp-serif-display" style="font-size:34px">Power Rankings</div>
+    <div class="mp-serif-display" style="font-size:22px;font-style:italic">Proposed · Thu 8 Oct</div>
+    <div style="font-family:var(--font-ui);font-size:15px;font-weight:400">Inter 400 — everything read or tapped.</div>
+    <div style="font-family:var(--font-ui);font-size:15px;font-weight:500">Inter 500 — labels and controls.</div>
+    <div style="font-family:var(--font-ui);font-size:15px;font-weight:600">Inter 600 — emphasis and figures.</div>
+  </div>
+  <p>Instrument Serif has no tabular figures, so numbers that must line up use <code>.mp-figures</code> (Inter, tabular):</p>
+  <div class="demo num-demo">
+    <span class="mp-serif-display">1,611.4</span><small>serif — digits differ in width</small>
+    <span class="mp-serif-display">1,487.1</span><small></small>
+    <span class="mp-figures">1,611.4</span><small>.mp-figures — columns align</small>
+    <span class="mp-figures">1,487.1</span><small></small>
+  </div>
+
+  <h2>Section heading</h2>
+  <div class="mp-section-head"><h3 class="mp-section-head-title">Needs you</h3><span class="mp-count-badge" aria-label="2 waiting">2</span><span class="mp-section-head-meta">This week</span></div>
+  <button type="button" class="mp-section-head" aria-expanded="true"><span class="mp-section-head-title">Upcoming</span><span class="mp-section-head-meta">3 games</span></button>
+  <button type="button" class="mp-section-head" aria-expanded="false"><span class="mp-section-head-title">Archived call-outs</span><span class="mp-section-head-meta">folded</span></button>
+
+  <h2>Buttons</h2>
+  <div class="row">
+    <button type="button" class="mp-btn-primary mp-btn-touch mp-btn-accent">I'm in</button>
+    <button type="button" class="mp-btn-secondary mp-btn-touch">Swap a player</button>
+    <button type="button" class="mp-btn-quiet">I can't make it</button>
+    <button type="button" class="mp-btn-secondary mp-btn-touch mp-btn-danger">Remove…</button>
+  </div>
+
+  <h2>Pills</h2>
+  <div class="row">
+    <span class="mp-pill">2/4 in</span>
+    <span class="mp-pill mp-pill-booked">Court booked</span>
+    <span class="mp-pill mp-pill-nocourt">No court</span>
+    <span class="mp-pill mp-pill-attention">Needs a 4th</span>
+    <span class="mp-pill mp-pill-admin">Admin</span>
+  </div>
+
+  <h2>Segmented control</h2>
+  <div class="stack">
+    <div class="mp-seg" role="tablist" aria-label="Rankings"><button type="button" role="tab" class="mp-seg-item" data-seg="power" aria-selected="true" tabindex="0">Power</button><button type="button" role="tab" class="mp-seg-item" data-seg="month" aria-selected="false" tabindex="-1">This Month</button></div>
+    <div class="mp-seg" role="tablist" aria-label="Play"><button type="button" role="tab" class="mp-seg-item" data-seg="mine" aria-selected="false" tabindex="-1">My Games</button><button type="button" role="tab" class="mp-seg-item" data-seg="club" aria-selected="true" tabindex="0">Club</button></div>
+  </div>
+
+  <h2>Count badge</h2>
+  <div class="row"><span class="mp-count-badge" aria-label="1 waiting">1</span><span class="mp-count-badge" aria-label="12 waiting">12</span><span class="mp-count-badge" aria-label="140 waiting">99+</span><span style="color:var(--text-dim);font-size:12px">— and nothing at all at 0</span></div>
+
+  <h2>Lifecycle counters</h2>
+  <div class="mp-counter-row">
+    <button type="button" class="mp-counter" aria-pressed="true"><span class="mp-counter-num">1</span><span class="mp-counter-label">Attention</span></button>
+    <button type="button" class="mp-counter" aria-pressed="false"><span class="mp-counter-num">3</span><span class="mp-counter-label">Upcoming</span></button>
+    <button type="button" class="mp-counter" aria-pressed="false"><span class="mp-counter-num">2</span><span class="mp-counter-label">Called out</span></button>
+    <button type="button" class="mp-counter" aria-pressed="false"><span class="mp-counter-num">5</span><span class="mp-counter-label">Requests</span></button>
+  </div>
+
+  <h2>Date block and game row</h2>
+  <div>
+    <button type="button" class="mp-game-row"><span class="mp-date-block"><span class="mp-date-dow">Tue</span><span class="mp-date-day">6</span><span class="mp-date-mon">Oct</span><span class="mp-date-state">Booked</span></span><span><div class="mp-game-row-teams">You &amp; Sam v Jo &amp; Kit</div><div class="mp-game-row-meta">20:00 · Riverside · in 2 days</div></span><span class="mp-list-row-chevron" aria-hidden="true"></span></button>
+    <button type="button" class="mp-game-row"><span class="mp-date-block mp-date-block-proposed"><span class="mp-date-dow">Thu</span><span class="mp-date-day">8</span><span class="mp-date-mon">Oct</span><span class="mp-date-state">Proposed</span></span><span><div class="mp-game-row-teams">Alex &amp; Rae v You &amp; Lee</div><div class="mp-game-row-meta">4/4 agreed · no court yet</div></span><span class="mp-list-row-chevron" aria-hidden="true"></span></button>
+  </div>
+
+  <h2>Player rows and movement</h2>
+  <div>
+    <div class="mp-player-row"><span class="mp-player-row-rank">1</span><span class="mp-pill" style="justify-content:center;width:36px;height:36px;padding:0">AK</span><span><div class="mp-player-row-name">Alex</div><div class="mp-player-row-meta">Tier A · #1 in tier · <span class="mp-move-up">+12 this month</span></div></span><span class="mp-player-row-value">1,611.4</span></div>
+    <div class="mp-player-row is-self"><span class="mp-player-row-rank">2</span><span class="mp-pill" style="justify-content:center;width:36px;height:36px;padding:0">SM</span><span><div class="mp-player-row-name">You</div><div class="mp-player-row-meta">Tier A · #2 in tier · <span class="mp-move-down">−8 this month</span></div></span><span class="mp-player-row-value">1,487.1</span></div>
+  </div>
+
+  <h2>List rows</h2>
+  <div class="mp-card-standard" style="overflow:hidden">
+    <button type="button" class="mp-list-row"><span class="mp-list-row-label">Kings of Tiers</span><span class="mp-list-row-chevron" aria-hidden="true"></span></button>
+    <button type="button" class="mp-list-row"><span class="mp-list-row-label">Doughnuts</span><span class="mp-list-row-meta">3 this month</span><span class="mp-list-row-chevron" aria-hidden="true"></span></button>
+    <button type="button" class="mp-list-row"><span class="mp-list-row-label">Power Rating Guide</span><span class="mp-list-row-chevron" aria-hidden="true"></span></button>
+  </div>
+
+  <h2>Stepper</h2>
+  <ol class="mp-stepper"><li class="mp-step is-done">Requested</li><li class="mp-step is-done">Agreed</li><li class="mp-step is-current" aria-current="step">Booked</li><li class="mp-step">Played</li></ol>
+
+  <h2>Cards</h2>
+  <div class="stack">
+    <div class="mp-card-self" style="padding:14px"><span class="mp-serif-display" style="font-size:22px">3rd in Tier B · September</span><div style="font-size:12.5px;color:var(--text-dim);margin-top:4px">5–2 · 13 pts · <span class="mp-move-up">+9 this month</span></div></div>
+    <div class="mp-card-quiet" style="color:var(--text-soft);font-size:13px">A quiet card: content with no chrome of its own.</div>
+  </div>
+
+  <h2>Sheet and toast</h2>
+  <div class="sheet-demo">
+    <div class="mp-sheet-backdrop"></div>
+    <div class="mp-sheet" role="dialog" aria-label="Request a game">
+      <div class="mp-sheet-handle"></div>
+      <div class="mp-sheet-head"><h3 class="mp-sheet-title">Request a game</h3><button type="button" class="mp-sheet-close" aria-label="Close">×</button></div>
+      <div class="mp-sheet-body"><p>Scrolling body. Pick three players; you're in automatically.</p></div>
+      <div class="mp-sheet-actions"><button type="button" class="mp-btn-primary mp-btn-touch mp-btn-accent" style="flex:1">Add 1 more player</button></div>
+    </div>
+  </div>
+  <div class="sheet-demo" style="height:90px;margin-top:10px">
+    <div class="mp-toast" role="status">✓ Moved to Upcoming<button type="button" class="mp-toast-action">View</button></div>
+  </div>
+</main>
+</body>
+</html>
