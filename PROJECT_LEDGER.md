@@ -60,7 +60,8 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
-| Branch | `main` |
+| Branch | `main` (live: GitHub Pages deploys it) |
+| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). |
 | Last verified implementation commit | **`fa60180`** |
 | Tests | **738 / 738 passing** (245 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
@@ -149,6 +150,23 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Two working branches (Shaun, 30 Sep).**
+- **`app-features-fixes`:** features, bug fixes and functional updates.
+  - It replaces `claude/upload-commit-main-yfgpx0`, renamed for clarity.
+  - It is kept identical to `main` and pushed with it, so this work goes
+    live.
+- **`app-redesign`:** the app redesign.
+  - It is created from `main` at `ec963d5`.
+  - It is **held**: nothing on it goes to `main` or the live site until
+    Shaun says so.
+  - Keeping it close to `main` means **merging `main` into it** from time to
+    time. The reverse, `app-redesign` into `main`, happens only on Shaun's
+    release.
+- **Housekeeping:** the old `claude/upload-commit-main-yfgpx0` still exists
+  on GitHub, because this session's proxy refused to delete it. Shaun can
+  delete it from the repo's Branches page. It holds nothing that is not on
+  `main`.
 
 **Repository renamed to `MP-Dashboard-Beta-v2` (Shaun, 29 Sep).**
 - **Pages URL:** the GitHub Pages site is now
