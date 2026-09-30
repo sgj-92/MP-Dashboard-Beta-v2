@@ -61,9 +61,9 @@ rating chokepoint now reads v3 persisted state.
 |---|---|
 | Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
 | Branch | `main` (live: GitHub Pages deploys it) |
-| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). |
-| Last verified implementation commit | **`fa60180`** |
-| Tests | **738 / 738 passing** (245 of them drive a real browser) |
+| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is to be `ux/player-reset-v2`, cut from **`f75a493`** once Shaun confirms the IA review; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. |
+| Last verified implementation commit | **`f75a493`** — the redesign branching point |
+| Tests | **752 / 752 passing** (245 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -150,6 +150,27 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Parallel-development split — DONE (`0b9c9eb` … `f75a493`).** Shaun/CGPT,
+30 Sep. Behaviour-preserving refactor so the functional and redesign streams
+rarely edit the same file. The record is
+[`docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md`](./docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md).
+- **What moved:**
+  - `app.js` 10,178 → 2,215 lines; `shell.js` 2,568 → 655.
+  - 40 files under `assets/js/data/`, `domain/`, `features/<area>/` and
+    `ui/`, each moved unchanged.
+  - `app.css` split into base, `components.css`, `shell.css` and
+    `screens/<area>.css`, with every class name kept.
+- **One new domain module:** Games filtering and the one-player record
+  (`domain/matches/gamesFilter.js`), behind `filteredGames(filters)` /
+  `playerRecord(games, player)`.
+- **No rule changed:** ratings, fixtures, permissions, scoring, Firestore
+  schema, routing and visible behaviour are all untouched.
+- **Evidence:** a 39-state DOM plus computed-style snapshot is identical at
+  390px and 360px against the pre-split commit, and the suite passes after
+  every step.
+- **Branching point: `f75a493`.** The redesign branch `ux/player-reset-v2`
+  is **not created**. It waits on Shaun's IA review (Section 5).
 
 **Two working branches (Shaun, 30 Sep).**
 - **`app-features-fixes`:** features, bug fixes and functional updates.
@@ -478,6 +499,29 @@ evidence. Actual score = 80% game share + 20% match result; draw = 0.5; draws
 are rated. Weighted, deliberately not strict zero-sum. Pre-match expectations
 are persisted and never recomputed in the browser. Initial tier informs the
 starting level but does not permanently anchor it.
+
+**Code layout and load order (30 Sep).** The app is still one set of
+classic `<script>` tags sharing one global scope, with no build step. What
+changed is where code lives:
+- **`data/`:** Firebase, permissions and the viewer.
+- **`domain/`:** pure calculations.
+- **`features/<area>/`:** a screen's data (`*Data.js`) and its rendering
+  (`*Screen.js`).
+- **`ui/`:** shared components.
+- **`app.js`:** base data, state, per-screen months, the router,
+  `dataChanged()` and `init`.
+
+`docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md` is the map and says which
+stream owns what. `tests/architecture.test.js` enforces the rules the layout
+depends on:
+1. Every layered module loads before `app.js` and only declares.
+2. No two scripts declare the same top-level name.
+3. No top-level initialiser reads a binding from a later script.
+4. `domain/` is pure.
+5. Stylesheets load tokens → base → components → shell → screens.
+
+The source-level guards scan every application script
+(`tests/helpers/appSource.js`), so moving code cannot switch one off.
 
 **Data loading and rendering (22 Sep).** Start-up issues every read it needs
 at once — three collections and eleven configuration documents, none of which
@@ -1072,6 +1116,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | D6 — P / W / D / L open their games | **DONE `9cca86c`.** Shaun, 28 Sep 2026. In both the Merit and League tables, each player's P, W, D and L open the games behind them, like Hard and Fav. The detail says which player, which count and which month/table context. **"If the cell says 2, its drill-down explains exactly those 2 games,"** under the table's own filtering (month, By tier / All together, mid-month tier changes, split-month, history). Hard and Fav are unchanged, one drill-down component is shared, and mobile fit is kept. |
 | Games — one selected player's filtered record | **DONE `d348c56`.** Shaun, 29 Sep 2026. When exactly one player is selected in the Games Player filter, show Played / Wins / Draws / Losses / Win % above the filtered list, **calculated from exactly the same final filtered match set the rows display**, never independently from a broader dataset: P = displayed rows and W + D + L = P, recomputed on every filter change. Tier matchups keep the canonical classification and historical tier on the match date; notation and order unchanged. Win from the player's own side whichever stored side they are on; a recorded draw is a draw. Win % = wins / played unless a canonical alternative exists (the League's monthly win % is exactly that, draws included, so it is reused). Zero games gets a deliberate state, not 0%. One player only; no multi-player summaries, no new navigation, no new statistics engine. |
 | D7 — Doughnuts: By Player and a Doughnut List, with a Month | **DONE `e4408ff`.** Shaun, 28 Sep 2026. Keep the player-based view and add a list of the doughnut results themselves, with an obvious By Player / Doughnut List switch. Each row reads like "28 Sep · Shaun & PDM 6–0, 6–3 Rishi & Erf" in the app's result conventions. The list uses the **existing doughnut definition and data**, with no new definition. Tapping a result uses the existing result detail. A **Month** selector (historical months included) applies to both views and survives switching between them, defaulting by the app's existing month convention. The list is newest first with a deterministic same-day order, and an empty month gets a deliberate empty state. |
+| Split the app before the redesign branch | **DONE `f75a493`.** Shaun/CGPT, 30 Sep 2026. It was a behaviour-preserving refactor into data / domain / features / ui and component / shell / screen stylesheets. The aim is that functional work (`main`, via `app-features-fixes`) and the redesign rarely edit the same file. There is no duplicate app: no `app-redesign.js`, no second rating, fixture or Firebase logic, and no mock calculations. `f75a493` is the common ancestor for `main` and `ux/player-reset-v2`. The redesign branch is created **only after Shaun confirms the product/IA Keep / Simplify / Move / Merge / Hide / Remove review is complete**. It then merges `main` at least weekly, and after any significant domain or data change. Unfinished redesign work never merges into `main`. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -2012,9 +2057,42 @@ following as one coherent UI refactor, with no data/model changes:
 7. **Primary viewport:** narrow iPhone/mobile first; add targeted browser
    regression coverage for layout and collapse/reset behavior.
 
+**30 Sep: the parallel-development split is delivered (`f75a493`). Baton
+with Shaun.**
+- `f75a493` is the redesign branching point.
+- **Not started:** the redesign branch (`ux/player-reset-v2`) and all
+  redesign work. Both wait on Shaun confirming the product/IA review
+  (Section 5).
+- Functional work continues on `app-features-fixes` → `main` as before.
+
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 30 Sep — redesign branch: waiting on Shaun's IA review
+
+- **What unblocks it:** Shaun confirms the product/IA Keep / Simplify /
+  Move / Merge / Hide / Remove review is complete.
+- **Then CCode creates `ux/player-reset-v2` from `f75a493`,** the commit
+  that finished the split. Every structural change is in its ancestry.
+- **`app-redesign` (`ec963d5`) should not be used.**
+  - It was cut before the split, so redesign work there would conflict with
+    all of it.
+  - It holds no commits of its own; it is an ancestor of `main`.
+  - **Recommendation:** delete it when `ux/player-reset-v2` is created.
+    Nothing is lost. CCode will not delete it without Shaun's word.
+- **Sync rule, once it exists:**
+  - it merges `main` at least weekly, and after any significant domain or
+    data change;
+  - its unfinished work never goes to `main`.
+- **Heads-up for the redesign stream:** two things stayed shared on
+  purpose.
+  - **The router** (`#tabrow`) stays in `app.js` / `shell.js`: 101 test
+    references navigate through it. Its natural home is the redesign's shell
+    phase.
+  - **The view-model functions** a redesigned screen should call are listed
+    in Section 3 of the split document. A missing fact is added on the
+    functional side, never re-derived in a screen.
 
 ### OPEN 29 Sep — Vercel: one setting to confirm when the project is connected
 
@@ -2713,6 +2791,58 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (parallel-development split; redesign branching point)
+
+**`f75a493`: 752 / 752 tests** (245 browser). There are 14 new tests:
+- 8 in `tests/gamesFilter.test.js`;
+- 6 in `tests/architecture.test.js`.
+
+**Done, in the order the brief set (A → E), one commit per step, each
+pushed only once verified:**
+- **Proposal:** `0b9c9eb`. Hotspots and the proposed map.
+- **Two test fixes:**
+  - `8dd9edd` pins the Club Pulse test's clock. It started failing on
+    30 Sep as the record aged, on the old code too.
+  - `fce3fe8` makes the source guards scan every application script, so
+    the moves could not switch them off.
+- **A (`8437d48`):** Games filtering and the player record move into
+  `domain/matches/gamesFilter.js`, behind a view-model
+  (`filteredGames`, `playerRecord`, `getFilteredGamesViewModel`).
+- **B1–B9 (`24bf191` … `003c7bc`):** every screen renderer, data helper and
+  component moves out of `app.js` / `shell.js` into `data/`,
+  `features/<area>/` and `ui/`, unchanged.
+- **C (`9961823`):** `app.css` split into base / components / shell /
+  `screens/*`. All 827 rules are accounted for, and the two
+  `.rating-big` / `.rating-sub` rules sit in `components.css` so the
+  cascade is unchanged.
+- **D/E (`f75a493`):** `tests/architecture.test.js` and the final record,
+  including ownership, view-model boundaries and the sync rule.
+
+**Verified at each step:**
+- a 39-state DOM plus every-computed-style snapshot, identical against
+  `0b9c9eb`, at 390px (and at 360px for the CSS);
+- the full suite.
+
+**One real defect was caught along the way and never shipped.**
+`CHALLENGE_RESTRICTIONS` spreads `TIER_ORDER_LIST` at load time, so moving
+it ahead of `app.js` threw on load. It stays in `app.js`, and the
+architecture test now catches the pattern.
+
+**Deliberately not moved:**
+- the router;
+- per-screen month state;
+- `CHALLENGE_RESTRICTIONS`.
+
+The reasons are in Section 2.3 of the split document.
+
+**Not done, per the brief:**
+- no redesign;
+- no branch created.
+
+Section 5 has the one decision.
+
+Baton → Shaun.
 
 ### CCode — 29 Sep 2026 (build stamp on Vercel)
 
@@ -6516,6 +6646,11 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `f75a493` | Parallel-development split finished; **the redesign branching point**. `tests/architecture.test.js` (6 tests: load order, no duplicate or forward top-level names, layered modules only declare, pure domain, stylesheet order) and the final `docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md`. 752/752. |
+| `9961823` | C: `app.css` split into base / `components.css` / `shell.css` / `screens/{rankings,home,play,players,games,admin}.css`. Class names are kept and all 827 rules are accounted for. The snapshot is identical at 390px and 360px. |
+| `24bf191` … `003c7bc` | B1–B9: renderers, data helpers and components move unchanged from `app.js` (10,178 → 2,215 lines) and `shell.js` (2,568 → 655) into `data/`, `features/<area>/` and `ui/`. The 39-state snapshot is identical after each step. |
+| `8437d48` | A: Games filtering and the one-player record become a pure domain module (`gamesFilter.js`) plus a view-model. 8 tests. |
+| `fce3fe8`, `8dd9edd` | Source guards scan every application script (`tests/helpers/appSource.js`), and the Club Pulse test's clock is pinned. |
 | `fa60180` | Build stamp on Vercel. The stamp was GitHub Pages-only (Jekyll's `build_revision`), so Vercel would have shown "local build". `vercel.json` now runs `scripts/stamp-build.js`, which writes the same line from `VERCEL_GIT_COMMIT_SHA` (Europe/London date) and never touches the placeholder without a real SHA. Pages is unchanged and verified with a local github-pages 232 build. 9 tests; 738/738. |
 | `d348c56` | Games: one selected player's filtered record. Played / W / D / L / win % above the list, counted from the same `display` array the rows are drawn from (P = rows, W+D+L = P). Month, game type (historical tiers) and player all apply. Draws come from the recorded outcome, whichever side is stored. Win % uses the League's definition. The zero state never shows 0%. 12 tests (9 fail against the previous code; 3 invariants); 729/729. |
 | `08712d4` | Claude Design → implementation map (mapping only). `docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md` maps all 18 areas the brief named, each against its nine questions. It also covers the prototype-to-production translation, the token and primitive layer, the features the design gives no home, architecture constraints, 30 decision questions and a seven-phase order. No production change; 717/717 unchanged. |
@@ -6598,9 +6733,14 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
 ## 8. NEXT
 
-**The approved queue is empty.** Baton with Shaun / CGPT.
-- **Implementation:** `fa60180`, **738 / 738 tests** (245 browser).
+**The approved queue is empty.** Baton with Shaun.
+- **Implementation:** `f75a493`, **752 / 752 tests** (245 browser).
+- **Redesign branching point:** `f75a493`. `ux/player-reset-v2` is to be
+  created **after** Shaun confirms the IA review (Section 5). It is not
+  created yet.
 - **Design map:** `08712d4`.
+
+*(The lines this replaces read "`fa60180`, 738 / 738 tests".)*
 
 *(Shaun/CGPT's queued header, 29 Sep, kept: the increment it names is now delivered.)*
 > **One approved product increment is queued.** Baton with Claude Code after Shaun/CGPT handoff.
