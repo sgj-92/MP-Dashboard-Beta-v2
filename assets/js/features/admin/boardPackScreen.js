@@ -66,6 +66,19 @@ function boardPackRenderers(){ return {
     <div class="bp-stat"><div class="bp-stat-num">${d.draws}</div><div class="bp-stat-label">Draws</div></div>
   </div>`,
 
+  results_table: (d) => (d.rows.length
+    ? bpTableHtml(['#', 'Player', 'Tier', 'P', 'W', 'D', 'L', 'Pts', 'Diff'], d.rows.map((r, i) => [i + 1, escapeHtml(r.name), escapeHtml(r.tier),
+      r.games, r.wins, r.draws, r.losses, `<b>${r.points}</b>`, Number(r.hardness).toFixed(1)]))
+    : bpEmpty('No games recorded.'))
+    + `<div class="bp-foot">Points: 3 for a win, 1 for a draw, 0 for a loss. Diff (difficulty) is the average strength of the games played ÷ 300 — the Monthly Information “hardest games” measure; higher is harder. Ordered by ${d.sort === 'games' ? 'games played' : d.sort === 'difficulty' ? 'difficulty' : 'points, then game difference'}.</div>`,
+
+  over_80: (d) => {
+    const line = (s, pct, what) => ({ rank: '•', name: escapeHtml(s.name), value: `${what} ${s[pct]}% · ${s.wins}W ${s.draws}D ${s.losses}L of ${s.games}` });
+    return bpSub('Won more than 80%') + bpLinesHtml(d.won.map(s => line(s, 'winpct', 'won')), 'Nobody.')
+      + bpSub('Lost more than 80%') + bpLinesHtml(d.lost.map(s => line(s, 'losspct', 'lost')), 'Nobody.')
+      + `<div class="bp-foot">${d.min > 1 ? `Players with ${d.min}+ games that month. ` : 'Every player who played that month. '}Draws count as games played. Exactly 80% (for example 4 of 5) is not more than 80%.</div>`;
+  },
+
   information: (d) => {
     if(!d.statsArr.length) return bpEmpty('No games recorded.');
     const s = (g) => d.stats[g.names[0]];

@@ -38,6 +38,11 @@
   // saved pack starts with it selected.
   const MODULES = [
     { id: 'overview', title: 'Month overview', on: true, options: {} },
+    { id: 'results_table', title: 'Monthly results table', on: true, options: {
+      sort: { label: 'Order by', values: ['points', 'games', 'difficulty'], labels: { points: 'Points', games: 'Games played', difficulty: 'Hardest games' }, default: 'points' },
+      top: top('all') } },
+    { id: 'over_80', title: 'Won or lost over 80% of games', on: true, options: {
+      min: { label: 'Minimum games', values: ['3', '1', '5'], labels: { 1: 'Everyone', 3: '3+ games', 5: '5+ games' }, default: '3' } } },
     { id: 'information', title: 'Monthly Information (the players’ month review)', on: false, options: {} },
     { id: 'power', title: 'Power Rankings at month end', on: true, options: { tier: TIER, top: top('10') } },
     { id: 'kings', title: 'Kings of Tiers', on: true, options: {} },

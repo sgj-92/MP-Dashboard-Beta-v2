@@ -47,6 +47,34 @@ function boardPackSources(){ return {
     };
   },
 
+  // One row per player for the whole month, from the same aggregation as the
+  // League (All together) and Monthly Information: games, W / D / L, points
+  // at 3 / 1 / 0, and the Information review's "hardest games" measure
+  // (average strength of the games played, ÷ 300). Ordered by the League's
+  // own standing rule, or by games or difficulty first.
+  results_table(month, o){
+    const key = { points: 'points', games: 'games', difficulty: 'hardness' }[o.sort] || 'points';
+    const rows = Object.values(computeMonthlySummaryStats(month)).filter(s => s.games > 0)
+      .map(s => ({ ...s, tier: tierSpellLabel(s.name, month) || tierAtMonthClose(s.name, month) || '?' }));
+    return { sort: o.sort, rows: sortLeagueRows(rows, key, true).slice(0, BoardPack.limit(o.top)) };
+  },
+
+  // Anyone who won, or lost, MORE than 80% of the games they played that
+  // month. Draws are games played, so they count in the denominator -- the
+  // same win % and loss % as Monthly Information. Exactly 80% (4 of 5) is
+  // not more than 80%. `min` is the fewest games that make a percentage
+  // worth reporting; 3 is Monthly Information's own rule for win %.
+  over_80(month, o){
+    const min = Number(o.min);
+    const played = Object.values(computeMonthlySummaryStats(month)).filter(s => s.games > 0 && s.games >= min);
+    const order = (k) => (a, b) => b[k] - a[k] || b.games - a.games || a.name.localeCompare(b.name);
+    return {
+      min,
+      won: played.filter(s => s.wins / s.games > 0.8).sort(order('winpct')),
+      lost: played.filter(s => s.losses / s.games > 0.8).sort(order('losspct')),
+    };
+  },
+
   information(month){
     return monthlyInformation(month);
   },

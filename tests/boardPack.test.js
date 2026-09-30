@@ -79,7 +79,7 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
       powerRows: document.querySelectorAll('#bpPreview [data-module="power"] tbody tr').length,
       powerTiers: [...document.querySelectorAll('#bpPreview [data-module="power"] tbody tr')].map((tr) => tr.children[2].textContent),
     }));
-    assert.deepStrictEqual(preview.order, ['note:Chair’s summary', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
+    assert.deepStrictEqual(preview.order, ['note:Chair’s summary', 'results_table', 'over_80', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
     assert.strictEqual(preview.noteTag, 'Admin commentary', 'manual content is marked as such');
     assert.strictEqual(preview.noteHtml, 'Good month.<br>&lt;b&gt;Not bold&lt;/b&gt;', 'and is text, not markup');
     assert.strictEqual(preview.powerRows, 3);
@@ -94,7 +94,7 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
     assert.strictEqual(saved.updatedBy, 'Shaun');
     assert.ok(saved.updatedAt && saved.basis && saved.basis.games > 0 && saved.basis.fingerprint);
     const on = saved.items.filter((it) => it.kind === 'note' || it.enabled).map((it) => it.kind === 'note' ? 'note' : it.id);
-    assert.deepStrictEqual(on, ['note', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
+    assert.deepStrictEqual(on, ['note', 'results_table', 'over_80', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
     assert.deepStrictEqual(saved.items.find((it) => it.id === 'power').options, { tier: 'A', top: '3' });
     assert.deepStrictEqual(Object.keys(saved).sort(), ['basis', 'items', 'month', 'updatedAt', 'updatedBy', 'version'], 'the choice and its stamp -- no figures');
     assert.match(await p.textContent('#bpStatus'), /^Saved .* by Shaun\.$/);
@@ -117,7 +117,7 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
       powerTop: document.querySelector(`[data-bp-module="power"] [data-key="top"]`).value,
     }));
     assert.match(r.status, /^Saved .* by Shaun\.$/);
-    assert.deepStrictEqual(r, { status: r.status, drift: false, checked: ['kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves'],
+    assert.deepStrictEqual(r, { status: r.status, drift: false, checked: ['results_table', 'over_80', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves'],
       first: true, title: 'Chair’s summary', body: 'Good month.\n<b>Not bold</b>', powerTop: '3' });
     // September was never saved: its own default, untouched by August's pack.
     await again.page.selectOption('#bpMonth', '2026-09');
@@ -186,6 +186,32 @@ maybe('every figure is the canonical one: the same functions the app\'s own scre
         data('merit', m).tiers.forEach((t) => eq(t.rows, merit.filter((x) => x.tier === t.tier && x.played > 0), `${m} merit ${t.tier}`));
         const race = buildMonthlyRace(m).table;
         data('race', m, { provisional: 'show' }).tiers.forEach((t) => eq(t.rows, race.filter((x) => x.tier === t.tier), `${m} race ${t.tier}`));
+
+        // The monthly results table and the over-80% list, checked against a
+        // tally made here straight from the month's approved matches.
+        const tally = {};
+        getAllApprovedMatches().filter((x) => x.date.slice(0, 7) === m).forEach((x) => {
+          const add = (n, k) => { const t = tally[n] = tally[n] || { games: 0, wins: 0, draws: 0, losses: 0 }; t.games++; t[k]++; };
+          x.winners.forEach((n) => add(n, x.isDraw ? 'draws' : 'wins'));
+          x.losers.forEach((n) => add(n, x.isDraw ? 'draws' : 'losses'));
+        });
+        const table = data('results_table', m).rows;
+        eq(table.map((x) => x.name).sort(), Object.keys(tally).sort(), `${m} results table players`);
+        table.forEach((x) => {
+          const t = tally[x.name] || {};
+          eq([x.games, x.wins, x.draws, x.losses, x.points], [t.games, t.wins, t.draws, t.losses, 3 * t.wins + t.draws], `${m} results ${x.name}`);
+        });
+        eq(table.map((x) => x.points), table.map((x) => x.points).slice().sort((a, b) => b - a), `${m} ordered by points`);
+        const byDiff = data('results_table', m, { sort: 'difficulty' }).rows;
+        eq(byDiff.map((x) => x.hardness), byDiff.map((x) => x.hardness).slice().sort((a, b) => b - a), `${m} ordered by difficulty`);
+        const hardest = monthlyInformation(m, { top: 1 }).hardestGames;
+        if (hardest.length && !hardest[0].names.includes(byDiff.filter((x) => x.games >= 3)[0].name)) out.push(`${m} hardest = Information's`);
+        [1, 3, 5].forEach((min) => {
+          const o = data('over_80', m, { min: String(min) });
+          const who = (k) => Object.keys(tally).filter((n) => tally[n].games >= min && tally[n][k] * 5 > tally[n].games * 4).sort();
+          eq(o.won.map((x) => x.name).sort(), who('wins'), `${m} won >80% (${min}+)`);
+          eq(o.lost.map((x) => x.name).sort(), who('losses'), `${m} lost >80% (${min}+)`);
+        });
 
         // Doughnuts, the month's games, tier changes.
         const dn = computeDoughnutStats(m);

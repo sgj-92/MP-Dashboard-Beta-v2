@@ -22,8 +22,19 @@ test('a month with nothing saved starts from the catalogue, every module present
   assert.deepStrictEqual(c.items.filter((it) => it.enabled).map((it) => it.id), BP.MODULES.filter((m) => m.on).map((m) => m.id));
   assert.deepStrictEqual(c.items[at(c, 'power')].options, { tier: 'all', top: '10' });
   assert.deepStrictEqual([c.updatedAt, c.updatedBy, c.basis], [null, null, null]);
-  // No figure anywhere in what would be stored.
-  assert.ok(!/rating|points|wins"/.test(JSON.stringify(c.items.map((it) => it.options))));
+  // No figure anywhere in what would be stored: every option is one of the
+  // module's own presentation choices.
+  c.items.forEach((it) => Object.entries(it.options).forEach(([k, v]) => assert.ok(BP.BY_ID[it.id].options[k].values.includes(v), `${it.id}.${k}`)));
+});
+
+test('the monthly results table and the over-80% list are in every new month\'s pack', () => {
+  const c = BP.defaultConfig(M);
+  const on = BP.selected(c).map((it) => it.id);
+  assert.ok(on.includes('results_table') && on.includes('over_80'));
+  assert.deepStrictEqual(c.items[at(c, 'results_table')].options, { sort: 'points', top: 'all' });
+  assert.deepStrictEqual(c.items[at(c, 'over_80')].options, { min: '3' });
+  assert.deepStrictEqual(BP.BY_ID.results_table.options.sort.values, ['points', 'games', 'difficulty']);
+  assert.deepStrictEqual(BP.BY_ID.over_80.options.min.values, ['3', '1', '5']);
 });
 
 test('select and deselect keep the module\'s place and options', () => {
