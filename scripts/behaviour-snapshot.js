@@ -111,7 +111,10 @@ const STATES = process.env.ONLY ? ALL_STATES.filter(([n]) => process.env.ONLY.sp
 function capture(opts) {
   // Runs in the page, so everything it needs is defined inside it.
   // The shell's navigation chrome: left out in MODE=content.
-  const CHROME = '.shell-header, #sectionSubnav, .shell-bottom-nav, #shellMoreSheet, #meView, #rankingsMoreSheet';
+  // (Me, and Play's My Games and Club, are screens the shell draws over the
+  // app -- Player Experience Reset Phases 1-2 -- as are their sheets.)
+  const CHROME = '.shell-header, #sectionSubnav, .shell-bottom-nav, #shellMoreSheet, #meView, #myGamesView, #clubView, '
+    + '#rankingsMoreSheet, #gameSheet, #arrangeSheet, #bookingSheet, #playToast';
   const EXCL = new Set(opts.excludeVars || []);
   const content = opts.mode === 'content';
   // DOM: the whole body, with volatile attributes left as they are (clock is fixed).
