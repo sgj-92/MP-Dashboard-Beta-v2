@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "node scripts/stamp-build.js"
+  "buildCommand": "node scripts/stamp-build.js",
+  "redirects": [
+    { "source": "/preview", "destination": "/preview/", "permanent": false }
+  ]
 }

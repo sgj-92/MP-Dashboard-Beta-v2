@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  // Served as /preview (no trailing slash), the relative links below would
+  // resolve beside this folder instead of inside it. Normalise first, on any
+  // host -- Vercel, GitHub Pages or a local server.
+  (function () {
+    var p = location.pathname;
+    if (!/\/$/.test(p) && !/\.html$/.test(p)) location.replace(p + '/' + location.search + location.hash);
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Money Padel · Phone preview</title>
+<link rel="stylesheet" href="preview.css">
+</head>
+<body>
+  <header class="toolbar" id="toolbar">
+    <span class="label"><b>Money Padel</b> · phone preview</span>
+    <span class="group" role="group" aria-label="Viewport width">
+      <button type="button" data-width="375" aria-pressed="false">375</button>
+      <button type="button" data-width="390" aria-pressed="true">390</button>
+      <button type="button" data-width="412" aria-pressed="false">412</button>
+    </span>
+    <span class="readout" id="readout" aria-live="polite">390 × 844</span>
+    <span class="group">
+      <button type="button" id="rotate" aria-pressed="false" title="Portrait / landscape">Rotate</button>
+      <button type="button" id="refresh" title="Reload the app inside the frame">Refresh</button>
+      <a id="openFull" href="../" target="_blank" rel="noopener">Open full size</a>
+    </span>
+  </header>
+
+  <main class="stage">
+    <div class="fit" id="fit"><div class="device" id="device"></div></div>
+  </main>
+
+  <div class="narrow">
+    <p>The phone preview is for reviewing on a laptop or desktop.</p>
+    <a id="openNormally" href="../">Open Money Padel normally</a>
+  </div>
+
+  <script src="preview.js"></script>
+  <script>MPPreview.start(document, window);</script>
+</body>
+</html>

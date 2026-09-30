@@ -232,6 +232,11 @@ screen calls it.
 - **`PROJECT_LEDGER.md`:** each stream adds its own handoff, edits only
   its own lines in shared sections, and never rewrites another's entry.
 
+**Review utility, either stream:** `preview/` is the desktop phone preview
+(`/preview`). It frames the real app in an iframe and is not loaded by
+`index.html`. It holds no app code, so neither stream needs to touch it for
+app work.
+
 **Adding code:**
 - **A new screen:** `features/<area>/<name>Screen.js` +
   `screens/<area>.css`.
