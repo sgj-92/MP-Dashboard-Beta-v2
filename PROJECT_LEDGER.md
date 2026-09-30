@@ -169,6 +169,8 @@ rarely edit the same file. The record is
 - **Evidence:** a 39-state DOM plus computed-style snapshot is identical at
   390px and 360px against the pre-split commit, and the suite passes after
   every step.
+- **Live on Pages:** not yet. Pages has not built since 29 Sep; see
+  Section 5. The pushes change no behaviour.
 - **Branching point: `f75a493`.** The redesign branch `ux/player-reset-v2`
   is **not created**. It waits on Shaun's IA review (Section 5).
 
@@ -2112,6 +2114,25 @@ That is honest, but the commit is missing.
   to the root.
 - **Nothing has been deployed to Vercel by CCode,** so the first live proof
   is the Admin / Manage foot on the first Vercel deploy.
+
+**REOPENED 30 Sep: Pages has not built since run 133 (`6a311c6`, 29 Sep,
+13:53 UTC).**
+- **What did not build:** none of the 30 Sep pushes to `main` started a
+  "pages build and deployment" run. That covers the Club Pulse clock pin
+  through the split and the Ledger, up to `1c45938`.
+- **What Pages is serving:** the Pages site still serves `6a311c6`.
+- **Why it matters little:** these pushes change no behaviour, so a Pages
+  user sees the same app. But **functional work will not reach Pages
+  either** until this is resolved.
+- **Likely cause:** as before, a Pages setting. Run 133 was triggered by
+  Shaun's rename, not by a push.
+- **Decision needed:**
+  - **If Vercel is now the live host,** nothing is needed. Say so, and
+    this note closes.
+  - **If not,** check *Settings › Pages*: source `main`, root.
+- **The API-commit fallback was not tried this time.** It would mean
+  re-sending a whole file through the API, just to prod a setting that is
+  probably off.
 
 **RESOLVED 29 Sep, 13:53 UTC: Pages builds resumed.** Run 133 deployed
 `6a311c6`, the head at the time, around Shaun's rename of the repository to
