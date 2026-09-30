@@ -1,0 +1,109 @@
+// ===================== RANKINGS: MONTHLY TABLE INPUTS =====================
+// What the League, Last 10, Merit and Monthly Race tables are built from, and
+// the order their standings are listed in: the canonical match sets handed to
+// LastTen.build / MeritTable.build / MonthlyRace.build, and the League and
+// Last 10 tie-break rules. Competition facts, so functional code -- a
+// redesigned table consumes these and never re-derives them.
+//
+// Extracted from app.js unchanged (docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md).
+// Owning stream: functional. Loads before app.js; declarations only.
+
+// Every appearance in the record, as LastTen wants them: one entry per player
+// per match. Built from the same two sources the monthly aggregation uses --
+// ALL_MATCHES/MATCHES for rated results and getAllApprovedMatches() for draws
+// -- so the two tables can never disagree about what a game was.
+function leagueAppearances(){
+  const out = [];
+  let seq = 0;
+  ALL_MATCHES.forEach((raw, idx)=>{
+    const enriched = MATCHES[idx];
+    if(!enriched) return;
+    const n = ++seq;
+    raw.winners.forEach(name => out.push({ name, date: raw.date, result: 'W',
+      gamesFor: enriched.games_winner, gamesAgainst: enriched.games_loser, seq: n }));
+    raw.losers.forEach(name => out.push({ name, date: raw.date, result: 'L',
+      gamesFor: enriched.games_loser, gamesAgainst: enriched.games_winner, seq: n }));
+  });
+  // Draws sit outside the rating engine, so they are read from the approved
+  // matches directly -- but they are still games, and the League Table has
+  // always counted them for a point.
+  getAllApprovedMatches().filter(m => m.isDraw).forEach(m=>{
+    const n = ++seq;
+    const t1 = m.sets.reduce((a,[x])=>a+x,0);
+    const t2 = m.sets.reduce((a,[,y])=>a+y,0);
+    m.winners.forEach(name => out.push({ name, date: m.date, result: 'D', gamesFor: t1, gamesAgainst: t2, seq: n }));
+    m.losers.forEach(name => out.push({ name, date: m.date, result: 'D', gamesFor: t2, gamesAgainst: t1, seq: n }));
+  });
+  return out;
+}
+
+function sortLeagueRows(rows){
+  const key = leagueSortKey;
+  const dir = leagueSortDesc ? -1 : 1;
+  return rows.slice().sort((a,b)=>{
+    let av = a[key], bv = b[key];
+    if(key === 'name') return dir * a.name.localeCompare(b.name);
+    if(av === undefined || av === null) av = -Infinity;
+    if(bv === undefined || bv === null) bv = -Infinity;
+    if(av !== bv) return dir * (av - bv);
+    // Stable tiebreak so ties don't jump around between renders.
+    return b.points - a.points || b.gd - a.gd || a.name.localeCompare(b.name);
+  });
+}
+
+// The Last 10 table. Deliberately a different table from the monthly one:
+// no Tier column (a form table is club-wide by nature), no Avg Opp, and a
+// Last 10 column in place of Form (10g) -- showing that percentage beside a
+// table built from the same ten games would be the same fact told twice.
+const LAST10_SORT_FALLBACK = (a,b)=> b.points - a.points || b.gd - a.gd || b.games - a.games || a.name.localeCompare(b.name);
+
+function sortLastTenRows(rows){
+  const key = leagueSortKey;
+  const dir = leagueSortDesc ? -1 : 1;
+  return rows.slice().sort((a,b)=>{
+    if(key === 'name') return dir * a.name.localeCompare(b.name);
+    let av = a[key], bv = b[key];
+    // This table has no avg_opp or recent_form column, so a sort key carried
+    // over from the monthly table would compare undefined against undefined
+    // and leave the rows in hash order. Fall back to the league's own order.
+    if(av === undefined || bv === undefined) return LAST10_SORT_FALLBACK(a,b);
+    if(av === null) av = -Infinity;
+    if(bv === null) bv = -Infinity;
+    if(av !== bv) return dir * (av - bv);
+    return LAST10_SORT_FALLBACK(a,b);
+  });
+}
+
+// Every approved match in a shape MeritTable understands. One source, so Merit
+// and the League can never disagree about what a game was.
+function meritMatches(month){
+  return getAllApprovedMatches()
+    .filter(m => month === 'all' || m.date.slice(0,7) === month)
+    .map(m => ({ id: m.id, date: m.date, winners: m.winners, losers: m.losers,
+      isDraw: !!m.isDraw, sets: m.sets, type: m.type }));
+}
+
+// The month's approved matches in the order they were played. Order matters:
+// a tier's par is built from each player's FIRST pre-match rating of the month.
+function raceMatches(month){
+  return getAllApprovedMatches()
+    .filter(m => m.date.slice(0,7) === month)
+    .slice()
+    .sort((a,b)=> a.date < b.date ? -1 : a.date > b.date ? 1 : (a.sourceIndex||0) - (b.sourceIndex||0))
+    .map(m => ({ id: m.id, date: m.date, winners: m.winners, losers: m.losers,
+      isDraw: !!m.isDraw, sets: m.sets }));
+}
+
+function buildMonthlyRace(month){
+  return MonthlyRace.build({
+    matches: raceMatches(month),
+    tierAt: (n, d) => historicalTierOf(n, d),
+    // The persisted pre-match rating, read back from the journey -- never
+    // today's rating and never a second calculation.
+    preRating: (id, n) => {
+      const f = V3_MATCH_FACTS && V3_MATCH_FACTS[id];
+      const p = f && f.byPlayer && f.byPlayer[n];
+      return p ? p.preMatchRating : null;
+    },
+  });
+}
