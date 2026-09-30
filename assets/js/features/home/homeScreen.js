@@ -248,10 +248,12 @@ function renderHomeDashboard(){
   if(insightsBtn) insightsBtn.onclick = ()=>{ openInsightsFromTop(); };
   document.getElementById('homeFullReviewBtn').onclick = ()=> showFullMonthlyReview();
 
+  // Find a Game, directly: Play itself opens on My Games (Phase 2).
+  const openFinder = ()=>{ const b = legacyTabBtn('findgame'); if(b) b.click(); };
   const findMoreBtn = document.getElementById('homeFindMoreBtn');
-  if(findMoreBtn) findMoreBtn.onclick = ()=>{ goToSection('play'); };
+  if(findMoreBtn) findMoreBtn.onclick = openFinder;
   const viewMatchupBtn = document.getElementById('homeViewMatchupBtn');
-  if(viewMatchupBtn) viewMatchupBtn.onclick = ()=> goToSection('play');
+  if(viewMatchupBtn) viewMatchupBtn.onclick = openFinder;
 
   const ideasToggle = document.getElementById('homeIdeasToggle');
   if(ideasToggle){

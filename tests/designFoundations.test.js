@@ -206,11 +206,13 @@ test('the stepper marks the steps before the current one done, and only one curr
   assert.doesNotMatch(mpStepperHtml(['A', 'B']), /is-current|is-done/);
 });
 
-test('only the redesigned shell and Me use the helpers so far (Phase 1); no legacy screen does', () => {
+// The helpers belong to the redesigned screens as each phase builds them;
+// the legacy screens keep their own markup until their phase.
+test('only redesigned screens use the helpers (Phases 1-2): the shell, Me, and Play\'s new lists', () => {
   const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
   const users = appScriptFiles().filter((f) => f !== 'ui/components/primitives.js'
     && /\bmp(CountBadge|Pill|DateBlock|Segmented|ListRow|SectionHead|Stepper)Html\(/.test(readAppScript(f)));
-  assert.deepStrictEqual(users.sort(), ['features/me/meScreen.js', 'shell.js']);
+  assert.deepStrictEqual(users.sort(), ['features/me/meScreen.js', 'features/play/arrangeScreen.js', 'features/play/playScreens.js', 'shell.js']);
 });
 
 // ---------- in a browser ----------

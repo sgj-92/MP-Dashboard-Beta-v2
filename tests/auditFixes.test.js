@@ -24,21 +24,30 @@ const leaks = (html) => PREDICTION_PATTERNS.filter((re) => re.test(html)).map(St
 
 // --- D4 ---------------------------------------------------------------------------
 
+// Phase 2: Play opens on My Games; Find a Game is reached through Arrange a Game.
 maybe('D4: a player reaches Find a Game from Play, and it recommends matchups without any prediction', async () => {
   const app = await open();
   try {
     const r = await app.run(() => {
       setCurrentViewer('Shaun');
       goToSection('play');
+      const lands = activeShellScreen;
+      document.getElementById('arrangeGameBtn').click();
+      const modes = [...document.querySelectorAll('#arrangeSheet .mp-seg-item')].map((b) => b.textContent.trim());
+      openArrangeGame('find');
+      const arrange = document.querySelector('#arrangeSheet .arrange-body').innerHTML;
+      document.querySelector('#arrangeSheet [data-arrange="finder"]').click();
       const view = document.getElementById('findGameView');
       return {
-        activeTab, subnav: [...document.querySelectorAll('#sectionSubnav .section-subnav-item')].map((b) => b.textContent.trim()),
+        lands, modes, arrange, activeTab,
         shown: view.style.display !== 'none', html: view.innerHTML,
         recommends: !!view.querySelector('.pm-best'), teams: (view.querySelector('.pm-best') || {}).textContent || '',
       };
     });
-    assert.strictEqual(r.activeTab, 'findgame', 'Play still opens on Find a Game');
-    assert.ok(r.subnav.includes('Find Game'), `Find Game stays in player navigation: ${r.subnav}`);
+    assert.strictEqual(r.lands, 'mygames', 'Play opens on My Games');
+    assert.ok(r.modes.includes('Find a game'), `Find a game stays in player navigation: ${r.modes}`);
+    assert.strictEqual(r.activeTab, 'findgame');
+    assert.deepStrictEqual(leaks(r.arrange), [], 'Suggested for you shows a player no prediction');
     assert.strictEqual(r.shown, true);
     assert.strictEqual(r.recommends, true, 'it still recommends a match');
     assert.match(r.teams, /Shaun/);
@@ -56,16 +65,20 @@ maybe('D4: an admin still sees the prediction layer in Find a Game, Home and a f
     const r = await app.run(() => {
       isUnlocked = true; currentUserName = 'Shaun'; applyTabVisibility();
       setCurrentViewer('Shaun');
-      goToSection('play');
+      document.querySelector('#tabrow .tab-btn[data-tab="findgame"]').click();
       const find = document.getElementById('findGameView').innerHTML;
+      openArrangeGame('find');
+      const arrange = document.querySelector('#arrangeSheet .arrange-body').textContent;
+      document.getElementById('arrangeSheet').classList.remove('show');
       homeIdeasOpen = true; goToSection('home');
       const home = document.getElementById('homeDashboard').innerHTML;
       goToSection('play'); document.querySelector('#tabrow .tab-btn[data-tab="upcoming"]').click();
       document.querySelector('.fx-card[data-fixture-id="fxP"] .fx-head').click();
       document.querySelector('.fx-card[data-fixture-id="fxP"] .request-pred-toggle').click();
-      return { find, home, fixture: document.querySelector('.fx-card[data-fixture-id="fxP"]').textContent.replace(/\s+/g, ' ') };
+      return { find, arrange, home, fixture: document.querySelector('.fx-card[data-fixture-id="fxP"]').textContent.replace(/\s+/g, ' ') };
     });
     assert.match(r.find, /\d+% – \d+%/, 'Find a Game shows the split to an admin');
+    assert.match(r.arrange, /Expected to win about \d+% of the games/, 'and Arrange a Game\'s suggestion does, in the approved wording');
     assert.match(r.home, /home-matchup-pct/, 'Home match ideas show it to an admin');
     assert.match(r.fixture, /Expected to win about \d+% of the games/, 'and the fixture prediction is still there');
     assert.deepStrictEqual(app.pageErrors, []);
@@ -84,6 +97,14 @@ maybe('D4: no player surface leaks a prediction — Home, Find a Game, Requests,
       homeIdeasOpen = true; goToSection('home');
       seen.home = document.getElementById('homeDashboard').innerHTML;
       goToSection('play');
+      seen.mygames = document.getElementById('myGamesView').innerHTML;
+      openArrangeGame('find');
+      seen.arrange = document.querySelector('#arrangeSheet .arrange-body').innerHTML;
+      document.getElementById('arrangeSheet').classList.remove('show');
+      openGameSheet('fxP');
+      seen.sheet = document.getElementById('gameSheet').innerHTML;
+      document.getElementById('gameSheet').classList.remove('show');
+      document.querySelector('#tabrow .tab-btn[data-tab="findgame"]').click();
       seen.find = document.getElementById('findGameView').innerHTML;
       document.querySelector('#tabrow .tab-btn[data-tab="upcoming"]').click();
       document.querySelector('.fx-card[data-fixture-id="fxP"] .fx-head').click();
@@ -99,7 +120,7 @@ maybe('D4: no player surface leaks a prediction — Home, Find a Game, Requests,
       return seen;
     });
     assert.strictEqual(r.challengeReady, true, 'the challenge fixture must be a real ready match');
-    for (const where of ['home', 'find', 'upcoming', 'requests', 'challenge', 'body']) {
+    for (const where of ['home', 'mygames', 'arrange', 'sheet', 'find', 'upcoming', 'requests', 'challenge', 'body']) {
       assert.deepStrictEqual(leaks(r[where]), [], `${where} leaked a prediction to a player`);
     }
     assert.ok(!/request-pred-toggle/.test(r.upcoming), 'no "Prediction available" fold for a player');
@@ -116,8 +137,8 @@ maybe('D4: a screen switched to Admin only is hidden by every route — sub-navi
       applyTabVisibility();
       const out = {};
       goToSection('play');
-      out.playLands = activeTab;
-      out.playSubnav = [...document.querySelectorAll('#sectionSubnav .section-subnav-item')].map((b) => b.textContent.trim());
+      out.playLands = activeShellScreen;
+      out.playModes = arrangeModesVisible().map((m) => m.label);
       document.querySelector('#tabrow .tab-btn[data-tab="findgame"]').click();
       out.directTap = { activeTab, findShown: document.getElementById('findGameView').style.display !== 'none' };
       goToSection('rankings');
@@ -138,14 +159,16 @@ maybe('D4: a screen switched to Admin only is hidden by every route — sub-navi
       // The admin sees everything again, from the same rule.
       isUnlocked = true; applyTabVisibility();
       goToSection('play');
-      out.admin = { lands: activeTab, subnav: [...document.querySelectorAll('#sectionSubnav .section-subnav-item')].map((b) => b.textContent.trim()) };
+      out.admin = { lands: activeShellScreen, modes: arrangeModesVisible().map((m) => m.label) };
       openRankingsMoreTables();
       out.adminMore = [...document.querySelectorAll('#rankingsMoreSheet .mp-list-row')].map((b) => b.textContent.trim());
       document.getElementById('rankingsMoreSheet').classList.remove('show');
       return out;
     });
-    assert.strictEqual(r.playLands, 'games', 'Play lands on the first screen the player may see');
-    assert.ok(!r.playSubnav.includes('Find Game'), `hidden from the sub-navigation: ${r.playSubnav}`);
+    // Play opens on My Games (Phase 2); Find a Game is reached only through
+    // Arrange a Game, which no longer offers it.
+    assert.strictEqual(r.playLands, 'mygames');
+    assert.ok(!r.playModes.includes('Find a game'), `hidden from Arrange a Game: ${r.playModes}`);
     assert.deepStrictEqual(r.directTap, { activeTab: 'games', findShown: false }, 'a direct route to it is turned away');
     // Rankings' primary entries are Power | This Month (Phase 1): with Power
     // hidden it lands on This Month.
@@ -156,8 +179,8 @@ maybe('D4: a screen switched to Admin only is hidden by every route — sub-navi
     assert.notStrictEqual(r.insights, 'callouts', 'Home\'s Insights shortcut cannot reach it either');
     assert.deepStrictEqual(r.home, { ideas: false, insights: false });
     assert.deepStrictEqual(r.profile, { prove: false, text: false });
-    assert.strictEqual(r.admin.lands, 'findgame');
-    assert.ok(r.admin.subnav.includes('Find Game'));
+    assert.strictEqual(r.admin.lands, 'mygames');
+    assert.ok(r.admin.modes.includes('Find a game'));
     assert.ok(r.adminMore.some((t) => /Call-Outs/.test(t)));
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }

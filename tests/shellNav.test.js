@@ -255,7 +255,7 @@ maybe('every new entry is a 44px target, and nothing scrolls sideways at 375', a
       return out;
     });
     assert.ok(r.play.seg >= 44, `Play control ${r.play.seg}px`);
-    assert.ok(r.play.labelsFit, 'four Play entries fit without an ellipsis');
+    assert.ok(r.play.labelsFit, 'Play\'s entries fit without an ellipsis');
     assert.ok(r.more >= 44 && r.rows >= 44 && r.nav >= 48, JSON.stringify(r));
     assert.ok(r.width <= 375, `page ${r.width}px wide`);
   } finally { await app.close(); }

@@ -24,9 +24,10 @@ let shellNavQueued = false;
 function shellNavState(){
   const summary = document.getElementById('summaryView');
   const review = activeSection === 'home' && !!summary && summary.style.display === 'block';
-  return { section: activeSection, tab: activeTab, review };
+  return { section: activeSection, tab: activeTab, review, screen: activeShellScreen || null };
 }
-const shellSameNav = (a, b) => !!a && !!b && a.section === b.section && a.tab === b.tab && a.review === b.review;
+const shellSameNav = (a, b) => !!a && !!b && a.section === b.section && a.tab === b.tab && a.review === b.review
+  && (a.screen || null) === (b.screen || null);
 
 function shellPush(state){
   if(shellHistoryPendingBack){ shellHistoryQueue.push(state); return; }
@@ -82,7 +83,8 @@ function shellCloseSheet(id){
 
 function shellRestoreNav(nav){
   if(!nav || shellSameNav(nav, shellNavState())) return;
-  if(nav.section === 'home' || nav.section === 'me') goToSection(nav.section);
+  if(nav.screen) enterShellScreen(nav.screen);
+  else if(nav.section === 'home') goToSection('home');
   else {
     const b = legacyTabBtn(nav.tab);
     if(b) b.click();

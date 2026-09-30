@@ -172,11 +172,14 @@
 .shell-list{ background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-md); overflow: hidden; }
 .shell-list .mp-list-row:last-child{ border-bottom: 0; }
 
-#meView{ display: none; }
-body.is-me #meView{ display: block; }
-body.is-me > :not(.shell-header):not(#meView):not(.shell-bottom-nav):not(.shell-more-sheet):not(.overlay):not(#bootNotice):not(script){
+#meView, #myGamesView, #clubView{ display: none; }
+body.is-me #meView, body.is-mygames #myGamesView, body.is-club #clubView{ display: block; }
+/* Only the shell, the screen it is showing, its section control and sheets. */
+body:is(.is-me, .is-mygames, .is-club) > :not(.shell-header):not(#sectionSubnav):not(#meView):not(#myGamesView):not(#clubView):not(.shell-bottom-nav):not(.shell-more-sheet):not(.overlay):not(#bootNotice):not(.mp-toast):not(script){
   display: none !important;
 }
+/* Arrange a Game: the one accented entry beside Play's switch. */
+.section-arrange-btn{ color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
 
 /* ==========================================================================
    VIEWER FOUNDATION -- first-launch player selector, My Player entry

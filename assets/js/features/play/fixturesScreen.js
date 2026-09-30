@@ -826,6 +826,19 @@ function renderWishlist(flashMessage, adminFlashMessage){
 
 }
 
+// Shared by every agreed-fixture card, wherever it is drawn (Upcoming, the
+// game sheet): which fixtures already have a result waiting for approval, the
+// recorded results an admin may reconcile against, and today.
+function fixtureCardContext(now){
+  return {
+    now,
+    today: localIsoToday(),
+    submittedFor: new Set(extraMatchesState.filter(x => x.status === 'pending' && x.fixtureId).map(x => x.fixtureId)),
+    results: isUnlocked ? getAllApprovedMatches() : [],
+    linked: FixtureFlow.linkedResultIds(gameRequestsState),
+  };
+}
+
 function renderUpcoming(){
   const box = document.getElementById('upcomingView');
   const S = FixtureFlow.STAGE;
@@ -844,15 +857,7 @@ function renderUpcoming(){
   // booked, so they sit in Called Out until an admin answers for each one.
   const unrecorded = isUnlocked ? agreed.filter(r => !FixtureFlow.bookingRecorded(r)) : [];
 
-  // Shared by every card: which fixtures already have a result waiting for
-  // approval, the recorded results an admin may reconcile against, and today.
-  const ctx = {
-    now,
-    today: localIsoToday(),
-    submittedFor: new Set(extraMatchesState.filter(x => x.status === 'pending' && x.fixtureId).map(x => x.fixtureId)),
-    results: isUnlocked ? getAllApprovedMatches() : [],
-    linked: FixtureFlow.linkedResultIds(gameRequestsState),
-  };
+  const ctx = fixtureCardContext(now);
   const section = (key, id, label, list, empty, sub) => {
     let h = foldHeading(id, `${label} (${list.length})`, upcomingSectionOpen[key], sub ? { summary: sub } : undefined);
     if(upcomingSectionOpen[key]){

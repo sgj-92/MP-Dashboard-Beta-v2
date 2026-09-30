@@ -60,6 +60,26 @@ TAB_TO_SECTION.manage = 'me';
 
 const SECTION_LABELS = { home:'Home', rankings:'Rankings', play:'Play', players:'Players', me:'Me' };
 
+// Screens the shell draws over the app -- Me, and Play's My Games and Club
+// (Phase 2). Each has its own view and a body class that hides the app's
+// screens (shell.css), so whatever is underneath keeps its state.
+const SHELL_SCREENS = {
+  me: { section: 'me', cls: 'is-me', render: () => renderMe() },
+  mygames: { section: 'play', cls: 'is-mygames', render: () => renderMyGames() },
+  club: { section: 'play', cls: 'is-club', render: () => renderClub() },
+};
+// Play's primary entries (the IA): My Games | Club, with Arrange a Game beside
+// them. Play's four existing screens stay reachable -- Played Games & Results
+// and Find a Game from these screens, and the previous Upcoming and Requests
+// until the new lists are accepted.
+const SECTION_SCREENS = {
+  play: [{ screen: 'mygames', label: 'My Games' }, { screen: 'club', label: 'Club' }],
+};
+let activeShellScreen = null;
+// My Games and Club list requests and agreed games: they exist for a reader
+// who may see either.
+function playScreensVisible(){ return canSeeTab('wishlist') || canSeeTab('upcoming'); }
+
 let activeSection = 'rankings'; // matches legacy default activeTab === 'power'
 
 function legacyTabBtn(tab){
@@ -67,8 +87,9 @@ function legacyTabBtn(tab){
 }
 
 function goToSection(section){
-  if(section === 'me'){ enterMe(); return; }
-  leaveMe();
+  if(section === 'me'){ enterShellScreen('me'); return; }
+  if(section === 'play' && playScreensVisible()){ enterShellScreen('mygames'); return; }
+  leaveShellScreen();
   const singleTab = SECTION_TAB_MAP[section];
   const subnav = SECTION_SUBNAV[section];
   // default to the first subnav item this reader may see
@@ -109,13 +130,18 @@ function goToSection(section){
   shellNavChanged();
 }
 
-// Me is drawn over the app rather than through a legacy tab: body.is-me hides
-// every screen (shell.css), so the screen underneath -- activeTab, its month,
-// its filters -- is exactly as it was when the reader comes back.
-function enterMe(){
-  activeSection = 'me';
-  document.body.classList.add('is-me');
-  renderMe();
+// A shell screen is drawn over the app rather than through a legacy tab: its
+// body class hides every app screen (shell.css), so the screen underneath --
+// activeTab, its month, its filters -- is exactly as it was when the reader
+// comes back.
+function enterShellScreen(name){
+  const s = SHELL_SCREENS[name];
+  if(!s) return;
+  leaveShellScreen();
+  activeShellScreen = name;
+  activeSection = s.section;
+  document.body.classList.add(s.cls);
+  s.render();
   updateBottomNavHighlight();
   renderSectionSubnav();
   syncPlayHeadingVisibility();
@@ -123,7 +149,18 @@ function enterMe(){
   try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch(e){ window.scrollTo(0, 0); }
   shellNavChanged();
 }
-function leaveMe(){ document.body.classList.remove('is-me'); }
+function leaveShellScreen(){
+  Object.values(SHELL_SCREENS).forEach(s => document.body.classList.remove(s.cls));
+  activeShellScreen = null;
+}
+// Redraw whatever the shell is showing: after a change to the record, or a
+// panel opened or shut inside it.
+function refreshShellScreen(){
+  if(activeShellScreen) SHELL_SCREENS[activeShellScreen].render();
+  if(typeof refreshPlaySheets === 'function') refreshPlaySheets();
+}
+function enterMe(){ enterShellScreen('me'); }
+function leaveMe(){ leaveShellScreen(); }
 
 // Play heading shows for the whole Play section (any of its four sub-tabs),
 // never for other sections -- kept in its own function so both the primary
@@ -169,22 +206,31 @@ function syncHeaderSectionTitle(){
 // never a hidden menu. Rankings adds its More tables button beside it.
 function renderSectionSubnav(){
   const container = document.getElementById('sectionSubnav');
-  // Only the screens this reader may see (canSeeTab, permissions.js).
-  const items = (SECTION_SUBNAV[activeSection] || []).filter(it => canSeeTab(it.tab));
+  // A section's own screens (Play's My Games | Club), else its legacy tabs --
+  // only those this reader may see (canSeeTab, permissions.js).
+  const screens = (activeSection === 'play' && playScreensVisible()) ? SECTION_SCREENS.play : [];
+  const entries = screens.length
+    ? screens.map(s => ({ attr: `data-screen="${s.screen}"`, label: s.label, on: activeShellScreen === s.screen }))
+    : (SECTION_SUBNAV[activeSection] || []).filter(it => canSeeTab(it.tab))
+        .map(it => ({ attr: `data-tab="${it.tab}"`, label: it.label, on: it.tab === activeTab && !activeShellScreen }));
   const moreTables = activeSection === 'rankings' ? rankingsMoreTablesVisible() : [];
-  if(items.length < 2 && !moreTables.length){ container.style.display = 'none'; container.innerHTML = ''; return; }
+  const arrange = activeSection === 'play' ? arrangeModesVisible() : [];
+  if(entries.length < 2 && !moreTables.length && !arrange.length){ container.style.display = 'none'; container.innerHTML = ''; return; }
   container.style.display = 'flex';
   const onMore = moreTables.some(it => it.tab === activeTab);
   container.innerHTML = `<div class="mp-seg" role="tablist" aria-label="${escapeHtml(SECTION_LABELS[activeSection] || '')}">`
-    + items.map(it => {
-      const on = it.tab === activeTab;
-      return `<button type="button" role="tab" class="section-subnav-item mp-seg-item${on ? ' active' : ''}" data-tab="${it.tab}" aria-selected="${on}" tabindex="${on ? 0 : -1}">${escapeHtml(it.label)}</button>`;
-    }).join('')
+    + entries.map(it =>
+      `<button type="button" role="tab" class="section-subnav-item mp-seg-item${it.on ? ' active' : ''}" ${it.attr} aria-selected="${it.on}" tabindex="${it.on ? 0 : -1}">${escapeHtml(it.label)}</button>`
+    ).join('')
     + `</div>`
-    + (moreTables.length ? `<button type="button" class="section-more-btn" id="rankingsMoreBtn" aria-haspopup="dialog" aria-pressed="${onMore}">More tables</button>` : '');
+    + (moreTables.length ? `<button type="button" class="section-more-btn" id="rankingsMoreBtn" aria-haspopup="dialog" aria-pressed="${onMore}">More tables</button>` : '')
+    + (arrange.length ? `<button type="button" class="section-more-btn section-arrange-btn" id="arrangeGameBtn" aria-haspopup="dialog">Arrange a Game</button>` : '');
   const tabs = [...container.querySelectorAll('.section-subnav-item')];
   tabs.forEach((btn, i)=>{
-    btn.onclick = ()=>{ const b = legacyTabBtn(btn.dataset.tab); if(b) b.click(); };
+    btn.onclick = ()=>{
+      if(btn.dataset.screen){ enterShellScreen(btn.dataset.screen); return; }
+      const b = legacyTabBtn(btn.dataset.tab); if(b) b.click();
+    };
     // Arrow keys move along the control, as a tablist should.
     btn.onkeydown = (ev)=>{
       const step = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
@@ -196,6 +242,8 @@ function renderSectionSubnav(){
   });
   const more = document.getElementById('rankingsMoreBtn');
   if(more) more.onclick = openRankingsMoreTables;
+  const arr = document.getElementById('arrangeGameBtn');
+  if(arr) arr.onclick = ()=> openArrangeGame();
 }
 
 function rankingsMoreTablesVisible(){
@@ -249,7 +297,9 @@ function updatePlayBadge(){
 function onVisibilityChanged(){
   if(typeof renderSectionSubnav === 'function' && document.getElementById('sectionSubnav')) renderSectionSubnav();
   updatePlayBadge();
-  if(activeSection === 'me') renderMe();
+  // Off a Play list the reader may no longer see; otherwise redraw what is shown.
+  if((activeShellScreen === 'mygames' || activeShellScreen === 'club') && !playScreensVisible()) goToSection('play');
+  else refreshShellScreen();
   if(typeof activeTab !== 'undefined' && !canSeeTab(activeTab)){
     const fb = legacyTabBtn(visibleFallbackTab(activeTab));
     if(fb) fb.click();
@@ -293,6 +343,12 @@ function buildShellDom(){
   const meView = document.createElement('div');
   meView.id = 'meView';
   playHeading.parentNode.insertBefore(meView, playHeading.nextSibling);
+  // Play's My Games and Club (features/play/playScreens.js), shown the same way.
+  ['clubView', 'myGamesView'].forEach(id => {
+    const el = document.createElement('div');
+    el.id = id;
+    meView.parentNode.insertBefore(el, meView.nextSibling);
+  });
 
   // Bottom nav
   const nav = document.createElement('div');
@@ -533,9 +589,9 @@ function buildViewerSelector(){
 }
 
 // ---- The chosen player changed: what shows it follows ----------------------
-// (My Player lives in Me now; the Play badge counts for the chosen player.)
+// (My Player lives in Me; My Games and the Play badge are the chosen player's.)
 function updateMyPlayerLabel(){
-  if(activeSection === 'me') renderMe();
+  refreshShellScreen();
   updatePlayBadge();
 }
 
@@ -670,6 +726,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
   window.dataChanged = function(){
     const r = _originalDataChanged.apply(this, arguments);
     updatePlayBadge();
+    refreshShellScreen();
+    return r;
+  };
+  // Panels opened or shut inside a fixture (Manage fixture, remove, answers)
+  // redraw through renderActiveTab; the shell's own screens and sheets follow.
+  const _originalRenderActiveTab = window.renderActiveTab;
+  window.renderActiveTab = function(){
+    const r = _originalRenderActiveTab.apply(this, arguments);
+    refreshShellScreen();
     return r;
   };
   const _originalFullReview = window.showFullMonthlyReview;

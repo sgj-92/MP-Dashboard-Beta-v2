@@ -1,0 +1,146 @@
+// ===================== PLAY: ARRANGE A GAME =====================
+// Player Experience Reset, Phase 2 (map §4.8, §4.9, §4.16). One entry point for
+// the three ways a game gets going:
+//   Find a game   Match Ideas -- a suggested matchup for you (DQ32) -- and the
+//                 full Find a Game screen, one tap on
+//   Request       name four players; optional date, time and venue (DQ9)
+//   Paste a list  the existing Add multiple games check (restyled in Phase 6)
+//
+// Presentation only. A suggestion is computeMatchToMake (Home's Match ideas);
+// a request is submitGameRequest -- the one path Requests' form also uses.
+// No player sees a predicted split or a favourite call (D4): the split shows
+// for an admin only, as everywhere else.
+//
+// Owning stream: redesign. Loads before app.js; declarations only.
+
+let arrangeMode = null;
+let arrangeDraft = null; // { names: [4], date, time, venue }
+
+// The modes this reader may use: finding follows Find a Game's setting,
+// requesting follows Requests'.
+function arrangeModesVisible(){
+  const modes = [];
+  if(canSeeTab('findgame')) modes.push({ id: 'find', label: 'Find a game' });
+  if(canSeeTab('wishlist')){
+    modes.push({ id: 'request', label: 'Request' });
+    modes.push({ id: 'paste', label: 'Paste a list' });
+  }
+  return modes;
+}
+
+function openArrangeGame(mode, draft){
+  const modes = arrangeModesVisible();
+  if(!modes.length) return;
+  const has = (m) => modes.some(x => x.id === m);
+  arrangeMode = has(mode) ? mode : has(arrangeMode) ? arrangeMode : modes[0].id;
+  if(draft) arrangeDraft = draft;
+  renderArrange(true);
+}
+
+function arrangeFindHtml(viewer){
+  if(!viewer) return playWhoAreYouHtml();
+  const m = computeMatchToMake(viewer.name);
+  const suggestion = m ? `<div class="mp-card-standard arrange-suggestion">
+      <div class="mp-section-label">Suggested for you</div>
+      <div class="arrange-teams">You &amp; ${escapeHtml(m.partner.name)} <span class="arrange-v">v</span> ${escapeHtml(m.opponents[0].name)} &amp; ${escapeHtml(m.opponents[1].name)}</div>
+      <div class="arrange-why">A well-balanced matchup, from Find a Game's own pairing.</div>
+      ${canSeePredictions() ? `<div class="arrange-admin">${mpPillHtml('Admin', 'admin')} Expected to win about ${m.pctFor}% of the games, against ${m.pctAgainst}%</div>` : ''}
+      <button type="button" class="mp-btn-primary mp-btn-touch mp-btn-accent arrange-use"
+        data-names="${escapeHtml(JSON.stringify([viewer.name, m.partner.name, m.opponents[0].name, m.opponents[1].name]))}">Request this game</button>
+    </div>` : `<div class="play-empty-sub play-empty-line">Not enough eligible players to suggest a matchup right now.</div>`;
+  return suggestion + `<div class="shell-list arrange-onward">${mpListRowHtml({ label: 'Open Find a Game', meta: 'filters, partners, rematches', data: { arrange: 'finder' } })}</div>`;
+}
+
+function arrangeRequestHtml(viewer){
+  if(!viewer) return playWhoAreYouHtml();
+  const d = arrangeDraft || { names: [viewer.name, '', '', ''], date: '', time: '', venue: '' };
+  arrangeDraft = d;
+  const field = (i, label) => `<label class="arrange-field"><span class="fx-m-label">${label}</span>
+    <input class="fg-select arrange-name" data-seat="${i}" list="arrangeNames" value="${escapeHtml(d.names[i] || '')}" autocomplete="off"></label>`;
+  return `<div class="play-note">You're in as soon as you ask; the other three answer from Needs you.</div>
+    <datalist id="arrangeNames">${allPlayerNames().map(n => `<option value="${escapeHtml(n)}">`).join('')}</datalist>
+    <div class="arrange-sides">
+      <div class="arrange-side">${field(0, 'Player 1')}${field(1, 'Partner')}</div>
+      <div class="arrange-v arrange-v-mid">v</div>
+      <div class="arrange-side">${field(2, 'Opponent')}${field(3, 'Opponent')}</div>
+    </div>
+    <div class="mp-section-label arrange-optional">Suggest a time and place — optional</div>
+    <div class="fx-m-grid">
+      <label class="fx-m-field"><span class="fx-m-label">Date</span><input type="date" class="fg-select arrange-date" value="${escapeHtml(d.date || '')}"></label>
+      <label class="fx-m-field"><span class="fx-m-label">Time</span><input type="time" class="fg-select arrange-time" value="${escapeHtml(d.time || '')}"></label>
+    </div>
+    <label class="fx-m-field"><span class="fx-m-label">Venue</span><input class="fg-select arrange-venue" value="${escapeHtml(d.venue || '')}" placeholder="Court or venue"></label>
+    <button type="button" class="mp-btn-primary mp-btn-touch mp-btn-accent arrange-send"></button>
+    <div class="play-flash arrange-msg" role="status"></div>`;
+}
+
+function arrangePasteHtml(){
+  return `<div class="play-note">Paste a list of games from WhatsApp. Each line is checked — names are matched exactly and never guessed — and nothing is sent until you have reviewed it.</div>
+    <div class="shell-list">${mpListRowHtml({ label: 'Open Add multiple games', data: { arrange: 'paste' } })}</div>`;
+}
+
+// The button says what is missing, or what it will do.
+function arrangeSendLabel(){
+  const missing = (arrangeDraft ? arrangeDraft.names : []).filter(n => !String(n || '').trim()).length;
+  return missing ? `Add ${missing} more player${missing > 1 ? 's' : ''}` : 'Send request';
+}
+
+function renderArrange(show){
+  const sheet = playSheet('arrangeSheet');
+  const modes = arrangeModesVisible();
+  if(!modes.length){ sheet.classList.remove('show'); return; }
+  const viewer = getCurrentViewer();
+  const body = arrangeMode === 'find' ? arrangeFindHtml(viewer)
+    : arrangeMode === 'request' ? arrangeRequestHtml(viewer) : arrangePasteHtml();
+  sheet.innerHTML = `<div class="shell-more-panel arrange-sheet" role="dialog" aria-label="Arrange a Game">
+    <div class="game-sheet-head"><h3>Arrange a Game</h3><button type="button" class="mp-sheet-close arrange-close" aria-label="Close">×</button></div>
+    ${modes.length > 1 ? mpSegmentedHtml(modes, arrangeMode, 'Arrange a Game') : ''}
+    <div class="arrange-body">${body}</div>
+  </div>`;
+  const panel = sheet.querySelector('.arrange-sheet');
+  panel.querySelector('.arrange-close').onclick = () => sheet.classList.remove('show');
+  panel.querySelectorAll('.mp-seg-item').forEach(b => { b.onclick = () => { arrangeMode = b.dataset.seg; renderArrange(false); }; });
+  panel.querySelectorAll('.play-choose').forEach(b => { b.onclick = () => buildViewerSelector(); });
+  panel.querySelectorAll('.arrange-use').forEach(b => {
+    b.onclick = () => { arrangeDraft = { names: JSON.parse(b.dataset.names), date: '', time: '', venue: '' }; arrangeMode = 'request'; renderArrange(false); };
+  });
+  panel.querySelectorAll('[data-arrange]').forEach(b => {
+    b.onclick = () => {
+      sheet.classList.remove('show');
+      if(b.dataset.arrange === 'finder'){ const t = legacyTabBtn('findgame'); if(t) t.click(); }
+      else {
+        requestSectionOpen.bulk = true;
+        const t = legacyTabBtn('wishlist'); if(t) t.click();
+        const fold = document.getElementById('reqFoldBulk');
+        if(fold) fold.scrollIntoView({ block: 'start' });
+      }
+    };
+  });
+  const send = panel.querySelector('.arrange-send');
+  if(send){
+    const sync = () => {
+      arrangeDraft.names = [...panel.querySelectorAll('.arrange-name')].map(i => i.value);
+      arrangeDraft.date = panel.querySelector('.arrange-date').value;
+      arrangeDraft.time = panel.querySelector('.arrange-time').value;
+      arrangeDraft.venue = panel.querySelector('.arrange-venue').value;
+      send.textContent = arrangeSendLabel();
+      send.disabled = send.textContent !== 'Send request';
+    };
+    panel.querySelectorAll('input').forEach(i => { i.oninput = sync; });
+    sync();
+    send.onclick = async () => {
+      sync();
+      if(send.disabled) return;
+      const msg = panel.querySelector('.arrange-msg');
+      const r = await submitGameRequest({ names: arrangeDraft.names, requestedBy: submissionIdentity(),
+        date: arrangeDraft.date, time: arrangeDraft.time, venue: arrangeDraft.venue });
+      if(!r.ok){ msg.textContent = r.message; return; }
+      arrangeDraft = null;
+      sheet.classList.remove('show');
+      dataChanged();
+      enterShellScreen('mygames');
+      showPlayToast('Requested — it is under Waiting on others', 'View', () => openGameSheet(r.req.id));
+    };
+  }
+  if(show) sheet.classList.add('show');
+}
