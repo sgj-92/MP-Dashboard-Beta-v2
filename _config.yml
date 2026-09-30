@@ -1,8 +1,9 @@
-# GitHub Pages builds this site with Jekyll on every push to main. This file
-# exists for one purpose: stamping the deployed build, so the foot of Admin /
-# Manage can say exactly which commit a device is running. (On Vercel, which
-# runs no Jekyll, scripts/stamp-build.js does the same job -- see vercel.json.
-# tests/buildStamp.test.js checks both hosts' wiring.)
+# GitHub Pages compatibility only. Vercel is the primary host (30 Sep 2026)
+# and scripts/stamp-build.js is the canonical deployment stamp -- see
+# vercel.json. While the Pages site still exists, Jekyll builds it from main,
+# and this file keeps its build stamped the same way, so the foot of Admin /
+# Manage can say exactly which commit a device is running.
+# tests/buildStamp.test.js checks both hosts' wiring.
 #
 # assets/js/buildInfo.pages.js is a Liquid template rendered to
 # assets/js/buildInfo.js with the commit being built. The committed

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 // Stamp the deployed build into assets/js/buildInfo.js on hosts that do not run
-// Jekyll -- Vercel today.
+// Jekyll. Vercel is the primary host (30 Sep 2026), so this is the canonical
+// deployment stamp -- for production (main) and every preview deployment of a
+// branch alike, each stamped with its own commit.
 //
 //   node scripts/stamp-build.js     # run by Vercel as the build command (vercel.json)
 //
-// GitHub Pages stamps the build itself: its Jekyll run renders
+// GitHub Pages, kept only while it still exists, stamps the build itself: its Jekyll run renders
 // assets/js/buildInfo.pages.js over the placeholder with the commit it is
 // building (see _config.yml). Vercel runs no Jekyll, so without this it would
 // serve the committed placeholder and every device would say "local build".

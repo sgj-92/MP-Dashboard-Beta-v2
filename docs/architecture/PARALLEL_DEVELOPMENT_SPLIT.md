@@ -255,6 +255,12 @@ app work.
 
   It resolves conflicts on the redesign branch while the work is fresh.
 - Unfinished redesign work is never merged back into `main`.
+- **Deployments are on Vercel,** the primary host since 30 Sep 2026.
+  - `main` is production.
+  - Each branch (redesign and feature branches) gets its own Vercel preview
+    deployment.
+  - Every deployment carries its own commit in the Admin / Manage build
+    stamp.
 
 ## 6. How the split was verified
 
