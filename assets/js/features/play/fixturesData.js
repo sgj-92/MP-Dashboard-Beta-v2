@@ -99,3 +99,19 @@ function requestLists(viewerName){
   });
   return { forMe, mine, others };
 }
+
+// How many things the selected player must act on in Play -- the Play badge
+// (DQ29, Shaun/CGPT 30 Sep): requests waiting on their answer (For me), plus
+// agreed games in Needs attention that they are in. A game they themselves
+// have backed out of is not counted: nothing is left for them to do on it
+// (an Admin replaces them). No viewer, no count.
+function playActionCount(viewerName, now){
+  if(!viewerName) return 0;
+  const at = now || new Date().toISOString();
+  const needsThem = gameRequestsState.filter(r => {
+    if(FixtureFlow.stage(r, at) !== FixtureFlow.STAGE.ATTENTION) return false;
+    const me = FixtureFlow.participantName(r, viewerName);
+    return !!me && !FixtureFlow.cantPlayers(r).includes(me);
+  });
+  return requestLists(viewerName).forMe.length + needsThem.length;
+}
