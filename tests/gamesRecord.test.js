@@ -339,7 +339,7 @@ test('the record counts the listed games and reads no rating, table or race', ()
   const vm = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'features', 'games', 'gamesViewModel.js'), 'utf8');
   assert.ok(/GamesFilter\.record\(r\.games,/.test(vm), 'the record is counted over the returned games');
   // ...and the screen draws both from the same view-model.
-  const src = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'app.js'), 'utf8');
+  const src = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'features', 'games', 'gamesScreen.js'), 'utf8');
   assert.ok(/const display = gamesVm\.games;/.test(src), 'the rows are the view-model games');
   assert.ok(/gamesRecordHtml\(gamesVm\.record,/.test(src), 'the record line is the view-model record');
 });
