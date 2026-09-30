@@ -72,7 +72,7 @@ context, rather than competing at the top level.
 
 | DQ | Status | Now reads |
 |---|---|---|
-| DQ3 | **Settled by the IA** | Power shows **current** ratings. Month-end Power history moves to More tables. The Meaningful Month default (26 Sep) therefore governs **This Month**, not Power. *CCode reads the IA this way; see 0.4.* |
+| DQ3 | **Confirmed by Shaun, 30 Sep** | Power shows **current** ratings. Month-end Power history moves to More tables. The Meaningful Month default (26 Sep) therefore governs **This Month**, not Power. |
 | DQ4 | **Settled** | This Month is League · Merit · Race, League first while Race is a trial. |
 | DQ18 | **Resolved** | Keep both. The podium is compact, near the top of Power. Kings of Tiers is a secondary Rankings destination. |
 | DQ19 | **Resolved in direction** | The target product has a **compact, interactive, live-data hero**, not `1a`'s no-hero. It prioritises monthly competition over slow-moving Power Rating. Its visual treatment may be staged (Phase 3b). |
@@ -110,7 +110,7 @@ These are presentation within agreed intent, so CGPT may lead.
     podium on Power, opening its own screen, and also listed in More
     tables.
 
-### 0.4 One thing to confirm (for Shaun)
+### 0.4 Confirmed by Shaun, 30 Sep: Power's default
 
 **Rankings' default month (DQ3).** The IA makes Power "current club strength"
 and moves month-end Power history into More tables.
@@ -119,9 +119,7 @@ and moves month-end Power history into More tables.
   agree with Tier Rank everywhere (D5).
 - **What does not change:** the Meaningful Month still decides which month
   This Month opens on.
-- **When it would matter:** the change would ship in Phase 4.
-- **If that is not what was meant, Power keeps its month control** and
-  only the default is revisited.
+- **When it ships:** Phase 4, on `ux/player-reset-v2`.
 
 ### 0.5 What does not change
 
@@ -502,7 +500,7 @@ Existing families are named, so they are extended rather than duplicated.
   - A "More tables" list at the foot.
   - The sort chips and filters fold behind one quiet control (they are not removed).
   - A compact podium near the top, and a "Kings of Tiers ›" row (DQ18 resolved, DQ33).
-  - The month select leaves Power. Month-end history is reached from More tables › Past months (DQ3, confirm per 0.4).
+  - The month select leaves Power. Month-end history is reached from More tables › Past months (DQ3, confirmed 30 Sep).
 - **Mock-only:**
   - "Tier 1 · 1,700 +", "Tier 2 · 1,600 – 1,699", "Under 1,600". **Tiers are club classifications (S/A/B/C) set by board decision, not rating bands**;
   - "Ranked players have 5+ games in the last 60 days". The real rule is **2+ rated matches in 30 days**;
@@ -1173,7 +1171,7 @@ Removing More and flattening Play means every item below must be given a home **
 | Win / Loss | Rankings sub-tab | Rankings › More tables (*IA*) |
 | Podium | Top of Power | Stays near the top of Power, made compact (*IA*, DQ18) |
 | Kings of Tiers | Power, below the podium | A secondary Rankings destination: a row under the podium and a More tables entry (*IA*, DQ18; DQ33) |
-| Month-end Power history (the Power month select) | Power | Rankings › More tables › Past months (*IA*; DQ3, confirm per 0.4) |
+| Month-end Power history (the Power month select) | Power | Rankings › More tables › Past months (*IA*; DQ3 confirmed) |
 | Monthly Summary, monthly stories, Monthly Performance | League › View | Rankings › More tables (*IA*) |
 | Information view | League › View | A methodology disclosure on This Month, and the Rating Guide in Me (*IA*) |
 | Last 10 | League (third table) | Rankings › More tables (*IA*). It is not month-scoped; label it so |
@@ -1211,7 +1209,7 @@ In every case, the real rule is kept until someone decides otherwise.
   Tiers are board decisions, not rating thresholds. The only related figure is `computePromotionGap`, the distance to the lowest rating in the tier above, which the code itself flags as a proxy and not a rule. **Recommendation:**
   - keep today's one-line wording, reframed as "N pts below the lowest-rated Tier A player";
   - no bar and no threshold line, because either would imply automatic promotion.
-- **DQ3. What Power shows by default.** *Settled by the IA (Section 0.2); one confirmation remains (0.4).*
+- **DQ3. What Power shows by default.** *Confirmed by Shaun 30 Sep: current ratings; month-end history in More tables (Section 0.4).*
   - The design's Power is "today", so Tier Rank would agree with every other surface (D5 defines Tier Rank on today's ratings).
   - Today, Rankings opens on the Meaningful Month's month-end view.
   - **Recommendation:** Power shows current ratings, and month-end history moves to the Month segment and Past months. This reverses part of the 26 Sep default, so it is Shaun's call.
@@ -1364,7 +1362,7 @@ are kept until the new ones are accepted.
 | **2 — Play** | `playView.js` view-model; My Games (lifecycle sections, Challenges); Club (counters); **Arrange a Game** (find / request / paste a list, Match Ideas); game detail; Admin Manage sheet; booking sheet; toast; Played Games & Results entry. | Fixes the audit's worst finding, and builds the view-model Home needs. | DQ6, DQ7, DQ8, DQ9, DQ11, DQ32 |
 | **3a — Home hierarchy** | The IA order with a **plain, text-first hero**: This Month position → Needs You → Next Game → Last Time Out → light Around the Club; the demoted standing line; "Why it moved" sheet. | Depends on Phase 2's view-model. Gets the hierarchy right before the visuals. | DQ1, DQ2, DQ24, DQ30, DQ31 |
 | **3b — Home hero visual** | The interactive visual treatment of the same hero data. | DQ19 allows staging. Separable and reversible. | CGPT/Shaun visual pick |
-| **4 — Rankings** | Power (current, compact podium, Kings secondary, one secondary control); This Month (League · Merit · Race); More tables (W/L, Last 10, monthly stories and Monthly Performance, Past months, North vs South, Insights, Doughnuts); methodology disclosure. | The most test-pinned area; best once the primitives are proven. | DQ3 confirmation (0.4), DQ33 |
+| **4 — Rankings** | Power (current, compact podium, Kings secondary, one secondary control); This Month (League · Merit · Race); More tables (W/L, Last 10, monthly stories and Monthly Performance, Past months, North vs South, Insights, Doughnuts); methodology disclosure. | The most test-pinned area; best once the primitives are proven. | DQ33 |
 | **5 — Players, Profile, Me** | Directory search-first with secondary filters; profile identity → You vs them (Compare/H2H) → recent → disclosure; Me dashboard. | The profile is large and fragile; Me reuses Home's pieces. | DQ15 |
 | **6 — Remaining** | Find a Game card restyle (inside Arrange a Game); Doughnuts; Played Games & Results; Insights; the H2H screen; Admin / Manage restyle. | Lowest player impact, or recently improved. | DQ26 |
 

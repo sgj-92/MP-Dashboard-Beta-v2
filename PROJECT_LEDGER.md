@@ -62,7 +62,7 @@ rating chokepoint now reads v3 persisted state.
 | Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
-| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Not yet created (30 Sep, CCode):** CCode's attempt to create and push it was refused by this session's permission check; it waits on Shaun (Section 5). |
+| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
 | Last verified implementation commit | **`8e1c91e`** (desktop phone preview). The redesign branching point is still **`f75a493`**. |
 | Tests | **762 / 762 passing** (250 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
@@ -1216,6 +1216,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Split the app before the redesign branch | **DONE `f75a493`.** Shaun/CGPT, 30 Sep 2026. It was a behaviour-preserving refactor into data / domain / features / ui and component / shell / screen stylesheets. The aim is that functional work (`main`, via `app-features-fixes`) and the redesign rarely edit the same file. There is no duplicate app: no `app-redesign.js`, no second rating, fixture or Firebase logic, and no mock calculations. `f75a493` is the common ancestor for `main` and `ux/player-reset-v2`. The redesign branch is created **only after Shaun confirms the product/IA Keep / Simplify / Move / Merge / Hide / Remove review is complete**. It then merges `main` at least weekly, and after any significant domain or data change. Unfinished redesign work never merges into `main`. |
 | Desktop phone preview is a container, not a second app | **DONE `8e1c91e`.** Shaun, 30 Sep 2026. `/preview` frames the normal app URL in a same-origin iframe at 375 / 390 / 412 (390 by default). It uses no mock data and duplicates no screen code, and the app is not told it is being previewed. CCode left out the suggested `?embeddedPreview=1` flag: nothing needs it, and a URL the app never reads cannot alter product logic. It is desktop-only: a phone gets a link to the app instead. |
 | Vercel is the primary hosting and deployment platform | Shaun, 30 Sep 2026. `main` = production/stable. Redesign and feature branches get their own Vercel preview deployments. Custom domains come later. The Vercel build stamp is the canonical deployment stamp. Relative paths must work from Vercel root hosting. GitHub Pages compatibility is kept only where trivial and is not removed unless it causes maintenance overhead. No new infrastructure is designed around it. Supersedes "GitHub Pages deploys `main`". |
+| Power shows current ratings; month-end history moves to More tables (DQ3) | Shaun, 30 Sep 2026, confirming CCode's reading of the IA. Rankings › Power stops opening on the Meaningful Month's month-end view (the 26 Sep default) and shows today's ratings, so it agrees with Tier Rank everywhere (D5). Month-end Power history is reached from Rankings › More tables › Past months. The Meaningful Month still decides which month **This Month** opens on. It ships with Phase 4 on `ux/player-reset-v2`, not before; `main` is unchanged until Shaun releases the redesign. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -2170,6 +2171,10 @@ with Shaun.**
 
 ### OPEN 30 Sep — redesign branch: waiting on Shaun's IA review
 
+**RESOLVED 30 Sep: `ux/player-reset-v2` created.** Shaun gave the
+go-ahead in the session. It was cut from `f75a493` and brought up to `main`
+(`b4e57e4`), then pushed. The earlier update is kept below.
+
 **Update, 30 Sep (CCode): the IA gate is cleared, but the branch is not
 yet created. It needs Shaun.**
 - **What CCode tried**, as NEXT instructed: create `ux/player-reset-v2` at
@@ -2374,14 +2379,13 @@ short acceptance briefs.
   - **DQ32, where Match Ideas goes.** Recommended: Play › Arrange a Game.
   - **DQ33, where Kings of Tiers is reached.** Recommended: a row under the
     compact podium, and a More tables entry.
-- **For Shaun to confirm (DQ3):** the IA makes Power "current club
+- **DQ3 CONFIRMED by Shaun, 30 Sep:** the IA makes Power "current club
   strength" and moves month-end Power history to More tables.
   - Power would stop opening on the Meaningful Month's month-end view, the
     26 Sep default. It would show today's ratings, which agree with Tier
     Rank everywhere.
   - The Meaningful Month still picks This Month's month.
-  - This ships in Phase 4. If that is not what was meant, Power keeps its
-    month control.
+  - This ships in Phase 4, on `ux/player-reset-v2`.
 - **Phase changes:**
   - Phase 2 (Play) gains Arrange a Game, with Find a Game's entry, Match
     Ideas and Challenges in My Games.
@@ -2988,6 +2992,22 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (redesign branch created; DQ3 confirmed)
+
+**On Shaun's go-ahead:**
+- **Branch:** CCode created `ux/player-reset-v2` from `f75a493` and merged
+  `main`, which was a fast-forward to `b4e57e4`. It is pushed and
+  identical to `main` for now.
+- **Untouched:** `app-redesign`. It holds nothing of its own, and Shaun
+  can delete it.
+- **Vercel:** will give the branch its own preview deployment.
+- **DQ3:** Shaun confirmed it. The Decisions Log, the map (Sections 0.2,
+  0.4, 5, 6 and 7) and NEXT are updated.
+
+Baton → CGPT for:
+- DQ31–33, and DQ20 / DQ5 / DQ29, which block Phases 0 and 1;
+- then Shaun's approval of the Phase 0 brief.
 
 ### CCode — 30 Sep 2026 (Ledger CCode: redesign setup and the map reconciliation)
 
@@ -7033,13 +7053,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
 ## 8. NEXT
 
-**CCode, 30 Sep: the map reconciliation is DONE (`cf72a14`). The redesign
-branch is NOT created; it needs Shaun (Section 5). Baton → Shaun / CGPT.**
-- **For Shaun:**
-  1. Let CCode create `ux/player-reset-v2` from `f75a493` and merge `main`,
-     or create it himself.
-  2. Confirm the DQ3 reading: Power shows current ratings, and month-end
-     history moves to More tables.
+**CCode, 30 Sep: the map is reconciled (`cf72a14`), `ux/player-reset-v2`
+exists (`b4e57e4`), and DQ3 is confirmed. Baton → CGPT / Shaun.**
 - **For CGPT:**
   - DQ31, the hero's content;
   - DQ32, Match Ideas;
