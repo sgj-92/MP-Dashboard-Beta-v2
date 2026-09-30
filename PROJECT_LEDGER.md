@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`4af924d`** (Monthly Review Share Deck, 30 Sep; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **810 / 810 on `main`** (30 Sep, after the Share Deck); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`a5cbe84`** (Monthly Review: Unpublish + Kings tiles, 30 Sep; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **815 / 815 on `main`** (30 Sep, after Unpublish + Kings tiles); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,21 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Monthly Review: Unpublish and Kings tiles — DONE (`a5cbe84`),
+30 Sep.** Shaun asked for both.
+- **Unpublish** (Admin only, with a confirmation):
+  - The link immediately says the month's review "is no longer
+    available".
+  - The review is kept, marked withdrawn; nothing is deleted.
+  - "Publish again" brings it back as the next revision.
+  - Messages already sent in WhatsApp keep their text.
+- **Kings of Tiers**, in the deck and in the Board Pack report, now uses
+  the app's own crowned tiles: the laurel crown, tier metals, serif
+  names and bold ratings.
+  - In the deck the tiles share the card: one large; two side by side;
+    three with the top tier across the top; four in a square.
+  - Reviews published earlier keep the look they were published with.
 
 **Monthly Review Share Deck — DONE on `app-features-fixes` = `main`
 (`4af924d`), 30 Sep.** Shaun's brief. The redesign branch is untouched.
@@ -2418,9 +2433,9 @@ with Shaun.**
   1. **Export slides as images**, 1080 × 1350 (Section 3).
   2. **"View full stats" into a particular screen**, with the redesign's
      router.
-- **Not in this increment:** unpublishing. Republish replaces what the
-  link shows. Removing a review entirely would be a deletion, which needs
-  Shaun's word.
+- **Unpublishing: added 30 Sep (`a5cbe84`) at Shaun's request,** as a
+  withdrawal rather than a deletion. The review stays stored, marked
+  withdrawn, and can be published again.
 
 ### OPEN 30 Sep — Board Pack: saved figures or live ones?
 
@@ -3297,6 +3312,25 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Monthly Review: Unpublish, Kings tiles)
+
+**`a5cbe84` on `app-features-fixes` = `main`.**
+- **Unpublish:**
+  - `ShareDeck.withdrawal` / `isLive`;
+  - `unpublishBoardPackReview` (Admin only);
+  - three publish states in the section: Draft, Published and
+    Unpublished;
+  - the public page's "no longer available".
+  - No document is ever deleted, and a test checks that.
+- **Kings tiles:**
+  - Share Deck slides carry `layout: 'kings'`, and `DeckView` draws the
+    crowned grid.
+  - The Board Pack report reuses the Rankings `.kings-card` markup.
+- **Tests:** 5 new (2 pure, 3 browser), plus the Board Pack Kings tiles
+  in the canonical test. All mutation-checked. **815 / 815.**
+
+Baton → Shaun / CGPT.
 
 ### CCode — 30 Sep 2026 (Monthly Review Share Deck)
 
