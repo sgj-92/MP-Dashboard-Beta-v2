@@ -60,7 +60,7 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
-| Hosting (30 Sep) | **Vercel is the primary host.** `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
+| Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is to be `ux/player-reset-v2`, cut from **`f75a493`** once Shaun confirms the IA review; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. |
 | Last verified implementation commit | **`8e1c91e`** (desktop phone preview). The redesign branching point is still **`f75a493`**. |
@@ -2157,6 +2157,19 @@ with Shaun.**
 ### OPEN 29 Sep — Vercel: one setting to confirm when the project is connected
 
 **30 Sep: Vercel is now the primary host**, so this setting matters more.
+
+**Production URL (Shaun, 30 Sep):** <https://mp-dashboard-new-ratings.vercel.app>.
+- **CCode could not verify it.** This cloud session's network policy
+  refuses the host: a 403 on connect, with the policy denial recorded by
+  the session proxy. CCode did not try to route around it.
+- **To let CCode check deploys, read-only:** in the cloud environment's
+  settings, add these to Network access:
+  - `mp-dashboard-new-ratings.vercel.app`;
+  - `*.vercel.app`, for branch preview URLs.
+- **Until then, Shaun can check by hand:**
+  - The foot of Admin / Manage should read "Build" plus the latest `main`
+    commit.
+  - `/preview` should show the app in a phone frame on a laptop.
 - **What CCode still cannot do:** see Vercel deployments from its sandbox.
   So far no deployment has been observed.
 - **What would let CCode verify one:** the production URL, or a preview
