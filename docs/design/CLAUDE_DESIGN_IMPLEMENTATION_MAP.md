@@ -79,15 +79,32 @@ context, rather than competing at the top level.
 | DQ21 | **Settled** | H2H and Compare live in the player flow (profile "You vs them"), not as a Players destination. |
 | DQ22 | **Settled** | Played Games & Results is Play's history destination. Challenges go into My Games. |
 
-**Still open, unchanged:**
-- **For Shaun:** DQ1, DQ6, DQ7, DQ8, DQ9, DQ10, DQ15, DQ26.
-- **For CGPT:** DQ2, DQ5, DQ11, DQ20, DQ24, DQ29, DQ30.
+**Resolved by Shaun/CGPT later on 30 Sep** (Ledger, *CGPT presentation
+decisions RESOLVED*):
+- **DQ2:** this month on Rankings and Me; the last-match delta on Last Time
+  Out. The period is always labelled.
+- **DQ5:** first run asks "Who are you?" through the existing selector, with
+  no login language.
+- **DQ11:** a fixture opens Add Result pre-filled, with no time gate.
+- **DQ20:** champagne `#D5B76E`, and Instrument Serif + Inter, self-hosted.
+  The Ledger's contrast levels are kept, and Booked gets a distinct hue.
+- **DQ24:** a monthly position always names its tier, and the Race may show
+  "provisional".
+- **DQ29:** the badge counts For Me requests plus Needs Attention fixtures
+  the viewer is in, and is hidden at zero.
+- **DQ30:** two or three derivable items at most.
+- **DQ31, DQ32, DQ33:** as recommended in 0.3.
+- **The Kings / podium basis is Power Rating,** as the code has it.
+
+**Still open, all for Shaun:** DQ1, DQ6, DQ7, DQ8, DQ9, DQ10, DQ15, DQ26.
 
 These are listed in Section 6.
 
 ### 0.3 New questions the IA raises
 
 These are presentation within agreed intent, so CGPT may lead.
+**All three were resolved as recommended (Shaun/CGPT, 30 Sep).** For DQ31,
+the hero also carries a compact record / points / movement line.
 
 - **DQ31. What the Home hero says.** Recommendation:
   - The viewer's **This Month** position, named by tier, from the League
@@ -1357,12 +1374,12 @@ are kept until the new ones are accepted.
 
 | Phase | Scope | Why this order | Blocked on |
 |---|---|---|---|
-| **0 — Foundations** | Tokens in `tokens.css`; fonts if chosen; the primitive CSS in `components.css`; a primitives reference page in `docs/design/`. **No visible change.** | Every later phase uses these. | DQ20 |
-| **1 — Shell** | Five tabs (More → Me). Me as the home of the former More destinations and the viewer header. Section entry points: Rankings **Power \| This Month** with a More tables list; Play **My Games \| Club** with Arrange a Game; Players Directory. Play badge (count only). System Back. `#tabrow` stays the router. | Every other phase needs the entry points; high routing risk, so do it alone. | DQ5, DQ29 |
-| **2 — Play** | `playView.js` view-model; My Games (lifecycle sections, Challenges); Club (counters); **Arrange a Game** (find / request / paste a list, Match Ideas); game detail; Admin Manage sheet; booking sheet; toast; Played Games & Results entry. | Fixes the audit's worst finding, and builds the view-model Home needs. | DQ6, DQ7, DQ8, DQ9, DQ11, DQ32 |
-| **3a — Home hierarchy** | The IA order with a **plain, text-first hero**: This Month position → Needs You → Next Game → Last Time Out → light Around the Club; the demoted standing line; "Why it moved" sheet. | Depends on Phase 2's view-model. Gets the hierarchy right before the visuals. | DQ1, DQ2, DQ24, DQ30, DQ31 |
+| **0 — Foundations** | Tokens in `tokens.css`; fonts if chosen; the primitive CSS in `components.css`; a primitives reference page in `docs/design/`. **No visible change.** | Every later phase uses these. | — (DQ20 resolved). Awaiting its go-ahead |
+| **1 — Shell** | Five tabs (More → Me). Me as the home of the former More destinations and the viewer header. Section entry points: Rankings **Power \| This Month** with a More tables list; Play **My Games \| Club** with Arrange a Game; Players Directory. Play badge (count only). System Back. `#tabrow` stays the router. | Every other phase needs the entry points; high routing risk, so do it alone. | — (DQ5, DQ29 resolved) |
+| **2 — Play** | `playView.js` view-model; My Games (lifecycle sections, Challenges); Club (counters); **Arrange a Game** (find / request / paste a list, Match Ideas); game detail; Admin Manage sheet; booking sheet; toast; Played Games & Results entry. | Fixes the audit's worst finding, and builds the view-model Home needs. | DQ6, DQ7, DQ8, DQ9 (Shaun) |
+| **3a — Home hierarchy** | The IA order with a **plain, text-first hero**: This Month position → Needs You → Next Game → Last Time Out → light Around the Club; the demoted standing line; "Why it moved" sheet. | Depends on Phase 2's view-model. Gets the hierarchy right before the visuals. | DQ1 (Shaun) |
 | **3b — Home hero visual** | The interactive visual treatment of the same hero data. | DQ19 allows staging. Separable and reversible. | CGPT/Shaun visual pick |
-| **4 — Rankings** | Power (current, compact podium, Kings secondary, one secondary control); This Month (League · Merit · Race); More tables (W/L, Last 10, monthly stories and Monthly Performance, Past months, North vs South, Insights, Doughnuts); methodology disclosure. | The most test-pinned area; best once the primitives are proven. | DQ33 |
+| **4 — Rankings** | Power (current, compact podium, Kings secondary, one secondary control); This Month (League · Merit · Race); More tables (W/L, Last 10, monthly stories and Monthly Performance, Past months, North vs South, Insights, Doughnuts); methodology disclosure. | The most test-pinned area; best once the primitives are proven. | — |
 | **5 — Players, Profile, Me** | Directory search-first with secondary filters; profile identity → You vs them (Compare/H2H) → recent → disclosure; Me dashboard. | The profile is large and fragile; Me reuses Home's pieces. | DQ15 |
 | **6 — Remaining** | Find a Game card restyle (inside Arrange a Game); Doughnuts; Played Games & Results; Insights; the H2H screen; Admin / Manage restyle. | Lowest player impact, or recently improved. | DQ26 |
 
