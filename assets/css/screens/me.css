@@ -1,0 +1,12 @@
+/* ==========================================================================
+   Me: who you are on this device, and the settings, guides and tools More
+   used to hold (Player Experience Reset, Phase 1). Built from the Phase 0
+   primitives; the personal dashboard arrives in Phase 5.
+   ========================================================================== */
+
+.me-inner{ padding: var(--space-4) var(--space-4) var(--space-6); font-family: var(--font-ui); }
+.me-title{ margin: 2px 0 var(--space-4); font-size: 32px; color: var(--text); }
+.me-identity{ padding: var(--space-4); }
+.me-name{ font-size: 26px; color: var(--accent-bright); }
+.me-identity-sub{ margin-top: 4px; font-size: 13px; line-height: 1.45; color: var(--text-dim); }
+.me-choose{ margin-top: var(--space-3); width: 100%; }

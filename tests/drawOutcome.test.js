@@ -110,9 +110,10 @@ maybe('the Doughnut drill-down says a drawn game was drawn', async () => {
         });
       });
       // Rendered, not merely computed: open the leaderboard and expand it.
-      goToSection('more');
-      const item = [...document.querySelectorAll('[data-special]')].find((b) => b.dataset.special === 'doughnuts');
-      item.click();
+      // Rankings › More tables › Doughnuts (Phase 1).
+      goToSection('rankings');
+      openRankingsMoreTables();
+      document.querySelector('#rankingsMoreSheet [data-special="doughnuts"]').click();
       // The sheet opens on a month now; this game is found across all time.
       const sel = document.getElementById('doughnutMonthSelect');
       sel.value = 'all'; sel.dispatchEvent(new Event('change'));

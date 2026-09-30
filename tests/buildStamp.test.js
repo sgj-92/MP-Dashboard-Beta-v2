@@ -132,7 +132,8 @@ const readStamp = () => {
   return {
     lines: [...el.children].map((c) => c.textContent.trim()),
     isLast: box.lastElementChild === el,
-    inMore: !!document.querySelector('#shellMoreSheet #buildStamp, #shellMoreSheet .build-stamp'),
+    // More became Me (Phase 1): the stamp is in Admin / Manage only.
+    inMore: !!document.querySelector('#meView #buildStamp, #meView .build-stamp, .shell-more-sheet .build-stamp'),
     fontSize: parseFloat(cs.fontSize),
     border: cs.borderTopStyle,
     background: cs.backgroundColor,

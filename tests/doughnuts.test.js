@@ -16,9 +16,10 @@ const open = (opts) => H.open({ now: NOW, ...(opts || {}) });
 
 // Page helpers, installed once per page.
 const install = (app) => app.run(() => {
+  // Me › Doughnuts (More became Me in Phase 1).
   window.openDoughnuts = () => {
-    goToSection('more');
-    document.querySelector('.shell-more-item[data-special="doughnuts"]').click();
+    goToSection('me');
+    document.querySelector('#meView [data-me="doughnuts"]').click();
   };
   window.dnBody = () => document.getElementById('doughnutModalBody');
   window.dnMonth = (m) => { const s = document.getElementById('doughnutMonthSelect'); s.value = m; s.dispatchEvent(new Event('change')); };

@@ -107,7 +107,7 @@ maybe('D4: no player surface leaks a prediction — Home, Find a Game, Requests,
   } finally { await app.close(); }
 });
 
-maybe('D4: a screen switched to Admin only is hidden by every route — sub-navigation, landing, More, shortcuts, direct taps', async () => {
+maybe('D4: a screen switched to Admin only is hidden by every route — sub-navigation, landing, More tables, shortcuts, direct taps', async () => {
   const app = await open();
   try {
     const r = await app.run(() => {
@@ -123,9 +123,10 @@ maybe('D4: a screen switched to Admin only is hidden by every route — sub-navi
       goToSection('rankings');
       out.rankingsLands = activeTab;
       out.rankingsSubnav = [...document.querySelectorAll('#sectionSubnav .section-subnav-item')].map((b) => b.textContent.trim());
-      openMoreSheet();
-      out.more = [...document.querySelectorAll('#shellMoreSheet .shell-more-item')].filter((b) => b.style.display !== 'none').map((b) => b.textContent.replace('›', '').trim());
-      closeMoreSheet();
+      // More became Me and Rankings › More tables (Phase 1); Insights lives in More tables.
+      openRankingsMoreTables();
+      out.more = [...document.querySelectorAll('#rankingsMoreSheet .mp-list-row')].map((b) => b.textContent.trim());
+      document.getElementById('rankingsMoreSheet').classList.remove('show');
       openInsightsFromTop();
       out.insights = activeTab;
       homeIdeasOpen = true; goToSection('home');
@@ -138,17 +139,20 @@ maybe('D4: a screen switched to Admin only is hidden by every route — sub-navi
       isUnlocked = true; applyTabVisibility();
       goToSection('play');
       out.admin = { lands: activeTab, subnav: [...document.querySelectorAll('#sectionSubnav .section-subnav-item')].map((b) => b.textContent.trim()) };
-      openMoreSheet();
-      out.adminMore = [...document.querySelectorAll('#shellMoreSheet .shell-more-item')].filter((b) => b.style.display !== 'none').map((b) => b.textContent.replace('›', '').trim());
-      closeMoreSheet();
+      openRankingsMoreTables();
+      out.adminMore = [...document.querySelectorAll('#rankingsMoreSheet .mp-list-row')].map((b) => b.textContent.trim());
+      document.getElementById('rankingsMoreSheet').classList.remove('show');
       return out;
     });
     assert.strictEqual(r.playLands, 'games', 'Play lands on the first screen the player may see');
     assert.ok(!r.playSubnav.includes('Find Game'), `hidden from the sub-navigation: ${r.playSubnav}`);
     assert.deepStrictEqual(r.directTap, { activeTab: 'games', findShown: false }, 'a direct route to it is turned away');
-    assert.strictEqual(r.rankingsLands, 'wl');
+    // Rankings' primary entries are Power | This Month (Phase 1): with Power
+    // hidden it lands on This Month.
+    assert.strictEqual(r.rankingsLands, 'summary');
     assert.ok(!r.rankingsSubnav.includes('Power'));
-    assert.ok(!r.more.some((t) => /Call-Outs/.test(t)), `More offers no hidden screen: ${r.more}`);
+    assert.ok(r.more.length > 0);
+    assert.ok(!r.more.some((t) => /Call-Outs/.test(t)), `More tables offers no hidden screen: ${r.more}`);
     assert.notStrictEqual(r.insights, 'callouts', 'Home\'s Insights shortcut cannot reach it either');
     assert.deepStrictEqual(r.home, { ideas: false, insights: false });
     assert.deepStrictEqual(r.profile, { prove: false, text: false });

@@ -1,7 +1,11 @@
 // ==========================================================================
-// PRESTIGE V1 — SHELL (Phase 1)
-// This file adds the new Home/Rankings/Play/Players/More navigation on top
-// of the existing app, WITHOUT renaming or altering any legacy tab identity.
+// SHELL -- Home · Rankings · Play · Players · Me
+// Player Experience Reset, Phase 1 (30 Sep 2026): More became Me, Rankings'
+// primary entries became Power | This Month with the rest under More tables,
+// each section's entries became one segmented control, Play carries a badge,
+// and the phone's Back works inside the app (ui/shellHistory.js).
+// This file adds the navigation on top of the existing app, WITHOUT renaming
+// or altering any legacy tab identity.
 // Legacy tab values (summary, power, findgame, players, wl, callouts, h2h,
 // games, wishlist, upcoming, manage) are untouched -- this is a mapping layer
 // only, per the agreed Phase 1 contract. Load this file after app.js.
@@ -12,11 +16,16 @@ const SECTION_TAB_MAP = { home: 'summary' };
 
 // MULTI-TAB sections: a visible segmented subnav under the header, per the IA
 // correction. First entry in each list is that section's default landing tab.
+// Rankings has two primary entries (the IA, 30 Sep): Power, current club
+// strength, and This Month, the League / Merit / Race screen. Everything else
+// Rankings holds is under More tables (RANKINGS_MORE_TABLES).
+// Play's My Games | Club and Players' Directory -> Profile are new screens,
+// built in Phases 2 and 5; until then those sections keep their existing
+// destinations, drawn with the same segmented control.
 const SECTION_SUBNAV = {
   rankings: [
-    { tab: 'power', label: 'Power', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 20v-6"/><path d="M12 20V8"/><path d="M18 20v-10"/><path d="M4 20h16"/></svg>' },
-    { tab: 'wl', label: 'W/L', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5V12l6 3.2"/></svg>' },
-    { tab: 'summary', label: 'League', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4.5" width="16" height="15" rx="1.5"/><path d="M4 9h16"/><path d="M8 4.5v-1.5"/><path d="M16 4.5v-1.5"/></svg>' },
+    { tab: 'power', label: 'Power' },
+    { tab: 'summary', label: 'This Month' },
   ],
   play: [
     { tab: 'findgame', label: 'Find Game' },
@@ -30,22 +39,26 @@ const SECTION_SUBNAV = {
   ],
 };
 
+// Rankings › More tables: the tables and stories that are not Power or This
+// Month. The Power Rating Guide, About, Data & Rankings, My Player and Admin
+// moved to Me (features/me/meScreen.js); Doughnuts is reachable from both.
+const RANKINGS_MORE_TABLES = [
+  { tab: 'wl', label: 'Win / Loss' },
+  { tab: 'callouts', label: 'Insights / Call-Outs' },
+  { special: 'northsouth', label: 'North vs South' },
+  { special: 'doughnuts', label: 'Doughnuts' },
+];
+
+// Which section each legacy tab belongs to -- the bottom-nav highlight and
+// visibleFallbackTab (permissions.js) read it.
 const TAB_TO_SECTION = { summary: 'home' };
 Object.keys(SECTION_SUBNAV).forEach(sec=>{
   SECTION_SUBNAV[sec].forEach(item=>{ TAB_TO_SECTION[item.tab] = sec; });
 });
+RANKINGS_MORE_TABLES.forEach(item=>{ if(item.tab) TAB_TO_SECTION[item.tab] = 'rankings'; });
+TAB_TO_SECTION.manage = 'me';
 
-// More is now genuinely secondary only -- everything with a real home above
-// (Games, Upcoming, Requests, Compare/H2H, Win/Loss) has been moved out.
-const MORE_ITEMS = [
-  { special: 'ratingguide', label: 'Power Rating Guide' },
-  { special: 'northsouth', label: 'North vs South' },
-  { tab: 'callouts', label: 'Insights / Call-Outs' },
-  { special: 'about', label: 'About Power Rankings' },
-  { special: 'doughnuts', label: 'Doughnuts' },
-  { special: 'datarange', label: 'Data & Rankings' },
-];
-const MORE_ADMIN_ITEM = { tab: 'manage', label: 'Admin / Manage' };
+const SECTION_LABELS = { home:'Home', rankings:'Rankings', play:'Play', players:'Players', me:'Me' };
 
 let activeSection = 'rankings'; // matches legacy default activeTab === 'power'
 
@@ -54,10 +67,8 @@ function legacyTabBtn(tab){
 }
 
 function goToSection(section){
-  if(section === 'more'){
-    openMoreSheet();
-    return; // don't change activeSection until a specific destination is chosen
-  }
+  if(section === 'me'){ enterMe(); return; }
+  leaveMe();
   const singleTab = SECTION_TAB_MAP[section];
   const subnav = SECTION_SUBNAV[section];
   // default to the first subnav item this reader may see
@@ -95,7 +106,24 @@ function goToSection(section){
     if(dash) dash.style.display = 'none';
   }
   updateHeaderForSection();
+  shellNavChanged();
 }
+
+// Me is drawn over the app rather than through a legacy tab: body.is-me hides
+// every screen (shell.css), so the screen underneath -- activeTab, its month,
+// its filters -- is exactly as it was when the reader comes back.
+function enterMe(){
+  activeSection = 'me';
+  document.body.classList.add('is-me');
+  renderMe();
+  updateBottomNavHighlight();
+  renderSectionSubnav();
+  syncPlayHeadingVisibility();
+  updateHeaderForSection();
+  try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch(e){ window.scrollTo(0, 0); }
+  shellNavChanged();
+}
+function leaveMe(){ document.body.classList.remove('is-me'); }
 
 // Play heading shows for the whole Play section (any of its four sub-tabs),
 // never for other sections -- kept in its own function so both the primary
@@ -117,8 +145,7 @@ function updateHeaderForSection(){
     titleEl.innerHTML = `<button id="homeViewerSwitch" class="home-viewer-switch">${viewer ? viewer.name : 'Choose player'} ▾</button>`;
     document.getElementById('homeViewerSwitch').onclick = ()=> buildViewerSelector();
   } else {
-    const sectionLabels = { rankings:'Rankings', play:'Play', players:'Players', more:'More' };
-    titleEl.innerHTML = sectionLabels[activeSection] || '';
+    titleEl.innerHTML = SECTION_LABELS[activeSection] || '';
   }
 }
 
@@ -137,27 +164,83 @@ function syncHeaderSectionTitle(){
   titleEl.style.display = (activeTab === 'power') ? 'none' : '';
 }
 
-// Renders (or hides) the visible segmented subnav for the current section.
-// Not a menu -- always on-screen for sections that have one, per the "must
-// be discoverable, not hidden behind another tap" requirement.
+// Renders (or hides) the section's segmented control (role="tablist") under
+// the header -- always on screen for a section with more than one entry,
+// never a hidden menu. Rankings adds its More tables button beside it.
 function renderSectionSubnav(){
   const container = document.getElementById('sectionSubnav');
-  // Only the screens this reader may see (canSeeTab, app.js).
+  // Only the screens this reader may see (canSeeTab, permissions.js).
   const items = (SECTION_SUBNAV[activeSection] || []).filter(it => canSeeTab(it.tab));
-  if(!items.length){ container.style.display = 'none'; container.innerHTML = ''; return; }
-  container.style.display = 'grid';
-  // minmax(0, 1fr), not plain 1fr -- a grid track's implicit min-width is
-  // "auto" (its content's own minimum size) just like a flex item, so a
-  // long label (e.g. "Monthly Summary") would force its whole track wider
-  // than its equal share and overflow the page instead of actually
-  // shrinking to let the span-level ellipsis do its job.
-  container.style.gridTemplateColumns = `repeat(${items.length}, minmax(0, 1fr))`;
-  container.innerHTML = items.map(it=>
-    `<button class="section-subnav-item ${it.tab===activeTab?'active':''}" data-tab="${it.tab}">${it.icon||''}<span>${it.label}</span></button>`
-  ).join('');
-  container.querySelectorAll('.section-subnav-item').forEach(btn=>{
+  const moreTables = activeSection === 'rankings' ? rankingsMoreTablesVisible() : [];
+  if(items.length < 2 && !moreTables.length){ container.style.display = 'none'; container.innerHTML = ''; return; }
+  container.style.display = 'flex';
+  const onMore = moreTables.some(it => it.tab === activeTab);
+  container.innerHTML = `<div class="mp-seg" role="tablist" aria-label="${escapeHtml(SECTION_LABELS[activeSection] || '')}">`
+    + items.map(it => {
+      const on = it.tab === activeTab;
+      return `<button type="button" role="tab" class="section-subnav-item mp-seg-item${on ? ' active' : ''}" data-tab="${it.tab}" aria-selected="${on}" tabindex="${on ? 0 : -1}">${escapeHtml(it.label)}</button>`;
+    }).join('')
+    + `</div>`
+    + (moreTables.length ? `<button type="button" class="section-more-btn" id="rankingsMoreBtn" aria-haspopup="dialog" aria-pressed="${onMore}">More tables</button>` : '');
+  const tabs = [...container.querySelectorAll('.section-subnav-item')];
+  tabs.forEach((btn, i)=>{
     btn.onclick = ()=>{ const b = legacyTabBtn(btn.dataset.tab); if(b) b.click(); };
+    // Arrow keys move along the control, as a tablist should.
+    btn.onkeydown = (ev)=>{
+      const step = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+      if(!step) return;
+      ev.preventDefault();
+      const next = tabs[(i + step + tabs.length) % tabs.length];
+      next.focus(); next.click();
+    };
   });
+  const more = document.getElementById('rankingsMoreBtn');
+  if(more) more.onclick = openRankingsMoreTables;
+}
+
+function rankingsMoreTablesVisible(){
+  return RANKINGS_MORE_TABLES.filter(it => !it.tab || canSeeTab(it.tab));
+}
+
+// Rankings › More tables: a sheet on the existing modal primitive, so it
+// closes like every other (backdrop, Back).
+function openRankingsMoreTables(){
+  let sheet = document.getElementById('rankingsMoreSheet');
+  if(!sheet){
+    sheet = document.createElement('div');
+    sheet.className = 'shell-more-sheet';
+    sheet.id = 'rankingsMoreSheet';
+    document.body.appendChild(sheet);
+    sheet.addEventListener('click', (e)=>{ if(e.target === sheet) sheet.classList.remove('show'); });
+  }
+  sheet.innerHTML = `<div class="shell-more-panel">
+    <h3>More tables</h3>
+    <div class="shell-list">${rankingsMoreTablesVisible().map(it => mpListRowHtml({ label: it.label, data: it.tab ? { tab: it.tab } : { special: it.special } })).join('')}</div>
+  </div>`;
+  sheet.querySelectorAll('.mp-list-row').forEach(row=>{
+    row.onclick = ()=>{
+      sheet.classList.remove('show');
+      if(row.dataset.special === 'northsouth') openNorthSouth();
+      else if(row.dataset.special === 'doughnuts') openDoughnutLeaderboard();
+      else if(row.dataset.tab === 'callouts') openInsightsFromTop();
+      else { const b = legacyTabBtn(row.dataset.tab); if(b) b.click(); }
+    };
+  });
+  sheet.classList.add('show');
+}
+
+// The Play badge (DQ29): what the selected player must act on, counted on the
+// functional side (playActionCount, features/play/fixturesData.js). Hidden at
+// zero, with no player chosen, before the record has arrived, and whenever
+// Requests or Upcoming is hidden from this reader -- it never points at a
+// screen they cannot open.
+function updatePlayBadge(){
+  const el = document.getElementById('playNavBadge');
+  if(!el) return;
+  const viewer = (typeof DATA_READY !== 'undefined' && DATA_READY) ? getCurrentViewer() : null;
+  const reachable = canSeeTab('wishlist') && canSeeTab('upcoming');
+  const n = viewer && reachable ? playActionCount(viewer.name) : 0;
+  el.innerHTML = mpCountBadgeHtml(n, n === 1 ? 'thing waiting on you' : 'things waiting on you');
 }
 
 // Unlocking, locking or changing a visibility setting redraws the shell's own
@@ -165,22 +248,12 @@ function renderSectionSubnav(){
 // longer see.
 function onVisibilityChanged(){
   if(typeof renderSectionSubnav === 'function' && document.getElementById('sectionSubnav')) renderSectionSubnav();
+  updatePlayBadge();
+  if(activeSection === 'me') renderMe();
   if(typeof activeTab !== 'undefined' && !canSeeTab(activeTab)){
     const fb = legacyTabBtn(visibleFallbackTab(activeTab));
     if(fb) fb.click();
   }
-}
-
-function openMoreSheet(){
-  // More lists only what this reader may open.
-  document.querySelectorAll('#shellMoreSheet .shell-more-item[data-tab]').forEach(btn=>{
-    const tab = btn.dataset.tab;
-    if(tab && tab !== 'manage') btn.style.display = canSeeTab(tab) ? '' : 'none';
-  });
-  document.getElementById('shellMoreSheet').classList.add('show');
-}
-function closeMoreSheet(){
-  document.getElementById('shellMoreSheet').classList.remove('show');
 }
 
 function buildShellDom(){
@@ -216,6 +289,11 @@ function buildShellDom(){
   `;
   subnav.parentNode.insertBefore(playHeading, subnav.nextSibling);
 
+  // Me (features/me/meScreen.js) -- shown instead of the app's screens.
+  const meView = document.createElement('div');
+  meView.id = 'meView';
+  playHeading.parentNode.insertBefore(meView, playHeading.nextSibling);
+
   // Bottom nav
   const nav = document.createElement('div');
   nav.className = 'shell-bottom-nav';
@@ -224,12 +302,12 @@ function buildShellDom(){
     { section: 'rankings', label: 'Rankings', icon: 'rankings' },
     { section: 'play', label: 'Play', icon: 'play' },
     { section: 'players', label: 'Players', icon: 'players' },
-    { section: 'more', label: 'More', icon: 'more' },
+    { section: 'me', label: 'Me', icon: 'me' },
   ];
   nav.innerHTML = navItems.map(it => `
     <button class="shell-nav-item" data-section="${it.section}">
       <span class="nav-icon-mount" data-icon="${it.icon}" data-fallback="${it.label[0]}"></span>
-      <span>${it.label}</span>
+      <span>${it.label}</span>${it.section === 'play' ? '<span class="shell-nav-badge" id="playNavBadge"></span>' : ''}
     </button>
   `).join('');
   document.body.appendChild(nav);
@@ -258,69 +336,22 @@ function buildShellDom(){
       });
   });
 
-  // More sheet
-  const sheet = document.createElement('div');
-  sheet.className = 'shell-more-sheet';
-  sheet.id = 'shellMoreSheet';
-  sheet.innerHTML = `<div class="shell-more-panel">
-    <h3>More</h3>
-    ${MORE_ITEMS.map(it => `<button class="shell-more-item" data-tab="${it.tab||''}" data-special="${it.special||''}">${it.label}<span class="chev">›</span></button>`).join('')}
-    <button class="shell-more-item admin-item" data-tab="${MORE_ADMIN_ITEM.tab}">${MORE_ADMIN_ITEM.label}<span class="chev">›</span></button>
-  </div>`;
-  document.body.appendChild(sheet);
-  sheet.addEventListener('click', (e)=>{ if(e.target === sheet) closeMoreSheet(); });
-  sheet.querySelectorAll('.shell-more-item').forEach(btn=>{
-    btn.onclick = ()=>{
-      if(btn.dataset.special === 'ratingguide'){
-        closeMoreSheet();
-        openPowerRatingGuide();
-        return;
-      }
-      if(btn.dataset.special === 'northsouth'){
-        closeMoreSheet();
-        openNorthSouth();
-        return;
-      }
-      if(btn.dataset.special === 'about'){
-        closeMoreSheet();
-        openAboutPowerRankings();
-        return;
-      }
-      if(btn.dataset.special === 'doughnuts'){
-        closeMoreSheet();
-        openDoughnutLeaderboard();
-        return;
-      }
-      if(btn.dataset.special === 'datarange'){
-        closeMoreSheet();
-        openDataRangeSheet();
-        return;
-      }
-      const b = legacyTabBtn(btn.dataset.tab);
-      if(b) b.click(); // the #tabrow capture listener already updates activeSection/subnav correctly
-      closeMoreSheet();
-    };
-  });
-
-  // About, Doughnuts and North vs South used to be defined here, inside
-  // buildShellDom. They are features now (features/rankings/ratingGuide.js,
-  // doughnutsScreen.js, northSouthScreen.js); the More sheet above still opens
-  // them by name.
+  // About, Doughnuts and North vs South are features (features/rankings/
+  // ratingGuide.js, doughnutsScreen.js, northSouthScreen.js), opened by name
+  // from Me and from Rankings › More tables.
 
   // Keep bottom-nav highlight (and section subnav) in sync no matter how the
-  // legacy tab changes (new nav, subnav, More sheet, or internal app.js
-  // navigation like "Edit this game").
+  // legacy tab changes (new nav, subnav, Me, More tables, or internal app.js
+  // navigation like "Edit this game"). Any of them leaves Me.
   document.getElementById('tabrow').addEventListener('click', (e)=>{
     const btn = e.target.closest('.tab-btn');
     if(!btn) return;
     const tab = btn.dataset.tab;
-    activeSection = TAB_TO_SECTION[tab] || 'more';
+    leaveMe();
+    activeSection = TAB_TO_SECTION[tab] || 'rankings';
     updateBottomNavHighlight();
     const titleEl = document.getElementById('shellSectionTitle');
-    if(titleEl){
-      const sectionLabels = { home:'Home', rankings:'Rankings', play:'Play', players:'Players', more:'More' };
-      titleEl.textContent = sectionLabels[activeSection] || '';
-    }
+    if(titleEl) titleEl.textContent = SECTION_LABELS[activeSection] || '';
   }, true);
 
   // Separate, non-capturing listener: fires AFTER the legacy tab handler has
@@ -336,11 +367,13 @@ function buildShellDom(){
     renderRankingsPodium();
     renderKingsOfTiersPanel();
     renderSectionSubnav();
+    updatePlayBadge();
+    shellNavChanged();
   });
 }
 
 // ---- Data & Rankings: the app-wide Data Range setting ---------------------
-// Deliberately a setting, not a filter: it lives in More, it persists, and it
+// Deliberately a setting, not a filter: it lives in Me, it persists, and it
 // is the only place in the app where the dataset can be changed. The two
 // options map onto dataRange in app.js ('verified' | 'all'), which is applied
 // in exactly one place (getAllApprovedMatches) so every screen agrees.
@@ -499,25 +532,11 @@ function buildViewerSelector(){
   overlay.classList.add('show');
 }
 
-// ---- "My Player" entry in More -------------------------------------------
+// ---- The chosen player changed: what shows it follows ----------------------
+// (My Player lives in Me now; the Play badge counts for the chosen player.)
 function updateMyPlayerLabel(){
-  const label = document.getElementById('myPlayerLabel');
-  if(!label) return;
-  const viewer = getCurrentViewer();
-  label.textContent = viewer ? viewer.name : 'Choose player';
-}
-
-function buildMyPlayerMoreItem(){
-  const sheet = document.getElementById('shellMoreSheet');
-  if(!sheet) return;
-  const panel = sheet.querySelector('.shell-more-panel');
-  const adminItem = panel.querySelector('.admin-item');
-  const item = document.createElement('button');
-  item.className = 'shell-more-item';
-  item.innerHTML = `My Player<span class="my-player-value"><span id="myPlayerLabel"></span> <span class="chev">›</span></span>`;
-  item.onclick = ()=>{ closeMoreSheet(); buildViewerSelector(); };
-  panel.insertBefore(item, adminItem);
-  updateMyPlayerLabel();
+  if(activeSection === 'me') renderMe();
+  updatePlayBadge();
 }
 
 
@@ -596,6 +615,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     renderKingsOfTiersPanel();
     hero.style.display = (activeTab === 'power') ? 'block' : 'none';
     syncHeaderSectionTitle();
+    updatePlayBadge();
     // Viewer foundation init happens here, on the first real render, rather
     // than directly in DOMContentLoaded: app.js's init() is async and loads
     // Firestore data before calling recomputeAll(), so PLAYERS is not
@@ -604,7 +624,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     // which is what buildViewerSelector's real player list depends on.
     if(!viewerInitDone){
       viewerInitDone = true;
-      buildMyPlayerMoreItem();
       buildHomeDashboard();
       // Wrap openSheet once PLAYERS/etc are guaranteed ready -- every internal
       // call site in app.js (after edit/delete/confirm) goes through this
@@ -644,8 +663,34 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   });
 
+  // Every change to the record ends at dataChanged() (app.js); the Play badge
+  // follows it, as the screens do. Home's Full Review is a screen of its own
+  // for Back, and its own "Back to Home" button takes that entry with it.
+  const _originalDataChanged = window.dataChanged;
+  window.dataChanged = function(){
+    const r = _originalDataChanged.apply(this, arguments);
+    updatePlayBadge();
+    return r;
+  };
+  const _originalFullReview = window.showFullMonthlyReview;
+  window.showFullMonthlyReview = function(){
+    shellFlushNav(); // Home itself first, if it has only just been opened
+    _originalFullReview.apply(this, arguments);
+    const back = document.getElementById('homeBackFromReview');
+    if(back && !back.dataset.shellHistory){
+      back.dataset.shellHistory = '1';
+      const own = back.onclick;
+      back.onclick = function(){
+        const top = history.state && history.state.mpNav;
+        if(top && top.review) history.back(); else own.apply(this, arguments);
+      };
+    }
+    shellNavChanged();
+  };
+
   updateBottomNavHighlight();
   renderSectionSubnav();
+  shellHistoryInstall();
 
   // The shell exists. If the record is already here, this is the half that
   // finished second and the first screen is drawn now; if it is not, init()

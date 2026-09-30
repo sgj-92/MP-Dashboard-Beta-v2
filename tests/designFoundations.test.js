@@ -206,10 +206,11 @@ test('the stepper marks the steps before the current one done, and only one curr
   assert.doesNotMatch(mpStepperHtml(['A', 'B']), /is-current|is-done/);
 });
 
-test('nothing in the app calls the helpers yet (Phase 0 changes no screen)', () => {
-  const { readAllAppSource } = require('./helpers/appSource.js');
-  const src = readAllAppSource().replace(read('assets/js/ui/components/primitives.js'), '');
-  assert.doesNotMatch(src, /\bmp(CountBadge|Pill|DateBlock|Segmented|ListRow|SectionHead|Stepper)Html\(/);
+test('only the redesigned shell and Me use the helpers so far (Phase 1); no legacy screen does', () => {
+  const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
+  const users = appScriptFiles().filter((f) => f !== 'ui/components/primitives.js'
+    && /\bmp(CountBadge|Pill|DateBlock|Segmented|ListRow|SectionHead|Stepper)Html\(/.test(readAppScript(f)));
+  assert.deepStrictEqual(users.sort(), ['features/me/meScreen.js', 'shell.js']);
 });
 
 // ---------- in a browser ----------
@@ -225,7 +226,9 @@ function host() {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-maybe('the app downloads no web font and still sets its type exactly as before', async () => {
+// Phase 1 adopted the type roles for the shell's own navigation; the screens
+// themselves keep theirs until their phase.
+maybe('the app fetches only its own fonts, and no screen\'s content is set in a new family yet', async () => {
   const app = await H.open();
   try {
     const fonts = [];
@@ -235,10 +238,13 @@ maybe('the app downloads no web font and still sets its type exactly as before',
       await app.page.evaluate((t) => { const b = document.querySelector(`#tabrow .tab-btn[data-tab="${t}"]`); if (b) b.click(); }, tab);
       await app.page.waitForTimeout(150);
     }
-    assert.deepStrictEqual(fonts, []);
-    const families = await app.run(() => [...new Set([...document.querySelectorAll('body *')]
-      .map((el) => getComputedStyle(el).fontFamily))].filter((f) => /Instrument Serif|Inter/.test(f)));
-    assert.deepStrictEqual(families, [], 'no element renders in a new family');
+    const origin = await app.run(() => location.origin);
+    assert.deepStrictEqual(fonts.filter((u) => !u.startsWith(origin + '/assets/fonts/')), [], 'self-hosted only');
+    const CHROME = '.shell-header, #sectionSubnav, .shell-bottom-nav, #meView, .shell-more-sheet';
+    const families = await app.run((chrome) => [...new Set([...document.querySelectorAll('body *')]
+      .filter((el) => !el.closest(chrome)).map((el) => getComputedStyle(el).fontFamily))]
+      .filter((f) => /Instrument Serif|Inter/.test(f)), CHROME);
+    assert.deepStrictEqual(families, [], 'no screen content renders in a new family');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });

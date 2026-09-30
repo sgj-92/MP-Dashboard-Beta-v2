@@ -1796,12 +1796,12 @@ test('the monthly stories keep all four parts behind a takeaways summary', { ski
 // reachable, that it describes the model the app is actually running, and that
 // it does not say the two things it must never say.
 
-test('the Power Rating Guide is reachable from More', { skip }, async () => {
+test('the Power Rating Guide is reachable from Me', { skip }, async () => {
   const app = await H.open();
   try {
     const r = await app.run(() => {
-      goToSection('more');
-      const item = [...document.querySelectorAll('#shellMoreSheet .shell-more-item')]
+      goToSection('me');
+      const item = [...document.querySelectorAll('#meView .mp-list-row')]
         .find((b) => /power rating guide/i.test(b.textContent));
       if (!item) return { found: false };
       item.click();
@@ -1809,13 +1809,13 @@ test('the Power Rating Guide is reachable from More', { skip }, async () => {
       return {
         found: true,
         shown: !!modal && modal.classList.contains('show'),
-        moreSheetClosed: !document.getElementById('shellMoreSheet').classList.contains('show'),
+        stillMe: activeSection === 'me',
         title: modal ? modal.querySelector('h3').textContent.trim() : null,
       };
     });
-    assert.strictEqual(r.found, true, 'the More sheet must offer the guide');
+    assert.strictEqual(r.found, true, 'Me must offer the guide');
     assert.strictEqual(r.shown, true, 'tapping it must open the guide');
-    assert.strictEqual(r.moreSheetClosed, true, 'the More sheet must close behind it');
+    assert.strictEqual(r.stillMe, true, 'Me stays behind it');
     assert.strictEqual(r.title, 'Power Rating Guide');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
