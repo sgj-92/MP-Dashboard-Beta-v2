@@ -349,6 +349,7 @@ Existing families are named, so they are extended rather than duplicated.
     - Rankings: **Power | This Month**, plus a More tables list;
     - Play: **My Games | Club**, plus **Arrange a Game**;
     - Players: the Directory only. Compare leaves the sub-bar for the profile (Phase 5); until then it stays reachable from the Directory.
+  - **As built in Phase 1 (30 Sep):** Rankings is Power | This Month with a More tables sheet. Play and Players keep their existing destinations in the same segmented control, because My Games | Club and Directory → Profile are new screens (Phases 2 and 5); Arrange a Game arrives with Phase 2.
   - The system **Back** closes sheets and returns from drill screens (Phase 1; the audit found Back exits the app).
 - **Mock-only:**
   - the status bar;
@@ -1375,7 +1376,7 @@ are kept until the new ones are accepted.
 | Phase | Scope | Why this order | Blocked on |
 |---|---|---|---|
 | **0 — Foundations** | Tokens in `tokens.css`; fonts if chosen; the primitive CSS in `components.css`; a primitives reference page in `docs/design/`. **No visible change.** | Every later phase uses these. | **DONE `cd844f6`** on `ux/player-reset-v2` (30 Sep) |
-| **1 — Shell** | Five tabs (More → Me). Me as the home of the former More destinations and the viewer header. Section entry points: Rankings **Power \| This Month** with a More tables list; Play **My Games \| Club** with Arrange a Game; Players Directory. Play badge (count only). System Back. `#tabrow` stays the router. | Every other phase needs the entry points; high routing risk, so do it alone. | — (DQ5, DQ29 resolved) |
+| **1 — Shell** | Five tabs (More → Me). Me as the home of the former More destinations and the viewer header. Section entry points: Rankings **Power \| This Month** with a More tables list; Play **My Games \| Club** with Arrange a Game; Players Directory. Play badge (count only). System Back. `#tabrow` stays the router. | Every other phase needs the entry points; high routing risk, so do it alone. | **DONE `0772379`** on `ux/player-reset-v2` (30 Sep). Play and Players keep their existing entries until Phases 2 and 5 |
 | **2 — Play** | `playView.js` view-model; My Games (lifecycle sections, Challenges); Club (counters); **Arrange a Game** (find / request / paste a list, Match Ideas); game detail; Admin Manage sheet; booking sheet; toast; Played Games & Results entry. | Fixes the audit's worst finding, and builds the view-model Home needs. | DQ6, DQ7, DQ8, DQ9 (Shaun) |
 | **3a — Home hierarchy** | The IA order with a **plain, text-first hero**: This Month position → Needs You → Next Game → Last Time Out → light Around the Club; the demoted standing line; "Why it moved" sheet. | Depends on Phase 2's view-model. Gets the hierarchy right before the visuals. | DQ1 (Shaun) |
 | **3b — Home hero visual** | The interactive visual treatment of the same hero data. | DQ19 allows staging. Separable and reversible. | CGPT/Shaun visual pick |
@@ -1393,7 +1394,7 @@ Each brief is written out in full when it is approved.
   - the tokens and primitives are documented;
   - `tests/architecture.test.js` passes, and any new stylesheet is loaded
     in rank order.
-- **Phase 1 — acceptance:**
+- **Phase 1 — acceptance (met, `0772379`):**
   - every former More destination is reachable within two taps of Me or
     Rankings › More tables;
   - visibility settings govern every new entry point (D4);

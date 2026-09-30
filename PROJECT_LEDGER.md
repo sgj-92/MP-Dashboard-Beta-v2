@@ -152,6 +152,34 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Player Experience Reset — Phase 1 (shell) DONE on `ux/player-reset-v2`
+(`0772379`), with the functional pieces on `main` (`a3f6939`).** Shaun's
+go-ahead, 30 Sep.
+- **Five tabs:** Home · Rankings · Play · Players · **Me**. More is gone.
+- **Me holds what More held:** My Player, Data & Rankings, the Power
+  Rating Guide, About, Doughnuts, and Admin (shown as "Admin sign-in" when
+  locked), plus "View my profile".
+  - With no player chosen it asks **"Who are you?"** (DQ5), with no
+    sign-in language.
+  - Me is drawn over the app, so the screen underneath keeps its state.
+- **Rankings:** **Power | This Month**, with **More tables** (Win / Loss,
+  Insights, North vs South, Doughnuts) in a sheet beside the switch.
+- **Play and Players:** they keep their existing destinations in the same
+  segmented control until Phases 2 and 5 build My Games | Club, Arrange a
+  Game and Directory → Profile.
+- **The Play badge:** it draws `playActionCount` (DQ29) and is hidden at 0.
+- **System Back works inside the app:** it closes the sheet on top, then
+  returns to the previous screen (Home's Full Review included). It leaves
+  the app only from the first screen.
+- **Evidence:**
+  - With the navigation chrome left out, all 38 behaviour-snapshot states
+    are **identical** at 390px and 360px, so no screen's content changed.
+  - 15 new tests. **795 / 795** on the branch; `main` is **768 / 768**.
+- **`main` gained two things:** the badge count (`playActionCount`, a
+  functional fact) and the snapshot tool, committed as
+  `scripts/behaviour-snapshot.js` + `behaviour-diff.js` with a new
+  content-only mode.
+
 **Player Experience Reset — Phase 0 (foundations) DONE on `ux/player-reset-v2`
 (`cd844f6`).** Shaun's go-ahead, 30 Sep. **No screen changed.** It is on the
 redesign branch only; `main` does not carry it.
@@ -1282,6 +1310,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Vercel is the primary hosting and deployment platform | Shaun, 30 Sep 2026. `main` = production/stable. Redesign and feature branches get their own Vercel preview deployments. Custom domains come later. The Vercel build stamp is the canonical deployment stamp. Relative paths must work from Vercel root hosting. GitHub Pages compatibility is kept only where trivial and is not removed unless it causes maintenance overhead. No new infrastructure is designed around it. Supersedes "GitHub Pages deploys `main`". |
 | Power shows current ratings; month-end history moves to More tables (DQ3) | Shaun, 30 Sep 2026, confirming CCode's reading of the IA. Rankings › Power stops opening on the Meaningful Month's month-end view (the 26 Sep default) and shows today's ratings, so it agrees with Tier Rank everywhere (D5). Month-end Power history is reached from Rankings › More tables › Past months. The Meaningful Month still decides which month **This Month** opens on. It ships with Phase 4 on `ux/player-reset-v2`, not before; `main` is unchanged until Shaun releases the redesign. |
 | Booked is steel blue `#8FB3D9`; aligned numbers use Inter, not Instrument Serif | CCode, 30 Sep 2026, Phase 0. Both are implementation choices within DQ20 (Shaun/CGPT). DQ20 asked for Booked to get a distinct hue: `#8FB3D9` is 8.6:1 on cards and over 45° of hue from Tier B sage, upward movement, attention and the accent. The map asked whether Instrument Serif has tabular figures before using it for numbers: it has none, so tables, points, scores and counts use Inter with `tabular-nums`. Either is a one-token change if CGPT prefers otherwise. |
+| Play badge: "genuinely act on" read strictly; interim Play / Players entries | CCode, 30 Sep 2026, Phase 1, implementing DQ29 and the IA. **The badge** counts For me requests plus Needs attention games the player is in, **but not a game they backed out of themselves**, since nothing is left for them to do on it (an Admin replaces them). It is hidden whenever Requests or Upcoming is hidden from the reader (D4: it never points at a screen they cannot open). **Play and Players keep their existing entries in Phase 1**: My Games \| Club, Arrange a Game and Directory → Profile are new screens, so they arrive with Phases 2 and 5 rather than as relabelled old screens. Any of this is quick to change if CGPT prefers otherwise. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -3053,6 +3082,52 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Player Experience Reset: Phase 1 shell)
+
+**On `main` (functional side), `a3f6939`:**
+- **`playActionCount(viewer, now)`** in `features/play/fixturesData.js`,
+  with 6 tests built from real `FixtureFlow` fixtures.
+- **`scripts/behaviour-snapshot.js` + `behaviour-diff.js`:**
+  - the harness, now committed;
+  - More-free states;
+  - `MODE=content`;
+  - a state is "skipped" only when its own setup fails, and a failed
+    capture always counts as a difference.
+
+**On `ux/player-reset-v2`, `0772379`:**
+- **`shell.js`:** five tabs, Me, the segmented section control
+  (`role=tablist`, arrow keys, 44px), More tables and the badge.
+- **`features/me/meScreen.js` + `screens/me.css`.**
+- **`ui/shellHistory.js`:** system Back.
+- **`assets/icons/me.svg`.**
+
+**Two ordering bugs, caught by the new Back test and fixed before commit:**
+- A screen that redraws itself (Me) queued the sheet observer ahead of
+  its own history entry.
+- Opening Home and its Full Review in one step recorded only the review.
+
+Both are now covered.
+
+**Tests moved to the new routes in the same commit:**
+- `auditFixes`: More → More tables. With Power hidden, Rankings now lands
+  on This Month, where it used to land on Win / Loss.
+- `buildStamp`, `doughnuts`, `drawOutcome`, `ui` (the Guide from Me) and
+  `designFoundations` (the shell may now fetch its own fonts; screen
+  content still uses none).
+
+**Proof of no screen change:** the content-only snapshot, identical in all
+38 states at 390px and 360px. Screenshots at 375px were checked.
+
+**Needs Shaun for Phase 2 (Play):** DQ6, DQ7, DQ8 and DQ9 (Section 5). The
+recommendations:
+- a participant **may** record "Court booked", attributed and
+  reversible by an Admin (DQ6);
+- replacement stays Admin-only (DQ7);
+- no player "Change plan" in Phase 2 (DQ8);
+- a plain request may carry an optional time and venue (DQ9).
+
+Baton → Shaun.
 
 ### CCode — 30 Sep 2026 (Player Experience Reset: Phase 0 foundations)
 
@@ -7086,6 +7161,8 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `0772379` (`ux/player-reset-v2`) | Phase 1 shell. Five tabs with More → Me (settings, guides, Admin, "Who are you?"), Rankings Power \| This Month + More tables, one segmented control per section, the Play badge, and system Back (sheets, screens, Home's Full Review). Screen content is identical in all 38 states at 390 and 360 (content-mode snapshot). 15 tests; 795/795 on the branch. |
+| `a3f6939` | `playActionCount` (the Play badge's count, DQ29) and the behaviour-snapshot tool committed as `scripts/behaviour-snapshot.js` / `behaviour-diff.js`, with content-only mode. 6 tests; 768/768. |
 | `cd844f6` (`ux/player-reset-v2`) | Phase 0 foundations. Tokens (champagne accent, steel-blue Booked, attention, movement, danger, type roles, touch, z-scale), self-hosted Instrument Serif + Inter (OFL, unused by the app so not downloaded), the primitive CSS under new names, presentation-only HTML helpers, and `docs/design/primitives.html`. Snapshot identical at 390 and 360. 18 tests; 780/780 on the branch. |
 | `8b7657b` | Product idea backlog (`docs/product/`). It holds three ideas (Video Highlights & Moments, season recap, attendance record) and pointers to the Ledger's parked and open items, with usage and promotion rules. The design map now marks the 30 Sep presentation decisions resolved. Documentation only. |
 | `cf72a14` | Design map reconciled to the approved IA. It adds Section 0 (target IA per tab, the DQs settled, new DQ31–33, and the DQ3 confirmation for Shaun), IA notes on every area, IA homes for every current destination, and re-cut phases with acceptance briefs (Arrange a Game in Phase 2; Home 3a/3b). Documentation only. |
@@ -7177,6 +7254,23 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Sep: Phase 1 is DONE on `ux/player-reset-v2` (`0772379`), with
+no screen's content changed. Baton → Shaun.**
+- **Before Phase 2 (Play) can start, Shaun decides DQ6–DQ9.** The
+  recommendations are in the CCode handoff above.
+  - The main one is **DQ6**: whether a player in the game may record
+    "Court booked".
+- **Then the Phase 2 go-ahead:**
+  - the `playView.js` view-model;
+  - My Games | Club;
+  - Arrange a Game (find / request / paste a list, with Match Ideas);
+  - game detail with the stepper;
+  - the Admin Manage sheet;
+  - the booking sheet, and Played Games & Results.
+- **Review Phase 1 on the branch's Vercel preview, at `/preview`:** the
+  tabs, Me, Rankings › More tables, Back.
+- **`main`:** `a3f6939`, 768 / 768.
 
 **CCode, 30 Sep: Phase 0 is DONE on `ux/player-reset-v2` (`cd844f6`), with
 no visible change. Baton → Shaun.**
