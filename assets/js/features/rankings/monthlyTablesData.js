@@ -37,9 +37,28 @@ function leagueAppearances(){
   return out;
 }
 
-function sortLeagueRows(rows){
-  const key = leagueSortKey;
-  const dir = leagueSortDesc ? -1 : 1;
+// The League by tier for a month: each match filed under the tier the player
+// held ON ITS DATE, so a mid-month mover has a row in each tier holding only
+// what they earned there. `tier` is that tier ('?' where it cannot be
+// established). The League's By tier view and the Board Pack read this.
+function leagueSplitRows(month){
+  return Object.values(computeMonthlySummaryStats(month, { splitByTier: true }))
+    .map(s => ({ ...s, tier: s.segmentTier || '?' }));
+}
+
+// Last 10 as it stood at the close of a month: the same table, built from the
+// record up to and including that month's last day -- so a past month's form
+// is that month's, not today's.
+function lastTenAtMonthEnd(month){
+  const end = month + '-31';
+  return LastTen.build(leagueAppearances().filter(a => a.date <= end));
+}
+
+// The League's order. The screen sorts by whichever column the reader chose;
+// anything else (the Board Pack) asks for the League's own standing order,
+// points first.
+function sortLeagueRows(rows, key = leagueSortKey, desc = leagueSortDesc){
+  const dir = desc ? -1 : 1;
   return rows.slice().sort((a,b)=>{
     let av = a[key], bv = b[key];
     if(key === 'name') return dir * a.name.localeCompare(b.name);
@@ -57,9 +76,8 @@ function sortLeagueRows(rows){
 // table built from the same ten games would be the same fact told twice.
 const LAST10_SORT_FALLBACK = (a,b)=> b.points - a.points || b.gd - a.gd || b.games - a.games || a.name.localeCompare(b.name);
 
-function sortLastTenRows(rows){
-  const key = leagueSortKey;
-  const dir = leagueSortDesc ? -1 : 1;
+function sortLastTenRows(rows, key = leagueSortKey, desc = leagueSortDesc){
+  const dir = desc ? -1 : 1;
   return rows.slice().sort((a,b)=>{
     if(key === 'name') return dir * a.name.localeCompare(b.name);
     let av = a[key], bv = b[key];

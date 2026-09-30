@@ -109,6 +109,7 @@ function renderManage(){
     </div>`).join('') + `<div id="visMessage" class="section-sub"></div></div>`);
 
   html += adminSection('review', 'Admin monthly review', buildReviewSectionHtml());
+  html += adminSection('boardpack', 'Monthly Board Pack', adminOpenSections.boardpack ? buildBoardPackSectionHtml() : '');
   html += adminSection('historical', 'Historical club adjustment', buildHistoricalAdjustmentHtml());
   html += adminSection('diagnostics', 'Beta diagnostics', buildDiagnosticsSectionHtml());
 
@@ -165,6 +166,7 @@ function renderManage(){
 
   wireReviewSection();
   wireHistoricalAdjustment();
+  wireBoardPackSection();
 
   const today = new Date().toISOString().slice(0,10);
 

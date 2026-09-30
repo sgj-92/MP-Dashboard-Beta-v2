@@ -18,21 +18,12 @@
 let monthlySummaryOpen = true;
 
 function buildMonthlyStoriesHtml(month){
-  if(month === 'all' || !MONTHLY_VIEWS || !MONTHLY_VIEWS.byMonth[month]) return '';
+  // The stories themselves are monthlyStories() (monthlyStoryData.js): the
+  // Admin Board Pack reads the same derivation.
+  const stories = monthlyStories(month);
+  if(!stories) return '';
   const label = monthLabel(month);
-  const perf = MonthlyViews.performanceTable(MONTHLY_VIEWS, month).slice(0,3);
-  const moves = MonthlyViews.ratingMovementTable(MONTHLY_VIEWS, month);
-  const risers = moves.filter(r=>r.ratingChange>0).slice(0,3);
-  const fallers = moves.filter(r=>r.ratingChange<0).slice(-3).reverse();
-  const all = MONTHLY_VIEWS.byMonth[month].rows.concat(MONTHLY_VIEWS.byMonth[month].inactiveRows);
-  const ranked = all.filter(r=>r.rankChangeOverall !== null && r.rankChangeOverall !== 0)
-    .sort((a,b)=>b.rankChangeOverall-a.rankChangeOverall);
-  const climbers = ranked.filter(r=>r.rankChangeOverall>0).slice(0,3);
-  const sliders = ranked.filter(r=>r.rankChangeOverall<0).slice(-3).reverse();
-  const idleMovers = MONTHLY_VIEWS.byMonth[month].inactiveRows
-    .filter(r=>r.rankChangeOverall !== null && r.rankChangeOverall !== 0)
-    .sort((a,b)=>Math.abs(b.rankChangeOverall)-Math.abs(a.rankChangeOverall)).slice(0,3);
-  const crossovers = MONTHLY_VIEWS.byMonth[month].crossovers.slice(0,3);
+  const { perf, risers, fallers, climbers, sliders, idleMovers, crossovers } = stories;
 
   const line = (main, sub) => `<div class="ms-line"><span class="ms-main">${main}</span><span class="ms-sub">${sub}</span></div>`;
   const block = (title, explain, body) => body

@@ -1,0 +1,255 @@
+// ===================== ADMIN MONTHLY BOARD PACK =====================
+// Admin / Manage › Monthly Board Pack: an admin chooses a month, the modules,
+// their order and presentation, adds commentary, previews and saves. What is
+// saved is the choice (moneypadel_board_pack_YYYY-MM); every figure is drawn
+// from the same functions the rest of the app shows, for that month as it was.
+
+const test = require('node:test');
+const assert = require('node:assert');
+const H = require('./helpers/uiHarness.js');
+
+const maybe = H.available() ? test : test.skip;
+const NOW = '2026-09-28T12:00:00.000Z';
+const open = (club) => H.open({ now: NOW, club });
+const KEY = 'moneypadel_board_pack_2026-08';
+
+
+async function openSection(app){
+  await app.run(() => {
+    isUnlocked = true; adminRole = 'owner'; currentUserName = 'Shaun';
+    legacyTabBtn('manage').click(); renderManage();
+    document.querySelector('[data-acc-toggle="boardpack"]').click();
+  });
+  await app.page.waitForSelector('#bpStatus');
+}
+
+maybe('Admin only: not on the locked screen, not read at start-up, and a save refuses without the lock', async () => {
+  const app = await open();
+  try {
+    const r = await app.run(async () => {
+      const startupReads = window.__reads.filter((x) => String(x.id || '').startsWith('moneypadel_board_pack')).length;
+      isUnlocked = false; legacyTabBtn('manage').click(); renderManage();
+      const lockedText = document.getElementById('manageView').textContent;
+      const writes = window.__writes.length;
+      const res = await saveBoardPackConfig(BoardPack.defaultConfig('2026-08'));
+      return { startupReads, shown: lockedText.includes('Monthly Board Pack'), res, wrote: window.__writes.length - writes };
+    });
+    assert.deepStrictEqual(r, { startupReads: 0, shown: false, res: { ok: false, message: 'Only an admin can save the Board Pack.' }, wrote: 0 });
+    await openSection(app);
+    const shown = await app.run(() => !!document.getElementById('bpMonth'));
+    assert.ok(shown, 'unlocked, the section is there');
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+maybe('choose a month, select, deselect, reorder, set options, add commentary, preview and save', async () => {
+  const app = await open();
+  let saved;
+  try {
+    await openSection(app);
+    const months = await app.run(() => [...document.querySelectorAll('#bpMonth option')].map((o) => o.value));
+    assert.deepStrictEqual(months, ['2026-09', '2026-08', '2026-07', '2026-06'], 'every month with games, newest first');
+    assert.strictEqual(await app.page.$eval('#bpMonth', (s) => s.value), '2026-09', 'opens on the month the monthly screens open on');
+
+    await app.page.selectOption('#bpMonth', '2026-08');
+    await app.page.waitForSelector('#bpStatus');
+    const p = app.page;
+    const idx = (id) => p.$eval(`[data-bp-module="${id}"]`, (el) => Number(el.dataset.bpItem));
+    // Deselect the overview, select Merit.
+    await p.click(`[data-bp-toggle="${await idx('overview')}"]`);
+    await p.click(`[data-bp-toggle="${await idx('merit')}"]`);
+    // Kings up above Power.
+    await p.click(`[data-bp-move="${await idx('kings')}"][data-delta="-1"]`);
+    // Power: Tier A, top 3.
+    await p.selectOption(`[data-bp-opt="${await idx('power')}"][data-key="tier"]`, 'A');
+    await p.selectOption(`[data-bp-opt="${await idx('power')}"][data-key="top"]`, '3');
+    // Commentary, moved to the top.
+    await p.click('#bpAddNote');
+    const n = await p.$$eval('[data-bp-item]', (els) => els.length);
+    await p.fill(`[data-bp-note-title="${n - 1}"]`, 'Chair’s summary');
+    await p.fill(`[data-bp-note-body="${n - 1}"]`, 'Good month.\n<b>Not bold</b>');
+    assert.match(await p.textContent('#bpStatus'), /Unsaved changes/);
+    for (let i = n - 1; i > 0; i--) await p.click(`[data-bp-move="${i}"][data-delta="-1"]`);
+
+    await p.click('#bpPreviewBtn');
+    const preview = await p.evaluate(() => ({
+      order: [...document.querySelectorAll('#bpPreview .bp-module')].map((s) => s.dataset.module || 'note:' + s.querySelector('.bp-module-title').textContent),
+      noteTag: document.querySelector('#bpPreview .bp-note .bp-note-tag').textContent,
+      noteHtml: document.querySelector('#bpPreview .bp-note-body').innerHTML,
+      powerRows: document.querySelectorAll('#bpPreview [data-module="power"] tbody tr').length,
+      powerTiers: [...document.querySelectorAll('#bpPreview [data-module="power"] tbody tr')].map((tr) => tr.children[2].textContent),
+    }));
+    assert.deepStrictEqual(preview.order, ['note:Chair’s summary', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
+    assert.strictEqual(preview.noteTag, 'Admin commentary', 'manual content is marked as such');
+    assert.strictEqual(preview.noteHtml, 'Good month.<br>&lt;b&gt;Not bold&lt;/b&gt;', 'and is text, not markup');
+    assert.strictEqual(preview.powerRows, 3);
+    assert.deepStrictEqual([...new Set(preview.powerTiers)], ['A']);
+
+    await p.click('#bpSave');
+    await p.waitForFunction(() => document.getElementById('bpMessage').textContent === 'Saved.');
+    const w = await app.run((key) => window.__writes.filter((x) => x.id === key), KEY);
+    assert.strictEqual(w.length, 1, 'one document, for that month');
+    saved = JSON.parse(w[0].doc.value);
+    assert.strictEqual(saved.month, '2026-08');
+    assert.strictEqual(saved.updatedBy, 'Shaun');
+    assert.ok(saved.updatedAt && saved.basis && saved.basis.games > 0 && saved.basis.fingerprint);
+    const on = saved.items.filter((it) => it.kind === 'note' || it.enabled).map((it) => it.kind === 'note' ? 'note' : it.id);
+    assert.deepStrictEqual(on, ['note', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
+    assert.deepStrictEqual(saved.items.find((it) => it.id === 'power').options, { tier: 'A', top: '3' });
+    assert.deepStrictEqual(Object.keys(saved).sort(), ['basis', 'items', 'month', 'updatedAt', 'updatedBy', 'version'], 'the choice and its stamp -- no figures');
+    assert.match(await p.textContent('#bpStatus'), /^Saved .* by Shaun\.$/);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+
+  // A fresh session reads it back exactly.
+  const again = await open({ [KEY]: saved });
+  try {
+    await openSection(again);
+    await again.page.selectOption('#bpMonth', '2026-08');
+    await again.page.waitForSelector('#bpStatus');
+    const r = await again.run(() => ({
+      status: document.getElementById('bpStatus').textContent,
+      drift: !!document.getElementById('bpDrift'),
+      checked: [...document.querySelectorAll('[data-bp-toggle]')].filter((c) => c.checked).map((c) => c.closest('[data-bp-module]').dataset.bpModule),
+      first: document.querySelector('[data-bp-item="0"]').classList.contains('bp-item-note'),
+      title: document.querySelector('[data-bp-note-title="0"]').value,
+      body: document.querySelector('[data-bp-note-body="0"]').value,
+      powerTop: document.querySelector(`[data-bp-module="power"] [data-key="top"]`).value,
+    }));
+    assert.match(r.status, /^Saved .* by Shaun\.$/);
+    assert.deepStrictEqual(r, { status: r.status, drift: false, checked: ['kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves'],
+      first: true, title: 'Chair’s summary', body: 'Good month.\n<b>Not bold</b>', powerTop: '3' });
+    // September was never saved: its own default, untouched by August's pack.
+    await again.page.selectOption('#bpMonth', '2026-09');
+    await again.page.waitForSelector('#bpStatus');
+    assert.match(await again.page.textContent('#bpStatus'), /Not saved yet for September 2026/);
+    assert.deepStrictEqual(again.pageErrors, []);
+  } finally { await again.close(); }
+});
+
+maybe('a saved pack says when the month\'s record has changed since it was saved', async () => {
+  const stale = { version: 1, month: '2026-08', items: [], basis: { games: 3, fingerprint: 'not-this-record' }, updatedAt: '2026-09-01T09:00:00.000Z', updatedBy: 'Shaun' };
+  const app = await open({ [KEY]: stale });
+  try {
+    await openSection(app);
+    await app.page.selectOption('#bpMonth', '2026-08');
+    await app.page.waitForSelector('#bpStatus');
+    const warn = await app.run(() => (document.getElementById('bpDrift') || {}).textContent || '');
+    assert.match(warn, /The record for August 2026 has changed since this pack was saved \(3 games then, \d+ now/);
+  } finally { await app.close(); }
+});
+
+maybe('every figure is the canonical one: the same functions the app\'s own screens show', async () => {
+  const app = await open();
+  try {
+    const r = await app.run(() => {
+      const out = [];
+      const eq = (a, b, what) => { if (JSON.stringify(a) !== JSON.stringify(b)) out.push(`${what}: ${JSON.stringify(a).slice(0, 200)} != ${JSON.stringify(b).slice(0, 200)}`); };
+      const data = (id, month, options) => boardPackModuleData({ id, options: Object.assign(BoardPack.defaultOptions(id), options || {}) }, month);
+      boardPackMonths().forEach((m) => {
+        // Rankings: the podium and Kings of Tiers the Rankings screen draws for that month.
+        activeTab = 'power'; activeSortP = 'rating'; query = ''; activeTier = 'All'; selectedMonth = m; minGames = 5;
+        const podium = computeRankingsPodiumTop3();
+        eq(data('power', m, { top: '3' }).rows.map((x) => ({ name: x.name, rating: x.rating })), podium, `${m} power = podium`);
+        eq(data('kings', m).kings, computeKingsOfTiers(), `${m} kings`);
+
+        // Monthly Information: every list, as the Information tab prints it.
+        summaryMonth = m; summaryMode = 'information'; renderSummary();
+        const tab = document.getElementById('summaryContent').textContent.replace(/\s+/g, ' ');
+        const info = data('information', m);
+        const line = (g, tail) => `${g.rank}. ${g.names.join(' / ')} — ${tail}`;
+        info.mostGames.forEach((g) => { if (!tab.includes(line(g, `${g.value} game`))) out.push(`${m} most games ${g.names}`); });
+        info.highestWinPct.forEach((g) => { if (!tab.includes(line(g, `${g.value}% wins`))) out.push(`${m} win% ${g.names}`); });
+        info.mostWins.forEach((g) => { if (!tab.includes(line(g, ''))) out.push(`${m} wins ${g.names}`); });
+        info.hardestGames.forEach((g) => { if (!tab.includes(line(g, `${g.value}`))) out.push(`${m} hardest ${g.names}`); });
+        eq(data('most_wins', m).groups, info.mostWins, `${m} most wins`);
+        eq(data('best_record', m).groups, info.highestWinPct, `${m} best record`);
+        eq(data('most_games', m).groups, info.mostGames, `${m} most games`);
+
+        // Monthly stories: the Power Rankings stories for the month.
+        const stories = document.createElement('div'); stories.innerHTML = buildMonthlyStoriesHtml(m);
+        const st = stories.textContent.replace(/\s+/g, ' ');
+        const mv = data('rating_movers', m);
+        mv.risers.concat(mv.fallers).forEach((x) => { if (!st.includes(`${x.playerId}${Math.round(x.startRating)} → ${Math.round(x.endRating)}`)) out.push(`${m} mover ${x.playerId}`); });
+        eq(mv.risers.map((x) => x.playerId), MonthlyViews.ratingMovementTable(MONTHLY_VIEWS, m).filter((x) => x.ratingChange > 0).slice(0, 3).map((x) => x.playerId), `${m} risers`);
+        eq(data('performance', m).rows.map((x) => x.playerId), MonthlyViews.performanceTable(MONTHLY_VIEWS, m).slice(0, 3).map((x) => x.playerId), `${m} performance`);
+        eq(data('crossovers', m, { top: 'all' }).rows, MONTHLY_VIEWS.byMonth[m].crossovers, `${m} crossovers`);
+
+        // League, Merit, Race: the tables' own builders, by the tier held on each match's date.
+        const split = Object.values(computeMonthlySummaryStats(m, { splitByTier: true })).filter((s) => s.games > 0);
+        data('league', m).tiers.forEach((t) => {
+          const want = split.filter((s) => (s.segmentTier || '?') === t.tier)
+            .sort((a, b) => b.points - a.points || b.gd - a.gd || a.name.localeCompare(b.name)).map((s) => [s.name, s.points, s.games]);
+          eq(t.rows.map((s) => [s.name, s.points, s.games]), want, `${m} league ${t.tier}`);
+        });
+        const merit = MeritTable.build(meritMatches(m), historicalTierOf, { tierForRow: historicalTierOf }).table;
+        data('merit', m).tiers.forEach((t) => eq(t.rows, merit.filter((x) => x.tier === t.tier && x.played > 0), `${m} merit ${t.tier}`));
+        const race = buildMonthlyRace(m).table;
+        data('race', m, { provisional: 'show' }).tiers.forEach((t) => eq(t.rows, race.filter((x) => x.tier === t.tier), `${m} race ${t.tier}`));
+
+        // Doughnuts, the month's games, tier changes.
+        const dn = computeDoughnutStats(m);
+        eq(data('doughnuts', m, { top: 'all' }).received, topNTied(dn.filter((x) => x.received > 0), 'received', Infinity, true), `${m} doughnuts`);
+        eq(data('overview', m).games, MeaningfulMonth.countInMonth(getAllApprovedMatches(), m), `${m} games`);
+        eq(data('tier_moves', m).rows.map((c) => c.name), V3_TIER_HISTORY.changes.filter((c) => c.effectiveDate.slice(0, 7) === m).map((c) => c.playerId), `${m} tier moves`);
+      });
+      return out;
+    });
+    assert.deepStrictEqual(r, []);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+maybe('a past month is that month: tiers as they were, only that month\'s games', async () => {
+  const app = await open();
+  try {
+    const r = await app.run(() => {
+      const d = (id, m, o) => boardPackModuleData({ id, options: Object.assign(BoardPack.defaultOptions(id), o || {}) }, m);
+      // Fatch was promoted C -> B on 1 August. July's pack files him in C.
+      const current = PLAYERS.find((p) => p.name === 'Fatch').tier;
+      const julyPower = d('power', '2026-07', { top: 'all' }).rows.find((x) => x.name === 'Fatch');
+      const julyC = d('power', '2026-07', { tier: 'C', top: 'all' }).rows.map((x) => x.name);
+      const julyB = d('power', '2026-07', { tier: 'B', top: 'all' }).rows.map((x) => x.name);
+      const julyLeague = d('league', '2026-07').tiers.map((t) => [t.tier, t.rows.some((x) => x.name === 'Fatch')]).filter(([, has]) => has).map(([t]) => t);
+      const augMoves = d('tier_moves', '2026-08').rows;
+      // Month scoping: every league game in each month's pack is a game of that month.
+      const scoped = boardPackMonths().every((m) => d('league', m, { top: 'all' }).tiers.every((t) => t.rows.every((x) => x.matchList.every((g) => g.date.slice(0, 7) === m))));
+      // Form is Last 10 as it stood at the month's close, not today's.
+      const julyForm = d('form', '2026-07', { top: 'all' }).rows;
+      const formEndsInJuly = julyForm.every((x) => x.to <= '2026-07-31');
+      return { current, julyTier: julyPower && julyPower.tier, inC: julyC.includes('Fatch'), inB: julyB.includes('Fatch'), julyLeague,
+        augMoves: augMoves.map((c) => [c.name, c.fromTier, c.toTier]), scoped, formEndsInJuly, formRows: julyForm.length };
+    });
+    assert.deepStrictEqual(r, { current: 'B', julyTier: 'C', inC: true, inB: false, julyLeague: ['C'],
+      augMoves: [['Fatch', 'C', 'B']], scoped: true, formEndsInJuly: true, formRows: r.formRows });
+    assert.ok(r.formRows > 0);
+  } finally { await app.close(); }
+});
+
+maybe('compiling and saving packs changes no rating, table or race', async () => {
+  const app = await open();
+  try {
+    const r = await app.run(async () => {
+      const fingerprint = () => JSON.stringify({
+        players: PLAYERS.map((p) => [p.name, p.rating, p.tier, p.total]),
+        closing: MONTHLY_VIEWS.byMonth,
+        months: getAvailableMonths().map((m) => [computeMonthlySummaryStats(m), MeritTable.build(meritMatches(m), historicalTierOf).table, buildMonthlyRace(m).table]),
+        journey: V3_JOURNEY.length,
+      });
+      const before = fingerprint();
+      const writes = window.__writes.length;
+      isUnlocked = true; adminRole = 'owner'; currentUserName = 'Shaun';
+      for (const m of boardPackMonths()) {
+        let c = BoardPack.defaultConfig(m);
+        c.items.forEach((_, i) => { c = BoardPack.setEnabled(c, i, true); });
+        boardPackHtml(c);
+        await saveBoardPackConfig(c);
+      }
+      const ids = window.__writes.slice(writes).map((w) => w.id);
+      return { same: fingerprint() === before, ids };
+    });
+    assert.strictEqual(r.same, true);
+    assert.deepStrictEqual(r.ids, ['2026-09', '2026-08', '2026-07', '2026-06'].map((m) => `moneypadel_board_pack_${m}`), 'nothing but the packs is written');
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});

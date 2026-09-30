@@ -139,3 +139,60 @@
   margin-top: 6px; line-height: 1.45;
 }
 .ptag-rename-note.is-bad{ color: var(--red); }
+
+/* ===================== MONTHLY BOARD PACK =====================
+   The editor is the ordinary Admin list: one row per module, a checkbox, two
+   small move buttons, and its options once it is switched on. The preview is
+   a plain report -- compact tables and lists -- and the admin's own
+   commentary is visibly marked as such, so nobody mistakes it for a figure. */
+.bp-items{ margin:8px 0 4px; }
+.bp-item{ border-top:1px solid var(--surface-border-soft); padding:8px 0; }
+.bp-item:first-child{ border-top:0; }
+.bp-item-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.bp-check{ display:flex; align-items:center; gap:8px; min-width:0; font-family:'Helvetica Neue', Arial, sans-serif; font-size:12.5px; color:var(--text-soft); }
+.bp-item.is-on .bp-check{ color:var(--text); font-weight:600; }
+.bp-move{ display:flex; gap:4px; flex:none; }
+.bp-move-btn{ min-width:34px; padding:4px 8px; }
+.bp-move-btn[disabled]{ opacity:.35; }
+.bp-opts{ display:flex; flex-wrap:wrap; gap:6px 10px; margin:6px 0 0 26px; }
+.bp-opt{ display:flex; flex-direction:column; gap:2px; font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; color:var(--text-dim); }
+.bp-opt .fg-select{ padding:5px 8px; font-size:12px; min-width:118px; }
+.bp-item-note .fg-select{ margin-top:6px; width:100%; }
+.bp-note-input{ resize:vertical; min-height:64px; }
+.bp-remove{ margin-top:6px; }
+.bp-note-tag{
+  display:inline-block; font-family:'Helvetica Neue', Arial, sans-serif; font-size:9.5px; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--gold-bright);
+  border:1px solid var(--gold-dim); border-radius:999px; padding:1px 7px;
+}
+.bp-actions{ display:flex; gap:8px; }
+.bp-actions .preset-btn{ flex:1; }
+.bp-warn{
+  font-family:'Helvetica Neue', Arial, sans-serif; font-size:11.5px; line-height:1.45; color:var(--text);
+  border:1px solid var(--gold-dim); border-radius:8px; padding:8px 10px; margin:6px 0;
+}
+.bp-pack{ margin-top:10px; border-top:1px solid var(--surface-border-soft); padding-top:8px; }
+.bp-pack-head{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
+.bp-module{ padding:10px 0; border-bottom:1px solid var(--surface-border-soft); }
+.bp-module:last-child{ border-bottom:0; }
+.bp-module-title{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.bp-note .bp-note-tag{ margin-bottom:6px; }
+.bp-note-body{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:12.5px; line-height:1.5; color:var(--text-soft); overflow-wrap:anywhere; }
+.bp-subhead{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--gold-soft); margin:8px 0 3px; }
+.bp-list{ list-style:none; margin:0; padding:0; }
+.bp-list li{ display:flex; align-items:baseline; gap:8px; padding:3px 0; font-family:'Helvetica Neue', Arial, sans-serif; font-size:12.5px; color:var(--text); }
+.bp-rank{ flex:none; min-width:18px; color:var(--text-dim); font-variant-numeric:tabular-nums; }
+.bp-name{ min-width:0; overflow-wrap:anywhere; }
+.bp-val{ margin-left:auto; text-align:right; color:var(--text-soft); font-variant-numeric:tabular-nums; }
+.bp-table{ width:100%; border-collapse:collapse; font-family:'Helvetica Neue', Arial, sans-serif; font-size:12px; font-variant-numeric:tabular-nums; }
+.bp-table th{ text-align:left; font-size:10px; font-weight:600; color:var(--text-dim); padding:3px 4px; border-bottom:1px solid var(--surface-border-soft); }
+.bp-table td{ padding:4px; color:var(--text); border-bottom:1px solid var(--surface-border-soft); }
+.bp-table tr:last-child td{ border-bottom:0; }
+.bp-table th:nth-child(n+3), .bp-table td:nth-child(n+3){ text-align:right; }
+.bp-stats{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+.bp-stat{ text-align:center; }
+.bp-stat-num{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:20px; font-weight:700; color:var(--text); }
+.bp-stat-label{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; color:var(--text-dim); }
+.bp-foot{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; color:var(--text-dim); margin-top:6px; }
+.bp-empty{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:12px; color:var(--text-dim); padding:2px 0; }
+.bp-dim{ color:var(--text-dim); }

@@ -134,6 +134,22 @@ async function saveNorthSouthResults(results){
   } catch(e){ lastStorageError = (e && e.message) ? e.message : String(e); console.error('save north vs south results failed', e); return false; }
 }
 
+// The Admin Monthly Board Pack: one document per month
+// (moneypadel_board_pack_YYYY-MM, domain/boardPack/boardPackConfig.js), read
+// when an admin opens that month's pack rather than at start-up -- no player
+// ever needs it. It holds the admin's choice for the month, never figures.
+async function loadBoardPack(month){
+  try { const v = await fsGet(BoardPack.storageKey(month)); if(v) return JSON.parse(v); } catch(e){ console.error('load board pack failed', e); }
+  return null;
+}
+
+async function saveBoardPack(config){
+  try {
+    await fsSet(BoardPack.storageKey(config.month), JSON.stringify(config));
+    return true;
+  } catch(e){ lastStorageError = (e && e.message) ? e.message : String(e); console.error('save board pack failed', e); return false; }
+}
+
 // Four independent documents. Read together rather than one after another:
 // none of them is an input to any of the others, so reading them in sequence
 // only ever bought four round trips where one would do. See init() for the

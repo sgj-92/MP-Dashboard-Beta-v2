@@ -1195,9 +1195,7 @@ function computeMonthlyStats(month){
 // filed under a tier they did not hold.
 function tierInScope(player){
   if(selectedMonth === 'all') return player.tier;
-  if(!MONTHLY_VIEWS) return null;
-  const row = MonthlyViews.playerMonth(MONTHLY_VIEWS, selectedMonth, player.name);
-  return row ? row.tierAtMonthEnd : null;
+  return tierAtMonthClose(player.name, selectedMonth);
 }
 
 function matchesActiveTier(player){
