@@ -272,3 +272,18 @@ async function publishBoardPackReview(config){
   if(!ok) return { ok: false, config: saved.config, message: storageAvailable() ? `Publish failed (${lastStorageError || 'unknown error'}) — the pack was saved; try publishing again.` : `Publish failed — this page can't reach shared storage.` };
   return { ok: true, config: saved.config, publication };
 }
+
+// Unpublish: the link stops showing the review straight away. The review is
+// kept, marked withdrawn -- nothing is deleted -- and publishing again
+// brings it back as the next revision. Admin only.
+async function unpublishBoardPackReview(month){
+  if(!isUnlocked) return { ok: false, message: 'Only an admin can unpublish the review.' };
+  const current = await loadPublishedReview(month);
+  if(!ShareDeck.isLive(current)) return { ok: false, message: 'This review is not published.' };
+  const viewer = (typeof getCurrentViewer === 'function') ? getCurrentViewer() : null;
+  const by = (currentUserName && currentUserName.trim()) || (viewer && viewer.name) || (adminRole === 'board' ? 'Board' : 'Admin');
+  const publication = ShareDeck.withdrawal(current, { by, at: new Date().toISOString() });
+  const ok = await savePublishedReview(publication);
+  if(!ok) return { ok: false, message: storageAvailable() ? `Unpublish failed (${lastStorageError || 'unknown error'}) — try again.` : `Unpublish failed — this page can't reach shared storage.` };
+  return { ok: true, publication };
+}

@@ -299,7 +299,7 @@ maybe('a published review stays as published: the page shows the stored slides, 
   try {
     const r = await rv.run(() => ({
       games: document.querySelector('[data-slide="overview"] .deck-stat-value').textContent,
-      king: document.querySelector('[data-slide="kings"] .deck-name').textContent,
+      king: document.querySelector('[data-slide="kings"] .deck-king-name').textContent,
     }));
     assert.deepStrictEqual(r, { games: '41', king: 'Then-King' });
   } finally { await rv.close(); }
@@ -333,4 +333,95 @@ maybe('unpublished months, bad links and Admin-only sections', async () => {
     ['power', 'kings', 'rating_movers', 'rank_movers', 'performance', 'crossovers'].forEach((id) => assert.ok(!ids.includes(id), id));
     assert.ok(ids.includes('league') && ids.includes('overview'));
   } finally { await hidden.close(); }
+});
+
+maybe('Kings of Tiers fills its card with the app\'s crowned tiles, whether there are one, two, three or four kings', async () => {
+  const SD = require('../assets/js/domain/boardPack/shareDeck.js');
+  const all = { S: { name: 'Manny', rating: 1802 }, A: { name: 'Kaz', rating: 1741 }, B: { name: 'PDM', rating: 1462 }, C: { name: 'Ant Slicer', rating: 1288 } };
+  for (const tiers of [['A'], ['A', 'B'], ['A', 'B', 'C'], ['S', 'A', 'B', 'C']]) {
+    const kings = Object.assign(Object.fromEntries(tiers.map((t) => [t, all[t]])), { _fieldSize: {} });
+    const deck = SD.build('2026-09', [{ item: { kind: 'module', id: 'kings', enabled: true, options: {} }, data: { minGames: 5, kings } }]);
+    const rv = await openReview('2026-09', { [REVIEW('2026-09')]: SD.publication({ deck, by: 'Shaun', at: '2026-09-30T10:00:00.000Z' }) });
+    try {
+      await rv.page.click('[data-deck-next]');
+      await rv.page.waitForFunction(() => document.querySelector('[data-deck]').dataset.index === '1');
+      await rv.page.waitForFunction(() => [...document.querySelectorAll('.deck-king-crown')].every((i) => i.complete && i.naturalWidth > 0));
+      const r = await rv.run(() => {
+        const body = document.querySelector('[data-slide="kings"] .deck-body').getBoundingClientRect();
+        const grid = document.querySelector('.deck-kings').getBoundingClientRect();
+        const tiles = [...document.querySelectorAll('.deck-king')];
+        return {
+          count: document.querySelector('.deck-kings').dataset.count,
+          tiles: tiles.map((t) => [t.className.match(/deck-king-(\w)\b/)[1], t.querySelector('.deck-king-name').textContent, t.querySelector('.deck-king-tier').textContent, t.querySelector('.deck-king-rating').textContent]),
+          crowns: document.querySelectorAll('.deck-king-crown').length,
+          fills: Math.round((grid.height / body.height) * 100),
+          inside: tiles.every((t) => { const b = t.getBoundingClientRect(); return b.left >= body.left - 0.5 && b.right <= body.right + 0.5 && b.bottom <= body.bottom + 0.5
+            && [...t.children].every((c) => { const cb = c.getBoundingClientRect(); return cb.left >= b.left - 0.5 && cb.right <= b.right + 0.5 && cb.bottom <= b.bottom + 0.5; }); }),
+        };
+      });
+      assert.strictEqual(r.count, String(tiers.length));
+      assert.deepStrictEqual(r.tiles, tiers.map((t) => [t.toLowerCase(), all[t].name, `Tier ${t}`, String(all[t].rating)]));
+      assert.strictEqual(r.crowns, tiers.length, 'every king has the laurel crown');
+      assert.ok(r.fills >= 99, `the tiles fill the card (${r.fills}%)`);
+      assert.ok(r.inside, 'nothing spills out of a tile or the card');
+    } finally { await rv.close(); }
+  }
+});
+
+maybe('a review published before the Kings tiles keeps the look it was published with', async () => {
+  const SD = require('../assets/js/domain/boardPack/shareDeck.js');
+  const deck = SD.build('2026-09', [{ item: { kind: 'module', id: 'kings', enabled: true, options: {} }, data: { minGames: 5, kings: { A: { name: 'Kaz', rating: 1741 }, _fieldSize: {} } } }]);
+  delete deck.slides[0].layout;       // as stored by the first release
+  const rv = await openReview('2026-09', { [REVIEW('2026-09')]: SD.publication({ deck, by: 'Shaun', at: '2026-09-30T10:00:00.000Z' }) });
+  try {
+    const r = await rv.run(() => ({ tiles: document.querySelectorAll('.deck-king').length, rows: [...document.querySelectorAll('[data-slide="kings"] .deck-name')].map((n) => n.textContent) }));
+    assert.deepStrictEqual(r, { tiles: 0, rows: ['Kaz'] });
+  } finally { await rv.close(); }
+});
+
+maybe('unpublish: the link stops showing the review at once, nothing is deleted, and publishing again brings it back', async () => {
+  const app = await openApp();
+  let withdrawn, back;
+  try {
+    await openSection(app, '2026-09');
+    const p = app.page;
+    const docs = () => app.run((key) => window.__writes.filter((w) => w.id === key).map((w) => (w.deleted ? 'DELETED' : JSON.parse(w.doc.value))), REVIEW('2026-09'));
+    assert.strictEqual(await p.$('#bpUnpublish'), null, 'nothing to unpublish yet');
+    await p.click('#bpPublish'); await p.click('#bpPublishConfirm');
+    await p.waitForFunction(() => /revision 1/.test(document.getElementById('bpPublishState').textContent));
+
+    const locked = await app.run(async () => { isUnlocked = false; const r = await unpublishBoardPackReview('2026-09'); isUnlocked = true; return r; });
+    assert.deepStrictEqual([locked.ok, locked.message], [false, 'Only an admin can unpublish the review.']);
+    assert.strictEqual((await docs()).length, 1);
+
+    await p.click('#bpUnpublish');
+    assert.match(await p.textContent('.bp-confirm'), /stops showing it straight away/);
+    await p.click('#bpUnpublishConfirm');
+    await p.waitForFunction(() => /^Unpublished/.test(document.getElementById('bpPublishState').textContent));
+    withdrawn = (await docs()).at(-1);
+    assert.notStrictEqual(withdrawn, 'DELETED');
+    assert.deepStrictEqual([withdrawn.withdrawn, withdrawn.withdrawnBy, withdrawn.revision, withdrawn.deck.slides.length > 0], [true, 'Shaun', 1, true]);
+    assert.strictEqual(await p.$('#bpCopySummary'), null, 'nothing to share while unpublished');
+    assert.strictEqual(await p.textContent('#bpPublish'), 'Publish again');
+    assert.match(await p.textContent('#bpPublishState'), /brings it back as revision 2/);
+
+    await p.click('#bpPublish'); await p.click('#bpPublishConfirm');
+    await p.waitForFunction(() => /revision 2/.test(document.getElementById('bpPublishState').textContent));
+    back = (await docs()).at(-1);
+    assert.deepStrictEqual([back.revision, back.withdrawn, back.firstPublishedAt], [2, undefined, withdrawn.firstPublishedAt]);
+    assert.ok(!(await docs()).includes('DELETED'), 'no document was ever deleted');
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+
+  const gone = await openReview('2026-09', { [REVIEW('2026-09')]: withdrawn });
+  try {
+    const r = await gone.run(() => ({ deck: !!document.querySelector('[data-deck]'), text: document.getElementById('reviewMain').textContent }));
+    assert.strictEqual(r.deck, false);
+    assert.match(r.text, /The September 2026 review is no longer available\./);
+  } finally { await gone.close(); }
+
+  const again = await openReview('2026-09', { [REVIEW('2026-09')]: back });
+  try {
+    assert.ok(await again.run(() => !!document.querySelector('[data-deck]')));
+  } finally { await again.close(); }
 });

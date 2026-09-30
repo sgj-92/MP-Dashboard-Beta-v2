@@ -87,3 +87,23 @@ test('publishing: revisions count up, the first date is kept, and the deck is st
   assert.strictEqual(SD.storageKey(M), 'moneypadel_review_2026-09');
   assert.throws(() => SD.storageKey('all'));
 });
+
+test('Kings of Tiers is drawn as the app\'s crowned tiles, one per tier', () => {
+  const s = SD.slideFor(item('kings'), DATA.kings, M);
+  assert.strictEqual(s.layout, 'kings');
+  assert.deepStrictEqual(s.groups[0].rows.map((r) => r.tier), ['A', 'B']);
+});
+
+test('unpublishing keeps the review, marked withdrawn; publishing again brings it back as the next revision', () => {
+  const deck = SD.build(M, [{ item: item('overview'), data: DATA.overview }]);
+  const first = SD.publication({ deck, by: 'Shaun', at: '2026-10-01T09:00:00Z' });
+  assert.ok(SD.isLive(first));
+  const gone = SD.withdrawal(first, { by: 'Board', at: '2026-10-02T09:00:00Z' });
+  assert.deepStrictEqual([gone.withdrawn, gone.withdrawnBy, gone.withdrawnAt, gone.revision], [true, 'Board', '2026-10-02T09:00:00Z', 1]);
+  assert.strictEqual(gone.deck, deck, 'nothing is deleted');
+  assert.ok(!SD.isLive(gone));
+  const back = SD.publication({ deck, by: 'Shaun', at: '2026-10-03T09:00:00Z', previous: gone });
+  assert.deepStrictEqual([back.revision, back.firstPublishedAt, 'withdrawn' in back], [2, '2026-10-01T09:00:00Z', false]);
+  assert.ok(SD.isLive(back));
+  assert.ok(!SD.isLive(null));
+});

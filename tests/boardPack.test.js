@@ -152,6 +152,12 @@ maybe('every figure is the canonical one: the same functions the app\'s own scre
         const podium = computeRankingsPodiumTop3();
         eq(data('power', m, { top: '3' }).rows.map((x) => ({ name: x.name, rating: x.rating })), podium, `${m} power = podium`);
         eq(data('kings', m).kings, computeKingsOfTiers(), `${m} kings`);
+        // Drawn as the Rankings screen's own Kings of Tiers tiles.
+        const kingsHtml = document.createElement('div');
+        kingsHtml.innerHTML = boardPackRenderers().kings(data('kings', m), m);
+        const k = computeKingsOfTiers();
+        eq([...kingsHtml.querySelectorAll('.kings-card:not(:has(.kings-name-empty))')].map((c) => [c.querySelector('.kings-name').textContent, c.querySelector('.kings-rating').textContent, !!c.querySelector('img.kings-crown[src="assets/rankings/podium-crown-laurel.png"]')]),
+          k ? TIER_ORDER_LIST.filter((t) => k[t]).map((t) => [k[t].name, String(k[t].rating), true]) : [], `${m} kings tiles`);
 
         // Monthly Information: every list, as the Information tab prints it.
         summaryMonth = m; summaryMode = 'information'; renderSummary();

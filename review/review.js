@@ -46,6 +46,9 @@
     if (!storageAvailable()) return empty(label + ' Review', 'This page can’t reach Money Padel right now. Try again in a moment.');
     var got = await Promise.all([loadPublishedReview(month), fsGetJson(STORAGE_KEY_VISIBILITY, {}, 'visibility')]);
     var pub = got[0], vis = got[1] || {};
+    if (pub && pub.withdrawn) {
+      return empty(label + ' Review', 'The ' + label + ' review is no longer available.');
+    }
     if (!pub || !pub.deck || !Array.isArray(pub.deck.slides)) {
       return empty(label + ' Review', 'The ' + label + ' review hasn’t been published yet.');
     }
@@ -53,7 +56,7 @@
     var slides = ShareDeck.visibleSlides(deck, function (k) { return vis[k] !== false; });
     document.title = deck.title + ' · Money Padel';
     document.getElementById('reviewTitle').textContent = deck.title;
-    main.innerHTML = DeckView.html(deck, slides, { brandSrc: '../assets/brand/mp-mark.svg', appLink: appLink });
+    main.innerHTML = DeckView.html(deck, slides, { brandSrc: '../assets/brand/mp-mark.svg', crownSrc: '../assets/rankings/podium-crown-laurel.png', appLink: appLink });
     DeckView.mount(main);
 
     // Share where the phone offers its own share sheet (WhatsApp is on it);

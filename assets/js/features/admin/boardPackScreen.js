@@ -21,6 +21,7 @@ let boardPackPreviewOpen = false;
 let boardPackPreviewMode = 'pack';
 // The published review of each month once read (null: never published).
 let boardPackPublished = {};
+// Which confirmation is open: 'publish', 'unpublish' or none.
 let boardPackPublishConfirm = false;
 let boardPackMessage = '';
 let boardPackNoteSeq = 0;
@@ -106,9 +107,17 @@ function boardPackRenderers(){ return {
 
   kings: (d) => {
     if(!d.kings) return bpEmpty('No tier had a field of two or more.');
-    return bpLinesHtml(TIER_ORDER_LIST.filter(t => d.kings[t] || d.kings._fieldSize[t]).map(t => d.kings[t]
-      ? { rank: t, name: escapeHtml(d.kings[t].name), value: `${d.kings[t].rating}` }
-      : { rank: t, name: 'No crown', value: `field of ${d.kings._fieldSize[t]}` }))
+    // The Rankings screen's own Kings of Tiers tiles: same crown, same
+    // tier metals, same classes (screens/rankings.css).
+    const tiles = TIER_ORDER_LIST.filter(t => d.kings[t] || d.kings._fieldSize[t]).map(t => {
+      const k = d.kings[t];
+      return `<div class="kings-card bp-king kings-tier-${t.toLowerCase()}">
+        <div class="kings-crown-wrap"><img class="kings-crown" src="assets/rankings/podium-crown-laurel.png" alt="" onerror="this.style.display='none'"></div>
+        ${k ? `<div class="kings-name">${escapeHtml(k.name)}</div><div class="kings-tier-label">Tier ${t}</div><div class="kings-rating">${k.rating}</div>`
+            : `<div class="kings-name kings-name-empty">—</div><div class="kings-tier-label">Tier ${t}</div><div class="kings-rating bp-king-none">${d.kings._fieldSize[t] === 1 ? 'only one qualified' : 'nobody qualified'}</div>`}
+      </div>`;
+    });
+    return `<div class="kings-row">${tiles.join('')}</div>`
       + `<div class="bp-foot">${d.minGames}+ games in the month; a tier needs two qualifiers to crown a king.</div>`;
   },
 
@@ -232,15 +241,19 @@ function boardPackWhen(iso){
   return iso ? new Date(iso).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
 }
 
-// Draft -> Preview -> Publish. What the review link shows changes only here,
-// on an explicit Publish; editing the pack never touches it.
+// Draft -> Preview -> Publish (-> Unpublish). What the review link shows
+// changes only here, on an explicit Publish or Unpublish; editing the pack
+// never touches it.
 function boardPackPublishHtml(liveDeck){
   const month = boardPackMonth;
   const pub = boardPackPublished[month];
-  const label = monthLabel(month);
+  const live = ShareDeck.isLive(pub);
+  const label = escapeHtml(monthLabel(month));
   let state;
   if(!pub){
-    state = `<b>Draft.</b> The ${escapeHtml(label)} review is not published: its link shows nothing until you publish.`;
+    state = `<b>Draft.</b> The ${label} review is not published: its link shows nothing until you publish.`;
+  } else if(!live){
+    state = `<b>Unpublished</b> · ${escapeHtml(boardPackWhen(pub.withdrawnAt))}${pub.withdrawnBy ? ` by ${escapeHtml(pub.withdrawnBy)}` : ''}. The link now says the ${label} review is no longer available. Publishing again brings it back as revision ${pub.revision + 1}.`;
   } else {
     const same = ShareDeck.sameDeck(pub.deck, liveDeck);
     state = `<b>Published</b> · revision ${pub.revision} · ${escapeHtml(boardPackWhen(pub.publishedAt))}${pub.publishedBy ? ` by ${escapeHtml(pub.publishedBy)}` : ''}. `
@@ -250,18 +263,29 @@ function boardPackPublishHtml(liveDeck){
   let html = `<div class="bp-publish" id="bpPublishBlock">
     <div class="section-heading" style="margin-top:14px;">Players' Monthly Review</div>
     <div class="section-sub" id="bpPublishState">${state}</div>`;
-  if(boardPackPublishConfirm){
+  if(boardPackPublishConfirm === 'publish'){
     html += `<div class="bp-confirm" role="group" aria-label="Confirm publishing">
-      <div class="section-sub">${pub ? 'Republish' : 'Publish'} the ${escapeHtml(label)} review? Anyone with the link can open it, without unlocking. What it shows is fixed until you publish again.</div>
+      <div class="section-sub">${live ? 'Republish' : 'Publish'} the ${label} review? Anyone with the link can open it, without unlocking. What it shows is fixed until you publish again.</div>
       <div class="fg-row bp-actions">
-        <button type="button" class="preset-btn active" id="bpPublishConfirm">${pub ? 'Republish now' : 'Publish now'}</button>
+        <button type="button" class="preset-btn active" id="bpPublishConfirm">${live ? 'Republish now' : 'Publish now'}</button>
+        <button type="button" class="preset-btn" id="bpPublishCancel">Cancel</button>
+      </div>
+    </div>`;
+  } else if(boardPackPublishConfirm === 'unpublish'){
+    html += `<div class="bp-confirm" role="group" aria-label="Confirm unpublishing">
+      <div class="section-sub">Unpublish the ${label} review? The link stops showing it straight away and says it is no longer available. Messages already sent in WhatsApp keep their text. Nothing is deleted: you can publish again at any time.</div>
+      <div class="fg-row bp-actions">
+        <button type="button" class="preset-btn active" id="bpUnpublishConfirm">Unpublish now</button>
         <button type="button" class="preset-btn" id="bpPublishCancel">Cancel</button>
       </div>
     </div>`;
   } else {
-    html += `<div class="fg-row bp-actions"><button type="button" class="preset-btn" id="bpPublish">${pub ? 'Republish review' : 'Publish review'}</button></div>`;
+    html += `<div class="fg-row bp-actions">
+      <button type="button" class="preset-btn" id="bpPublish">${live ? 'Republish review' : pub ? 'Publish again' : 'Publish review'}</button>
+      ${live ? `<button type="button" class="preset-btn" id="bpUnpublish">Unpublish</button>` : ''}
+    </div>`;
   }
-  if(pub){
+  if(live){
     const url = boardPackReviewUrl(month);
     html += `<div class="bp-share-row">
       <a class="preset-btn" id="bpOpenReview" href="${escapeHtml(url)}" target="_blank" rel="noopener">Open review</a>
@@ -279,9 +303,9 @@ function boardPackDeckPreviewHtml(liveDeck){
   const shown = ShareDeck.visibleSlides(liveDeck, boardPackPlayerCanSee);
   const hidden = liveDeck.slides.filter(sl => !shown.includes(sl));
   const pub = boardPackPublished[boardPackMonth];
-  const when = !pub ? 'will see when you publish' : ShareDeck.sameDeck(pub.deck, liveDeck) ? 'see on the review link' : 'will see once you republish';
+  const when = !ShareDeck.isLive(pub) ? 'will see when you publish' : ShareDeck.sameDeck(pub.deck, liveDeck) ? 'see on the review link' : 'will see once you republish';
   return `<div class="section-sub bp-deck-note">What players ${when}: one card per selected module, in the pack's order. Empty modules are left out.${hidden.length ? ` Left out because the section is Admin only: ${hidden.map(sl => escapeHtml(sl.title)).join(', ')}.` : ''}</div>
-    <div class="bp-deck-frame" id="bpDeckFrame">${DeckView.html(liveDeck, shown, { brandSrc: 'assets/brand/mp-mark.svg', appLink: '' })}</div>`;
+    <div class="bp-deck-frame" id="bpDeckFrame">${DeckView.html(liveDeck, shown, { brandSrc: 'assets/brand/mp-mark.svg', crownSrc: 'assets/rankings/podium-crown-laurel.png', appLink: '' })}</div>`;
 }
 
 function boardPackOptionsHtml(it, index){
@@ -354,7 +378,7 @@ function buildBoardPackSectionHtml(){
     <div id="bpMessage" class="section-sub">${escapeHtml(boardPackMessage)}</div>`;
   // Built once per drawing: the publish state compares it with what is
   // published, and the Share Deck preview draws it.
-  const liveDeck = (boardPackPublished[boardPackMonth] || (boardPackPreviewOpen && boardPackPreviewMode === 'deck')) ? boardPackDeck(boardPackDraft) : null;
+  const liveDeck = (ShareDeck.isLive(boardPackPublished[boardPackMonth]) || (boardPackPreviewOpen && boardPackPreviewMode === 'deck')) ? boardPackDeck(boardPackDraft) : null;
   html += boardPackPublishHtml(liveDeck) + `</div>`;
   if(boardPackPreviewOpen){
     html += `<div class="fg-toggle bp-preview-mode" role="group" aria-label="Preview" style="margin:12px 0 4px;">
@@ -413,7 +437,18 @@ function wireBoardPackSection(){
   const month = boardPackMonth;
   const say = (text) => { boardPackMessage = text; const m = document.getElementById('bpMessage'); if(m) m.textContent = text; };
   const publish = document.getElementById('bpPublish');
-  if(publish) publish.onclick = () => { boardPackPublishConfirm = true; renderManage(); };
+  if(publish) publish.onclick = () => { boardPackPublishConfirm = 'publish'; renderManage(); };
+  const unpublish = document.getElementById('bpUnpublish');
+  if(unpublish) unpublish.onclick = () => { boardPackPublishConfirm = 'unpublish'; renderManage(); };
+  const unconfirm = document.getElementById('bpUnpublishConfirm');
+  if(unconfirm) unconfirm.onclick = async () => {
+    unconfirm.disabled = true;
+    const res = await unpublishBoardPackReview(month);
+    boardPackPublishConfirm = false;
+    if(res.ok) boardPackPublished[month] = res.publication;
+    boardPackMessage = res.ok ? 'Unpublished — the link no longer shows the review.' : res.message;
+    renderManage();
+  };
   const cancel = document.getElementById('bpPublishCancel');
   if(cancel) cancel.onclick = () => { boardPackPublishConfirm = false; renderManage(); };
   const confirm = document.getElementById('bpPublishConfirm');

@@ -205,3 +205,7 @@
 .bp-share-row .preset-btn{ flex:1 1 auto; text-align:center; text-decoration:none; }
 .bp-review-url{ font-size:10.5px; overflow-wrap:anywhere; margin-top:4px; }
 .bp-deck-note{ margin-top:6px; }
+/* The pack's Kings of Tiers is the Rankings panel's own tiles; they are not
+   links here. */
+.bp-module .kings-card{ cursor:default; }
+.bp-king-none{ font-size:10px; font-weight:400; color:var(--text-dim); }

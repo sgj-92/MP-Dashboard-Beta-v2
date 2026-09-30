@@ -126,10 +126,12 @@
 
     kings: (d) => {
       if (!d.kings) return null;
-      const rows = ['S', 'A', 'B', 'C'].filter((t) => d.kings[t]).map((t) => ({ label: `Tier ${t}`, name: d.kings[t].name, value: String(d.kings[t].rating) }));
+      const rows = ['S', 'A', 'B', 'C'].filter((t) => d.kings[t]).map((t) => ({ tier: t, label: `Tier ${t}`, name: d.kings[t].name, value: String(d.kings[t].rating) }));
       if (!rows.length) return null;
+      // Drawn as the app's Kings of Tiers: a crowned tile per tier, sized to
+      // fill the card whether there are two kings or four.
       return {
-        eyebrow: 'Kings of Tiers', title: 'Top of each tier', groups: [{ rows }],
+        layout: 'kings', eyebrow: 'Kings of Tiers', title: 'Top of each tier', groups: [{ rows }],
         foot: 'Highest Power Rating in each tier at month end',
         summary: rows.map((r) => `${r.label} King: ${r.name}`),
       };
@@ -297,6 +299,15 @@
     };
   }
 
+  // Unpublishing: the review stays stored, marked withdrawn, so the link
+  // stops showing it at once and publishing again brings it back as the
+  // next revision. Nothing is deleted.
+  function withdrawal(previous, { by, at }) {
+    return Object.assign({}, previous, { withdrawn: true, withdrawnAt: at, withdrawnBy: by || null });
+  }
+
+  const isLive = (pub) => !!(pub && pub.deck && !pub.withdrawn);
+
   // Same slides, same order, same words: nothing to republish.
   function sameDeck(a, b) {
     return !!a && !!b && JSON.stringify(a.slides) === JSON.stringify(b.slides);
@@ -310,5 +321,5 @@
     return lines.join('\n');
   }
 
-  return { VERSION, ROWS, NOTE_BODY_MAX, SECTION, monthLabel, storageKey, slideFor, build, visibleSlides, publication, sameDeck, summaryText };
+  return { VERSION, ROWS, NOTE_BODY_MAX, SECTION, monthLabel, storageKey, slideFor, build, visibleSlides, publication, withdrawal, isLive, sameDeck, summaryText };
 });

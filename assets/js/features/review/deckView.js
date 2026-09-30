@@ -44,7 +44,25 @@
     </li>`;
   }
 
-  function bodyHtml(s) {
+  // Kings of Tiers as the app draws them: a crowned tile per tier, the
+  // crown tinted to the tier's metal. The tiles share the card between them
+  // -- two side by side, three with the top tier across the top, four in a
+  // square -- so the card is full whatever the month's count.
+  function kingsHtml(s, o) {
+    const rows = s.groups[0].rows;
+    return `<div class="deck-kings" data-count="${rows.length}">${rows.map((r) => {
+      const tier = String(r.tier || String(r.label || '').replace(/^Tier\s*/, '')).toLowerCase();
+      return `<div class="deck-king deck-king-${esc(tier)}">
+        ${o.crownSrc ? `<img class="deck-king-crown" src="${esc(o.crownSrc)}" alt="">` : ''}
+        <div class="deck-king-name">${esc(r.name)}</div>
+        <div class="deck-king-tier">${esc(r.label)}</div>
+        <div class="deck-king-rating">${esc(r.value)}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  function bodyHtml(s, o) {
+    if (s.layout === 'kings' && s.groups && s.groups[0] && s.groups[0].rows.length) return kingsHtml(s, o);
     if (s.kind === 'note') {
       return `<div class="deck-note">${esc(s.body).split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
     }
@@ -65,7 +83,7 @@
         ${brandHtml(o, month)}
         <div class="deck-eyebrow">${esc(s.eyebrow)}</div>
         <h2 class="deck-title">${esc(s.title)}</h2>
-        <div class="deck-body">${bodyHtml(s)}</div>
+        <div class="deck-body">${bodyHtml(s, o)}</div>
         ${s.foot ? `<footer class="deck-foot">${esc(s.foot)}</footer>` : ''}
       </article>
     </section>`;
@@ -97,7 +115,7 @@
   }
 
   // deck: a Share Deck; slides: the ones to show (already filtered for who is
-  // looking). Options: brandSrc, appLink.
+  // looking). Options: brandSrc, crownSrc, appLink.
   function html(deck, slides, o) {
     const opts = o || {};
     const month = deck.title.replace(/ Review$/, '');

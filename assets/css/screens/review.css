@@ -158,3 +158,51 @@ body.review-page{
 .deck-bar{ width:100%; height:3px; border-radius:2px; background:rgba(241,233,216,0.14); overflow:hidden; }
 .deck-bar span{ display:block; height:100%; width:0; background:var(--gold-bright); transition:width .25s ease; }
 @media (prefers-reduced-motion: reduce){ .deck-bar span{ transition:none; } }
+
+/* ---- Kings of Tiers: the app's crowned tiles, filling the card --------- */
+.deck-kings{
+  flex:1 1 auto; min-height:0; display:grid; gap:10px; gap:2.8cqw;
+  grid-template-columns:1fr 1fr; grid-auto-rows:minmax(0, 1fr);
+}
+.deck-kings[data-count="1"]{ grid-template-columns:1fr; }
+.deck-kings[data-count="3"] .deck-king:first-child{ grid-column:1 / -1; }
+.deck-king{
+  position:relative; overflow:hidden; min-width:0; min-height:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  padding:10px 6px; padding:2.8cqw 1.6cqw;
+  border-radius:16px; border:1px solid var(--surface-border);
+  background:var(--surface-2);
+}
+.deck-king::before{
+  content:''; position:absolute; inset:0; pointer-events:none; opacity:.7;
+  background:radial-gradient(ellipse 90% 60% at 50% 0%, var(--kings-glow, transparent) 0%, transparent 75%);
+}
+.deck-king-a{ --kings-glow:rgba(245,213,118,0.18); --king-metal:var(--kings-a-bright); }
+.deck-king-b{ --kings-glow:rgba(217,204,163,0.15); --king-metal:var(--kings-b-bright); }
+.deck-king-c{ --kings-glow:rgba(201,154,99,0.17); --king-metal:var(--kings-c-bright); }
+.deck-king-s{ --kings-glow:rgba(240,223,160,0.18); --king-metal:var(--tier-s-text); }
+.deck-king > *{ position:relative; z-index:1; }
+.deck-king-crown{ width:62%; max-width:120px; max-width:32cqw; height:auto; aspect-ratio:2 / 1; object-fit:contain; margin-bottom:6px; margin-bottom:1.8cqw; }
+/* The same crown for every tier; a filter shifts its metal, as in the app. */
+.deck-king-b .deck-king-crown{ filter:saturate(0.45) brightness(1.1); }
+.deck-king-c .deck-king-crown{ filter:sepia(0.35) saturate(0.85) brightness(0.8) hue-rotate(-8deg); }
+.deck-king-name{
+  max-width:100%; font-family:var(--font-prestige); color:var(--text); line-height:1.1;
+  font-size:24px; font-size:6.6cqw; overflow-wrap:anywhere;
+}
+.deck-king-tier{ margin-top:4px; margin-top:1.1cqw; font-size:11px; font-size:3cqw; letter-spacing:.1em; text-transform:uppercase; color:var(--king-metal, var(--gold-bright)); }
+.deck-king-rating{ margin-top:4px; margin-top:1.1cqw; font-weight:700; font-variant-numeric:tabular-nums; font-size:26px; font-size:7.4cqw; color:var(--king-metal, var(--gold-bright)); }
+/* One king, or the top tier's across the top of three: a little grander. */
+.deck-kings[data-count="1"] .deck-king-name, .deck-kings[data-count="3"] .deck-king:first-child .deck-king-name{ font-size:30px; font-size:8.4cqw; }
+.deck-kings[data-count="1"] .deck-king-rating, .deck-kings[data-count="3"] .deck-king:first-child .deck-king-rating{ font-size:32px; font-size:9cqw; }
+.deck-kings[data-count="3"] .deck-king-crown, .deck-kings[data-count="4"] .deck-king-crown{ width:46%; }
+.deck-kings[data-count="3"] .deck-king:first-child .deck-king-crown{ width:34%; }
+/* Fewer kings, bigger tiles: the crown and type grow to fill them. */
+.deck-kings[data-count="2"] .deck-king-crown{ width:84%; max-width:none; }
+.deck-kings[data-count="2"] .deck-king-name{ font-size:30px; font-size:8.4cqw; }
+.deck-kings[data-count="2"] .deck-king-tier{ font-size:12px; font-size:3.4cqw; }
+.deck-kings[data-count="2"] .deck-king-rating{ font-size:34px; font-size:9.6cqw; }
+.deck-kings[data-count="1"] .deck-king-crown{ width:52%; max-width:none; }
+.deck-kings[data-count="1"] .deck-king-name{ font-size:40px; font-size:11cqw; }
+.deck-kings[data-count="1"] .deck-king-tier{ font-size:13px; font-size:3.6cqw; }
+.deck-kings[data-count="1"] .deck-king-rating{ font-size:44px; font-size:12cqw; }
