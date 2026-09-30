@@ -17,7 +17,7 @@ const NOW = '2026-09-28T12:00:00.000Z';
 const at = (d) => new Date(Date.parse(T0) + d * 864e5).toISOString();
 
 function load(requests) {
-  const ctx = vm.createContext({ FixtureFlow: FF, gameRequestsState: requests });
+  const ctx = vm.createContext({ FixtureFlow: FF, PlayView: require('../assets/js/domain/fixtures/playView.js'), gameRequestsState: requests });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets/js/features/play/fixturesData.js'), 'utf8')
     + '\n;this.api = { playActionCount, requestLists };', ctx);
   return ctx.api;

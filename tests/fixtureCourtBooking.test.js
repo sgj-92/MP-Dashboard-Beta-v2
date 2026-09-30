@@ -99,11 +99,15 @@ test('an admin can record that a player backed out; the booking, details and oth
   assert.deepStrictEqual(r.history.at(-1), { at: T1, by: 'Shaun', action: 'backed-out', player: 'Osh' });
 });
 
-test('nobody but an admin can change players, sides, date, time, venue, answers or the booking', () => {
+// DQ6 (Shaun, 30 Sep) opened one door: a player in the game may record that
+// the court IS booked (below). Unbooking, and booking by anyone outside the
+// game, stay the admin's.
+test('nobody but an admin can change players, sides, date, time, venue, answers or take a booking back', () => {
   const r = agreedFour();
   const before = JSON.stringify(r);
   assert.strictEqual(FF.adminEdit(r, { seats: ['Erf', 'Eli', 'Tom', 'Stormz'], date: '2026-10-01', venue: 'X' }, PLAYER).reason, 'not-admin');
-  assert.strictEqual(FF.setCourtBooking(r, { ...PLAYER, booked: true }).reason, 'not-admin');
+  assert.strictEqual(FF.setCourtBooking(r, { ...PLAYER, booked: false }).reason, 'not-admin', 'a player cannot un-book');
+  assert.strictEqual(FF.setCourtBooking(r, { isAdmin: false, by: 'Tom', at: T1, booked: true }).reason, 'not-participant', 'nor book a game they are not in');
   assert.strictEqual(FF.setAvailability(r, 'Eli', 'waiting', PLAYER).reason, 'not-admin');
   assert.strictEqual(FF.replacePlayer(r, 'Osh', 'Tom', PLAYER).reason, 'not-admin');
   assert.strictEqual(FF.adminRemove(r, { isAdmin: false, confirmed: true }).reason, 'not-admin');
@@ -527,4 +531,49 @@ maybe('D3 still asks for a Called Out game, and nothing about a fixture moves a 
   const ratingPart = (p) => ({ matchId: p.plan.matchId, moved: p.plan.moved, docs: p.plan.docs });
   assert.deepStrictEqual(ratingPart(called), ratingPart(none), 'a Called Out game changes nothing about how a result is rated');
   assert.deepStrictEqual(ratingPart(booked), ratingPart(none), 'nor does an Upcoming one');
+});
+
+// --- DQ6: a player in the game records the court booking ----------------------
+
+test('DQ6: a player in the game can record the court as booked -- attributed to them, and the game is Upcoming', () => {
+  const r = agreedFour();
+  const res = FF.setCourtBooking(r, { ...PLAYER, booked: true });
+  assert.deepStrictEqual(res, { ok: true, changed: true });
+  assert.strictEqual(r.courtBookingMade, true);
+  assert.strictEqual(FF.stage(r), FF.STAGE.UPCOMING);
+  assert.deepStrictEqual(r.history.at(-1), { at: T1, by: 'Osh', action: 'court-booked', byPlayer: true });
+  // Their name as the game stores it, whatever case they typed.
+  const r2 = agreedFour();
+  FF.setCourtBooking(r2, { isAdmin: false, by: 'osh', at: T1, booked: true });
+  assert.strictEqual(r2.history.at(-1).by, 'Osh');
+});
+
+test('DQ6: only an admin takes a player\'s booking back', () => {
+  const r = agreedFour();
+  FF.setCourtBooking(r, { ...PLAYER, booked: true });
+  assert.strictEqual(FF.setCourtBooking(r, { isAdmin: false, by: 'Erf', at: T1, booked: false }).reason, 'not-admin');
+  assert.deepStrictEqual(FF.setCourtBooking(r, { ...ADMIN, booked: false }), { ok: true, changed: true });
+  assert.strictEqual(FF.stage(r), FF.STAGE.CALLED_OUT);
+  assert.strictEqual(r.history.at(-1).by, 'Shaun');
+});
+
+test('DQ6: not before all four are in, not after backing out, not on an archived call-out', () => {
+  const pending = FF.createRequest({ players: ['Erf', 'Eli', 'Osh', 'Stormz'], requestedBy: 'Erf', at: T0, id: 'p' });
+  assert.strictEqual(FF.setCourtBooking(pending, { ...PLAYER, booked: true }).reason, 'not-agreed');
+  const out = agreedFour();
+  FF.respond(out, 'Osh', 'cant', T1);
+  assert.strictEqual(FF.setCourtBooking(out, { ...PLAYER, booked: true }).reason, 'backed-out');
+  const old = agreedFour();
+  const later = new Date(Date.parse(T0) + (FF.ARCHIVE_DAYS + 1) * 864e5).toISOString();
+  assert.ok(FF.archiveInfo(old, later), 'archived after the window');
+  assert.strictEqual(FF.setCourtBooking(old, { isAdmin: false, by: 'Osh', at: later, booked: true }).reason, 'archived');
+  for (const r of [pending, out, old]) assert.notStrictEqual(r.courtBookingMade, true);
+});
+
+test('DQ9: a plain request can carry an optional time and venue', () => {
+  const r = FF.createRequest({ players: ['Erf', 'Eli', 'Osh', 'Stormz'], requestedBy: 'Erf', at: T0, id: 'tv',
+    preferredDate: '2026-10-06', preferredTime: '20:00', location: '  Rocket Padel ' });
+  assert.deepStrictEqual(details(r), { date: '2026-10-06', time: '20:00', venue: 'Rocket Padel' });
+  const bare = FF.createRequest({ players: ['Erf', 'Eli', 'Osh', 'Stormz'], requestedBy: 'Erf', at: T0, id: 'b' });
+  assert.ok(!('preferredTime' in bare) && !('location' in bare), 'nothing invented when not given');
 });
