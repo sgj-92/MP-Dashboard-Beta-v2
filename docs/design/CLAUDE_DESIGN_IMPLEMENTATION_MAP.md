@@ -96,7 +96,14 @@ decisions RESOLVED*):
 - **DQ31, DQ32, DQ33:** as recommended in 0.3.
 - **The Kings / podium basis is Power Rating,** as the code has it.
 
-**Still open, all for Shaun:** DQ1, DQ6, DQ7, DQ8, DQ9, DQ10, DQ15, DQ26.
+**Decided by Shaun, 30 Sep, as recommended** (before Phase 2):
+- **DQ6:** a player in the game may record "Court booked". It is
+  attributed, and reversible by an Admin only.
+- **DQ7:** replacement stays Admin-only.
+- **DQ8:** no player "Change plan".
+- **DQ9:** a plain request may carry an optional time and venue.
+
+**Still open, all for Shaun:** DQ1, DQ10, DQ15, DQ26.
 
 These are listed in Section 6.
 
@@ -1377,7 +1384,7 @@ are kept until the new ones are accepted.
 |---|---|---|---|
 | **0 — Foundations** | Tokens in `tokens.css`; fonts if chosen; the primitive CSS in `components.css`; a primitives reference page in `docs/design/`. **No visible change.** | Every later phase uses these. | **DONE `cd844f6`** on `ux/player-reset-v2` (30 Sep) |
 | **1 — Shell** | Five tabs (More → Me). Me as the home of the former More destinations and the viewer header. Section entry points: Rankings **Power \| This Month** with a More tables list; Play **My Games \| Club** with Arrange a Game; Players Directory. Play badge (count only). System Back. `#tabrow` stays the router. | Every other phase needs the entry points; high routing risk, so do it alone. | **DONE `0772379`** on `ux/player-reset-v2` (30 Sep). Play and Players keep their existing entries until Phases 2 and 5 |
-| **2 — Play** | `playView.js` view-model; My Games (lifecycle sections, Challenges); Club (counters); **Arrange a Game** (find / request / paste a list, Match Ideas); game detail; Admin Manage sheet; booking sheet; toast; Played Games & Results entry. | Fixes the audit's worst finding, and builds the view-model Home needs. | DQ6, DQ7, DQ8, DQ9 (Shaun) |
+| **2 — Play** | `playView.js` view-model; My Games (lifecycle sections, Challenges); Club (counters); **Arrange a Game** (find / request / paste a list, Match Ideas); game detail; Admin Manage sheet; booking sheet; toast; Played Games & Results entry. | Fixes the audit's worst finding, and builds the view-model Home needs. | **DONE `6291cdc`** on `ux/player-reset-v2` (30 Sep); rules on `main` (`7d70cc0`, `86beb59`) |
 | **3a — Home hierarchy** | The IA order with a **plain, text-first hero**: This Month position → Needs You → Next Game → Last Time Out → light Around the Club; the demoted standing line; "Why it moved" sheet. | Depends on Phase 2's view-model. Gets the hierarchy right before the visuals. | DQ1 (Shaun) |
 | **3b — Home hero visual** | The interactive visual treatment of the same hero data. | DQ19 allows staging. Separable and reversible. | CGPT/Shaun visual pick |
 | **4 — Rankings** | Power (current, compact podium, Kings secondary, one secondary control); This Month (League · Merit · Race); More tables (W/L, Last 10, monthly stories and Monthly Performance, Past months, North vs South, Insights, Doughnuts); methodology disclosure. | The most test-pinned area; best once the primitives are proven. | — |
@@ -1402,7 +1409,8 @@ Each brief is written out in full when it is approved.
     the app from inside it;
   - no screen's content changes. Only its entry point does, so tests on
     screen content pass unchanged.
-- **Phase 2 — acceptance:**
+- **Phase 2 — acceptance (met, `6291cdc`).** Find a Game, Paste a list and Challenges hand off to their existing screens (their restyle is Phase 6). The previous Upcoming and Requests stay reachable from Club until Shaun accepts the new lists.
+- **Phase 2 — acceptance, as briefed:**
   - My Games shows Needs You, Upcoming, Called Out, Waiting on others and
     Archived as sections of one list;
   - Arrange a Game reaches all three modes;
