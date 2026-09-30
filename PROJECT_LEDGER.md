@@ -177,6 +177,17 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 - **New idea to capture:** a **Video Highlights & Moments** feature. Store video externally (not in GitHub) and keep Money Padel references/metadata that can link a clip/moment to a canonical match and to players. Candidate metadata includes match ID, video/storage URL, timestamp, title/description, participating player IDs, featured player IDs, tags and creator. Potential surfaces include Match Detail, Player Profile, Me / My Highlights, Around the Club and future season/year recap. This is an idea only; storage provider, schema and UX are not approved.
 - Other historical brainstorms may be recovered into the backlog, but CCode must distinguish **already-approved features**, **parked/open Ledger questions**, and **pure ideas** rather than duplicating or changing their status.
 - When implemented, the backlog should have a short usage note explaining how Shaun/CGPT/CCode add ideas and when an item is promoted into the Ledger.
+- **DONE (`8b7657b`, CCode):** [`docs/product/IDEA_BACKLOG.md`](./docs/product/IDEA_BACKLOG.md) and `IDEA_TEMPLATE.md`.
+  - **Section 1, ideas only:**
+    - IB-01, Video Highlights & Moments;
+    - IB-02, a season or year recap, which was only mentioned in passing;
+    - IB-03, an attendance record, from the design mock and not requested.
+  - **Section 2:** pointers to items already parked or open here (match
+    sharing, the rating-model backlog, live updates, the service worker,
+    DQ6/7/8/10, the design sync, the Predict render). Their status is not
+    copied or changed.
+  - **One question for Shaun sits in IB-01:** consent and removal for clips
+    of identifiable players. It is privacy, so it is his.
 
 **Player Experience Reset — IA / Keep-Simplify-Move-Merge-Hide-Remove review COMPLETE (Shaun/CGPT, 30 Sep).**
 - **Core rule:** each primary tab answers one obvious player question; secondary analysis, settings and Admin controls move deeper/contextually rather than competing at the top level.
@@ -3014,6 +3025,32 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Ledger CCode: idea backlog; map follows the presentation decisions)
+
+Reconciled Shaun/CGPT's `1c824cc` (the backlog convention) and `90e240a`
+(the presentation decisions).
+- **Phase 0 is unblocked but not yet given its go-ahead,** so CCode did not
+  start it (NEXT).
+- **The one approved, unblocked CCode item was the backlog.**
+
+**`8b7657b`, documentation only:**
+- **`docs/product/IDEA_BACKLOG.md` + `IDEA_TEMPLATE.md`:** usage note,
+  statuses, and the promotion rule that an entry never authorises work and
+  CCode never marks one Approved.
+- **The backlog's contents:** three genuine ideas (IB-01, IB-02, IB-03)
+  and a pointer table to Ledger items, which keep their Ledger status.
+- **Kept out:** approved or delivered features (the Monthly Race trial,
+  the redesign phases).
+- **The design map:** marks DQ2, DQ5, DQ11, DQ20, DQ24, DQ29, DQ30 and
+  DQ31–33, and the Kings basis, as resolved.
+  - Only Shaun's DQ1, DQ6, DQ7, DQ8, DQ9, DQ10, DQ15 and DQ26 remain open.
+  - Phases 0, 1 and 4 now show no open blocker.
+
+**No code changed; 762 / 762.** `ux/player-reset-v2` is fast-forwarded to
+`main` again.
+
+Baton → Shaun.
 
 ### CCode — 30 Sep 2026 (redesign branch created; DQ3 confirmed)
 
@@ -6985,6 +7022,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `8b7657b` | Product idea backlog (`docs/product/`). It holds three ideas (Video Highlights & Moments, season recap, attendance record) and pointers to the Ledger's parked and open items, with usage and promotion rules. The design map now marks the 30 Sep presentation decisions resolved. Documentation only. |
 | `cf72a14` | Design map reconciled to the approved IA. It adds Section 0 (target IA per tab, the DQs settled, new DQ31–33, and the DQ3 confirmation for Shaun), IA notes on every area, IA homes for every current destination, and re-cut phases with acceptance briefs (Arrange a Game in Phase 2; Home 3a/3b). Documentation only. |
 | `f98b99e` | Vercel is the primary host (Shaun). Comments in `_config.yml`, `scripts/stamp-build.js` and the split document now say that Pages is compatibility only and that the Vercel stamp is canonical. No behaviour change. |
 | `8e1c91e` | Desktop phone preview at `/preview`. The real app sits in a same-origin iframe at 375 / 390 (default) / 412, with rotate, refresh and open full size. It scales to fit without changing the app's viewport, hides desktop scrollbars inside the frame, and shows a link instead of a frame on a phone. It works at `/` and below a repo path; `vercel.json` gains a `/preview` redirect. 10 tests; 762/762. |
@@ -7074,6 +7112,21 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Sep (later): the idea backlog is created (`8b7657b`), and the map
+records the presentation decisions. Baton → Shaun.**
+- **The one decision that starts the redesign:** a go-ahead for **Phase 0**,
+  foundations on `ux/player-reset-v2`:
+  - tokens, with champagne gold and a distinct Booked hue;
+  - Instrument Serif + Inter, self-hosted;
+  - the primitive CSS and a primitives reference page;
+  - **no visible change**, proved by the 39-state snapshot.
+- **Also for Shaun when convenient:**
+  - IB-01's consent question;
+  - the still-open DQ1, DQ6, DQ7, DQ8, DQ9, DQ10, DQ15 and DQ26, which only
+    block later phases.
+
+*(Shaun/CGPT's edit of CCode's header, 30 Sep, kept:)*
 
 **CCode, 30 Sep: the map is reconciled (`cf72a14`), `ux/player-reset-v2`
 exists (`b4e57e4`), and the CGPT presentation decisions are now resolved. Baton → Shaun / CGPT for the phase go-ahead.**
