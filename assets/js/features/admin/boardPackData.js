@@ -229,3 +229,46 @@ async function saveBoardPackConfig(config){
   if(!ok) return { ok: false, message: storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — try again.` : `Save failed — this page can't reach shared storage.` };
   return { ok: true, config: stored };
 }
+
+// ---- The Share Deck: the same pack, told to players ---------------------
+
+// The Share Deck for a Board Pack: its selected modules and commentary, in
+// its order, each from the same module data the Board Pack shows.
+function boardPackDeck(config){
+  const entries = BoardPack.selected(config).map(item => ({
+    item, data: item.kind === 'module' ? boardPackModuleData(item, config.month) : null,
+  }));
+  return ShareDeck.build(config.month, entries);
+}
+
+// What a player may see -- an Admin sees everything, so the deck an Admin
+// shares is filtered by the settings, not by who is holding the phone.
+function boardPackPlayerCanSee(section){
+  return visibilityState[section] !== false;
+}
+
+// The review's stable address: the same for every revision of the month.
+// A query rather than a path, so it works on every host the app is served
+// from (Vercel, GitHub Pages, a local server) without a rewrite.
+function boardPackReviewUrl(month){
+  return new URL(`review/?m=${month}`, new URL('.', location.href)).href;
+}
+
+function boardPackReviewSummary(publication){
+  return ShareDeck.summaryText(publication.deck, { link: boardPackReviewUrl(publication.month), canSee: boardPackPlayerCanSee });
+}
+
+// Publish: save the pack, then store its Share Deck exactly as it now reads,
+// as the next revision of the month's review. Admin only, and only ever on
+// an explicit Publish -- editing the pack never changes what the link shows.
+async function publishBoardPackReview(config){
+  if(!isUnlocked) return { ok: false, message: 'Only an admin can publish the review.' };
+  const saved = await saveBoardPackConfig(config);
+  if(!saved.ok) return saved;
+  const previous = await loadPublishedReview(config.month);
+  const publication = ShareDeck.publication({ deck: boardPackDeck(saved.config), by: saved.config.updatedBy,
+    at: saved.config.updatedAt, basis: saved.config.basis, previous });
+  const ok = await savePublishedReview(publication);
+  if(!ok) return { ok: false, config: saved.config, message: storageAvailable() ? `Publish failed (${lastStorageError || 'unknown error'}) — the pack was saved; try publishing again.` : `Publish failed — this page can't reach shared storage.` };
+  return { ok: true, config: saved.config, publication };
+}

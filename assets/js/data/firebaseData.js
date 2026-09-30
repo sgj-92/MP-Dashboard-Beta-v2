@@ -150,6 +150,23 @@ async function saveBoardPack(config){
   } catch(e){ lastStorageError = (e && e.message) ? e.message : String(e); console.error('save board pack failed', e); return false; }
 }
 
+// A published Monthly Review (moneypadel_review_YYYY-MM, domain/boardPack/
+// shareDeck.js): the slides exactly as they were published, so the link a
+// player opens months later shows the month as it was shared. Written only by
+// an Admin's Publish; read by the public review page (review/) and by the
+// Board Pack section.
+async function loadPublishedReview(month){
+  try { const v = await fsGet(ShareDeck.storageKey(month)); if(v) return JSON.parse(v); } catch(e){ console.error('load published review failed', e); }
+  return null;
+}
+
+async function savePublishedReview(doc){
+  try {
+    await fsSet(ShareDeck.storageKey(doc.month), JSON.stringify(doc));
+    return true;
+  } catch(e){ lastStorageError = (e && e.message) ? e.message : String(e); console.error('save published review failed', e); return false; }
+}
+
 // Four independent documents. Read together rather than one after another:
 // none of them is an input to any of the others, so reading them in sequence
 // only ever bought four round trips where one would do. See init() for the

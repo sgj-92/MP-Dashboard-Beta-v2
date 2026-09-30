@@ -1,0 +1,336 @@
+// ===================== MONTHLY REVIEW: SHARE DECK, PUBLISH, LINK =====================
+// The Board Pack, told to players: the same selected modules in the same
+// order, one swipeable card each. An Admin previews it, publishes it, and
+// shares a link (review/?m=YYYY-MM) that anyone can open without unlocking.
+// A published review is stored exactly as shown, so the link shows the same
+// month's story however much is recorded later.
+
+const test = require('node:test');
+const assert = require('node:assert');
+const H = require('./helpers/uiHarness.js');
+
+const maybe = H.available() ? test : test.skip;
+const NOW = '2026-09-28T12:00:00.000Z';
+const REVIEW = (m) => `moneypadel_review_${m}`;
+const openApp = (club) => H.open({ now: NOW, club });
+const openReview = (month, club) => H.open({ path: `review/?m=${month}`, mobile: true, now: NOW, club, readyWhen: () => window.REVIEW_READY });
+
+async function openSection(app, month){
+  await app.run(() => {
+    isUnlocked = true; adminRole = 'owner'; currentUserName = 'Shaun';
+    legacyTabBtn('manage').click(); renderManage();
+    document.querySelector('[data-acc-toggle="boardpack"]').click();
+  });
+  await app.page.waitForSelector('#bpStatus');
+  if (month) { await app.page.selectOption('#bpMonth', month); await app.page.waitForSelector('#bpStatus'); }
+}
+
+// Published reviews for August and September from the seeded record, made
+// once and reused: the pack's default selection, and one with everything.
+let published = null;
+async function publishedReviews(){
+  if (published) return published;
+  const app = await openApp();
+  try {
+    published = await app.run(async () => {
+      isUnlocked = true; adminRole = 'owner'; currentUserName = 'Shaun';
+      const out = {};
+      for (const m of ['2026-08', '2026-09']) out[m] = (await publishBoardPackReview(BoardPack.defaultConfig(m))).publication;
+      let all = BoardPack.defaultConfig('2026-09');
+      all.items.forEach((_, i) => { all = BoardPack.setEnabled(all, i, true); });
+      out.all = ShareDeck.publication({ deck: boardPackDeck(all), by: 'Shaun', at: '2026-09-30T10:00:00.000Z' });
+      return out;
+    });
+  } finally { await app.close(); }
+  return published;
+}
+
+maybe('the Share Deck is the Board Pack\'s selection, in the Board Pack\'s order -- previewed and published alike', async () => {
+  const app = await openApp();
+  try {
+    await openSection(app, '2026-08');
+    const p = app.page;
+    const idx = (id) => p.$eval(`[data-bp-module="${id}"]`, (el) => Number(el.dataset.bpItem));
+    await p.click(`[data-bp-toggle="${await idx('overview')}"]`);                // off
+    await p.click(`[data-bp-toggle="${await idx('most_wins')}"]`);               // on
+    for (let i = await idx('league'); i > 0; i--) await p.click(`[data-bp-move="${i}"][data-delta="-1"]`);  // League first
+    await p.click('#bpPreviewBtn');
+    await p.click('#bpModeDeck');
+    await p.waitForSelector('#bpDeckFrame .deck-slide');
+    const r = await app.run(() => ({
+      shown: [...document.querySelectorAll('#bpDeckFrame .deck-slide')].map((s) => s.dataset.slide),
+      selected: BoardPack.selected(boardPackDraft).map((it) => it.id),
+      withContent: boardPackDeck(boardPackDraft).slides.map((s) => s.id),
+      month: document.querySelector('#bpDeckFrame .deck-cover-title').textContent,
+    }));
+    assert.deepStrictEqual(r.selected, ['league', 'results_table', 'over_80', 'power', 'kings', 'race', 'most_wins', 'rating_movers', 'tier_moves']);
+    assert.deepStrictEqual(r.withContent, r.selected.filter((id) => r.withContent.includes(id)), 'slides follow the pack\'s order');
+    assert.ok(r.withContent.length >= r.selected.length - 1, 'only a module with nothing to say is left out');
+    assert.deepStrictEqual(r.shown, ['cover', ...r.withContent, 'end']);
+    assert.strictEqual(r.month, 'August 2026');
+
+    await p.click('#bpPublish');
+    await p.click('#bpPublishConfirm');
+    await p.waitForFunction(() => /Published/.test(document.getElementById('bpMessage').textContent));
+    const doc = await app.run((key) => JSON.parse(window.__writes.filter((w) => w.id === key).at(-1).doc.value), REVIEW('2026-08'));
+    assert.deepStrictEqual(doc.deck.slides.map((s) => s.id), r.withContent, 'published exactly as previewed');
+    assert.deepStrictEqual([doc.revision, doc.month, doc.publishedBy], [1, '2026-08', 'Shaun']);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+maybe('the deck and the WhatsApp summary carry the canonical figures, for the chosen month', async () => {
+  const app = await openApp();
+  try {
+    const r = await app.run(async () => {
+      isUnlocked = true; adminRole = 'owner'; currentUserName = 'Shaun';
+      const out = [];
+      for (const m of boardPackMonths()) {
+        let c = BoardPack.defaultConfig(m);
+        c.items.forEach((_, i) => { c = BoardPack.setEnabled(c, i, true); });
+        const deck = boardPackDeck(c);
+        const slide = (id) => deck.slides.find((s) => s.id === id);
+        const games = MeaningfulMonth.countInMonth(getAllApprovedMatches(), m);
+        const kings = kingsOfTiersFor(m, defaultRankingMinGames(m));
+        const league = leagueSplitRows(m).filter((s) => s.games > 0);
+        const leaders = ['S', 'A', 'B', 'C'].map((t) => sortLeagueRows(league.filter((s) => s.tier === t), 'points', true)[0]).filter(Boolean);
+        const risers = MonthlyViews.ratingMovementTable(MONTHLY_VIEWS, m).filter((x) => x.ratingChange > 0);
+        const summary = ShareDeck.summaryText(deck, { link: boardPackReviewUrl(m) });
+        out.push({
+          m, title: deck.title, month: deck.month,
+          games: [slide('overview').stats[0].value, String(games)],
+          kings: [slide('kings') ? slide('kings').groups[0].rows.map((x) => [x.label, x.name, x.value]) : null,
+            kings ? ['S', 'A', 'B', 'C'].filter((t) => kings[t]).map((t) => [`Tier ${t}`, kings[t].name, String(kings[t].rating)]) : null],
+          league: [slide('league').groups[0].rows.map((x) => [x.name, x.value]), leaders.map((s) => [s.name, `${s.points} pts`])],
+          riser: [slide('rating_movers') && slide('rating_movers').groups[0].rows[0].name, risers[0] && risers[0].playerId],
+          summaryHas: [`${games} games played`, ...(kings ? ['S', 'A', 'B', 'C'].filter((t) => kings[t]).map((t) => `Tier ${t} King: ${kings[t].name}`) : []),
+            `Full ${monthLabel(m).split(' ')[0]} review:`, `review/?m=${m}`].filter((line) => !summary.includes(line)),
+        });
+      }
+      return out;
+    });
+    assert.ok(r.length >= 3);
+    r.forEach((x) => {
+      assert.strictEqual(x.title, `${{ '2026-06': 'June', '2026-07': 'July', '2026-08': 'August', '2026-09': 'September' }[x.m]} 2026 Review`);
+      assert.strictEqual(x.month, x.m);
+      assert.deepStrictEqual(x.games[0], x.games[1], `${x.m} games`);
+      assert.deepStrictEqual(x.kings[0], x.kings[1], `${x.m} kings`);
+      assert.deepStrictEqual(x.league[0], x.league[1], `${x.m} league leaders`);
+      assert.deepStrictEqual(x.riser[0], x.riser[1], `${x.m} biggest riser`);
+      assert.deepStrictEqual(x.summaryHas, [], `${x.m} summary is missing these`);
+    });
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+maybe('draft until published; editing never changes the link; republishing does, as the next revision', async () => {
+  const app = await openApp();
+  try {
+    await openSection(app, '2026-09');
+    const p = app.page;
+    const reviewWrites = () => app.run((key) => window.__writes.filter((w) => w.id === key).map((w) => JSON.parse(w.doc.value)), REVIEW('2026-09'));
+    assert.match(await p.textContent('#bpPublishState'), /^Draft\./);
+    assert.strictEqual(await p.$('#bpCopySummary'), null, 'nothing to share before it is published');
+    // Locked: refused, nothing written.
+    const locked = await app.run(async () => { isUnlocked = false; const r = await publishBoardPackReview(boardPackDraft); isUnlocked = true; return r; });
+    assert.deepStrictEqual([locked.ok, locked.message], [false, 'Only an admin can publish the review.']);
+    assert.strictEqual((await reviewWrites()).length, 0);
+
+    const before = await app.run(() => JSON.stringify([PLAYERS.map((p) => [p.name, p.rating, p.tier]), MONTHLY_VIEWS.byMonth['2026-09'].closingRatings, computeMonthlySummaryStats('2026-09')]));
+    await p.click('#bpPublish');
+    assert.match(await p.textContent('.bp-confirm'), /Anyone with the link can open it/);
+    await p.click('#bpPublishConfirm');
+    await p.waitForFunction(() => /revision 1/.test(document.getElementById('bpPublishState').textContent));
+    const [rev1] = await reviewWrites();
+    assert.match(await p.textContent('#bpPublishState'), /The review link shows exactly this pack/);
+
+    // Edit and save the pack: the published review is untouched.
+    const i = await p.$eval('[data-bp-module="most_games"]', (el) => el.dataset.bpItem);
+    await p.click(`[data-bp-toggle="${i}"]`);
+    await p.click('#bpSave');
+    await p.waitForFunction(() => document.getElementById('bpMessage').textContent === 'Saved.');
+    assert.strictEqual((await reviewWrites()).length, 1, 'saving the pack does not publish it');
+    assert.match(await p.textContent('#bpPublishState'), /differs from what players see/);
+
+    await p.click('#bpPublish');
+    await p.click('#bpPublishConfirm');
+    await p.waitForFunction(() => /revision 2/.test(document.getElementById('bpPublishState').textContent));
+    const [, rev2] = await reviewWrites();
+    assert.strictEqual(rev2.firstPublishedAt, rev1.publishedAt);
+    assert.ok(rev2.deck.slides.some((s) => s.id === 'most_games') && !rev1.deck.slides.some((s) => s.id === 'most_games'));
+
+    // Share: the summary and the link come from what was published.
+    await p.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await p.click('#bpCopySummary');
+    await p.waitForFunction(() => /Summary copied/.test(document.getElementById('bpMessage').textContent));
+    const copied = await p.evaluate(() => navigator.clipboard.readText());
+    assert.strictEqual(copied, await app.run(() => boardPackReviewSummary(boardPackPublished['2026-09'])));
+    assert.match(copied, /^\*Money Padel — September 2026\*\n/);
+    assert.match(copied, /Full September review:\nhttp:\/\/127\.0\.0\.1:\d+\/review\/\?m=2026-09$/);
+    await p.click('#bpCopyLink');
+    await p.waitForFunction(() => /Link copied/.test(document.getElementById('bpMessage').textContent));
+    assert.match(await p.evaluate(() => navigator.clipboard.readText()), /\/review\/\?m=2026-09$/);
+    assert.strictEqual(await p.getAttribute('#bpOpenReview', 'href'), await p.evaluate(() => navigator.clipboard.readText()));
+
+    const after = await app.run(() => JSON.stringify([PLAYERS.map((p) => [p.name, p.rating, p.tier]), MONTHLY_VIEWS.byMonth['2026-09'].closingRatings, computeMonthlySummaryStats('2026-09')]));
+    assert.strictEqual(after, before, 'publishing changes no rating or table');
+    const ids = await app.run(() => [...new Set(window.__writes.map((w) => w.id))].sort());
+    assert.deepStrictEqual(ids, ['moneypadel_board_pack_2026-09', 'moneypadel_review_2026-09']);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+maybe('the review link opens straight into that month\'s deck, for anyone, with no Admin control and no stats engine', async () => {
+  const pub = await publishedReviews();
+  for (const [m, label] of [['2026-08', 'August 2026'], ['2026-09', 'September 2026']]) {
+    const rv = await openReview(m, { [REVIEW('2026-08')]: pub['2026-08'], [REVIEW('2026-09')]: pub['2026-09'] });
+    try {
+      const r = await rv.run(() => ({
+        title: document.title, head: document.getElementById('reviewTitle').textContent,
+        cover: document.querySelector('.deck-cover-title').textContent,
+        slides: [...document.querySelectorAll('.deck-slide')].map((s) => s.dataset.slide),
+        controls: document.querySelectorAll('input, select, textarea, #bpPublish, .admin-acc, [data-bp-toggle]').length,
+        buttons: [...document.querySelectorAll('button')].map((b) => b.textContent.trim()).filter((t) => t && !/^[‹›]$/.test(t)),
+        app: [typeof renderManage, typeof computeMonthlySummaryStats, typeof isUnlocked, typeof boardPackDeck],
+      }));
+      assert.deepStrictEqual([r.title, r.head, r.cover], [`${label} Review · Money Padel`, `${label} Review`, label]);
+      assert.deepStrictEqual(r.slides, ['cover', ...pub[m].deck.slides.map((s) => s.id), 'end']);
+      assert.strictEqual(r.controls, 0);
+      assert.deepStrictEqual(r.buttons, ['Copy link'], 'the only action a player has is sharing');
+      assert.deepStrictEqual(r.app, ['undefined', 'undefined', 'undefined', 'undefined'], 'the page cannot recalculate anything');
+      assert.deepStrictEqual(rv.pageErrors, []);
+    } finally { await rv.close(); }
+  }
+});
+
+maybe('at 375px nothing runs off the side, and every card holds its content', async () => {
+  const pub = await publishedReviews();
+  const rv = await openReview('2026-09', { [REVIEW('2026-09')]: pub.all });
+  try {
+    const r = await rv.run(async () => {
+      const track = document.querySelector('[data-deck-track]');
+      const out = { vw: innerWidth, page: document.documentElement.scrollWidth, cards: [] };
+      const slides = [...document.querySelectorAll('.deck-slide')];
+      for (let i = 0; i < slides.length; i++) {
+        track.scrollTo({ left: i * track.clientWidth, behavior: 'auto' });
+        await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+        const card = slides[i].querySelector('.deck-card').getBoundingClientRect();
+        const body = slides[i].querySelector('.deck-body');
+        const clipped = [...slides[i].querySelectorAll('.deck-card *')].some((el) => { const b = el.getBoundingClientRect(); return b.width && (b.right > card.right + 0.5 || b.left < card.left - 0.5 || b.bottom > card.bottom + 0.5); });
+        out.cards.push({ id: slides[i].dataset.slide, left: card.left, right: card.right, ratio: Math.round((card.height / card.width) * 100) / 100,
+          overflow: body ? body.scrollHeight - body.clientHeight : 0, clipped });
+      }
+      return out;
+    });
+    assert.strictEqual(r.vw, 375);
+    assert.ok(r.page <= 375, `page is ${r.page}px wide`);
+    assert.ok(r.cards.length > 15, 'every module on, so every kind of card is checked');
+    r.cards.forEach((c) => {
+      assert.ok(c.left >= 0 && c.right <= 375, `${c.id} sits inside the screen (${c.left}-${c.right})`);
+      assert.strictEqual(c.ratio, 1.25, `${c.id} is 4:5`);
+      assert.ok(c.overflow <= 1, `${c.id} content fits its card`);
+      assert.strictEqual(c.clipped, false, `${c.id} nothing cut off`);
+    });
+  } finally { await rv.close(); }
+});
+
+maybe('swipe, previous / next, the dots and the arrow keys all move the deck, and it says where you are', async () => {
+  const pub = await publishedReviews();
+  const rv = await openReview('2026-09', { [REVIEW('2026-09')]: pub['2026-09'] });
+  try {
+    const p = rv.page;
+    const at = () => rv.run(() => ({ i: Number(document.querySelector('[data-deck]').dataset.index),
+      dot: [...document.querySelectorAll('[data-deck-dot]')].findIndex((d) => d.getAttribute('aria-current') === 'true'),
+      prev: document.querySelector('[data-deck-prev]').disabled, next: document.querySelector('[data-deck-next]').disabled,
+      live: document.querySelector('.deck-live').textContent }));
+    const settle = (i) => p.waitForFunction((k) => Number(document.querySelector('[data-deck]').dataset.index) === k
+      && Math.abs(document.querySelector('[data-deck-track]').scrollLeft - k * document.querySelector('[data-deck-track]').clientWidth) < 2, i);
+    const n = await rv.run(() => document.querySelectorAll('.deck-slide').length);
+    assert.ok(n <= 12, 'a short deck shows dots');
+    assert.deepStrictEqual(await at(), { i: 0, dot: 0, prev: true, next: false, live: `1 of ${n}: September 2026 Review` });
+
+    await p.click('[data-deck-next]'); await settle(1);
+    await p.click('[data-deck-next]'); await settle(2);
+    assert.deepStrictEqual((await at()).dot, 2);
+    await p.click('[data-deck-prev]'); await settle(1);
+    await p.click(`[data-deck-dot="${n - 1}"]`); await settle(n - 1);
+    assert.deepStrictEqual([(await at()).next, (await at()).prev], [true, false]);
+
+    await p.focus('[data-deck]');
+    await p.keyboard.press('Home'); await settle(0);
+    await p.keyboard.press('ArrowRight'); await settle(1);
+    await p.keyboard.press('ArrowLeft'); await settle(0);
+    await p.keyboard.press('End'); await settle(n - 1);
+    await p.keyboard.press('Home'); await settle(0);
+
+    // A swipe is the track scrolling sideways. Headless Chromium cannot
+    // synthesise a touch scroll, so the same native scroller is driven by a
+    // sideways trackpad gesture; the deck follows whichever card it lands on.
+    const cdp = await p.context().newCDPSession(p);
+    await cdp.send('Input.synthesizeScrollGesture', { x: 180, y: 300, xDistance: -220, yDistance: 0, gestureSourceType: 'mouse', speed: 1500 });
+    await p.waitForFunction(() => Number(document.querySelector('[data-deck]').dataset.index) >= 1);
+    const swiped = (await at()).i;
+    assert.strictEqual((await at()).dot, swiped);
+    assert.match((await at()).live, new RegExp(`^${swiped + 1} of ${n}: `));
+    assert.deepStrictEqual(rv.pageErrors, []);
+  } finally { await rv.close(); }
+
+  // A long deck counts instead of dotting.
+  const long = await openReview('2026-09', { [REVIEW('2026-09')]: pub.all });
+  try {
+    const n = await long.run(() => document.querySelectorAll('.deck-slide').length);
+    assert.ok(n > 12);
+    assert.strictEqual(await long.run(() => document.querySelectorAll('[data-deck-dot]').length), 0);
+    assert.strictEqual(await long.page.textContent('[data-deck-count]'), `1 / ${n}`);
+    await long.page.click('[data-deck-next]');
+    await long.page.waitForFunction(() => document.querySelector('[data-deck-count]').textContent.startsWith('2 /'));
+  } finally { await long.close(); }
+});
+
+maybe('a published review stays as published: the page shows the stored slides, not today\'s figures', async () => {
+  const pub = await publishedReviews();
+  // The stored September review, with figures that are not today's -- as it
+  // would be after later results, corrections or a change of calculation.
+  const stored = JSON.parse(JSON.stringify(pub['2026-09']));
+  stored.deck.slides.find((s) => s.id === 'overview').stats[0].value = '41';
+  const kings = stored.deck.slides.find((s) => s.id === 'kings');
+  kings.groups[0].rows[0].name = 'Then-King';
+  const rv = await openReview('2026-09', { [REVIEW('2026-09')]: stored });
+  try {
+    const r = await rv.run(() => ({
+      games: document.querySelector('[data-slide="overview"] .deck-stat-value').textContent,
+      king: document.querySelector('[data-slide="kings"] .deck-name').textContent,
+    }));
+    assert.deepStrictEqual(r, { games: '41', king: 'Then-King' });
+  } finally { await rv.close(); }
+
+  // And the Admin, back in the app, is told the pack no longer matches it.
+  const app = await openApp({ [REVIEW('2026-09')]: stored });
+  try {
+    await openSection(app, '2026-09');
+    assert.match(await app.page.textContent('#bpPublishState'), /revision 1 .*differs from what players see/s);
+  } finally { await app.close(); }
+});
+
+maybe('unpublished months, bad links and Admin-only sections', async () => {
+  const pub = await publishedReviews();
+  const draft = await openReview('2026-07', { [REVIEW('2026-09')]: pub['2026-09'] });
+  try {
+    const r = await draft.run(() => ({ empty: !!document.querySelector('[data-review-empty]'), deck: !!document.querySelector('[data-deck]'), text: document.getElementById('reviewMain').textContent }));
+    assert.deepStrictEqual([r.empty, r.deck], [true, false]);
+    assert.match(r.text, /The July 2026 review hasn’t been published yet\./);
+  } finally { await draft.close(); }
+
+  const bad = await openReview('all', {});
+  try {
+    assert.match(await bad.page.textContent('#reviewMain'), /No review chosen/);
+  } finally { await bad.close(); }
+
+  // Power Rating made Admin-only: its slides are not shown to players.
+  const hidden = await openReview('2026-09', { [REVIEW('2026-09')]: pub.all, moneypadel_visibility: { power: false } });
+  try {
+    const ids = await hidden.run(() => [...document.querySelectorAll('.deck-slide')].map((s) => s.dataset.slide));
+    ['power', 'kings', 'rating_movers', 'rank_movers', 'performance', 'crossovers'].forEach((id) => assert.ok(!ids.includes(id), id));
+    assert.ok(ids.includes('league') && ids.includes('overview'));
+  } finally { await hidden.close(); }
+});

@@ -3,6 +3,15 @@
   "framework": null,
   "buildCommand": "node scripts/stamp-build.js",
   "redirects": [
-    { "source": "/preview", "destination": "/preview/", "permanent": false }
+    {
+      "source": "/preview",
+      "destination": "/preview/",
+      "permanent": false
+    },
+    {
+      "source": "/review",
+      "destination": "/review/",
+      "permanent": false
+    }
   ]
 }

@@ -16,6 +16,12 @@ let boardPackDraft = null;
 let boardPackStored = {};
 let boardPackLoading = null;
 let boardPackPreviewOpen = false;
+// Which preview: the Board Pack report ('pack') or the players' Share Deck
+// ('deck').
+let boardPackPreviewMode = 'pack';
+// The published review of each month once read (null: never published).
+let boardPackPublished = {};
+let boardPackPublishConfirm = false;
 let boardPackMessage = '';
 let boardPackNoteSeq = 0;
 
@@ -194,6 +200,7 @@ function boardPackOpenMonth(month){
   boardPackMonth = month;
   boardPackDraft = null;
   boardPackMessage = '';
+  boardPackPublishConfirm = false;
   if(boardPackStored[month] !== undefined) boardPackDraft = boardPackBaseline(month);
 }
 
@@ -202,7 +209,8 @@ async function boardPackEnsureLoaded(){
   const month = boardPackMonth;
   if(!month || boardPackStored[month] !== undefined || boardPackLoading === month) return;
   boardPackLoading = month;
-  const raw = await loadBoardPack(month);
+  const [raw, published] = await Promise.all([loadBoardPack(month), loadPublishedReview(month)]);
+  boardPackPublished[month] = published && published.deck ? published : null;
   boardPackStored[month] = raw ? BoardPack.normalise(raw, month) : null;
   boardPackLoading = null;
   if(boardPackMonth === month){
@@ -218,6 +226,62 @@ function boardPackStatusText(){
     : `Not saved yet for ${monthLabel(boardPackMonth)} — showing the default selection.`;
   const dirty = boardPackDraft && !BoardPack.sameChoice(boardPackDraft, boardPackBaseline(boardPackMonth));
   return saved + (dirty ? ' Unsaved changes.' : '');
+}
+
+function boardPackWhen(iso){
+  return iso ? new Date(iso).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+}
+
+// Draft -> Preview -> Publish. What the review link shows changes only here,
+// on an explicit Publish; editing the pack never touches it.
+function boardPackPublishHtml(liveDeck){
+  const month = boardPackMonth;
+  const pub = boardPackPublished[month];
+  const label = monthLabel(month);
+  let state;
+  if(!pub){
+    state = `<b>Draft.</b> The ${escapeHtml(label)} review is not published: its link shows nothing until you publish.`;
+  } else {
+    const same = ShareDeck.sameDeck(pub.deck, liveDeck);
+    state = `<b>Published</b> · revision ${pub.revision} · ${escapeHtml(boardPackWhen(pub.publishedAt))}${pub.publishedBy ? ` by ${escapeHtml(pub.publishedBy)}` : ''}. `
+      + (same ? 'The review link shows exactly this pack.'
+              : '<span class="bp-publish-differs">This pack now differs from what players see. The link keeps showing the published review until you republish.</span>');
+  }
+  let html = `<div class="bp-publish" id="bpPublishBlock">
+    <div class="section-heading" style="margin-top:14px;">Players' Monthly Review</div>
+    <div class="section-sub" id="bpPublishState">${state}</div>`;
+  if(boardPackPublishConfirm){
+    html += `<div class="bp-confirm" role="group" aria-label="Confirm publishing">
+      <div class="section-sub">${pub ? 'Republish' : 'Publish'} the ${escapeHtml(label)} review? Anyone with the link can open it, without unlocking. What it shows is fixed until you publish again.</div>
+      <div class="fg-row bp-actions">
+        <button type="button" class="preset-btn active" id="bpPublishConfirm">${pub ? 'Republish now' : 'Publish now'}</button>
+        <button type="button" class="preset-btn" id="bpPublishCancel">Cancel</button>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="fg-row bp-actions"><button type="button" class="preset-btn" id="bpPublish">${pub ? 'Republish review' : 'Publish review'}</button></div>`;
+  }
+  if(pub){
+    const url = boardPackReviewUrl(month);
+    html += `<div class="bp-share-row">
+      <a class="preset-btn" id="bpOpenReview" href="${escapeHtml(url)}" target="_blank" rel="noopener">Open review</a>
+      ${typeof navigator !== 'undefined' && navigator.share ? `<button type="button" class="preset-btn" id="bpShare">Share</button>` : ''}
+      <button type="button" class="preset-btn" id="bpCopyLink">Copy link</button>
+      <button type="button" class="preset-btn" id="bpCopySummary">Copy summary</button>
+    </div>
+    <div class="section-sub bp-review-url">${escapeHtml(url)}</div>`;
+  }
+  return html + `</div>`;
+}
+
+// The players' view of the draft: exactly what Publish would store.
+function boardPackDeckPreviewHtml(liveDeck){
+  const shown = ShareDeck.visibleSlides(liveDeck, boardPackPlayerCanSee);
+  const hidden = liveDeck.slides.filter(sl => !shown.includes(sl));
+  const pub = boardPackPublished[boardPackMonth];
+  const when = !pub ? 'will see when you publish' : ShareDeck.sameDeck(pub.deck, liveDeck) ? 'see on the review link' : 'will see once you republish';
+  return `<div class="section-sub bp-deck-note">What players ${when}: one card per selected module, in the pack's order. Empty modules are left out.${hidden.length ? ` Left out because the section is Admin only: ${hidden.map(sl => escapeHtml(sl.title)).join(', ')}.` : ''}</div>
+    <div class="bp-deck-frame" id="bpDeckFrame">${DeckView.html(liveDeck, shown, { brandSrc: 'assets/brand/mp-mark.svg', appLink: '' })}</div>`;
 }
 
 function boardPackOptionsHtml(it, index){
@@ -261,7 +325,7 @@ function boardPackItemHtml(it, index, count){
 function buildBoardPackSectionHtml(){
   if(!boardPackMonth) boardPackOpenMonth(boardPackDefaultMonth());
   const months = boardPackMonths();
-  let html = `<div class="section-sub">A month-end report for the board, compiled from the club's own statistics. The figures are drawn from the record every time; only your selection, order and commentary are saved. Monthly Information stays the players' month review.</div>`;
+  let html = `<div class="section-sub">A month-end report for the board, compiled from the club's own statistics. The figures are drawn from the record every time; only your selection, order and commentary are saved. Publishing turns the same pack into the players' Monthly Review — a swipeable link for WhatsApp, fixed as published. Monthly Information stays the players' month review in the app.</div>`;
   if(!boardPackMonth){
     return html + `<div class="section-sub">No months with games yet.</div>`;
   }
@@ -287,9 +351,18 @@ function buildBoardPackSectionHtml(){
       <button type="button" class="preset-btn" id="bpSave">Save pack</button>
       <button type="button" class="preset-btn${boardPackPreviewOpen ? ' active' : ''}" id="bpPreviewBtn" aria-expanded="${boardPackPreviewOpen}">${boardPackPreviewOpen ? 'Hide preview' : 'Preview'}</button>
     </div>
-    <div id="bpMessage" class="section-sub">${escapeHtml(boardPackMessage)}</div>
-  </div>`;
-  if(boardPackPreviewOpen) html += `<div id="bpPreview">${boardPackHtml(boardPackDraft)}</div>`;
+    <div id="bpMessage" class="section-sub">${escapeHtml(boardPackMessage)}</div>`;
+  // Built once per drawing: the publish state compares it with what is
+  // published, and the Share Deck preview draws it.
+  const liveDeck = (boardPackPublished[boardPackMonth] || (boardPackPreviewOpen && boardPackPreviewMode === 'deck')) ? boardPackDeck(boardPackDraft) : null;
+  html += boardPackPublishHtml(liveDeck) + `</div>`;
+  if(boardPackPreviewOpen){
+    html += `<div class="fg-toggle bp-preview-mode" role="group" aria-label="Preview" style="margin:12px 0 4px;">
+      <button type="button" class="fg-toggle-btn ${boardPackPreviewMode === 'pack' ? 'active' : ''}" id="bpModePack" aria-pressed="${boardPackPreviewMode === 'pack'}">Board Pack</button>
+      <button type="button" class="fg-toggle-btn ${boardPackPreviewMode === 'deck' ? 'active' : ''}" id="bpModeDeck" aria-pressed="${boardPackPreviewMode === 'deck'}">Share Deck</button>
+    </div>`;
+    html += `<div id="bpPreview" data-mode="${boardPackPreviewMode}">${boardPackPreviewMode === 'deck' ? boardPackDeckPreviewHtml(liveDeck) : boardPackHtml(boardPackDraft)}</div>`;
+  }
   return html;
 }
 
@@ -330,6 +403,41 @@ function wireBoardPackSection(){
   if(add) add.onclick = () => change(BoardPack.addNote(boardPackDraft, { id: `note-${Date.now().toString(36)}-${++boardPackNoteSeq}`, title: '', body: '' }));
   const preview = document.getElementById('bpPreviewBtn');
   if(preview) preview.onclick = () => { boardPackPreviewOpen = !boardPackPreviewOpen; renderManage(); };
+  const modePack = document.getElementById('bpModePack');
+  if(modePack) modePack.onclick = () => { boardPackPreviewMode = 'pack'; renderManage(); };
+  const modeDeck = document.getElementById('bpModeDeck');
+  if(modeDeck) modeDeck.onclick = () => { boardPackPreviewMode = 'deck'; renderManage(); };
+  const frame = document.getElementById('bpDeckFrame');
+  if(frame) DeckView.mount(frame);
+
+  const month = boardPackMonth;
+  const say = (text) => { boardPackMessage = text; const m = document.getElementById('bpMessage'); if(m) m.textContent = text; };
+  const publish = document.getElementById('bpPublish');
+  if(publish) publish.onclick = () => { boardPackPublishConfirm = true; renderManage(); };
+  const cancel = document.getElementById('bpPublishCancel');
+  if(cancel) cancel.onclick = () => { boardPackPublishConfirm = false; renderManage(); };
+  const confirm = document.getElementById('bpPublishConfirm');
+  if(confirm) confirm.onclick = async () => {
+    confirm.disabled = true;
+    const res = await publishBoardPackReview(boardPackDraft);
+    boardPackPublishConfirm = false;
+    if(res.config){
+      boardPackStored[month] = BoardPack.normalise(res.config, month);
+      if(boardPackMonth === month) boardPackDraft = boardPackStored[month];
+    }
+    if(res.ok) boardPackPublished[month] = res.publication;
+    boardPackMessage = res.ok ? `Published — revision ${res.publication.revision}.` : res.message;
+    renderManage();
+  };
+  const pub = boardPackPublished[month];
+  const share = document.getElementById('bpShare');
+  if(share && pub) share.onclick = () => {
+    navigator.share({ title: `Money Padel — ${pub.deck.title}`, text: boardPackReviewSummary(pub) }).catch(() => {});
+  };
+  const copyLink = document.getElementById('bpCopyLink');
+  if(copyLink && pub) copyLink.onclick = () => copyText(boardPackReviewUrl(month)).then(ok => say(ok ? 'Link copied.' : 'Could not copy — the link is shown below.'));
+  const copySummary = document.getElementById('bpCopySummary');
+  if(copySummary && pub) copySummary.onclick = () => copyText(boardPackReviewSummary(pub)).then(ok => say(ok ? 'Summary copied — paste it into WhatsApp.' : 'Could not copy the summary.'));
   const save = document.getElementById('bpSave');
   if(save) save.onclick = async () => {
     const month = boardPackMonth;

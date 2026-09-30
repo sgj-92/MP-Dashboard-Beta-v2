@@ -196,3 +196,12 @@
 .bp-foot{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; color:var(--text-dim); margin-top:6px; }
 .bp-empty{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:12px; color:var(--text-dim); padding:2px 0; }
 .bp-dim{ color:var(--text-dim); }
+
+/* Publishing the players' Monthly Review from the pack. */
+.bp-publish{ margin-top:6px; }
+.bp-publish-differs{ color:var(--gold-bright); }
+.bp-confirm{ border:1px solid var(--gold-dim); border-radius:10px; padding:10px; margin:6px 0; }
+.bp-share-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.bp-share-row .preset-btn{ flex:1 1 auto; text-align:center; text-decoration:none; }
+.bp-review-url{ font-size:10.5px; overflow-wrap:anywhere; margin-top:4px; }
+.bp-deck-note{ margin-top:6px; }
