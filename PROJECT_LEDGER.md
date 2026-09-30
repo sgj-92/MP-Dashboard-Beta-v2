@@ -60,7 +60,8 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
-| Branch | `main` (live: GitHub Pages deploys it) |
+| Hosting (30 Sep) | **Vercel is the primary host.** `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
+| Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is to be `ux/player-reset-v2`, cut from **`f75a493`** once Shaun confirms the IA review; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. |
 | Last verified implementation commit | **`8e1c91e`** (desktop phone preview). The redesign branching point is still **`f75a493`**. |
 | Tests | **762 / 762 passing** (250 of them drive a real browser) |
@@ -150,6 +151,24 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Vercel is the primary host; GitHub Pages is legacy (Shaun, 30 Sep).**
+- **Deployments:**
+  - `main` is production.
+  - Redesign and feature branches get their own Vercel preview deployments.
+  - Custom domains come later.
+- **The build stamp:** Vercel's (`scripts/stamp-build.js`) is the canonical
+  deployment stamp. Every deployment, production or preview, shows its own
+  commit in Admin / Manage.
+- **Paths:** the app and `/preview` use relative paths throughout, with no
+  absolute `/assets` path anywhere, so root hosting works as it stands.
+  The preview tests serve from `/`.
+- **Pages compatibility is kept, because it costs nothing.** It amounts to
+  `_config.yml`, `buildInfo.pages.js` and the preview's repo-path handling.
+  No new work is designed around it, and it comes out if it ever needs
+  maintenance.
+- **In code:** only comments changed (`f98b99e`). The "Pages stopped building"
+  note in Section 5 is closed by this decision.
 
 **Desktop phone preview — DONE (`8e1c91e`).** Shaun, 30 Sep.
 - **What it is:** `/preview` is a review page for a laptop. It shows the real
@@ -524,6 +543,20 @@ evidence. Actual score = 80% game share + 20% match result; draw = 0.5; draws
 are rated. Weighted, deliberately not strict zero-sum. Pre-match expectations
 are persisted and never recomputed in the browser. Initial tier informs the
 starting level but does not permanently anchor it.
+
+**Hosting and deployment (30 Sep).** **Vercel is the deployment target**
+for all new work: production, branch previews and `/preview`.
+- **Production:** `main`.
+- **Branches:** each branch's Vercel preview deployment is where it is
+  reviewed. The redesign branch will get one too.
+- **`vercel.json`:** no framework, the stamp as the build command, and a
+  `/preview` → `/preview/` redirect.
+- **Stamp:** Vercel's is canonical. `VERCEL_GIT_COMMIT_SHA` is set for
+  production and preview deployments alike, and dated Europe/London.
+- **Paths:** anything new must work from Vercel's root, using relative
+  paths as the app already does.
+- **GitHub Pages is compatibility only:** keep it where trivial, never
+  design for it, and drop it if it costs maintenance.
 
 **Code layout and load order (30 Sep).** The app is still one set of
 classic `<script>` tags sharing one global scope, with no build step. What
@@ -1143,6 +1176,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | D7 — Doughnuts: By Player and a Doughnut List, with a Month | **DONE `e4408ff`.** Shaun, 28 Sep 2026. Keep the player-based view and add a list of the doughnut results themselves, with an obvious By Player / Doughnut List switch. Each row reads like "28 Sep · Shaun & PDM 6–0, 6–3 Rishi & Erf" in the app's result conventions. The list uses the **existing doughnut definition and data**, with no new definition. Tapping a result uses the existing result detail. A **Month** selector (historical months included) applies to both views and survives switching between them, defaulting by the app's existing month convention. The list is newest first with a deterministic same-day order, and an empty month gets a deliberate empty state. |
 | Split the app before the redesign branch | **DONE `f75a493`.** Shaun/CGPT, 30 Sep 2026. It was a behaviour-preserving refactor into data / domain / features / ui and component / shell / screen stylesheets. The aim is that functional work (`main`, via `app-features-fixes`) and the redesign rarely edit the same file. There is no duplicate app: no `app-redesign.js`, no second rating, fixture or Firebase logic, and no mock calculations. `f75a493` is the common ancestor for `main` and `ux/player-reset-v2`. The redesign branch is created **only after Shaun confirms the product/IA Keep / Simplify / Move / Merge / Hide / Remove review is complete**. It then merges `main` at least weekly, and after any significant domain or data change. Unfinished redesign work never merges into `main`. |
 | Desktop phone preview is a container, not a second app | **DONE `8e1c91e`.** Shaun, 30 Sep 2026. `/preview` frames the normal app URL in a same-origin iframe at 375 / 390 / 412 (390 by default). It uses no mock data and duplicates no screen code, and the app is not told it is being previewed. CCode left out the suggested `?embeddedPreview=1` flag: nothing needs it, and a URL the app never reads cannot alter product logic. It is desktop-only: a phone gets a link to the app instead. |
+| Vercel is the primary hosting and deployment platform | Shaun, 30 Sep 2026. `main` = production/stable. Redesign and feature branches get their own Vercel preview deployments. Custom domains come later. The Vercel build stamp is the canonical deployment stamp. Relative paths must work from Vercel root hosting. GitHub Pages compatibility is kept only where trivial and is not removed unless it causes maintenance overhead. No new infrastructure is designed around it. Supersedes "GitHub Pages deploys `main`". |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -2122,6 +2156,16 @@ with Shaun.**
 
 ### OPEN 29 Sep — Vercel: one setting to confirm when the project is connected
 
+**30 Sep: Vercel is now the primary host**, so this setting matters more.
+- **What CCode still cannot do:** see Vercel deployments from its sandbox.
+  So far no deployment has been observed.
+- **What would let CCode verify one:** the production URL, or a preview
+  URL. CCode would then read the build stamp on a deploy, read-only.
+- **Worth knowing:** `app-features-fixes` is kept identical to `main`, so
+  Vercel will also build a preview deployment of it on each push. That is
+  harmless duplication. It can be switched off per branch in the Vercel
+  project settings if unwanted.
+
 The stamp needs Vercel's system environment variables at build time.
 **"Automatically expose System Environment Variables"** is on by default for
 a Vercel project. If it has been turned off, the stamp reads "local build".
@@ -2138,6 +2182,8 @@ That is honest, but the commit is missing.
   to the root.
 - **Nothing has been deployed to Vercel by CCode,** so the first live proof
   is the Admin / Manage foot on the first Vercel deploy.
+
+**CLOSED 30 Sep by Shaun's decision to host on Vercel.** Pages is legacy, so its stopped builds need no action. The note is kept below.
 
 **REOPENED 30 Sep: Pages has not built since run 133 (`6a311c6`, 29 Sep,
 13:53 UTC).**
@@ -2836,6 +2882,30 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Vercel is the primary host)
+
+**`f98b99e`:** comments only, so no behaviour or configuration changed.
+- `_config.yml` now says it exists for Pages compatibility.
+- `scripts/stamp-build.js` says it is the canonical stamp, for production
+  and every branch preview.
+- The split document's sync rule names Vercel.
+
+**Checked:**
+- No absolute paths in `index.html`, the JS, the CSS or `preview/`, so
+  Vercel root hosting needs nothing.
+- `vercel.json` is unchanged since the preview.
+- Build-stamp tests: 24/24.
+
+**Kept for Pages, since it costs nothing:**
+- the Jekyll stamp template;
+- the preview's repo-path handling.
+
+**Process change for CCode:** after a push, the check is now the Vercel
+deployment rather than the Pages run. CCode cannot see Vercel yet (Section
+5), so until it has a URL, a push is verified by the suite alone.
+
+Baton → Shaun.
 
 ### CCode — 30 Sep 2026 (desktop phone preview)
 
@@ -6733,6 +6803,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `f98b99e` | Vercel is the primary host (Shaun). Comments in `_config.yml`, `scripts/stamp-build.js` and the split document now say that Pages is compatibility only and that the Vercel stamp is canonical. No behaviour change. |
 | `8e1c91e` | Desktop phone preview at `/preview`. The real app sits in a same-origin iframe at 375 / 390 (default) / 412, with rotate, refresh and open full size. It scales to fit without changing the app's viewport, hides desktop scrollbars inside the frame, and shows a link instead of a frame on a phone. It works at `/` and below a repo path; `vercel.json` gains a `/preview` redirect. 10 tests; 762/762. |
 | `f75a493` | Parallel-development split finished; **the redesign branching point**. `tests/architecture.test.js` (6 tests: load order, no duplicate or forward top-level names, layered modules only declare, pure domain, stylesheet order) and the final `docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md`. 752/752. |
 | `9961823` | C: `app.css` split into base / `components.css` / `shell.css` / `screens/{rankings,home,play,players,games,admin}.css`. Class names are kept and all 827 rules are accounted for. The snapshot is identical at 390px and 360px. |
@@ -6822,6 +6893,7 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ## 8. NEXT
 
 **The approved queue is empty.** Baton with Shaun.
+- **Hosting:** Vercel is primary (`main` = production, branches = preview deployments). To let CCode verify deploys, share a Vercel URL (Section 5).
 - **Implementation:** `8e1c91e`, **762 / 762 tests** (250 browser). The
   desktop phone preview is at `/preview`.
 - **Redesign branching point:** `f75a493`. `ux/player-reset-v2` is to be
