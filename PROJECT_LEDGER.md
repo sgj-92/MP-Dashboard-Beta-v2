@@ -62,7 +62,7 @@ rating chokepoint now reads v3 persisted state.
 | Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
-| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. |
+| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Not yet created (30 Sep, CCode):** CCode's attempt to create and push it was refused by this session's permission check; it waits on Shaun (Section 5). |
 | Last verified implementation commit | **`8e1c91e`** (desktop phone preview). The redesign branching point is still **`f75a493`**. |
 | Tests | **762 / 762 passing** (250 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
@@ -2170,6 +2170,23 @@ with Shaun.**
 
 ### OPEN 30 Sep — redesign branch: waiting on Shaun's IA review
 
+**Update, 30 Sep (CCode): the IA gate is cleared, but the branch is not
+yet created. It needs Shaun.**
+- **What CCode tried**, as NEXT instructed: create `ux/player-reset-v2` at
+  `f75a493`, merge current `main` into it, and push.
+- **What happened:** this session's permission check refused it as a change
+  to a shared resource. CCode has not tried to get round that.
+- **Two ways to unblock it:**
+  - **Shaun tells CCode to go ahead** in the session. That approval clears
+    the permission check.
+  - **Or Shaun creates it on GitHub:** make branch `ux/player-reset-v2`
+    from commit `f75a493`. CCode then merges `main` into it on the next
+    `Ledger CCode`.
+- **Convention CCode proposes for when it exists:**
+  - The Ledger and the design map are edited on `main` only. The redesign
+    branch receives them by merging `main`, so the two never diverge.
+  - Only redesign code and CSS are committed on the branch.
+
 - **What unblocks it:** Shaun confirms the product/IA Keep / Simplify /
   Move / Merge / Hide / Remove review is complete.
 - **Then CCode creates `ux/player-reset-v2` from `f75a493`,** the commit
@@ -2344,6 +2361,34 @@ In every case the real rule stays until someone decides otherwise.
 - records show draws;
 - the eligibility rule is 2 in 30 days;
 - the Admin prediction is worded as a share of games, never a probability.
+
+**Map reconciled to the IA — DONE (`cf72a14`, CCode, 30 Sep).** Section 0 of the
+map now carries the target IA per tab, and Section 7 the re-cut phases with
+short acceptance briefs.
+- **Settled by the IA, as the map reads it:** DQ3, DQ4, DQ21, DQ22 (with
+  DQ18 and DQ19 above).
+- **New, for CGPT (presentation within intent):**
+  - **DQ31, the Home hero's content.** Recommended: the viewer's This Month
+    League position, named by tier and period, plus this month's movement;
+    tapping it opens This Month. The Race stays out while it is a trial.
+  - **DQ32, where Match Ideas goes.** Recommended: Play › Arrange a Game.
+  - **DQ33, where Kings of Tiers is reached.** Recommended: a row under the
+    compact podium, and a More tables entry.
+- **For Shaun to confirm (DQ3):** the IA makes Power "current club
+  strength" and moves month-end Power history to More tables.
+  - Power would stop opening on the Meaningful Month's month-end view, the
+    26 Sep default. It would show today's ratings, which agree with Tier
+    Rank everywhere.
+  - The Meaningful Month still picks This Month's month.
+  - This ships in Phase 4. If that is not what was meant, Power keeps its
+    month control.
+- **Phase changes:**
+  - Phase 2 (Play) gains Arrange a Game, with Find a Game's entry, Match
+    Ideas and Challenges in My Games.
+  - Phase 3 splits: **3a** is the Home hierarchy with a text-first hero,
+    and **3b** is the hero's visual treatment.
+  - Phase 1 is now blocked only on DQ5 and DQ29.
+- **No phase is approved yet.** Each brief needs its own go-ahead.
 
 **IA review resolved 30 Sep — replaces the earlier 'no phase approved' gate.**
 - Top-level IA is now **Home · Rankings · Play · Players · Me**.
@@ -2943,6 +2988,40 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Ledger CCode: redesign setup and the map reconciliation)
+
+The Ledger (Shaun/CGPT's `0b3322f`) gave CCode two tasks.
+
+**1. Create `ux/player-reset-v2` from `f75a493` and merge `main`: NOT
+DONE.**
+- This session's permission check refused creating the shared branch.
+- Nothing was created or pushed, and CCode did not look for a way round.
+- Section 5 has the two ways to unblock it.
+- `app-redesign` is untouched.
+
+**2. Reconcile the design map to the approved IA: DONE (`cf72a14`).** It
+is documentation only, committed on `main`, so every agent reads one copy
+and the branch inherits it.
+- **New Section 0:**
+  - the target IA per tab;
+  - which DQs it settles: DQ3, DQ4, DQ18, DQ19, DQ21 and DQ22;
+  - three new questions for CGPT: DQ31, DQ32 and DQ33;
+  - one confirmation for Shaun: Power stops opening on the month-end view.
+- **Areas 4.1–4.17:** each carries an IA note, and Home's Change list is
+  re-ordered to be hero-led.
+- **Section 5:** every current destination has an IA home, including Find
+  a Game, the Requests entries, Match Ideas, Last 10, Kings, month-end
+  Power and the Monthly Snapshot.
+- **Section 7:** the phases are re-cut, and 7.1 gives each an acceptance
+  line.
+  - Phase 2 gains Arrange a Game.
+  - Phase 3 splits into 3a (hierarchy) and 3b (hero visual).
+  - The preview route is the visual check.
+
+**No code changed; `main` is at 762 / 762.**
+
+Baton → Shaun / CGPT.
 
 ### CCode — 30 Sep 2026 (Vercel is the primary host)
 
@@ -6864,6 +6943,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `cf72a14` | Design map reconciled to the approved IA. It adds Section 0 (target IA per tab, the DQs settled, new DQ31–33, and the DQ3 confirmation for Shaun), IA notes on every area, IA homes for every current destination, and re-cut phases with acceptance briefs (Arrange a Game in Phase 2; Home 3a/3b). Documentation only. |
 | `f98b99e` | Vercel is the primary host (Shaun). Comments in `_config.yml`, `scripts/stamp-build.js` and the split document now say that Pages is compatibility only and that the Vercel stamp is canonical. No behaviour change. |
 | `8e1c91e` | Desktop phone preview at `/preview`. The real app sits in a same-origin iframe at 375 / 390 (default) / 412, with rotate, refresh and open full size. It scales to fit without changing the app's viewport, hides desktop scrollbars inside the frame, and shows a link instead of a frame on a phone. It works at `/` and below a repo path; `vercel.json` gains a `/preview` redirect. 10 tests; 762/762. |
 | `f75a493` | Parallel-development split finished; **the redesign branching point**. `tests/architecture.test.js` (6 tests: load order, no duplicate or forward top-level names, layered modules only declare, pure domain, stylesheet order) and the final `docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md`. 752/752. |
@@ -6952,6 +7032,25 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Sep: the map reconciliation is DONE (`cf72a14`). The redesign
+branch is NOT created; it needs Shaun (Section 5). Baton → Shaun / CGPT.**
+- **For Shaun:**
+  1. Let CCode create `ux/player-reset-v2` from `f75a493` and merge `main`,
+     or create it himself.
+  2. Confirm the DQ3 reading: Power shows current ratings, and month-end
+     history moves to More tables.
+- **For CGPT:**
+  - DQ31, the hero's content;
+  - DQ32, Match Ideas;
+  - DQ33, the Kings entry;
+  - the still-open presentation DQs that block Phase 0/1: DQ20, DQ5, DQ29.
+- **Then:** approve the **Phase 0** brief (map Section 7.1). It is tokens
+  and primitives with no visible change, and the first phase to build on
+  the branch.
+- **Implementation on `main`:** unchanged at `8e1c91e`, 762 / 762.
+
+*(Shaun/CGPT's 30 Sep header and lines, kept:)*
 
 **Player Experience Reset is now unblocked at the IA level. Baton → CCode for redesign setup/reconciliation, then back to Shaun/CGPT before broad visual implementation.**
 - **Hosting:** Vercel is primary (`main` = production, branches = preview deployments). To let CCode verify deploys, share a Vercel URL (Section 5).
