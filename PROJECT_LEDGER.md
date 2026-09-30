@@ -152,6 +152,33 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Player Experience Reset — Phase 0 (foundations) DONE on `ux/player-reset-v2`
+(`cd844f6`).** Shaun's go-ahead, 30 Sep. **No screen changed.** It is on the
+redesign branch only; `main` does not carry it.
+- **Tokens:**
+  - the champagne `--accent`;
+  - `--row-self`;
+  - a **steel-blue `--state-booked` (`#8FB3D9`)**, chosen well away from
+    Tier B sage and upward movement (DQ20);
+  - `--state-attention`, `--move-up`, `--move-down`, `--danger-text`;
+  - the type roles, `--radius-block`, `--touch-min` (44px) and one z-scale.
+- **Contrast:** the Ledger's is kept. Muted text stays `--text-dim`, and
+  every new text colour is AA on cards.
+- **Fonts:** Instrument Serif and Inter, **self-hosted** WOFF2 with their
+  OFL licences, with no third-party request.
+  - Nothing uses them yet, so the app downloads none of them.
+  - **Finding:** Instrument Serif has **no tabular figures**. Numbers that
+    must line up use Inter with `tabular-nums`; the serif is for display.
+- **Primitives:** the map's component set, under **new class names only**
+  (a test enforces it). Each tappable one is 44px.
+- **HTML helpers:** presentation-only, in `ui/components/primitives.js`.
+- **A reference page:** `docs/design/primitives.html`.
+- **Evidence:**
+  - The 39-state DOM + computed-style snapshot is **identical** at 390px
+    and 360px. Only the 27 new custom properties were left out, and a test
+    proves none redefines an old one.
+  - 18 new tests; **780 / 780** on the branch.
+
 **Player Experience Reset — CGPT presentation decisions RESOLVED (Shaun/CGPT, 30 Sep).**
 - **DQ20 — visual system:** adopt Claude Design's **champagne gold `#D5B76E`** and **Instrument Serif + Inter** (self-hosted); keep the Ledger's stronger contrast levels. **Booked gets a distinct state hue** so it cannot be confused with Tier B or positive movement.
 - **DQ5 — first run / no viewer:** Me and Play › My Games ask **“Who are you?”** and open the existing player selector. No sign-in/account language is implied. Until a viewer is chosen, Home may show club-level monthly context rather than fabricated personal data.
@@ -1254,6 +1281,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Desktop phone preview is a container, not a second app | **DONE `8e1c91e`.** Shaun, 30 Sep 2026. `/preview` frames the normal app URL in a same-origin iframe at 375 / 390 / 412 (390 by default). It uses no mock data and duplicates no screen code, and the app is not told it is being previewed. CCode left out the suggested `?embeddedPreview=1` flag: nothing needs it, and a URL the app never reads cannot alter product logic. It is desktop-only: a phone gets a link to the app instead. |
 | Vercel is the primary hosting and deployment platform | Shaun, 30 Sep 2026. `main` = production/stable. Redesign and feature branches get their own Vercel preview deployments. Custom domains come later. The Vercel build stamp is the canonical deployment stamp. Relative paths must work from Vercel root hosting. GitHub Pages compatibility is kept only where trivial and is not removed unless it causes maintenance overhead. No new infrastructure is designed around it. Supersedes "GitHub Pages deploys `main`". |
 | Power shows current ratings; month-end history moves to More tables (DQ3) | Shaun, 30 Sep 2026, confirming CCode's reading of the IA. Rankings › Power stops opening on the Meaningful Month's month-end view (the 26 Sep default) and shows today's ratings, so it agrees with Tier Rank everywhere (D5). Month-end Power history is reached from Rankings › More tables › Past months. The Meaningful Month still decides which month **This Month** opens on. It ships with Phase 4 on `ux/player-reset-v2`, not before; `main` is unchanged until Shaun releases the redesign. |
+| Booked is steel blue `#8FB3D9`; aligned numbers use Inter, not Instrument Serif | CCode, 30 Sep 2026, Phase 0. Both are implementation choices within DQ20 (Shaun/CGPT). DQ20 asked for Booked to get a distinct hue: `#8FB3D9` is 8.6:1 on cards and over 45° of hue from Tier B sage, upward movement, attention and the accent. The map asked whether Instrument Serif has tabular figures before using it for numbers: it has none, so tables, points, scores and counts use Inter with `tabular-nums`. Either is a one-token change if CGPT prefers otherwise. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -3025,6 +3053,42 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Player Experience Reset: Phase 0 foundations)
+
+**`cd844f6` on `ux/player-reset-v2`.** 780 / 780 tests there (18 new in
+`tests/designFoundations.test.js`). `main` is unchanged at 762.
+
+**Built:**
+- **`tokens.css`:** new tokens (above) and ten `@font-face` rules.
+- **`assets/fonts/`:** the WOFF2 files and OFL licences, from Fontsource
+  5.3.0 via npm.
+- **`components.css`:** a "Redesign primitives" section.
+- **`ui/components/primitives.js`:** the helpers. They are loaded before
+  `app.js` and reuse the app's `escapeHtml`.
+- **`docs/design/primitives.html`**, the reference page.
+
+**Proof of no change:**
+- **The snapshot:** the 39-state snapshot, taken before and after on the
+  branch, is identical at 390px and 360px.
+- **The tests:** they fail if a Phase 0 rule styles an existing selector,
+  if any token is declared twice, or if the app downloads a font or
+  renders anything in a new family. Each was checked by deliberately
+  breaking it.
+
+**Worth knowing:**
+- **Instrument Serif lacks tabular figures.** It was checked in the font
+  files; the map's fallback is applied and recorded in the Decisions Log.
+- **The snapshot tool lives only in CCode's scratchpad.** It is not in the
+  repo, yet every later phase's acceptance line relies on it.
+  - **Proposal:** commit it on `main` as `scripts/behaviour-snapshot.js`,
+    with its diff tool.
+  - It is a shared dev tool, so it needs no product decision. CCode will
+    do it with Phase 1 unless told otherwise.
+- **On the branch's Vercel preview:** `/docs/design/primitives.html` shows
+  the set. `/preview` frames the app, which should look unchanged.
+
+Baton → Shaun for the **Phase 1 (Shell)** go-ahead.
 
 ### CCode — 30 Sep 2026 (Ledger CCode: idea backlog; map follows the presentation decisions)
 
@@ -7022,6 +7086,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `cd844f6` (`ux/player-reset-v2`) | Phase 0 foundations. Tokens (champagne accent, steel-blue Booked, attention, movement, danger, type roles, touch, z-scale), self-hosted Instrument Serif + Inter (OFL, unused by the app so not downloaded), the primitive CSS under new names, presentation-only HTML helpers, and `docs/design/primitives.html`. Snapshot identical at 390 and 360. 18 tests; 780/780 on the branch. |
 | `8b7657b` | Product idea backlog (`docs/product/`). It holds three ideas (Video Highlights & Moments, season recap, attendance record) and pointers to the Ledger's parked and open items, with usage and promotion rules. The design map now marks the 30 Sep presentation decisions resolved. Documentation only. |
 | `cf72a14` | Design map reconciled to the approved IA. It adds Section 0 (target IA per tab, the DQs settled, new DQ31–33, and the DQ3 confirmation for Shaun), IA notes on every area, IA homes for every current destination, and re-cut phases with acceptance briefs (Arrange a Game in Phase 2; Home 3a/3b). Documentation only. |
 | `f98b99e` | Vercel is the primary host (Shaun). Comments in `_config.yml`, `scripts/stamp-build.js` and the split document now say that Pages is compatibility only and that the Vercel stamp is canonical. No behaviour change. |
@@ -7112,6 +7177,20 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Sep: Phase 0 is DONE on `ux/player-reset-v2` (`cd844f6`), with
+no visible change. Baton → Shaun.**
+- **Next decision: the Phase 1 (Shell) go-ahead.** It covers:
+  - five tabs, with More → Me;
+  - Me as the home of the former More destinations;
+  - the entry points Rankings **Power | This Month** with More tables,
+    Play **My Games | Club** with Arrange a Game, and Players Directory;
+  - the Play badge (DQ29), and system Back.
+- **Its acceptance line** (map 7.1): every former More destination is
+  within two taps; visibility settings govern every entry; Back never
+  exits the app from inside a sheet; no screen's content changes.
+- **Review Phase 0 on the branch's Vercel preview:**
+  `…/docs/design/primitives.html`.
 
 **CCode, 30 Sep (later): the idea backlog is created (`8b7657b`), and the map
 records the presentation decisions. Baton → Shaun.**
