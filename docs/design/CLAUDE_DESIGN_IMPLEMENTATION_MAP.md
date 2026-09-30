@@ -1,9 +1,16 @@
 # Claude Design → Money Padel: implementation map
 
-**Status:** mapping only. No production UI has changed. Nothing here is
-authorised for implementation until Shaun / CGPT approve a phase.
+**Status:** reconciled to the **approved IA of 30 Sep 2026** (Section 0).
+No production UI has changed.
+- **What is approved:** the IA, which is the Keep / Simplify / Move / Merge
+  / Hide / Remove review.
+- **What is not yet approved:** individual phases. Each phase brief in
+  Section 7 still needs its own go-ahead.
+- **Where redesign work lands:** `ux/player-reset-v2`, never `main`, until
+  Shaun releases it.
 
-**Written by:** CCode, 28 Sep 2026.
+**Written by:** CCode, 28 Sep 2026. **Reconciled to the IA:** CCode,
+30 Sep 2026. Where Section 0 and a later section disagree, Section 0 wins.
 
 **Design source:** `docs/design/claude-mobile-v1/`. It contains three files:
 - `Money_Padel_App.dc.html`, the file the brief calls "Money Padel App.dc.html". The repo copy has underscores for spaces.
@@ -38,7 +45,94 @@ Section 4 maps each area the brief named. Every area answers the brief's nine qu
 8. **Risk:** Low / Medium / High, with the reason.
 9. **Phase:** from the order in Section 7.
 
-Questions that need a decision are numbered **DQ1–DQ30** in Section 6. Each area points to them.
+Questions that need a decision are numbered **DQ1–DQ33** in Section 6 (DQ31–33 arose from the IA, Section 0.3). Each area points to them.
+
+---
+
+## 0. The approved IA (30 Sep 2026), and what it changes here
+
+Shaun and CGPT completed the IA review on 30 Sep (Ledger, *Added since the
+compaction*).
+
+**The core rule:** each primary tab answers one obvious player question.
+Secondary analysis, settings and Admin controls move deeper or into
+context, rather than competing at the top level.
+
+### 0.1 Target IA
+
+| Tab | Primary entry points | Everything else |
+|---|---|---|
+| **Home** | One scroll, in this order: **compact live-data hero** → **Needs You** → **Next Game** → **Last Time Out** → light **Around the Club** | The Monthly Snapshot is largely absorbed into the hero. **Match Ideas moves out of Home** (proposed: Play › Arrange a Game, DQ32). Power Rating, Tier Rank and form stay, but simplified and demoted below the monthly story. |
+| **Rankings** | **Power \| This Month** | **Power** is current club strength, with a **compact podium near the top**; filters and sorts go into one secondary control. **Kings of Tiers** is a secondary Rankings destination. **This Month** is **League · Merit · Race**, League first while Race is a trial, sharing one month and one drill-down. **More tables** holds W/L, Last 10, Monthly Performance and the monthly stories, month-end Power history, North vs South, Insights / Call-Outs and Doughnuts. Methodology sits behind a disclosure. |
+| **Play** | **My Games \| Club** | Requests, Called Out, Upcoming and Needs Attention are **lifecycle states inside those lists**, not destinations. **Arrange a Game** is one entry point for Find a Game, Request a game and Add multiple games. **Played Games & Results** stays as the history destination. **Challenges** are demoted into My Games. Admin fixture management stays contextual. |
+| **Players** | **Directory → Profile** | Search is the main Directory interaction, with advanced filters secondary. **Compare and H2H move into the profile** ("You vs them"). The profile leads with identity and current standing, then You vs them, then recent activity, then deeper analysis behind disclosure: journey, partnerships, rivals, full stats. |
+| **Me** | A personal dashboard, **distinct from a player's public profile** | My performance, this-month standing, history, personal settings (My Player, Data & Rankings) and the gated Admin tools. The Power Rating Guide and About live here or deeper. Me replaces More; it is not a junk drawer. |
+
+### 0.2 Decisions this settles
+
+| DQ | Status | Now reads |
+|---|---|---|
+| DQ3 | **Settled by the IA** | Power shows **current** ratings. Month-end Power history moves to More tables. The Meaningful Month default (26 Sep) therefore governs **This Month**, not Power. *CCode reads the IA this way; see 0.4.* |
+| DQ4 | **Settled** | This Month is League · Merit · Race, League first while Race is a trial. |
+| DQ18 | **Resolved** | Keep both. The podium is compact, near the top of Power. Kings of Tiers is a secondary Rankings destination. |
+| DQ19 | **Resolved in direction** | The target product has a **compact, interactive, live-data hero**, not `1a`'s no-hero. It prioritises monthly competition over slow-moving Power Rating. Its visual treatment may be staged (Phase 3b). |
+| DQ21 | **Settled** | H2H and Compare live in the player flow (profile "You vs them"), not as a Players destination. |
+| DQ22 | **Settled** | Played Games & Results is Play's history destination. Challenges go into My Games. |
+
+**Still open, unchanged:**
+- **For Shaun:** DQ1, DQ6, DQ7, DQ8, DQ9, DQ10, DQ15, DQ26.
+- **For CGPT:** DQ2, DQ5, DQ11, DQ20, DQ24, DQ29, DQ30.
+
+These are listed in Section 6.
+
+### 0.3 New questions the IA raises
+
+These are presentation within agreed intent, so CGPT may lead.
+
+- **DQ31. What the Home hero says.** Recommendation:
+  - The viewer's **This Month** position, named by tier, from the League
+    (DQ24). For example: "3rd in Tier B · September · 4 games · 2 days
+    left".
+  - Movement this month, labelled with its period (DQ2).
+  - A tap opens Rankings › This Month on Home's month.
+  - When the month has no games yet, the hero says so (the Meaningful Month
+    note), rather than showing an empty rank.
+  - The Race stays out of the hero while it is a trial.
+  - **No viewer chosen:** the hero shows the club's month (leaders per
+    tier) and asks who you are (DQ5).
+- **DQ32. Where Match Ideas goes.**
+  - **Recommendation:** Play › Arrange a Game, as the "suggested for you"
+    strip above Find a Game, still gated by `canSee('findgame')` and with
+    no favourite call (D4).
+  - **Alternative:** Me.
+- **DQ33. Where Kings of Tiers is reached.**
+  - **Recommendation:** a "Kings of Tiers ›" row directly under the compact
+    podium on Power, opening its own screen, and also listed in More
+    tables.
+
+### 0.4 One thing to confirm (for Shaun)
+
+**Rankings' default month (DQ3).** The IA makes Power "current club strength"
+and moves month-end Power history into More tables.
+- **What CCode reads:** Power stops opening on the Meaningful Month's
+  month-end view, a 26 Sep default. It shows today's ratings, which also
+  agree with Tier Rank everywhere (D5).
+- **What does not change:** the Meaningful Month still decides which month
+  This Month opens on.
+- **When it would matter:** the change would ship in Phase 4.
+- **If that is not what was meant, Power keeps its month control** and
+  only the default is revisited.
+
+### 0.5 What does not change
+
+- Every rule, calculation, permission and piece of data, and the
+  `sequential-v1` engine.
+- The legacy `#tabrow` router: the new IA is routed on top of it.
+- The view-model contract in `docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md`
+  Section 3. A redesigned screen asks those functions and never
+  re-derives. A fact that is missing is added on the functional side.
+- Nothing is removed silently. Every current destination has a home in
+  Section 5.
 
 ---
 
@@ -77,14 +171,14 @@ Questions that need a decision are numbered **DQ1–DQ30** in Section 6. Each ar
 - **More's eight destinations (six items, My Player and Admin).** They need new homes (Section 5).
 - **Rankings month.** The design's Power view is "today", but Rankings opens on the Meaningful Month (DQ3).
 
-**Recommended order** (Section 7):
+**Recommended order** (Section 7, reconciled to the IA):
 1. Tokens and primitives.
-2. Shell.
-3. Play, including the game screen and the Admin Manage sheet.
-4. Home.
-5. Rankings.
+2. Shell: five tabs, Me, section entry points.
+3. Play: My Games | Club, Arrange a Game, game detail, Admin sheet.
+4. Home: the hero-led hierarchy.
+5. Rankings: Power | This Month, More tables.
 6. Players, Profile and Me.
-7. Find a Game, Doughnuts and the remaining sub-screens.
+7. The remaining screens.
 
 ---
 
@@ -236,9 +330,10 @@ Existing families are named, so they are extended rather than duplicated.
   - Label colours per Section 3.1.
   - Tab height at least 48px.
   - A Play badge (DQ29).
-  - Sub-navigation becomes each section's own segmented control or in-page list, not a global sub-bar:
-    - Rankings: Power / *Month*;
-    - Play: My games / Club.
+  - Sub-navigation becomes each section's own segmented control or in-page list, not a global sub-bar (**IA 30 Sep**):
+    - Rankings: **Power | This Month**, plus a More tables list;
+    - Play: **My Games | Club**, plus **Arrange a Game**;
+    - Players: the Directory only. Compare leaves the sub-bar for the profile (Phase 5); until then it stays reachable from the Directory.
   - The system **Back** closes sheets and returns from drill screens (Phase 1; the audit found Back exits the app).
 - **Mock-only:**
   - the status bar;
@@ -252,6 +347,15 @@ Existing families are named, so they are extended rather than duplicated.
 - **Phase:** 1.
 
 ### 4.2 Home
+
+> **IA 30 Sep supersedes `1a`'s no-hero base.** The target order is: a compact, interactive,
+> live-data hero led by **This Month** (DQ31) → Needs You → Next Game → Last Time Out →
+> light Around the Club.
+> - The Monthly Snapshot is absorbed into the hero.
+> - Match Ideas leaves Home (DQ32).
+> - Power Rating, Tier Rank and form are simplified and demoted, not removed.
+>
+> The rest of this section still holds for the data sources and the rules to preserve.
 
 - **Design:**
   - `1a` is the recommended base. It has no hero. The first viewport answers, in order:
@@ -299,15 +403,16 @@ Existing families are named, so they are extended rather than duplicated.
   - Call-Outs off hides the "All Insights" link;
   - the Club Pulse chevrons;
   - "Select a player to personalise Home" when no viewer is chosen.
-- **Change:**
-  - One rating card, with Power Rating and Tier Rank at equal weight.
+- **Change** (re-ordered by the IA; see the note at the top of 4.2):
+  - **The hero:** This Month position and movement, and a tap into Rankings › This Month (DQ31). The "Your \<month\>" strip and the Monthly Snapshot fold into it.
+  - A compact standing line under the hero: Power Rating, Tier Rank and form. It is **demoted**, no longer a card at equal weight with the month.
   - A **Needs you** block that exists only when non-empty, with inline "I'm in / Can't play".
   - A **Next game** card with a date block.
-  - A compact "Your \<month\>" strip with three positions.
   - A Latest result row that opens 4.2a.
   - An "Around the club" list.
   - The greeting and date move into a small header.
-  - The "SAME GAME. HIGHER STANDARDS." hero goes, unless DQ19 chooses a hero.
+  - The "SAME GAME. HIGHER STANDARDS." decorative hero is replaced by the live-data hero (DQ19 resolved). The existing `.home-hero` image slot may stay as its background.
+  - Match Ideas moves to Play › Arrange a Game (DQ32).
 - **Mock-only:**
   - "▲12 this week" (DQ2);
   - "58 pts to Tier 1" and the progress bar (DQ1);
@@ -321,7 +426,7 @@ Existing families are named, so they are extended rather than duplicated.
 - **Risk: Medium.**
   - The data all exists, but Needs you and Next game need the shared viewer view-model from Play (4.6).
   - Home visual acceptance from 19 Sep is still open with CGPT / Shaun.
-- **Phase:** 3, after Play's view-model.
+- **Phase:** 3a (hierarchy, text-first hero), then 3b (hero visual); after Play's view-model.
 
 #### 4.2a Latest result → "Why it moved" (`1b`)
 
@@ -350,6 +455,13 @@ Existing families are named, so they are extended rather than duplicated.
 - **Risk: Low.** It reuses existing text. **Phase:** 3.
 
 ### 4.3 Rankings / Power
+
+> **IA 30 Sep:**
+> - Power is **current club strength** (DQ3).
+> - The **compact podium stays near the top**.
+> - **Kings of Tiers becomes a secondary destination** (DQ18, DQ33).
+> - Sorts and filters fold into one secondary control.
+> - W/L and month-end history move to More tables.
 
 - **Design:**
   - `1c`: a Power list **grouped by tier**. The number on the left is Tier Rank, with overall position in small print.
@@ -388,7 +500,9 @@ Existing families are named, so they are extended rather than duplicated.
   - The lit "you" row.
   - A footnote from `thresholdText` plus the live unranked count.
   - A "More tables" list at the foot.
-  - The sort chips and filters fold behind one quiet control (they are not removed; DQ18).
+  - The sort chips and filters fold behind one quiet control (they are not removed).
+  - A compact podium near the top, and a "Kings of Tiers ›" row (DQ18 resolved, DQ33).
+  - The month select leaves Power. Month-end history is reached from More tables › Past months (DQ3, confirm per 0.4).
 - **Mock-only:**
   - "Tier 1 · 1,700 +", "Tier 2 · 1,600 – 1,699", "Under 1,600". **Tiers are club classifications (S/A/B/C) set by board decision, not rating bands**;
   - "Ranked players have 5+ games in the last 60 days". The real rule is **2+ rated matches in 30 days**;
@@ -398,11 +512,17 @@ Existing families are named, so they are extended rather than duplicated.
 - **Primitives:** segmented control, section heading (tier), player row, list row with chevron, pill (IDLE / INACTIVE).
 - **Risk: High.**
   - Rankings carries the most accepted, test-pinned behaviour.
-  - The CGPT/Shaun instruction "do not redesign all-time Rankings, Kings, podium beyond consistency/readability" conflicts with removing the podium and Kings (DQ18).
+  - Kings and the podium are kept (DQ18 resolved): the podium is made compact and Kings becomes secondary. Neither is redesigned beyond that.
   - The default month differs (DQ3).
 - **Phase:** 4.
 
-### 4.4 Monthly Rankings
+### 4.4 Monthly Rankings → "This Month"
+
+> **IA 30 Sep:**
+> - The segment is **This Month**. It shows **League · Merit · Race**, League first (DQ4 settled).
+> - One shared month and one drill-down pattern.
+> - **Last 10, Monthly Performance and the monthly stories move to More tables.**
+> - The Information view goes behind a methodology disclosure.
 
 - **Design:**
   - `1d`: a "September" segment beside Power.
@@ -446,7 +566,7 @@ Existing families are named, so they are extended rather than duplicated.
   - "Kaz 6–1 +41".
   - The segment literally named "September". It must follow `summaryMonth`, which on the 1st may be the previous month.
 - **Primitives:** segmented control, section heading (tier), table row, drill-down panel, disclosure line.
-- **Risk: Medium–High.** The switch order is a product call (DQ4), and Information, Monthly Summary and Last 10 need places (Section 5).
+- **Risk: Medium–High.** The switch order is settled (DQ4). Information, the Monthly Summary and Last 10 now have homes (Section 5), but moving them touches test-pinned DOM (`#summaryContent`).
 - **Phase:** 4.
 
 ### 4.5 League / Merit tables and statistic drill-down
@@ -484,6 +604,12 @@ Existing families are named, so they are extended rather than duplicated.
 - **Phase:** 4.
 
 ### 4.6 Play / My Games
+
+> **IA 30 Sep:**
+> - **My Games | Club** are the only primary views. The lifecycle states are sections within them.
+> - **Arrange a Game** is the single entry for Find a Game, Request a game and Add multiple games (4.8, 4.9, 4.16).
+> - **Challenges go into My Games** (DQ22).
+> - **Played Games & Results** stays as the history destination.
 
 - **Design:**
   - `1g`: one list ordered by what needs doing:
@@ -582,7 +708,14 @@ Existing families are named, so they are extended rather than duplicated.
 - **Primitives:** lifecycle counter row, game row, pill, disclosure line.
 - **Risk: Medium.** **Phase:** 2.
 
-### 4.8 Requests
+### 4.8 Requests → Arrange a Game
+
+> **IA 30 Sep:** the request sheet is reached through **Arrange a Game**, which offers:
+> 1. **Find a game:** suggestions, including Match Ideas (DQ32);
+> 2. **Request a game:** four slots;
+> 3. **Add multiple games:** paste a list.
+>
+> These are one entry point, not three places.
 
 - **Design:**
   - `1k` Request a game: a sheet with four slots, not a form.
@@ -760,6 +893,11 @@ Existing families are named, so they are extended rather than duplicated.
 
 ### 4.13 Players
 
+> **IA 30 Sep:**
+> - **Directory → Profile** is the journey, and search is the primary Directory interaction.
+> - Advanced filters and sorts are secondary: one quiet control, keeping their behaviour.
+> - **Compare leaves the Players sub-bar** for the profile (DQ21).
+
 - **Design:**
   - `1o`: search first ("Search 15 members");
   - "Played with recently" avatar chips;
@@ -783,7 +921,7 @@ Existing families are named, so they are extended rather than duplicated.
   - filters, sorting, status semantics;
   - names via `escapeHtml`;
   - the Directory's accepted look, unless CGPT reopens it;
-  - Compare / H2H stays reachable (DQ21).
+  - Compare / H2H stays reachable. It moves into the profile's "You vs them" (DQ21 settled), and the old sub-tab stays until that ships.
 - **Change:**
   - The search field is first.
   - A "Played with recently" strip.
@@ -796,6 +934,12 @@ Existing families are named, so they are extended rather than duplicated.
 - **Risk: Low–Medium.** Accepted recently, so keep the changes small. **Phase:** 5.
 
 ### 4.14 Other-player profile
+
+> **IA 30 Sep:** the order is:
+> 1. identity and current standing;
+> 2. **You vs them**, which absorbs Compare / H2H for the viewer and this player;
+> 3. recent activity;
+> 4. deeper analysis behind progressive disclosure: journey, partnerships, rivals, full stats.
 
 - **Design:**
   - `1p` Rishi. Four answers before scrolling:
@@ -854,6 +998,15 @@ Existing families are named, so they are extended rather than duplicated.
 
 ### 4.15 Me
 
+> **IA 30 Sep:** Me is a **personal dashboard, distinct from a public profile**. It covers:
+> - my performance;
+> - this-month standing;
+> - history;
+> - personal settings: My Player and Data & Rankings;
+> - the gated Admin tools.
+>
+> The Power Rating Guide and About sit here or deeper. The public profile stays one tap away ("View my profile").
+
 - **Design:**
   - `1n`: an identity header ("Member since 2023 · 148 games");
   - Power Rating with "▲ 52 since April";
@@ -904,6 +1057,9 @@ Existing families are named, so they are extended rather than duplicated.
 
 ### 4.16 Find a Game
 
+> **IA 30 Sep:** Find a Game is no longer a Play destination. It is the first option
+> inside **Arrange a Game** (4.8). Its entry moves in Phase 2, and its card restyle is Phase 6.
+
 - **Design:**
   - `1q`: filter chips (Close game / New partner / Rematch / Step up).
   - Cards labelled "Evenly matched · Best fit" / "A stretch", each with a human reason ("You haven't partnered Len since July — you won 5 of 7 together") and Swap a player / Request.
@@ -932,7 +1088,7 @@ Existing families are named, so they are extended rather than duplicated.
   - "you won 5 of 7 together": fine if from `BEST_PARTNER` / partnership data.
   - "All four played this week": fine if derived.
 - **Primitives:** chip filter, card, reason line, primary / secondary buttons.
-- **Risk: Medium** (D4 compliance). **Phase:** 6.
+- **Risk: Medium** (D4 compliance). **Phase:** 2 for its entry inside Arrange a Game; 6 for the card restyle.
 
 ### 4.17 Doughnuts
 
@@ -955,7 +1111,7 @@ Existing families are named, so they are extended rather than duplicated.
   - the shared month;
   - empty states;
   - April / May show "No doughnuts in …" (display-only history; Section 5 item 5).
-- **Change:** entry points (Rankings › More tables; Me › Doughnuts); a date-block row; a "DOUBLE" tag when both sets are 6–0.
+- **Change:** entry points (Rankings › More tables; Me › Doughnuts; confirmed by the IA); a date-block row; a "DOUBLE" tag when both sets are 6–0.
 - **Mock-only:** "2 this year" on Me. That is a new year scope, so use the viewer's all-time count or the Meaningful Month.
 - **Primitives:** segmented control, month select, result row, date block, pill.
 - **Risk: Low.** It shipped today and is test-pinned (`.doughnut-row`, `.doughnut-result`). **Phase:** 6.
@@ -1002,7 +1158,7 @@ Existing families are named, so they are extended rather than duplicated.
 
 ## 5. Current features the design does not place, and where they would go
 
-Removing More and flattening Play means every item below must be given a home **before** Phase 1 ships. None may be dropped silently. The proposals below are for CGPT (DQ18, DQ21, DQ22).
+Removing More and flattening Play means every item below must be given a home **before** Phase 1 ships. None may be dropped silently. **Reconciled to the IA of 30 Sep**; rows marked *IA* are settled, and the rest are CCode proposals within it.
 
 | Current feature | Where it is now | Proposed home |
 |---|---|---|
@@ -1010,19 +1166,26 @@ Removing More and flattening Play means every item below must be given a home **
 | Data & Rankings (data range) | More | Me › Settings |
 | Power Rating Guide | More | Me › Go deeper, and a link from Rankings' footnote |
 | About Power Rankings | More | Me › About |
-| North vs South | More | Rankings › More tables |
-| Insights / Call-Outs | More (`callouts` tab) | Rankings › More tables, still gated by `canSee('callouts')` |
-| Doughnuts | More | Rankings › More tables **and** Me |
-| Admin / Manage | More | Me › Admin tools (unlocked only); the unlock form reached from Me › Settings |
-| Win / Loss | Rankings sub-tab | Rankings › More tables (as the design says) |
-| Podium, Kings of Tiers | Top of Power | **DQ18.** They are an accepted direction; either keep them above the tier groups or move them to Rankings › More tables |
-| Monthly Summary, monthly stories, Information view | League › View | Month segment › "About this month" disclosure, or Rankings › More tables › Past months |
-| Last 10 | League (third table) | Month segment, beside League (it is not month-scoped, so label it) |
-| Power sort options (Form, Avg opp., Clutch, Upsets) | Power sort bar | One quiet "Sort" control on Power |
-| Min-games filter, Include idle / inactive | Power | The same quiet filter control |
-| Compare / Head-to-Head | Players sub-tab | Profile "You & X" for one pair; the full H2H via Me › All partnerships & head-to-heads and Players (DQ21) |
-| Games history, filters, Add result, approvals, Admin `··· Manage`, corrections | Play › Games | Play › "Played games & results" (full screen, unchanged behaviour) (DQ22) |
-| Challenges | Requests fold | The request sheet as a third mode, or Play › My games section (DQ22) |
+| North vs South | More | Rankings › More tables (*IA*) |
+| Insights / Call-Outs | More (`callouts` tab) | Rankings › More tables, still gated by `canSee('callouts')` (*IA*) |
+| Doughnuts | More | Rankings › More tables **and** Me (*IA*) |
+| Admin / Manage | More | Me › Admin tools (unlocked only); the unlock form reached from Me › Settings (*IA*) |
+| Win / Loss | Rankings sub-tab | Rankings › More tables (*IA*) |
+| Podium | Top of Power | Stays near the top of Power, made compact (*IA*, DQ18) |
+| Kings of Tiers | Power, below the podium | A secondary Rankings destination: a row under the podium and a More tables entry (*IA*, DQ18; DQ33) |
+| Month-end Power history (the Power month select) | Power | Rankings › More tables › Past months (*IA*; DQ3, confirm per 0.4) |
+| Monthly Summary, monthly stories, Monthly Performance | League › View | Rankings › More tables (*IA*) |
+| Information view | League › View | A methodology disclosure on This Month, and the Rating Guide in Me (*IA*) |
+| Last 10 | League (third table) | Rankings › More tables (*IA*). It is not month-scoped; label it so |
+| Power sort options (Form, Avg opp., Clutch, Upsets) | Power sort bar | One quiet secondary control on Power (*IA*) |
+| Min-games filter, Include idle / inactive | Power | The same secondary control (*IA*) |
+| Compare / Head-to-Head | Players sub-tab | The profile's "You vs them" (*IA*, DQ21). The full H2H screen stays reachable from there |
+| Games history, filters, Add result, approvals, Admin `··· Manage`, corrections | Play › Games | Play › **Played Games & Results** (full screen, unchanged behaviour) (*IA*, DQ22) |
+| Challenges | Requests fold | A section of Play › My Games (*IA*, DQ22) |
+| Find a Game | Play sub-tab | Play › **Arrange a Game** › Find a game (*IA*) |
+| Request a game, Add multiple games | Requests tab | Play › **Arrange a Game** (*IA*) |
+| Match ideas | Home (folded) | Play › Arrange a Game (DQ32) |
+| Monthly Snapshot | Home | Absorbed into the Home hero (*IA*, DQ31) |
 | Predict a Matchup | Admin | Admin tools (unchanged) |
 | Admin-only Court bookings to record | Upcoming | Play › Club, admin-only section at the top |
 | Build stamp | Foot of Admin / Manage | Unchanged |
@@ -1048,11 +1211,11 @@ In every case, the real rule is kept until someone decides otherwise.
   Tiers are board decisions, not rating thresholds. The only related figure is `computePromotionGap`, the distance to the lowest rating in the tier above, which the code itself flags as a proxy and not a rule. **Recommendation:**
   - keep today's one-line wording, reframed as "N pts below the lowest-rated Tier A player";
   - no bar and no threshold line, because either would imply automatic promotion.
-- **DQ3. What Power shows by default.**
+- **DQ3. What Power shows by default.** *Settled by the IA (Section 0.2); one confirmation remains (0.4).*
   - The design's Power is "today", so Tier Rank would agree with every other surface (D5 defines Tier Rank on today's ratings).
   - Today, Rankings opens on the Meaningful Month's month-end view.
   - **Recommendation:** Power shows current ratings, and month-end history moves to the Month segment and Past months. This reverses part of the 26 Sep default, so it is Shaun's call.
-- **DQ4. Order of the monthly switch.**
+- **DQ4. Order of the monthly switch.** *Settled by the IA: League · Merit · Race.*
   - The design leads with Best Month ("the most human question").
   - The Monthly Race is an approved **trial**, and League is the established competition.
   - **Recommendation:** League · Merit · Race until the trial is confirmed. Then Race may lead.
@@ -1077,8 +1240,8 @@ In every case, the real rule is kept until someone decides otherwise.
 - **DQ15. Reliability.** The design's "Reliability" is attendance.
   - **Recommendation:** never reuse the word for anything but rating evidence.
   - Attendance is not recorded. Tracking it would be new data.
-- **DQ18. Podium and Kings of Tiers.** The design has neither. CGPT/Shaun accepted them and said "do not redesign beyond consistency". Keep them (above the tier groups, or in More tables)?
-- **DQ19. Home hero.** `1a` (no hero) versus `2a`/`2b`/`2c`/`3a`/`3b`.
+- **DQ18. Podium and Kings of Tiers.** *Resolved 30 Sep: compact podium near the top of Power; Kings secondary.* The design has neither. CGPT/Shaun accepted them and said "do not redesign beyond consistency". Keep them (above the tier groups, or in More tables)?
+- **DQ19. Home hero.** *Resolved in direction 30 Sep: a compact, interactive, live-data hero stays (content: DQ31).* `1a` (no hero) versus `2a`/`2b`/`2c`/`3a`/`3b`.
   - `3a`/`3b` need club photography: whose images, with what rights?
   - Today's `.home-hero` already uses an image, `assets/home/home-hero-padel.png`, so an image slot exists. The question is only whether to keep one.
   - **Recommendation:** build `1a` first. A hero is a later, separable increment.
@@ -1107,14 +1270,17 @@ In every case, the real rule is kept until someone decides otherwise.
   - adopt the design's gold and faces;
   - keep the Ledger's contrast levels;
   - give Booked a distinct hue.
-- **DQ21. Compare / H2H.** The profile's "You & X" covers one pair. Keep the full H2H screen reachable from Me and Players.
-- **DQ22. Games history and Challenges placement** (Section 5).
+- **DQ21. Compare / H2H.** *Settled by the IA: in the profile's "You vs them".* The profile's "You & X" covers one pair. Keep the full H2H screen reachable from Me and Players.
+- **DQ22. Games history and Challenges placement.** *Settled by the IA: Played Games & Results; Challenges in My Games (Section 5).*
 - **DQ24. Monthly positions outside the table** (Home "Your \<month\>", Me):
   - always name the tier, as in "3rd in Tier B";
   - show "provisional" for a Race below 5 matches;
   - for a split-month mover, show the spell they are in now.
 - **DQ29. Play badge.** Proposed: the number of fixtures where the viewer must act, i.e. For me requests plus Needs attention games the viewer is in. Never shown at 0.
-- **DQ30. "Around the club" items.** The design's items (doughnut news, a rank change, games booked this week) differ from Club Pulse's. Use only items with a derivable source.
+- **DQ30. "Around the club" items.** The design's items (doughnut news, a rank change, games booked this week) differ from Club Pulse's. Use only items with a derivable source. The IA makes this section **light**: two or three items at most.
+- **DQ31. What the Home hero says.** New with the IA; see Section 0.3.
+- **DQ32. Where Match Ideas goes.** New with the IA; see Section 0.3.
+- **DQ33. Where Kings of Tiers is reached.** New with the IA; see Section 0.3.
 
 **Recorded, no decision needed (the real rule is kept)**
 
@@ -1178,25 +1344,70 @@ These facts shape how, not whether, the design can land. They come from reading 
 
 ---
 
-## 7. Recommended phased migration order
+## 7. Recommended phased migration order — reconciled to the IA (30 Sep)
 
-Each phase is its own brief, with:
+**Each phase is its own brief.** A brief is approved on its own, lands on
+`ux/player-reset-v2` and ships with:
 - targeted tests, verified to fail against the old code;
 - the full suite;
-- a 375px and 390px visual check;
-- a Ledger update.
+- a check at 375px and 390px, using the desktop phone preview at `/preview`
+  on that branch's Vercel preview deployment;
+- a Ledger update, made on `main`.
 
-A phase ships behind no flag: each one replaces its screens outright, with the old entry points kept until the new ones are accepted.
+**No flags.** A phase replaces its screens outright. The old entry points
+are kept until the new ones are accepted.
 
 | Phase | Scope | Why this order | Blocked on |
 |---|---|---|---|
-| **0 — Foundations** | Tokens (Section 3.1) in `tokens.css`; self-hosted fonts if chosen; the primitive CSS (Section 3.4); a primitives reference page in `docs/design/` (not shipped in the app). **No visible change** to production screens. | Every later phase uses these. Doing them first keeps each screen change small and consistent. | DQ20 |
-| **1 — Shell** | Five tabs (More → Me); Me as the list of former More destinations plus the viewer header; per-section segmented controls; Play badge (count only); system Back closes sheets and returns from drill screens (`history.pushState`); the tab bar routes through `canSeeTab`. `#tabrow` kept as the internal router. | Every other phase needs the new entry points. It is low calculation risk and high routing risk, so do it alone. | DQ5, DQ18 (placement), DQ22, DQ29 |
-| **2 — Play** | `playView.js` view-model; My games; Club (counters); game detail with stepper; request sheet (one game / paste a list / review); Admin Manage sheet; booking sheet (Admin, or participants per DQ6); toast. Old Upcoming and Requests tabs retired only once accepted. | This fixes the audit's worst finding, and it produces the view-model Home needs. | DQ6, DQ7, DQ8, DQ9, DQ11 |
-| **3 — Home** | `1a` layout: rating card, Needs you, Next game (UPCOMING only), your month strip, latest result + "Why it moved" sheet, Around the club. | Depends on Phase 2's view-model. | DQ1, DQ2, DQ19, DQ24, DQ30 |
-| **4 — Rankings** | Power grouped by tier (four groups including S); Month segment with table switch; League / Merit / Race / Last 10 restyle; drill-down sheet; More tables list. | The most test-pinned area; best done once the primitives are proven. | DQ3, DQ4, DQ18 |
-| **5 — Players, Profile, Me** | Directory search-first; profile "You & X" and "More on X"; Me dashboard. | Profile is large and fragile; Me needs Home's pieces. | DQ15, DQ21 |
-| **6 — Remaining** | Find a Game cards and chips; Doughnuts restyle and new entry points; Games history, Insights and H2H restyle; Admin / Manage restyle. | Lowest player impact, or already recently improved. | DQ26 |
+| **0 — Foundations** | Tokens in `tokens.css`; fonts if chosen; the primitive CSS in `components.css`; a primitives reference page in `docs/design/`. **No visible change.** | Every later phase uses these. | DQ20 |
+| **1 — Shell** | Five tabs (More → Me). Me as the home of the former More destinations and the viewer header. Section entry points: Rankings **Power \| This Month** with a More tables list; Play **My Games \| Club** with Arrange a Game; Players Directory. Play badge (count only). System Back. `#tabrow` stays the router. | Every other phase needs the entry points; high routing risk, so do it alone. | DQ5, DQ29 |
+| **2 — Play** | `playView.js` view-model; My Games (lifecycle sections, Challenges); Club (counters); **Arrange a Game** (find / request / paste a list, Match Ideas); game detail; Admin Manage sheet; booking sheet; toast; Played Games & Results entry. | Fixes the audit's worst finding, and builds the view-model Home needs. | DQ6, DQ7, DQ8, DQ9, DQ11, DQ32 |
+| **3a — Home hierarchy** | The IA order with a **plain, text-first hero**: This Month position → Needs You → Next Game → Last Time Out → light Around the Club; the demoted standing line; "Why it moved" sheet. | Depends on Phase 2's view-model. Gets the hierarchy right before the visuals. | DQ1, DQ2, DQ24, DQ30, DQ31 |
+| **3b — Home hero visual** | The interactive visual treatment of the same hero data. | DQ19 allows staging. Separable and reversible. | CGPT/Shaun visual pick |
+| **4 — Rankings** | Power (current, compact podium, Kings secondary, one secondary control); This Month (League · Merit · Race); More tables (W/L, Last 10, monthly stories and Monthly Performance, Past months, North vs South, Insights, Doughnuts); methodology disclosure. | The most test-pinned area; best once the primitives are proven. | DQ3 confirmation (0.4), DQ33 |
+| **5 — Players, Profile, Me** | Directory search-first with secondary filters; profile identity → You vs them (Compare/H2H) → recent → disclosure; Me dashboard. | The profile is large and fragile; Me reuses Home's pieces. | DQ15 |
+| **6 — Remaining** | Find a Game card restyle (inside Arrange a Game); Doughnuts; Played Games & Results; Insights; the H2H screen; Admin / Manage restyle. | Lowest player impact, or recently improved. | DQ26 |
+
+### 7.1 Phase briefs, in short
+
+Each brief is written out in full when it is approved.
+
+- **Phase 0 — acceptance:**
+  - the 39-state behaviour snapshot is **identical** (DOM and computed
+    styles), because no screen changes;
+  - the tokens and primitives are documented;
+  - `tests/architecture.test.js` passes, and any new stylesheet is loaded
+    in rank order.
+- **Phase 1 — acceptance:**
+  - every former More destination is reachable within two taps of Me or
+    Rankings › More tables;
+  - visibility settings govern every new entry point (D4);
+  - Back closes a sheet and returns from a drill screen, and never exits
+    the app from inside it;
+  - no screen's content changes. Only its entry point does, so tests on
+    screen content pass unchanged.
+- **Phase 2 — acceptance:**
+  - My Games shows Needs You, Upcoming, Called Out, Waiting on others and
+    Archived as sections of one list;
+  - Arrange a Game reaches all three modes;
+  - no player sees a favourite call or a percentage (D4);
+  - every lifecycle rule stays in `fixtureFlow.js`.
+- **Phase 3a — acceptance:**
+  - the first viewport answers "how am I doing this month?", "is anyone
+    waiting on me?" and "when do I play next?", in that order;
+  - Next Game is UPCOMING only;
+  - the hero's position names its tier and period.
+- **Phase 4 — acceptance:**
+  - Power and This Month are the only two primary views;
+  - every More tables item opens the same content as today;
+  - League, Merit and Race keep every rule in 4.4 and 4.5.
+- **Phase 5 — acceptance:**
+  - search is first;
+  - "You vs them" matches today's H2H counts, draws included;
+  - Me is distinct from the public profile, and the profile's live-DOM
+    move (6a.3) still works.
+- **Phase 6 — acceptance:** these are restyles only. The behaviour
+  snapshot changes only in the restyled screens.
 
 **Test strategy, applying to every phase:**
 - Keep existing ids and classes on the same logical element wherever a test uses them. Add new classes alongside rather than renaming.
@@ -1231,5 +1442,5 @@ A phase ships behind no flag: each one replaces its screens outright, with the o
 ## 8. What this map deliberately does not do
 
 - It does not change any rule, calculation, permission, schema or copy in the app.
-- It does not choose between hero options, tokens or permission changes; those are DQs.
+- It does not choose tokens or permission changes; those are DQs. Hero *direction* is settled by the IA (DQ19); its content and visual are DQ31 and Phase 3b.
 - It does not port any `.dc.html` markup, script or mock data.
