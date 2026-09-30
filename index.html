@@ -178,6 +178,10 @@
 <script src="assets/js/v3Bridge.js"></script>
 <script src="assets/js/productionSnapshot.js"></script>
 <script src="assets/js/historicalDisplayMatches.js"></script>
+<!-- Domain and view-model modules extracted from app.js (docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md).
+     They only declare; app.js boots after them. -->
+<script src="assets/js/domain/matches/gamesFilter.js"></script>
+<script src="assets/js/features/games/gamesViewModel.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/shell.js"></script>
 </body>

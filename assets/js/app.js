@@ -9099,37 +9099,12 @@ function gamesFilterSummary(typeOptions){
   return [gamesMonthText(), playerPart, gamesTypeLabel(typeOptions)].map(escapeHtml).join(' · ');
 }
 
-// The selected player's record over EXACTLY the games listed beneath it.
-//
-// It is handed the list the rows are drawn from -- after month, game type and
-// player have all been applied -- and counts nothing else, so P is the number
-// of rows by construction and cannot drift from them the way a second query
-// over a broader set would. Each row's result is read by MatchOutcome from the
-// recorded outcome: a draw is a draw whichever side the player was filed on,
-// and which side is stored first never decides a win.
-//
-// The player is found by canonical id, as the filter found them, so a rename
-// cannot leave a listed game uncounted.
-//
-// Win rate is wins over games played, draws included, rounded to 0.1 -- the
-// definition the League table already uses for its monthly win percentage.
-// Nothing here is a rating, a League or Merit figure, or a new classification:
-// it is a count of the rows on screen.
+// The selected player's record over `matches`. The rule lives in
+// domain/matches/gamesFilter.js (GamesFilter.record); this remains for callers
+// that already hold a list, and is exactly what the screen shows.
 function gamesFocusRecord(matches){
   if(gamesPlayerIds.length !== 1) return null;
-  const id = String(gamesPlayerIds[0]).toLowerCase();
-  const rec = { played: 0, wins: 0, draws: 0, losses: 0, winpct: null };
-  (matches || []).forEach(m => {
-    const name = (m.winners || []).concat(m.losers || [])
-      .find(n => String(playerIdFor(n)).toLowerCase() === id);
-    const o = name ? MatchOutcome.outcomeFor(m, name) : null;
-    rec.played++;
-    if(o === MatchOutcome.WIN) rec.wins++;
-    else if(o === MatchOutcome.DRAW) rec.draws++;
-    else if(o === MatchOutcome.LOSS) rec.losses++;
-  });
-  if(rec.played) rec.winpct = Math.round(1000 * rec.wins / rec.played) / 10;
-  return rec;
+  return GamesFilter.record(matches, gamesPlayerIds[0], playerIdFor, MatchOutcome);
 }
 
 // One compact line under the list heading, not another card. It names the
@@ -9165,31 +9140,15 @@ function gamesRecordHtml(rec, typeOptions){
 function renderGamesTab(){
   const box = document.getElementById('gamesView');
   const pending = extraMatchesState.filter(m=>m.status==='pending' && !deletedIdsState.includes(m.id));
-  let display = getDisplayMatches().filter(m=>m._status==='approved');
-  if(gamesMonth !== 'all') display = display.filter(m=>m.date.slice(0,7)===gamesMonth);
-  // Every filter layers. The options offered are generated from the matches
-  // that survive the OTHER filters, so the control never offers a game type
-  // that would show nothing.
-  // The game-type options are generated from what survives the OTHER filters,
-  // so the control never offers a type that would show nothing.
-  const typeScope = PlayerFilter.filter(display, gamesPlayerIds, playerIdFor);
-  const gamesTypeOptions = (typeof GameType !== 'undefined')
-    ? GameType.optionsFrom(typeScope.map(gameTypeOf).filter(Boolean))
-    : { categories: [], matchups: [] };
-  // A game type that no longer exists under the current month/player selection
-  // falls back rather than filtering everything away. This used to live beside
-  // the select that offers the options, which meant the fallback happened one
-  // render too late -- the list was filtered to nothing first, and corrected
-  // only on the next draw. It also cannot live there at all now: a shut filter
-  // panel has no select to hang it off.
-  const gamesTypeAvailable = ['all'].concat(
-    gamesTypeOptions.categories.map(o=>o.value), gamesTypeOptions.matchups.map(o=>o.value));
-  if(!gamesTypeAvailable.includes(gamesType)) gamesType = 'all';
-  if(gamesType !== 'all' && typeof GameType !== 'undefined'){
-    display = display.filter(m => GameType.matches(gamesType, gameTypeOf(m)));
-  }
-  display = PlayerFilter.filter(display, gamesPlayerIds, playerIdFor);
-  display.sort((a,b)=> a.date < b.date ? 1 : -1);
+  // The filtered set and the one player's record come from the view-model
+  // (features/games/gamesViewModel.js -> domain/matches/gamesFilter.js); this
+  // screen only draws them. A game type that no longer exists under the
+  // current month/player selection has already fallen back to 'all' there,
+  // BEFORE filtering -- kept in this screen's state so the select agrees.
+  const gamesVm = getFilteredGamesViewModel();
+  gamesType = gamesVm.type;
+  const gamesTypeOptions = gamesVm.typeOptions;
+  const display = gamesVm.games;
 
   let html = '';
 
@@ -9339,8 +9298,9 @@ Player C &amp; Player D"></textarea>
       ? `📋 Games with ${escapeHtml(groupLabel)} (${display.length})`
       : `📋 All games (${display.length})`);
   html += `<div class="section-heading">${gamesHeading}</div>`;
-  // Counted from `display` itself -- the list drawn below -- never re-queried.
-  html += gamesRecordHtml(gamesFocusRecord(display), gamesTypeOptions);
+  // Counted by the view-model from `display` itself -- the list drawn below --
+  // never re-queried.
+  html += gamesRecordHtml(gamesVm.record, gamesTypeOptions);
   html += `<div class="section-sub">Newest first, grouped by day. Tap a game to see the full breakdown.</div>`;
   const idToIdx = {};
   ALL_MATCHES.forEach((m,i)=>{ idToIdx[m.id] = i; });

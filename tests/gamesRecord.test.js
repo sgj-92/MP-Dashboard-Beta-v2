@@ -325,14 +325,21 @@ test('canonical matchup notation and order are unchanged', () => {
 });
 
 test('the record counts the listed games and reads no rating, table or race', () => {
-  const src = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'app.js'), 'utf8');
-  const start = src.indexOf('function gamesFocusRecord(');
-  const end = src.indexOf('\n}\n', start);
-  assert.ok(start > 0 && end > start);
-  const body = src.slice(start, end);
+  // The rule lives in the domain module; the screen only draws what the
+  // view-model hands it.
+  const domain = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'domain', 'matches', 'gamesFilter.js'), 'utf8')
+    .replace(/^\s*\/\/.*$/gm, '');
+  const start = domain.indexOf('function record(');
+  const body = domain.slice(start, domain.indexOf('\n  }\n', start));
+  assert.ok(start > 0 && body.length > 0);
   ['rating', 'Merit', 'MonthlyRace', 'computeMonthly', 'getDisplayMatches', 'getAllApprovedMatches', 'MATCHES', 'GameType']
-    .forEach((word) => assert.ok(!body.includes(word), `gamesFocusRecord must not read ${word}`));
-  assert.ok(body.includes('MatchOutcome.outcomeFor'), 'results come from the one outcome reader');
-  // …and it is handed the list the rows are drawn from.
-  assert.ok(/gamesRecordHtml\(gamesFocusRecord\(display\)/.test(src), 'the record is given `display` itself');
+    .forEach((word) => assert.ok(!body.includes(word), `the record must not read ${word}`));
+  assert.ok(body.includes('MO.outcomeFor'), 'results come from the one outcome reader');
+  // ...the view-model counts the very list it returns...
+  const vm = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'features', 'games', 'gamesViewModel.js'), 'utf8');
+  assert.ok(/GamesFilter\.record\(r\.games,/.test(vm), 'the record is counted over the returned games');
+  // ...and the screen draws both from the same view-model.
+  const src = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'app.js'), 'utf8');
+  assert.ok(/const display = gamesVm\.games;/.test(src), 'the rows are the view-model games');
+  assert.ok(/gamesRecordHtml\(gamesVm\.record,/.test(src), 'the record line is the view-model record');
 });
