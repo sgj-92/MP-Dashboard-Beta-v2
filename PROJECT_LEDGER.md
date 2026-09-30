@@ -2106,6 +2106,22 @@ In every case the real rule stays until someone decides otherwise.
 - the eligibility rule is 2 in 30 days;
 - the Admin prediction is worded as a share of games, never a probability.
 
+**Syncing to Claude Design is deferred (Shaun, 30 Sep).**
+- **Why:** the Claude Design sync (`/design-sync`) imports a component
+  library, a React/Storybook-style package the design agent then builds
+  with. Money Padel has none: it is vanilla JS with HTML-string renderers,
+  no build and no dependencies. A sync now would carry only `tokens.css` /
+  `app.css`.
+- **Options Shaun was offered:**
+  - stop;
+  - a styles-only import;
+  - building React primitives just for the sync, which would pre-empt
+    Phase 0 / DQ20.
+- **He chose to stop.**
+- **When to revisit:** once Phase 0 has produced real reusable primitives.
+- **State:** no Claude Design project and no `.design-sync/` config were
+  created.
+
 **For CGPT: confirm the code is the intent.**
 - **Kings / podium basis.** The Ledger holds two statements: "Monthly Performance remains the podium/Kings basis" (17 Sep, CGPT) and "both rank on rating" (18 Sep, CCode).
 - **The code, checked 28 Sep, ranks both on Power Rating:** month-end Power Rating in a month view (`computeRankingsPodiumTop3` / `computeKingsOfTiers` in `shell.js`), and neither uses Monthly Performance.
