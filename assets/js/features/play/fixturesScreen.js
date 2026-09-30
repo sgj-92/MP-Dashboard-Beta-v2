@@ -784,29 +784,12 @@ function renderWishlist(flashMessage, adminFlashMessage){
 
   on('reqSubmit', (btn)=>{ btn.onclick = async ()=>{
     const msg = document.getElementById('reqMessage');
-    const requestedBy = submissionIdentity();
-    if(!requestedBy){ msg.textContent = 'Choose who you are first.'; return; }
-    const names = ['reqP1','reqP2','reqP3','reqP4'].map(id=>document.getElementById(id).value.trim());
-    if(names.some(n=>!n)){ msg.textContent = 'Enter all four players.'; return; }
-    if(new Set(names.map(n=>n.toLowerCase())).size !== 4){ msg.textContent = 'The same name appears more than once.'; return; }
-    const unrecognized = names.filter(n => !PLAYERS.find(p=>p.name.toLowerCase()===n.toLowerCase()));
-    if(unrecognized.length){ msg.textContent = `Unrecognized name${unrecognized.length>1?'s':''}: ${unrecognized.join(', ')}. Add them via Manage first if they're new.`; return; }
-
-    currentUserName = requestedBy;
-    await saveMyName(requestedBy);
-
-    // The requester is in by asking, when they are one of the four.
-    const req = FixtureFlow.createRequest({
-      players: names, requestedBy,
-      preferredDate: document.getElementById('reqDate').value || '',
+    const r = await submitGameRequest({
+      names: ['reqP1','reqP2','reqP3','reqP4'].map(id=>document.getElementById(id).value),
+      requestedBy: submissionIdentity(),
+      date: document.getElementById('reqDate').value,
     });
-    gameRequestsState.push(req);
-    const ok = await saveGameRequests(gameRequestsState);
-    if(!ok){
-      gameRequestsState.pop();
-      msg.textContent = storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — try again.` : `Save failed — this page can't reach shared storage.`;
-      return;
-    }
+    if(!r.ok){ msg.textContent = r.message; return; }
     requestSectionOpen.mine = true;
     dataChanged({ redraw: ()=> renderWishlist('Requested! It is under My Requests; the other players answer from For me.') });
   }; });

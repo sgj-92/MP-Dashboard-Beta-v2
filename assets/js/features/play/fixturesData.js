@@ -55,6 +55,34 @@ async function commitFixtureChange(change){
   return Object.assign({}, result, { saved: ok });
 }
 
+// Asking for a game: the one path, from Play › Requests and from Arrange a Game.
+// Checks the four names, saves, and says what happened; the caller redraws.
+// The requester is in by asking when they are one of the four. Date, time and
+// venue are optional suggestions (DQ9) -- a request is not a booking.
+async function submitGameRequest({ names, requestedBy, date, time, venue }){
+  if(!requestedBy) return { ok: false, message: 'Choose who you are first.' };
+  const clean = (names || []).map(n => String(n || '').trim());
+  if(clean.length !== 4 || clean.some(n => !n)) return { ok: false, message: 'Enter all four players.' };
+  if(new Set(clean.map(n => n.toLowerCase())).size !== 4) return { ok: false, message: 'The same name appears more than once.' };
+  const unrecognized = clean.filter(n => !PLAYERS.find(p => p.name.toLowerCase() === n.toLowerCase()));
+  if(unrecognized.length) return { ok: false, message: `Unrecognized name${unrecognized.length > 1 ? 's' : ''}: ${unrecognized.join(', ')}. Add them via Manage first if they're new.` };
+
+  currentUserName = requestedBy;
+  await saveMyName(requestedBy);
+
+  const req = FixtureFlow.createRequest({
+    players: clean, requestedBy,
+    preferredDate: date || '', preferredTime: time || '', location: (venue || '').trim(),
+  });
+  gameRequestsState.push(req);
+  const ok = await saveGameRequests(gameRequestsState);
+  if(!ok){
+    gameRequestsState.pop();
+    return { ok: false, message: storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — try again.` : `Save failed — this page can't reach shared storage.` };
+  }
+  return { ok: true, req };
+}
+
 // How an Upcoming game's players divide into sides.
 //
 // `players` is a flat list of four and has been since the wishlist was
