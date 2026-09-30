@@ -165,17 +165,17 @@ test('a club reassessment is shaped as its own event, with reliability, not as m
 });
 
 test('the UI no longer carries a reconstruction or its disclaimer', () => {
-  const app = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'app.js'), 'utf8');
-  const shell = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'shell.js'), 'utf8');
+  // Every application script: the profile may live outside shell.js.
+  const all = require('./helpers/appSource.js').readAllAppSource();
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const code = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').split('\n')
     .filter((l) => !l.trim().startsWith('//')).join('\n');
 
-  assert.ok(!/computePlayerJourney/.test(code(app) + code(shell)),
+  assert.ok(!/computePlayerJourney/.test(code(all)),
     'the fabricated player journey must be gone, not merely unused');
-  assert.ok(!/Story estimate/.test(app + shell),
+  assert.ok(!/Story estimate/.test(all),
     'the "story estimate" disclaimer existed only because a second calculation did');
-  assert.ok(/playerJourney\(name\)/.test(code(shell)),
+  assert.ok(/playerJourney\(name\)/.test(code(all).slice(code(all).indexOf('function renderPremiumProfile'))),
     'the premium profile must read the persisted journey');
   assert.ok(html.includes('assets/js/journeyView.js'), 'journeyView.js must be loaded by the page');
 });

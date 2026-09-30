@@ -131,8 +131,9 @@ test('crossovers are real swaps, and the first month has none to report', () => 
 
 test('the legacy monthly solver is gone from the application', () => {
   const strip = (s) => s.replace(/^\s*\/\/.*$/gm, '');
-  ['app.js', 'shell.js'].forEach((f) => {
-    const src = strip(fs.readFileSync(path.join(ROOT, 'assets', 'js', f), 'utf8'));
+  const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
+  appScriptFiles().forEach((f) => {
+    const src = strip(readAppScript(f));
     assert.ok(!src.includes('computeMonthlyRating'), f + ' still calls the retired monthly solver');
   });
   const mv = strip(fs.readFileSync(path.join(ROOT, 'assets', 'js', 'monthlyViews.js'), 'utf8'));
@@ -218,8 +219,9 @@ test('the real dataset reports fallers as well as risers', () => {
 });
 
 test('no user-facing copy still describes the retired monthly solver', () => {
-  ['app.js', 'shell.js'].forEach((f) => {
-    const src = fs.readFileSync(path.join(ROOT, 'assets', 'js', f), 'utf8');
+  const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
+  appScriptFiles().forEach((f) => {
+    const src = readAppScript(f);
     assert.ok(!/mini-season/i.test(src), f + ' still describes a monthly mini-season');
     assert.ok(!/tier-seeded rating using only/i.test(src), f + ' still describes a monthly re-solve');
   });

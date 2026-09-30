@@ -230,8 +230,9 @@ test('only Power Rankings reads or writes selectedMonth', () => {
     'applyRankingsMonth', 'arriveAtRankings', 'renderRankingsMonthNote',
   ]);
   const offenders = [];
-  ['app.js', 'shell.js'].forEach((file) => {
-    const lines = fs.readFileSync(path.join(__dirname, '..', 'assets', 'js', file), 'utf8').split('\n');
+  const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
+  appScriptFiles().forEach((file) => {
+    const lines = readAppScript(file).split('\n');
     let fn = '(top level)';
     lines.forEach((line, i) => {
       const m = /^(?:async )?function (\w+)|^  function (\w+)/.exec(line);

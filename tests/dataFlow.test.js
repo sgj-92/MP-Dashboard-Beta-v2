@@ -180,13 +180,16 @@ maybe('a submitted result appears on the screen it was submitted from', async ()
 test('nothing recomputes the record without redrawing the screen', () => {
   const fs = require('node:fs');
   const path = require('node:path');
-  const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'js', 'app.js'), 'utf8');
-  const lines = src.split('\n');
+  // Every application script, each walked on its own for its enclosing function.
+  const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
   const callers = [];
-  lines.forEach((line, i) => {
-    if (!/(^|[^\w.])recomputeAll\(\)/.test(line)) return;
-    if (/^\s*(\/\/|\*)/.test(line)) return;      // a comment about it, not a call
-    callers.push({ line: i + 1, text: line.trim() });
+  appScriptFiles().forEach((file) => {
+    const lines = readAppScript(file).split('\n');
+    lines.forEach((line, i) => {
+      if (!/(^|[^\w.])recomputeAll\(\)/.test(line)) return;
+      if (/^\s*(\/\/|\*)/.test(line)) return;      // a comment about it, not a call
+      callers.push({ file, line: i + 1, text: line.trim(), fn: nearestFunction(lines, i + 1) });
+    });
   });
   // Exactly three: the definition's own body, the one refresh path, and the
   // two places that own the whole screen anyway (start-up and the app-wide
@@ -194,10 +197,10 @@ test('nothing recomputes the record without redrawing the screen', () => {
   const allowed = ['return PerfTrace.time(', 'function recomputeAll'];
   const unexpected = callers.filter(c =>
     !allowed.some(a => c.text.startsWith(a))
-    && !/dataChanged|applyDataRangeChange|init/.test(nearestFunction(lines, c.line)));
+    && !/dataChanged|applyDataRangeChange|init/.test(c.fn));
   assert.deepStrictEqual(unexpected, [],
     'recomputeAll() is called outside dataChanged(): that screen will show the old numbers.\n'
-    + unexpected.map(c => `  app.js:${c.line}  ${c.text}`).join('\n'));
+    + unexpected.map(c => `  ${c.file}:${c.line}  ${c.text}`).join('\n'));
 });
 
 // Walks back to the nearest enclosing `function name(` line. Crude, and enough

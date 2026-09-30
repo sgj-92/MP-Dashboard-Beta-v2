@@ -191,8 +191,9 @@ test('nothing decides what a result looks like on its own', () => {
   const fs = require('node:fs');
   const path = require('node:path');
   const offenders = [];
-  ['app.js', 'shell.js'].forEach((file) => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'js', file), 'utf8');
+  const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
+  appScriptFiles().forEach((file) => {
+    const src = readAppScript(file);
     src.split('\n').forEach((line, i) => {
       if (/^\s*(\/\/|\*)/.test(line)) return;
       // `something ? 'w' : 'l'` and friends — deciding a form state from a

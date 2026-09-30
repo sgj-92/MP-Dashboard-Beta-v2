@@ -102,11 +102,10 @@ test('the application builds its monthly views from v3 tiers, not the empty TIER
 });
 
 test('the rankings filter, podium and Kings panel all scope tier to the selected month', () => {
-  const app = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'app.js'), 'utf8');
-  const shell = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'shell.js'), 'utf8');
+  const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
   const code = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').split('\n')
     .filter((l) => !l.trim().startsWith('//')).join('\n');
-  const all = code(app) + code(shell);
+  const all = appScriptFiles().map((f) => code(readAppScript(f))).join('\n');
   // The old shape compared today's tier against the selected tier filter.
   assert.ok(!/activeTier\s*===\s*'All'\s*\|\|\s*p\.tier\s*===\s*activeTier/.test(all),
     'tier filtering must go through tierInScope, not p.tier');

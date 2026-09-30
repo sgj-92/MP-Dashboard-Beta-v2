@@ -143,11 +143,10 @@ test('a month never opens at a tier seed', () => {
 });
 
 test('the browser no longer recomputes a historical expectation or a fake delta', () => {
-  const app = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'app.js'), 'utf8');
-  const shell = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'shell.js'), 'utf8');
+  const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
   const code = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').split('\n')
     .filter((l) => !l.trim().startsWith('//')).join('\n');
-  const all = code(app) + code(shell);
+  const all = appScriptFiles().map((f) => code(readAppScript(f))).join('\n');
 
   assert.ok(!/expected_winshare|overperformance_winner/.test(all),
     'the browser-derived expectation fields must be gone, not merely unread');
@@ -165,7 +164,7 @@ test('the browser no longer recomputes a historical expectation or a fake delta'
 test('the monthly breakdown no longer describes a solver that is not running', () => {
   // Comments stripped: several of these phrases survive on purpose as notes
   // recording what the copy used to claim and why it was wrong.
-  const app = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'app.js'), 'utf8')
+  const app = require('./helpers/appSource.js').readAllAppSource()
     .replace(/\/\*[\s\S]*?\*\//g, '').split('\n')
     .filter((l) => !l.trim().startsWith('//')).join('\n');
   ['K=28', '300 passes', 'solved every player', 'starts the month at their tier baseline',

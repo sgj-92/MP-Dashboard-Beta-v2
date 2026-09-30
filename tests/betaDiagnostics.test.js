@@ -171,10 +171,10 @@ test('every backend offers remove, and nothing in the UI calls it', async () => 
   // collection argument specifically -- the app is full of DOM .remove() calls,
   // and a blanket ban on the word would be a test that fails for the wrong
   // reason and gets weakened later.
-  const app = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'app.js'), 'utf8');
-  const shell = fs.readFileSync(path.join(ROOT, 'assets', 'js', 'shell.js'), 'utf8');
+  // Every application script -- app.js, shell.js and the extracted modules.
+  const appSrc = require('./helpers/appSource.js').readAllAppSource();
   const deletesADocument = /\.remove\(\s*(RatingStore\.COLLECTIONS|['"`](players|matches|ratingJourney)['"`])/;
-  assert.ok(!deletesADocument.test(app + shell), 'no screen may delete a document');
+  assert.ok(!deletesADocument.test(appSrc), 'no screen may delete a document');
   // And the reset script, which may, does.
   const reset = fs.readFileSync(path.join(ROOT, 'scripts', 'reset-beta.js'), 'utf8');
   assert.ok(/backend\.remove\(/.test(reset));
