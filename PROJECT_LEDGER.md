@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`9e4a5e6`** (Admin Monthly Board Pack, on `app-features-fixes` = `main`, 30 Sep). The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **795 / 795 on `main`** (30 Sep, after the Board Pack); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`e666a96`** (Board Pack: Monthly results table and over-80% modules, 30 Sep; the pack itself is `9e4a5e6`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **796 / 796 on `main`** (30 Sep, after the Board Pack); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -189,6 +189,18 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
     the new section.
 - **Storage:** Section 5, "Board Pack: saved figures or live ones?".
   Stats left out for want of a canonical source are listed there.
+- **Added the same day (`e666a96`), at Shaun's request:** two more
+  modules, both on by default.
+  - **Monthly results table:** one row per player for the whole month,
+    from the League / Information aggregation. Columns: Tier (as held, for
+    example "B → A"), P, W, D, L, Pts (3 / 1 / 0) and Diff, the
+    Information "hardest games" measure. It can be ordered by points,
+    games or difficulty.
+  - **Won or lost over 80%:** players who won, or lost, more than 80% of
+    their games. Draws count as games; exactly 80% is not flagged. The
+    minimum is 3 games by default, Information's own rule, with
+    "everyone" or 5+ as options.
+  - 21 modules in all.
 
 **Player Experience Reset — Phase 2 (Play) DONE on `ux/player-reset-v2`
 (`6291cdc`), with the rules on `main` (`7d70cc0`, `86beb59`).** Shaun,
@@ -3220,6 +3232,29 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Board Pack: results table and over-80%)
+
+**`e666a96` on `app-features-fixes` = `main`.**
+- **Shaun asked** that the pack cover, for any month: games played,
+  wins, losses, points (3 / 1 / 0), most difficult games, and anyone who
+  won or lost more than 80%.
+- **Already covered:** the League module (split by tier) and the top 3
+  hardest games in Monthly Information.
+- **Added:** the **Monthly results table** and **Won or lost over 80%**
+  modules (Section 1).
+- **Tests:** P / W / D / L / Pts are checked against a tally taken
+  straight from the month's approved matches, not only against the
+  function that feeds the module. 796 / 796.
+- **Checked against a read-only pull of the live beta (30 Sep):**
+  - **September:** 55 games, 9 draws, 27 players. Nobody with 3+ games
+    passed 80% either way. With every player included, Omar won 1 of 1
+    and Tee lost 1 of 1.
+  - **August:** Erf won 5 of 6 (83.3%) and Shaun lost 5 of 6 (83.3%).
+- **For Shaun:** is the 80% line strictly "more than"? Exactly 80% (4 of
+  5) is not flagged today; that is a one-word change.
+
+Baton → Shaun / CGPT.
 
 ### CCode — 30 Sep 2026 (Admin Monthly Board Pack)
 
@@ -7489,6 +7524,10 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Sep (later): the Board Pack now also has the Monthly results
+table and "Won or lost over 80%" (`e666a96`, 796 / 796).** Everything
+below still stands.
 
 **CCode, 30 Sep: the Admin Monthly Board Pack is DONE on `main`
 (`9e4a5e6`, 795 / 795). Baton → Shaun / CGPT.**
