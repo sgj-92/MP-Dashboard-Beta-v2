@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`e666a96`** (Board Pack: Monthly results table and over-80% modules, 30 Sep; the pack itself is `9e4a5e6`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **796 / 796 on `main`** (30 Sep, after the Board Pack); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`4af924d`** (Monthly Review Share Deck, 30 Sep; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **810 / 810 on `main`** (30 Sep, after the Share Deck); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,39 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Monthly Review Share Deck — DONE on `app-features-fixes` = `main`
+(`4af924d`), 30 Sep.** Shaun's brief. The redesign branch is untouched.
+- **Admin Board Pack → players' Share Deck.** The same selected modules,
+  in the same order, from the same module data. There is no second
+  configuration and no second calculation.
+- **Each module has a slide form:** a headline, the top 3–5 and big
+  figures, never a full table. Commentary becomes a "From the club" card.
+  A module with nothing to say that month is left out. A cover card opens
+  the deck, and a closing card links to the app.
+- **The deck:**
+  - portrait 4:5 cards in the dark and gold look;
+  - swipe (native scroll-snap), previous / next, dots (a count and a bar
+    past 12 cards), arrow keys, and announced position;
+  - safe-area aware, no sideways scroll at 375px, reduced motion
+    respected.
+- **The link:** `…/review/?m=YYYY-MM` is stable across revisions and
+  needs no unlock. It works on Vercel, GitHub Pages and locally, and
+  Vercel redirects `/review` to `/review/`.
+  - The page reads only the published review and the visibility settings.
+    It loads none of the app, so it cannot recalculate anything.
+  - Players can Share (the phone's share sheet) or Copy link.
+- **In the Board Pack section:**
+  - Preview: **Board Pack | Share Deck**.
+  - **Draft → Publish** (with an inline confirmation) **→ Republish** as
+    the next revision.
+  - Editing or saving the pack never changes the link. The section says
+    when the pack differs from what players see.
+  - Open review, Share, Copy link, and **Copy summary**, the WhatsApp text
+    built from the published slides.
+- **Visibility:** a slide built on a section made Admin only (Power
+  Rating, Partnerships) is left out for players, and out of the summary.
+  The Admin preview names what was left out.
 
 **Admin Monthly Board Pack — DONE on `app-features-fixes` = `main`
 (`9e4a5e6`), 30 Sep.** Shaun's brief; no redesign-branch change.
@@ -1411,6 +1444,8 @@ Shaun's decisions, including where an agent recommended otherwise.
 | DQ6–DQ9 as recommended | Shaun, 30 Sep 2026, before Phase 2. **DQ6:** a player in the game may record that the court is booked. It is attributed to them, only on an agreed game they are still in and that is not archived, and only an Admin can undo it. The Admin review of unrecorded bookings stays. **DQ7:** replacing a player stays Admin-only. **DQ8:** players get no "Change plan"; date, time and venue stay Admin edits. **DQ9:** a plain request may carry an optional time and venue, as a suggestion, never a booking. Implemented in `fixtureFlow.js` on `main` (`7d70cc0`). |
 | Accept all: the new Play lists, DQ1 as recommended, and the Phase 3a (Home) go-ahead | Shaun, 30 Sep 2026 ("Accept all"). **Play lists accepted:** "Upcoming, as before" and "Requests, as before" are to be retired from Club on `ux/player-reset-v2`. **DQ1:** no promotion bar and no threshold line; keep the one-line gap, worded "N pts below the lowest-rated Tier A player". **Phase 3a (Home) approved.** Shaun's same message said the Board Pack must not touch the redesign branch, so both are queued behind it (NEXT). |
 | Admin Monthly Board Pack: a stored choice, figures drawn live | Shaun's brief, 30 Sep 2026; implementation choices CCode's. **DONE `9e4a5e6`.** A per-month document `moneypadel_board_pack_YYYY-MM` holds only the admin's choice: modules (id, on/off, options) and commentary in one ordered list, who saved it and when, plus a fingerprint of the month's record. It is read when an admin opens that month, never at start-up. Figures are never stored. Whether a finalised pack should freeze its figures is Shaun's call (Section 5). |
+| A published Monthly Review is a snapshot of its slides | CCode, 30 Sep 2026, implementing Shaun's principle in the Share Deck brief ("a published monthly review should remain historically stable"). **DONE `4af924d`.** Publish stores the Share Deck exactly as shown: formatted, render-ready slides, with revision, first and last published, by whom, and the record fingerprint. It is stored in `moneypadel_review_YYYY-MM`. **Why a snapshot:** nothing month-end in the record is immutable today. Month-end ratings, ranks and tiers are recomputed from the journey on every load, so later results, corrections, club decisions or a calculation change would all move a live review. **Not a second source of truth:** it is a record of what was sent. Nothing reads it for a calculation, and it is labelled a publication. The Board Pack itself stays live (see the 30 Sep row above). |
+| Monthly Review link: `review/?m=YYYY-MM`; image export next, at 1080 × 1350 | CCode, 30 Sep 2026. **The link is a query, not a path**, so it works unchanged on every host (Vercel, Pages, local). `/review/2026-09` would need a Vercel rewrite and absolute asset paths, which break Pages. **Image export is staged as the next sub-increment.** Its format is **1080 × 1350 (4:5)**, the portrait WhatsApp shows whole in a chat; 9:16 is a stories format. The cards are already 4:5 and sized in container units, so an export will match the card. No image library was added: client-side capture without one is fragile (fonts, Safari canvas taint). **"View full stats" links to the app's home.** Deep links into a particular screen need a router entry point, which belongs with the redesign's shell and history work. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -2363,7 +2398,37 @@ with Shaun.**
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 30 Sep — Monthly Review: public links and what comes next
+
+**For Shaun. Nothing is blocked; the review works as built.**
+- **Who can open a review link:** anyone who has it. No unlock is
+  needed, as the brief asked.
+  - The address is predictable (`?m=2026-09`), so anyone who knows the
+    app's address could guess another month's link.
+  - This exposes nothing new. The beta's shared storage is already
+    readable by anyone with the app (Section 3, "permanent open
+    read/write"), and every figure on a slide is already on a public
+    screen.
+  - The page is marked `noindex`. A slide built on a section the club has
+    made Admin only is not shown.
+  - **If Shaun wants links that cannot be guessed,** a random token per
+    published month is a small change. CCode's recommendation: not needed
+    while the app itself is open.
+- **Next sub-increments, not started:**
+  1. **Export slides as images**, 1080 × 1350 (Section 3).
+  2. **"View full stats" into a particular screen**, with the redesign's
+     router.
+- **Not in this increment:** unpublishing. Republish replaces what the
+  link shows. Removing a review entirely would be a deletion, which needs
+  Shaun's word.
+
 ### OPEN 30 Sep — Board Pack: saved figures or live ones?
+
+**Update, 30 Sep (Share Deck):** the part of this that mattered most is
+now settled. A **published Monthly Review is frozen** as sent (Section 3).
+The Board Pack itself stays live, with its warning when a month's record
+changes. The finalise question below now applies only to the Admin's
+Board Pack report, if the board wants that frozen too.
 
 **For Shaun. Nothing is blocked; the pack works as built.**
 - **What is stored:** only the admin's choice for the month (Section 3).
@@ -3232,6 +3297,58 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (Monthly Review Share Deck)
+
+**`4af924d` on `app-features-fixes` = `main`. Nothing on
+`ux/player-reset-v2`.**
+- **New files:**
+  - `domain/boardPack/shareDeck.js`: slides, summary and publication.
+    It is pure.
+  - `features/review/deckView.js`: the drawing, shared by the Admin
+    preview and the public page.
+  - `assets/css/screens/review.css`.
+  - `review/index.html` and `review/review.js`.
+- **Changed:**
+  - `boardPackData.js`: `boardPackDeck`, `publishBoardPackReview` and the
+    review URL and summary.
+  - `boardPackScreen.js`: the preview mode, publish, and share.
+  - `firebaseData.js`: `loadPublishedReview` and `savePublishedReview`.
+  - The test harness: it can open another path, wait on a ready signal,
+    emulate a 375px touch phone, and serve a folder's index.
+- **For the redesign stream:** a redesigned screen can consume the same
+  things.
+  - `boardPackDeck(config)` gives a month's slides.
+  - `DeckView` draws them.
+  - The slide shape is documented in `shareDeck.js`, with room for later
+    slide kinds (Moment of the Month, photos, season recap, awards).
+- **Tests: 14 new.** 6 are pure (`shareDeck`) and 8 run in the browser
+  (`review`). They cover:
+  - selection and order to slides, and the preview being what is
+    published;
+  - canonical figures and the summary for every month;
+  - draft, publish, edit and republish, with the link changing only on
+    Publish;
+  - the direct link for each month;
+  - no Admin control and no stats engine on the public page;
+  - at 375px: no overflow, no clipping, and 4:5 cards;
+  - buttons, dots, keys, and a sideways scroll gesture;
+  - the stored slides shown verbatim;
+  - unpublished and bad links;
+  - Admin-only sections hidden.
+  - All fail on the old code. Five deliberate breakages were each caught.
+  - **Limitation:** headless Chromium here cannot synthesise a touch
+    scroll. The swipe is tested as a sideways trackpad gesture on the
+    same native scroller.
+- **Behaviour snapshot against `b1dc91a`:** 37 of 38 states are
+  identical. `manage-admin` differs only by the section's publish block.
+- **Full suite: 810 / 810.**
+- **For Shaun (Section 5):**
+  - Are predictable review links acceptable? The recommendation is yes,
+    while the app is open.
+  - Image export is the next sub-increment.
+
+Baton → Shaun / CGPT.
 
 ### CCode — 30 Sep 2026 (Board Pack: results table and over-80%)
 
@@ -7524,6 +7641,19 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Sep (later still): the Monthly Review Share Deck is live on
+`main` (`4af924d`, 810 / 810). Baton → Shaun / CGPT.**
+- **Try it:**
+  1. Admin / Manage › Monthly Board Pack.
+  2. Preview › Share Deck.
+  3. Publish review.
+  4. Copy summary, or Share, into WhatsApp.
+- **For Shaun (Section 5):**
+  - Are predictable month links acceptable?
+  - Go-ahead for image export (1080 × 1350) as the next sub-increment.
+- The queued redesign work below is unchanged. Retire "as before", then
+  Phase 3a (Home).
 
 **CCode, 30 Sep (later): the Board Pack now also has the Monthly results
 table and "Won or lost over 80%" (`e666a96`, 796 / 796).** Everything
