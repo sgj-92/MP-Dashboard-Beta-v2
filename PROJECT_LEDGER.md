@@ -62,8 +62,8 @@ rating chokepoint now reads v3 persisted state.
 | Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
 | Branch | `main` (live: GitHub Pages deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is to be `ux/player-reset-v2`, cut from **`f75a493`** once Shaun confirms the IA review; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. |
-| Last verified implementation commit | **`f75a493`** — the redesign branching point |
-| Tests | **752 / 752 passing** (245 of them drive a real browser) |
+| Last verified implementation commit | **`8e1c91e`** (desktop phone preview). The redesign branching point is still **`f75a493`**. |
+| Tests | **762 / 762 passing** (250 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -150,6 +150,29 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Desktop phone preview — DONE (`8e1c91e`).** Shaun, 30 Sep.
+- **What it is:** `/preview` is a review page for a laptop. It shows the real
+  app inside a phone-sized frame, with presets for 375, 390 (the default)
+  and 412, plus Rotate, Refresh and Open full size.
+- **Same app, same data:**
+  - The frame loads the normal app URL from the same origin, so it is the
+    same code, the same record and the same device state (My Player).
+  - It never loads `/preview`, so it cannot frame itself.
+  - `index.html` does not load it; no app file changed.
+- **Real phone widths:**
+  - The app's viewport genuinely is 375, 390 or 412 CSS pixels wide.
+  - On a short screen the whole device is scaled down with a transform.
+    The app's own width is never changed.
+  - Desktop scrollbars are hidden inside the frame, because a classic
+    scrollbar would take 15px and leave a 390 preview laid out at 375.
+- **On a phone:** no frame, just "Open Money Padel normally".
+- **Hosts:** it works on Vercel, GitHub Pages (below the repository path)
+  and local servers.
+  - The page adds the trailing slash itself.
+  - `vercel.json` also redirects `/preview` → `/preview/`. Its build
+    command is unchanged.
+- **Live on Pages:** not yet, for the same reason as the split (Section 5).
 
 **Parallel-development split — DONE (`0b9c9eb` … `f75a493`).** Shaun/CGPT,
 30 Sep. Behaviour-preserving refactor so the functional and redesign streams
@@ -1119,6 +1142,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Games — one selected player's filtered record | **DONE `d348c56`.** Shaun, 29 Sep 2026. When exactly one player is selected in the Games Player filter, show Played / Wins / Draws / Losses / Win % above the filtered list, **calculated from exactly the same final filtered match set the rows display**, never independently from a broader dataset: P = displayed rows and W + D + L = P, recomputed on every filter change. Tier matchups keep the canonical classification and historical tier on the match date; notation and order unchanged. Win from the player's own side whichever stored side they are on; a recorded draw is a draw. Win % = wins / played unless a canonical alternative exists (the League's monthly win % is exactly that, draws included, so it is reused). Zero games gets a deliberate state, not 0%. One player only; no multi-player summaries, no new navigation, no new statistics engine. |
 | D7 — Doughnuts: By Player and a Doughnut List, with a Month | **DONE `e4408ff`.** Shaun, 28 Sep 2026. Keep the player-based view and add a list of the doughnut results themselves, with an obvious By Player / Doughnut List switch. Each row reads like "28 Sep · Shaun & PDM 6–0, 6–3 Rishi & Erf" in the app's result conventions. The list uses the **existing doughnut definition and data**, with no new definition. Tapping a result uses the existing result detail. A **Month** selector (historical months included) applies to both views and survives switching between them, defaulting by the app's existing month convention. The list is newest first with a deterministic same-day order, and an empty month gets a deliberate empty state. |
 | Split the app before the redesign branch | **DONE `f75a493`.** Shaun/CGPT, 30 Sep 2026. It was a behaviour-preserving refactor into data / domain / features / ui and component / shell / screen stylesheets. The aim is that functional work (`main`, via `app-features-fixes`) and the redesign rarely edit the same file. There is no duplicate app: no `app-redesign.js`, no second rating, fixture or Firebase logic, and no mock calculations. `f75a493` is the common ancestor for `main` and `ux/player-reset-v2`. The redesign branch is created **only after Shaun confirms the product/IA Keep / Simplify / Move / Merge / Hide / Remove review is complete**. It then merges `main` at least weekly, and after any significant domain or data change. Unfinished redesign work never merges into `main`. |
+| Desktop phone preview is a container, not a second app | **DONE `8e1c91e`.** Shaun, 30 Sep 2026. `/preview` frames the normal app URL in a same-origin iframe at 375 / 390 / 412 (390 by default). It uses no mock data and duplicates no screen code, and the app is not told it is being previewed. CCode left out the suggested `?embeddedPreview=1` flag: nothing needs it, and a URL the app never reads cannot alter product logic. It is desktop-only: a phone gets a link to the app instead. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -2812,6 +2836,48 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 30 Sep 2026 (desktop phone preview)
+
+**`8e1c91e`: 762 / 762 tests.** 10 are new in `tests/preview.test.js`, 5 of
+them in a browser.
+
+**Built:**
+- **`preview/index.html`, `preview.js` and `preview.css`,** standalone.
+  - A toolbar with 375 / 390 / 412, Rotate, Refresh and Open full size
+    (a new tab on the normal app URL).
+  - A thin rounded bezel on a dark surround. No fake status bar or browser
+    chrome.
+  - The app URL is worked out from the page's own path: `/` on Vercel and
+    locally, `/<repo>/` on Pages.
+- **`vercel.json`:** one redirect, `/preview` → `/preview/`. The build
+  command and framework are unchanged; the build-stamp test still passes.
+
+**Verified:**
+- **Browser tests** serve the site at `/` and below `/MP-Dashboard-Beta-v2/`,
+  without the trailing slash, as Vercel may serve it. They check:
+  - the frame holds the app route and never the preview;
+  - the preview page was fetched once;
+  - the app's `innerWidth` / `innerHeight` / layout width are exactly
+    390×844 by default, 375×812 and 412×915 on the presets, and 844×390
+    when rotated;
+  - it resizes in place, with no reload;
+  - a 1280×640 window scales the device to fit while the app stays 390 wide;
+  - a phone-sized window gets the link and no iframe, and the app is not
+    loaded behind it.
+- **The tests catch real breakage:**
+  - pointing the frame at the preview fails them;
+  - so does removing the scrollbar fix. For that one, the tests launch
+    Chromium with real scrollbars, because headless hides them. Without the
+    fix the app lays out at 375 inside a 390 frame.
+- **Screenshots** at 1440×1000, 1280×720 (shown at 72%), 412, landscape and
+  a phone all look right.
+
+**Not verified:**
+- a live Vercel deploy (none exists from CCode's side);
+- Pages, which is still not building (Section 5).
+
+Baton → Shaun.
 
 ### CCode — 30 Sep 2026 (parallel-development split; redesign branching point)
 
@@ -6667,6 +6733,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `8e1c91e` | Desktop phone preview at `/preview`. The real app sits in a same-origin iframe at 375 / 390 (default) / 412, with rotate, refresh and open full size. It scales to fit without changing the app's viewport, hides desktop scrollbars inside the frame, and shows a link instead of a frame on a phone. It works at `/` and below a repo path; `vercel.json` gains a `/preview` redirect. 10 tests; 762/762. |
 | `f75a493` | Parallel-development split finished; **the redesign branching point**. `tests/architecture.test.js` (6 tests: load order, no duplicate or forward top-level names, layered modules only declare, pure domain, stylesheet order) and the final `docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md`. 752/752. |
 | `9961823` | C: `app.css` split into base / `components.css` / `shell.css` / `screens/{rankings,home,play,players,games,admin}.css`. Class names are kept and all 827 rules are accounted for. The snapshot is identical at 390px and 360px. |
 | `24bf191` … `003c7bc` | B1–B9: renderers, data helpers and components move unchanged from `app.js` (10,178 → 2,215 lines) and `shell.js` (2,568 → 655) into `data/`, `features/<area>/` and `ui/`. The 39-state snapshot is identical after each step. |
@@ -6755,7 +6822,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ## 8. NEXT
 
 **The approved queue is empty.** Baton with Shaun.
-- **Implementation:** `f75a493`, **752 / 752 tests** (245 browser).
+- **Implementation:** `8e1c91e`, **762 / 762 tests** (250 browser). The
+  desktop phone preview is at `/preview`.
 - **Redesign branching point:** `f75a493`. `ux/player-reset-v2` is to be
   created **after** Shaun confirms the IA review (Section 5). It is not
   created yet.
