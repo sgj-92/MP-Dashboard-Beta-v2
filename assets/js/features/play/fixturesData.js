@@ -17,6 +17,8 @@ const FIXTURE_REFUSALS = {
   'duplicate-player': 'The same player is in two seats.',
   'already-playing': 'That player is already in this game.',
   'archived': 'This call-out is archived — an admin can restore it.',
+  'not-agreed': 'A court can be booked once all four players are in.',
+  'backed-out': 'You have backed out of this game.',
   'not-called-out': 'Only an active Called Out game can be archived.',
   'not-archived': 'This game is not archived.',
 };
@@ -100,18 +102,18 @@ function requestLists(viewerName){
   return { forMe, mine, others };
 }
 
+// Play's two lists, from the club's fixtures (domain/fixtures/playView.js):
+// what the selected player sees in My Games, and the whole club's in Club.
+function myGamesFor(viewerName, now){ return PlayView.myGames(gameRequestsState, viewerName, now); }
+function clubFixtures(now){ return PlayView.club(gameRequestsState, now); }
+
 // How many things the selected player must act on in Play -- the Play badge
-// (DQ29, Shaun/CGPT 30 Sep): requests waiting on their answer (For me), plus
-// agreed games in Needs attention that they are in. A game they themselves
-// have backed out of is not counted: nothing is left for them to do on it
-// (an Admin replaces them). No viewer, no count.
+// (DQ29, Shaun/CGPT 30 Sep): requests waiting on their answer, plus agreed
+// games in Needs attention that they are in. A game they themselves have
+// backed out of is not counted: nothing is left for them to do on it (an
+// Admin replaces them). It is My Games' "Needs you", counted -- one
+// definition, so the badge and the list cannot disagree. No viewer, no count.
 function playActionCount(viewerName, now){
   if(!viewerName) return 0;
-  const at = now || new Date().toISOString();
-  const needsThem = gameRequestsState.filter(r => {
-    if(FixtureFlow.stage(r, at) !== FixtureFlow.STAGE.ATTENTION) return false;
-    const me = FixtureFlow.participantName(r, viewerName);
-    return !!me && !FixtureFlow.cantPlayers(r).includes(me);
-  });
-  return requestLists(viewerName).forMe.length + needsThem.length;
+  return myGamesFor(viewerName, now).needsYou.length;
 }

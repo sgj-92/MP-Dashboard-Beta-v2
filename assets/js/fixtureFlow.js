@@ -177,7 +177,9 @@
 
   // A new request. The requester is in by making it -- when they are one of
   // the players -- so a four-player request starts 1/4.
-  function createRequest({ players, requestedBy, at, id, preferredDate, teams, batch }) {
+  // Time and venue are optional on a plain request too (DQ9, Shaun 30 Sep):
+  // a suggestion, never a booking.
+  function createRequest({ players, requestedBy, at, id, preferredDate, preferredTime, location, teams, batch }) {
     const when = at || new Date().toISOString();
     const confirmations = {};
     (players || []).forEach((n) => { confirmations[n] = false; });
@@ -192,6 +194,8 @@
       status: STATUS.PENDING,
       history: [{ at: when, by: requestedBy, action: 'requested', ...(batch ? { batch: batch.id } : {}) }],
     };
+    if (preferredTime) req.preferredTime = preferredTime;
+    if (location) req.location = String(location).trim();
     if (Array.isArray(teams) && teams.length === 2) req.teams = [teams[0].slice(), teams[1].slice()];
     // Made with others in one pasted list: which list, and where in it.
     if (batch) req.batch = { id: batch.id, index: batch.index, size: batch.size };
@@ -260,16 +264,34 @@
 
   // Court booking made: the one thing that moves a healthy fixture between
   // Called Out and Upcoming. Date, time and venue are left exactly as they are.
+  //
+  // An admin records it either way. A player in the game may record that the
+  // court IS booked (DQ6, Shaun 30 Sep) -- attributed to them in the history,
+  // on an agreed game they are still in and that is not archived; only an
+  // admin can take it back.
   function setCourtBooking(req, { isAdmin, booked, by, at }) {
-    const refused = adminGate(req, isAdmin);
-    if (refused) return { ok: false, reason: refused };
+    const when = at || new Date().toISOString();
+    let who = by || 'admin';
+    if (isAdmin) {
+      const refused = adminGate(req, isAdmin);
+      if (refused) return { ok: false, reason: refused };
+    } else {
+      if (!isOpen(req)) return { ok: false, reason: 'closed' };
+      const me = participantName(req, by);
+      if (!me) return { ok: false, reason: 'not-participant' };
+      if (booked !== true) return { ok: false, reason: 'not-admin' };
+      if (!isAgreed(req)) return { ok: false, reason: 'not-agreed' };
+      if ((req.cantPlay || {})[me]) return { ok: false, reason: 'backed-out' };
+      if (archiveInfo(req, when)) return { ok: false, reason: 'archived' };
+      who = me;
+    }
     if (typeof booked !== 'boolean') return { ok: false, reason: 'bad-booking' };
     if (req.courtBookingMade === booked) return { ok: true, changed: false };
-    const when = at || new Date().toISOString();
     const was = req.courtBookingMade;
     const archived = archiveInfo(req, when);
     req.courtBookingMade = booked;
-    record(req, { at: when, by: by || 'admin', action: booked ? 'court-booked' : 'court-not-booked',
+    record(req, { at: when, by: who, action: booked ? 'court-booked' : 'court-not-booked',
+      ...(isAdmin ? {} : { byPlayer: true }),
       ...(was === undefined ? { firstRecorded: true } : {}),
       ...(archived ? { fromArchive: { at: archived.at, auto: archived.auto } } : {}) });
     if (booked) {
