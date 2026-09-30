@@ -62,7 +62,7 @@ rating chokepoint now reads v3 persisted state.
 | Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
-| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is to be `ux/player-reset-v2`, cut from **`f75a493`** once Shaun confirms the IA review; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. |
+| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. |
 | Last verified implementation commit | **`8e1c91e`** (desktop phone preview). The redesign branching point is still **`f75a493`**. |
 | Tests | **762 / 762 passing** (250 of them drive a real browser) |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
@@ -151,6 +151,45 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Player Experience Reset — IA / Keep-Simplify-Move-Merge-Hide-Remove review COMPLETE (Shaun/CGPT, 30 Sep).**
+- **Core rule:** each primary tab answers one obvious player question; secondary analysis, settings and Admin controls move deeper/contextually rather than competing at the top level.
+- **Final top-level player IA:** **Home · Rankings · Play · Players · Me**.
+- **Home:**
+  - Keep the hero, but make it **smaller, interactive and live-data driven**, in the spirit of the Claude Design concept rather than a decorative banner.
+  - Prioritise **monthly competition / movement** in the hero because it changes more often than Power Rating; Power Rating, Tier Rank and form stay but are simplified/demoted.
+  - **Last Time Out stays.**
+  - The separate Monthly Snapshot is **simplified heavily / largely absorbed into the hero**.
+  - **Match Ideas moves** out of primary Home.
+  - **Needs You** and **Next Game** are added as first-class Home sections.
+  - Home's target hierarchy is: live monthly hero → Needs You → Next Game → Last Time Out → light Around the Club/context.
+- **Rankings:**
+  - Only **Power | This Month** are primary entry points.
+  - **Power** = current club strength; simplify filters/sorts into secondary controls.
+  - Keep a **compact podium near the top** of Power. **Kings of Tiers stays, but as a secondary Rankings destination**, not a large competing block.
+  - **This Month** contains **League · Merit · Race** (League first while Race remains a trial), sharing the month context and drill-down pattern.
+  - W/L, Last 10, Monthly Performance, historical month-end Power, North vs South, Insights/Call-Outs and other niche analysis move under **More tables / deeper analysis** rather than equal top-level tabs.
+  - Methodology/info remains available behind disclosure/deeper navigation.
+- **Play:**
+  - Only **My Games | Club** are primary.
+  - Requests, Called Out, Upcoming and Needs Attention become **lifecycle/state views**, not separate top-level destinations.
+  - **Find Game + Request a Game + Add multiple games** merge behind one clear **Arrange a Game** entry point.
+  - **Played Games & Results** stays as the history/results destination.
+  - Challenges stay but are demoted into the My Games flow.
+  - Admin fixture management/reconciliation remains contextual and out of the normal player mental model.
+- **Players:**
+  - Primary journey is **Directory → Profile**; search is the main directory interaction and advanced filters are secondary.
+  - **Compare and H2H are moved/demoted into the profile/player flow**, not equal top-level destinations.
+  - Profile leads with identity/current standing, then **You vs them**, recent activity, and progressive-disclosure deeper analysis (journey, partnerships, rivals, full stats).
+- **Me:**
+  - Replace the current More/junk-drawer role with a genuine personal dashboard, distinct from a normal Player Profile.
+  - Me covers **my performance, this-month standing, history, personal settings and gated Admin tools**.
+  - My Player selector, Data & Rankings/settings, Power Rating Guide, About and Admin/Manage move here/deeper as appropriate.
+  - Doughnuts may be reachable from Rankings and Me; North vs South and Insights/Call-Outs belong under Rankings deeper analysis.
+- **DQ18 resolved:** keep both podium and Kings; podium compact near the top of Power, Kings secondary.
+- **Home hero timing:** visual implementation can be staged, but the target product now **retains a compact live-data hero**; do not remove it from the redesign.
+- **Branch consequence:** the IA gate is now cleared. `ux/player-reset-v2` may be created from the recorded branching point `f75a493`; immediately bring current `main` into it so later hosting/preview/non-redesign changes are inherited. Do not merge redesign work back to `main` until Shaun releases it.
+- **Next step:** update the Claude Design implementation map/phase briefs to reflect this IA before visual implementation; then proceed in controlled phases.
 
 **Vercel is the primary host; GitHub Pages is legacy (Shaun, 30 Sep).**
 - **Deployments:**
@@ -2282,8 +2321,8 @@ In every case the real rule stays until someone decides otherwise.
 | DQ9 | Should a plain request carry a time and venue? (NEXT #18) | Yes, optional. The fields already exist. |
 | DQ10 | Court number, "booked by", Directions, Add to calendar, Share. | Leave all out for now. A court number would be a schema change. |
 | DQ15 | The design uses "Reliability" to mean attendance ("turned up for 47 of 48"). | Never. Reliability means rating evidence, and attendance is not recorded. |
-| DQ18 | The podium and Kings of Tiers have no place in the design, but are accepted surfaces. | Keep them, either above the tier groups or under More tables. |
-| DQ19 | Home hero: none (`1a`) or one of five heroes. `3a`/`3b` need club photos. | Build `1a` first; a hero is a later increment. |
+| DQ18 | **RESOLVED 30 Sep.** The podium and Kings of Tiers have no place in the design, but are accepted surfaces. | **Keep both:** compact podium near the top of Power; Kings of Tiers as a secondary Rankings destination. |
+| DQ19 | **RESOLVED IN DIRECTION 30 Sep.** Home hero: none (`1a`) or one of five heroes. | **Hero stays in the target product**, but smaller, interactive and driven by live data; monthly competition is prioritised over slow-moving Power Rating. Visual implementation may be staged rather than built first. |
 | DQ26 | Find a Game labels each card "Evenly matched" / "A stretch", which is a favourite call (D4). | Keep filters; no per-card verdicts. |
 
 **CGPT may lead (presentation within agreed intent):**
@@ -2305,6 +2344,15 @@ In every case the real rule stays until someone decides otherwise.
 - records show draws;
 - the eligibility rule is 2 in 30 days;
 - the Admin prediction is worded as a share of games, never a probability.
+
+**IA review resolved 30 Sep — replaces the earlier 'no phase approved' gate.**
+- Top-level IA is now **Home · Rankings · Play · Players · Me**.
+- Rankings primary = **Power | This Month**.
+- Play primary = **My Games | Club**, with **Arrange a Game** for Find/Request/Bulk.
+- Players primary = **Directory → Profile**; Compare/H2H move into that flow.
+- Me is a personal dashboard/settings/Admin home, not merely the user's profile.
+- Home retains a compact live-data hero, with monthly competition prioritised; Needs You and Next Game are first-class.
+- The implementation map should be reconciled to these decisions before Phase 0/1 implementation.
 
 **Syncing to Claude Design is deferred (Shaun, 30 Sep).**
 - **Why:** the Claude Design sync (`/design-sync`) imports a component
@@ -6905,14 +6953,13 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
 ## 8. NEXT
 
-**The approved queue is empty.** Baton with Shaun.
+**Player Experience Reset is now unblocked at the IA level. Baton → CCode for redesign setup/reconciliation, then back to Shaun/CGPT before broad visual implementation.**
 - **Hosting:** Vercel is primary (`main` = production, branches = preview deployments). To let CCode verify deploys, share a Vercel URL (Section 5).
-- **Implementation:** `8e1c91e`, **762 / 762 tests** (250 browser). The
-  desktop phone preview is at `/preview`.
-- **Redesign branching point:** `f75a493`. `ux/player-reset-v2` is to be
-  created **after** Shaun confirms the IA review (Section 5). It is not
-  created yet.
-- **Design map:** `08712d4`.
+- **Current implementation:** `8e1c91e`, **762 / 762 tests** (250 browser). The desktop phone preview is at `/preview`.
+- **Redesign branch:** create **`ux/player-reset-v2`** from the recorded architecture branching point `f75a493`, then merge current `main` into it immediately so hosting/preview/non-redesign updates are inherited. Do not use the old `app-redesign` branch.
+- **First redesign task:** reconcile `docs/design/CLAUDE_DESIGN_IMPLEMENTATION_MAP.md` and the phase briefs to the 30 Sep approved IA: Home · Rankings · Play · Players · Me; Home live hero; Rankings Power|This Month; Play My Games|Club + Arrange a Game; Players Directory→Profile; Me personal dashboard.
+- **Do not start a broad cosmetic pass before that reconciliation.** Preserve canonical domain/data logic and the parallel-development ownership split.
+- **Design map baseline:** `08712d4` (mapping before the IA decisions above).
 
 *(The lines this replaces read "`fa60180`, 738 / 738 tests".)*
 
