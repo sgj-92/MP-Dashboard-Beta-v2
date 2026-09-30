@@ -3100,7 +3100,11 @@ test('the game-type control offers only types the current selection contains', {
 const withHome = async (app, fn) => app.run(new Function('return (' + fn.toString() + ')();'));
 
 test('Club Pulse cards open the player they name', { skip }, async () => {
-  const app = await H.open();
+  // A fixed clock inside the seeded record's range. The pulse names ranked and
+  // in-form players, both judged over the last 30 days; on the real clock the
+  // record ages out of that window (from 30 Sep 2026 a card came up empty),
+  // which is the test asking about the calendar rather than the cards.
+  const app = await H.open({ now: '2026-09-26T12:00:00Z' });
   try {
     const r = await app.run(() => {
       render();
