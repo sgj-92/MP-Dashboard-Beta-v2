@@ -152,6 +152,20 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Player Experience Reset — CGPT presentation decisions RESOLVED (Shaun/CGPT, 30 Sep).**
+- **DQ20 — visual system:** adopt Claude Design's **champagne gold `#D5B76E`** and **Instrument Serif + Inter** (self-hosted); keep the Ledger's stronger contrast levels. **Booked gets a distinct state hue** so it cannot be confused with Tier B or positive movement.
+- **DQ5 — first run / no viewer:** Me and Play › My Games ask **“Who are you?”** and open the existing player selector. No sign-in/account language is implied. Until a viewer is chosen, Home may show club-level monthly context rather than fabricated personal data.
+- **DQ29 — Play badge:** show only the count of items the selected player must genuinely act on: **For Me requests + Needs Attention fixtures involving that player**. Hide the badge at zero.
+- **DQ31 — Home hero content:** lead with the viewer's **current monthly competition position**, explicitly named by tier and month (for example, `3rd in Tier B · September`), with a compact record/points/movement line. Tapping opens Rankings › This Month for Home's month. **Race stays out of the hero while it remains a trial.** When no viewer is selected, show club-month context and the “Who are you?” path rather than personal rank.
+- **DQ32 — Match Ideas:** move to **Play › Arrange a Game**, as a suggested-for-you area associated with Find a Game. It remains governed by existing visibility and D4 rules; no player-facing favourite verdicts.
+- **DQ33 — Kings of Tiers:** put a **Kings of Tiers ›** row directly beneath the compact Power podium, opening its own destination; also list it in Rankings › More tables.
+- **DQ2 — movement period:** Rankings and Me use **this month**; Latest Result / Last Time Out uses the **last-match delta**. Always label the period.
+- **DQ11 — Add Result from fixture:** open the existing Add Result flow **pre-filled with the fixture's players/sides**; no arbitrary time gate. Existing approval/reconciliation rules remain unchanged.
+- **DQ24 — monthly position copy:** always name the tier (`3rd in Tier B`); Race may show **provisional** below its qualification threshold; split-month movers use their current spell for the contextual position.
+- **DQ30 — Around the Club:** keep it deliberately light, **2–3 derivable items maximum**. Never invent a social feed or unsupported club activity.
+- **Kings / podium basis conflict resolved:** **Power Rating is the basis**, matching the current code. The older 17 Sep statement that Monthly Performance is the podium/Kings basis is stale/superseded; do not change calculation merely to satisfy that old wording.
+- These decisions clear the **presentation blockers for Phases 0 and 1**. Phase 0 is now ready for its explicit implementation go-ahead; this entry does not itself authorise broad visual implementation beyond the approved phase process.
+
 **Product idea backlog — APPROVED STRUCTURE / NOT AN IMPLEMENTATION QUEUE (Shaun/CGPT, 30 Sep).**
 - Money Padel needs a permanent GitHub home for **unapproved / exploratory product ideas** so ideas from chats are not lost and can be revisited later.
 - This is deliberately separate from `PROJECT_LEDGER.md`:
@@ -2359,16 +2373,16 @@ In every case the real rule stays until someone decides otherwise.
 | DQ19 | **RESOLVED IN DIRECTION 30 Sep.** Home hero: none (`1a`) or one of five heroes. | **Hero stays in the target product**, but smaller, interactive and driven by live data; monthly competition is prioritised over slow-moving Power Rating. Visual implementation may be staged rather than built first. |
 | DQ26 | Find a Game labels each card "Evenly matched" / "A stretch", which is a favourite call (D4). | Keep filters; no per-card verdicts. |
 
-**CGPT may lead (presentation within agreed intent):**
-- **DQ2:** the period the movement indicator covers. Recommended: this month on Rankings and Me; the last game on Home.
-- **DQ5:** first run without a chosen player.
-- **DQ11:** Add result from a fixture, pre-filled, with no time gate.
-- **DQ20:** tokens and fonts. Recommended: the design's champagne gold, and Instrument Serif + Inter self-hosted, while keeping the Ledger's contrast levels. Booked needs its own hue.
-- **DQ21:** where H2H lives.
-- **DQ22:** Games history and Challenges.
-- **DQ24:** tier-labelled monthly positions.
-- **DQ29:** the Play badge rule.
-- **DQ30:** "Around the club" items.
+**CGPT presentation decisions (RESOLVED 30 Sep):**
+- **DQ2:** this month on Rankings/Me; last-match delta on Latest Result / Last Time Out; label the period.
+- **DQ5:** first run asks “Who are you?” via the existing player selector; no login implication.
+- **DQ11:** fixture → existing Add Result pre-filled with players/sides; no time gate.
+- **DQ20:** champagne gold `#D5B76E`; Instrument Serif + Inter self-hosted; keep stronger contrast; Booked gets a distinct hue.
+- **DQ21:** H2H/Compare live in the profile/player flow (already settled by IA).
+- **DQ22:** Played Games & Results + Challenges in My Games (already settled by IA).
+- **DQ24:** always tier-label monthly positions; Race may be provisional.
+- **DQ29:** badge = For Me requests + viewer-involved Needs Attention; hidden at zero.
+- **DQ30:** Around the Club = 2–3 derivable items maximum, never invented.
 
 **Mock assumptions kept out, with the real rule preserved.** No decision is needed on these:
 - the parser never auto-accepts "Ant" → Ant Slicer, and duplicates are warned, not skipped;
@@ -2384,13 +2398,10 @@ map now carries the target IA per tab, and Section 7 the re-cut phases with
 short acceptance briefs.
 - **Settled by the IA, as the map reads it:** DQ3, DQ4, DQ21, DQ22 (with
   DQ18 and DQ19 above).
-- **New, for CGPT (presentation within intent):**
-  - **DQ31, the Home hero's content.** Recommended: the viewer's This Month
-    League position, named by tier and period, plus this month's movement;
-    tapping it opens This Month. The Race stays out while it is a trial.
-  - **DQ32, where Match Ideas goes.** Recommended: Play › Arrange a Game.
-  - **DQ33, where Kings of Tiers is reached.** Recommended: a row under the
-    compact podium, and a More tables entry.
+- **Resolved by Shaun/CGPT, 30 Sep:**
+  - **DQ31:** Home hero leads with the viewer's current monthly competition position, named by tier and month, plus a compact record/points/movement line; tap opens This Month; Race stays out while it is a trial.
+  - **DQ32:** Match Ideas moves to Play › Arrange a Game.
+  - **DQ33:** Kings of Tiers is reached by a row directly under the compact Power podium and from More tables.
 - **DQ3 CONFIRMED by Shaun, 30 Sep:** the IA makes Power "current club
   strength" and moves month-end Power history to More tables.
   - Power would stop opening on the Meaningful Month's month-end view, the
@@ -2431,10 +2442,9 @@ short acceptance briefs.
 - **State:** no Claude Design project and no `.design-sync/` config were
   created.
 
-**For CGPT: confirm the code is the intent.**
-- **Kings / podium basis.** The Ledger holds two statements: "Monthly Performance remains the podium/Kings basis" (17 Sep, CGPT) and "both rank on rating" (18 Sep, CCode).
-- **The code, checked 28 Sep, ranks both on Power Rating:** month-end Power Rating in a month view (`computeRankingsPodiumTop3` / `computeKingsOfTiers` in `shell.js`), and neither uses Monthly Performance.
-- If rating is intended, the 17 Sep line is stale. If not, it is a product change, and nothing is changed until someone says which.
+**Kings / podium basis — RESOLVED by Shaun/CGPT, 30 Sep.**
+- **Power Rating is the intended basis**, matching the current code (`computeRankingsPodiumTop3` / `computeKingsOfTiers`).
+- The older 17 Sep statement that Monthly Performance is the podium/Kings basis is **stale/superseded history**. Do not change the calculation to match that sentence.
 
 ### OPEN 28 Sep — audit fixes D4–D6: judgment calls for Shaun
 
@@ -7066,15 +7076,10 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ## 8. NEXT
 
 **CCode, 30 Sep: the map is reconciled (`cf72a14`), `ux/player-reset-v2`
-exists (`b4e57e4`), and DQ3 is confirmed. Baton → CGPT / Shaun.**
-- **For CGPT:**
-  - DQ31, the hero's content;
-  - DQ32, Match Ideas;
-  - DQ33, the Kings entry;
-  - the still-open presentation DQs that block Phase 0/1: DQ20, DQ5, DQ29.
-- **Then:** approve the **Phase 0** brief (map Section 7.1). It is tokens
-  and primitives with no visible change, and the first phase to build on
-  the branch.
+exists (`b4e57e4`), and the CGPT presentation decisions are now resolved. Baton → Shaun / CGPT for the phase go-ahead.**
+- **Resolved:** DQ2, DQ5, DQ11, DQ20, DQ24, DQ29, DQ30, DQ31, DQ32 and DQ33; the Kings/podium basis conflict is also resolved in favour of the current Power Rating implementation.
+- **Phase 0 is unblocked:** tokens and primitives with no visible screen change. It still follows the normal phase-by-phase approval process; no broad redesign is implicitly authorised by resolving the questions.
+- **Phase 1 blockers are cleared** from the presentation side (DQ5 / DQ29).
 - **Implementation on `main`:** unchanged at `8e1c91e`, 762 / 762.
 
 *(Shaun/CGPT's 30 Sep header and lines, kept:)*
