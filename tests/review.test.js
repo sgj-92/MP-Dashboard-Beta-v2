@@ -64,8 +64,12 @@ maybe('the Share Deck is the Board Pack\'s selection, in the Board Pack\'s order
       month: document.querySelector('#bpDeckFrame .deck-cover-title').textContent,
     }));
     assert.deepStrictEqual(r.selected, ['league', 'results_table', 'over_80', 'lost_pct', 'power', 'kings', 'race', 'most_wins', 'rating_movers', 'tier_moves']);
-    assert.deepStrictEqual(r.withContent, r.selected.filter((id) => r.withContent.includes(id)), 'slides follow the pack\'s order');
-    assert.ok(r.withContent.length >= r.selected.length - 1, 'only a module with nothing to say is left out');
+    // A module split by tier has a slide per tier, side by side.
+    const modules = [...new Set(r.withContent.map((id) => id.split(':')[0]))];
+    assert.deepStrictEqual(modules, r.selected.filter((id) => modules.includes(id)), 'slides follow the pack\'s order');
+    assert.ok(modules.length >= r.selected.length - 1, 'only a module with nothing to say is left out');
+    assert.deepStrictEqual(r.withContent, modules.flatMap((m) => r.withContent.filter((id) => id.split(':')[0] === m)), 'a module\'s tier slides together');
+    assert.ok(r.withContent.includes('league:A') && r.withContent.includes('power:A'), 'split by tier by default');
     assert.deepStrictEqual(r.shown, ['cover', ...r.withContent, 'end']);
     assert.strictEqual(r.month, 'August 2026');
 
@@ -101,7 +105,9 @@ maybe('the deck and the WhatsApp summary carry the canonical figures, for the ch
           games: [slide('overview').stats[0].value, String(games)],
           kings: [slide('kings') ? slide('kings').groups[0].rows.map((x) => [x.label, x.name, x.value]) : null,
             kings ? ['S', 'A', 'B', 'C'].filter((t) => kings[t]).map((t) => [`Tier ${t}`, kings[t].name, String(kings[t].rating)]) : null],
-          league: [slide('league').groups[0].rows.map((x) => [x.name, x.value]), leaders.map((s) => [s.name, `${s.points} pts`])],
+          league: [['S', 'A', 'B', 'C'].map((t) => slide(`league:${t}`)).filter(Boolean).map((sl) => [sl.groups[0].rows[0].name, sl.groups[0].rows[0].value]), leaders.map((s) => [s.name, `${s.points} pts`])],
+          leagueTiers: ['S', 'A', 'B', 'C'].filter((t) => slide(`league:${t}`)).map((t) => [slide(`league:${t}`).groups[0].rows.map((x) => x.name),
+            sortLeagueRows(league.filter((s) => s.tier === t), 'points', true).slice(0, ShareDeck.ROWS).map((s) => s.name)]),
           riser: [slide('rating_movers') && slide('rating_movers').groups[0].rows[0].name, risers[0] && risers[0].playerId],
           summaryHas: [`${games} games played`, ...(kings ? ['S', 'A', 'B', 'C'].filter((t) => kings[t]).map((t) => `Tier ${t} King: ${kings[t].name}`) : []),
             `Full ${monthLabel(m).split(' ')[0]} review:`, `review/?m=${m}`].filter((line) => !summary.includes(line)),
@@ -116,6 +122,7 @@ maybe('the deck and the WhatsApp summary carry the canonical figures, for the ch
       assert.deepStrictEqual(x.games[0], x.games[1], `${x.m} games`);
       assert.deepStrictEqual(x.kings[0], x.kings[1], `${x.m} kings`);
       assert.deepStrictEqual(x.league[0], x.league[1], `${x.m} league leaders`);
+      x.leagueTiers.forEach(([shown, want]) => assert.deepStrictEqual(shown, want, `${x.m} a tier's League slide is its top five`));
       assert.deepStrictEqual(x.riser[0], x.riser[1], `${x.m} biggest riser`);
       assert.deepStrictEqual(x.summaryHas, [], `${x.m} summary is missing these`);
     });
@@ -236,7 +243,10 @@ maybe('at 375px nothing runs off the side, and every card holds its content', as
 
 maybe('swipe, previous / next, the dots and the arrow keys all move the deck, and it says where you are', async () => {
   const pub = await publishedReviews();
-  const rv = await openReview('2026-09', { [REVIEW('2026-09')]: pub['2026-09'] });
+  // A short deck: the first nine slides.
+  const short = JSON.parse(JSON.stringify(pub['2026-09']));
+  short.deck.slides = short.deck.slides.slice(0, 9);
+  const rv = await openReview('2026-09', { [REVIEW('2026-09')]: short });
   try {
     const p = rv.page;
     const at = () => rv.run(() => ({ i: Number(document.querySelector('[data-deck]').dataset.index),
@@ -330,8 +340,9 @@ maybe('unpublished months, bad links and Admin-only sections', async () => {
   const hidden = await openReview('2026-09', { [REVIEW('2026-09')]: pub.all, moneypadel_visibility: { power: false } });
   try {
     const ids = await hidden.run(() => [...document.querySelectorAll('.deck-slide')].map((s) => s.dataset.slide));
-    ['power', 'kings', 'rating_movers', 'rank_movers', 'performance', 'crossovers'].forEach((id) => assert.ok(!ids.includes(id), id));
-    assert.ok(ids.includes('league') && ids.includes('overview'));
+    const mods = ids.map((id) => id.split(':')[0]);
+    ['power', 'kings', 'rating_movers', 'rank_movers', 'performance', 'crossovers'].forEach((id) => assert.ok(!mods.includes(id), id));
+    assert.ok(mods.includes('league') && mods.includes('overview'));
   } finally { await hidden.close(); }
 });
 

@@ -102,7 +102,7 @@ maybe('the Share Deck can be shared before publishing: this slide, every slide, 
     await p.click('#bpShareSlides');
     await p.waitForFunction(() => /slide pictures saved/.test(document.getElementById('bpMessage').textContent));
     await p.waitForTimeout(300);
-    assert.deepStrictEqual(got.map((d) => d.suggestedFilename()), expected.map((id, i) => `money-padel-2026-09-review-${String(i + 1).padStart(2, '0')}-${id.replace(/[^a-z0-9]+/g, '-')}.png`));
+    assert.deepStrictEqual(got.map((d) => d.suggestedFilename()), expected.map((id, i) => `money-padel-2026-09-review-${String(i + 1).padStart(2, '0')}-${id.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`));
     for (const d of got) assert.deepStrictEqual(png(await d.path()), { width: 1080, height: 1350 }, d.suggestedFilename());
 
     // This slide: wherever the preview has been swiped to.
@@ -114,7 +114,7 @@ maybe('the Share Deck can be shared before publishing: this slide, every slide, 
     await p.click('#bpShareSlide');
     for (let t = 0; t < 100 && got.length === before; t++) await p.waitForTimeout(100);
     assert.strictEqual(got.length, before + 1, 'one picture');
-    assert.strictEqual(got.at(-1).suggestedFilename(), `money-padel-2026-09-review-03-${expected[2].replace(/[^a-z0-9]+/g, '-')}.png`);
+    assert.strictEqual(got.at(-1).suggestedFilename(), `money-padel-2026-09-review-03-${expected[2].toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`);
 
     // The summary, before publishing: the slides' headlines, no link yet.
     await p.context().grantPermissions(['clipboard-read', 'clipboard-write']);

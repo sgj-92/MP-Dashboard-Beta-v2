@@ -30,6 +30,22 @@ function boardPackTiers(tierOption){
   return groupedTiers().filter(t => tierOption === 'all' || t === tierOption);
 }
 
+// A list shown split by tier (each tier its own section, every tier
+// included, `top` applying to each) or as one list (`top` over the whole).
+// One list with a tier chosen is that tier's rows. Returns the sections --
+// one, untitled (tier null), for a single list -- and every row shown.
+function boardPackSplit(o, rows, tierOf){
+  const top = BoardPack.limit(o.top);
+  const one = o.split === 'one' && o.tier === 'all';
+  const tiers = one
+    ? [{ tier: null, rows: rows.slice(0, top) }]
+    : boardPackTiers(o.tier).map(tier => ({ tier, rows: rows.filter(r => tierOf(r) === tier).slice(0, top) })).filter(t => t.rows.length);
+  // Split, a hidden Tier S section (the club's switch) is left out like any
+  // tier-grouped view; the report says so. One list keeps everyone.
+  const sHidden = !one && !tierSSectionsShown() && (o.tier === 'all' || o.tier === 'S') && rows.some(r => tierOf(r) === 'S');
+  return { split: o.split === 'one' ? 'one' : 'split', tiers, rows: tiers.flatMap(t => t.rows), sHidden };
+}
+
 function boardPackTierAt(name, date){ return historicalTierOf(name, date); }
 
 // module id -> (month, options) -> data. A function rather than a table so
@@ -65,11 +81,17 @@ function boardPackSources(){ return {
   // at 3 / 1 / 0, and the Information review's "hardest games" measure
   // (average strength of the games played, ÷ 300). Ordered by the League's
   // own standing rule, or by games or difficulty first.
+  // Split by tier, a mid-month mover is in each tier they played in, with
+  // that spell's games -- the League's own split (leagueSplitRows). As one
+  // list, each player is one row with the month's whole record.
   results_table(month, o){
     const key = { points: 'points', games: 'games', difficulty: 'hardness' }[o.sort] || 'points';
-    const rows = Object.values(computeMonthlySummaryStats(month)).filter(s => s.games > 0)
-      .map(s => ({ ...s, tier: tierSpellLabel(s.name, month) || tierAtMonthClose(s.name, month) || '?' }));
-    return { sort: o.sort, rows: sortLeagueRows(rows, key, true).slice(0, BoardPack.limit(o.top)) };
+    const whole = o.split === 'one' && o.tier === 'all';
+    const rows = whole
+      ? Object.values(computeMonthlySummaryStats(month)).filter(s => s.games > 0)
+        .map(s => ({ ...s, tier: tierSpellLabel(s.name, month) || tierAtMonthClose(s.name, month) || '?' }))
+      : leagueSplitRows(month).filter(s => s.games > 0);
+    return Object.assign({ sort: o.sort }, boardPackSplit(o, sortLeagueRows(rows, key, true), r => r.tier));
   },
 
   // Anyone who won the chosen % of the games they played that month OR MORE
@@ -109,14 +131,13 @@ function boardPackSources(){ return {
       return players === 'ranked' ? st.rankable : st.participation !== 'INACTIVE';
     };
     const moves = monthlyMovementIndex(month);
-    const rows = rankingPool(month, minGames)
+    // In rating order, so each tier's section is that tier's ranking.
+    const pool = rankingPool(month, minGames)
       .filter(p => keep(p.name))
-      .filter(p => o.tier === 'all' || p.scopeTier === o.tier)
-      .slice(0, BoardPack.limit(o.top))
       .map(p => ({ name: p.name, tier: p.scopeTier, rating: p.scopeRating, games: p.total,
         ratingChange: moves[p.name] ? moves[p.name].ratingChange : null,
         rankChange: moves[p.name] ? moves[p.name].rankChangeOverall : null }));
-    return { minGames, players, rankingsDefault: minGames === defaultRankingMinGames(month), rows };
+    return Object.assign({ minGames, players, rankingsDefault: minGames === defaultRankingMinGames(month) }, boardPackSplit(o, pool, r => r.tier));
   },
 
   kings(month){

@@ -33,6 +33,10 @@
   const top = (d) => Object.assign({}, TOP, { default: d });
   const TIER = { label: 'Tiers', values: ['all', 'S', 'A', 'B', 'C'], labels: { all: 'All tiers', S: 'Tier S', A: 'Tier A', B: 'Tier B', C: 'Tier C' }, default: 'all' };
   const show = (values, labels) => ({ label: 'Include', values, labels, default: values[0] });
+  // Tiers: every tier in the pack, each in its own section (and its own
+  // slide), or one list. Split by default (Shaun, 1 Oct).
+  const SPLIT = { label: 'Layout', values: ['split', 'one'], labels: { split: 'Split by tier', one: 'One list' }, default: 'split' };
+  const SLIDES = { label: 'Slides', values: ['each', 'leaders'], labels: { each: 'A slide per tier', leaders: 'Leaders on one slide' }, default: 'each' };
 
   const THRESHOLD = { label: 'At least', values: ['50', '60', '70', '75', '80', '90', '100'], labels: { 50: '50% or more', 60: '60% or more', 70: '70% or more', 75: '75% or more', 80: '80% or more', 90: '90% or more', 100: '100% (every game)' }, default: '80' };
   const PCT_MIN = { label: 'Minimum games', values: ['3', '1', '5'], labels: { 1: 'Everyone', 3: '3+ games', 5: '5+ games' }, default: '3' };
@@ -43,20 +47,20 @@
     { id: 'overview', title: 'Month overview', on: true, options: {} },
     { id: 'results_table', title: 'Monthly results table', on: true, options: {
       sort: { label: 'Order by', values: ['points', 'games', 'difficulty'], labels: { points: 'Points', games: 'Games played', difficulty: 'Hardest games' }, default: 'points' },
-      top: top('all') } },
+      split: SPLIT, tier: TIER, top: top('all') } },
     // Kept as 'over_80' so packs saved before the threshold became a choice
     // still find it; 80% is the default. Winning and losing were one module
     // until 1 Oct; losing is now its own (lost_pct), with its own threshold.
     { id: 'over_80', title: 'Won a set % of games or more', on: true, options: { threshold: THRESHOLD, min: PCT_MIN } },
     { id: 'lost_pct', title: 'Lost a set % of games or more', on: true, splitFrom: 'over_80', options: { threshold: THRESHOLD, min: PCT_MIN } },
     { id: 'information', title: 'Monthly Information (the players’ month review)', on: false, options: {} },
-    { id: 'power', title: 'Power Rankings at month end', on: true, options: { tier: TIER, top: top('10'),
+    { id: 'power', title: 'Power Rankings at month end', on: true, options: { split: SPLIT, tier: TIER, top: top('10'),
       min: { label: 'Minimum games', values: ['1', '3', '5', '10'], labels: { 1: 'Any (1+)', 3: '3+ games', 5: '5+ games', 10: '10+ games' }, default: '5' },
       players: { label: 'Players', values: ['all', 'active', 'ranked'], labels: { all: 'Everyone', active: 'Leave out inactive', ranked: 'Ranked only' }, default: 'all' } } },
     { id: 'kings', title: 'Kings of Tiers', on: true, options: {} },
-    { id: 'league', title: 'League table', on: true, options: { tier: TIER, top: top('all') } },
-    { id: 'merit', title: 'Merit table', on: false, options: { tier: TIER, top: top('all') } },
-    { id: 'race', title: 'Monthly Race', on: true, options: { tier: TIER, top: top('all'),
+    { id: 'league', title: 'League table', on: true, options: { tier: TIER, top: top('all'), slides: SLIDES } },
+    { id: 'merit', title: 'Merit table', on: false, options: { tier: TIER, top: top('all'), slides: SLIDES } },
+    { id: 'race', title: 'Monthly Race', on: true, options: { tier: TIER, top: top('all'), slides: SLIDES,
       provisional: { label: 'Provisional', values: ['hide', 'show'], labels: { hide: 'Qualifiers only', show: 'Include provisional' }, default: 'hide' } } },
     { id: 'most_wins', title: 'Most wins & points', on: false, options: { top: top('3') } },
     { id: 'best_record', title: 'Best win % (3+ games)', on: false, options: { top: top('3') } },

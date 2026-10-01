@@ -77,13 +77,13 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
       noteTag: document.querySelector('#bpPreview .bp-note .bp-note-tag').textContent,
       noteHtml: document.querySelector('#bpPreview .bp-note-body').innerHTML,
       powerRows: document.querySelectorAll('#bpPreview [data-module="power"] tbody tr').length,
-      powerTiers: [...document.querySelectorAll('#bpPreview [data-module="power"] tbody tr')].map((tr) => tr.children[2].textContent),
+      powerTiers: [...document.querySelectorAll('#bpPreview [data-module="power"] .bp-subhead')].map((h) => h.textContent),
     }));
     assert.deepStrictEqual(preview.order, ['note:Chair’s summary', 'results_table', 'over_80', 'lost_pct', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
     assert.strictEqual(preview.noteTag, 'Admin commentary', 'manual content is marked as such');
     assert.strictEqual(preview.noteHtml, 'Good month.<br>&lt;b&gt;Not bold&lt;/b&gt;', 'and is text, not markup');
     assert.strictEqual(preview.powerRows, 3);
-    assert.deepStrictEqual([...new Set(preview.powerTiers)], ['A']);
+    assert.deepStrictEqual(preview.powerTiers, ['Tier A'], 'one tier chosen: its section only');
 
     // No Save button: every change has been saved as it was made.
     assert.strictEqual(await p.$('#bpSave'), null);
@@ -97,7 +97,7 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
     assert.ok(saved.updatedAt && saved.basis && saved.basis.games > 0 && saved.basis.fingerprint);
     const on = saved.items.filter((it) => it.kind === 'note' || it.enabled).map((it) => it.kind === 'note' ? 'note' : it.id);
     assert.deepStrictEqual(on, ['note', 'results_table', 'over_80', 'lost_pct', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
-    assert.deepStrictEqual(saved.items.find((it) => it.id === 'power').options, { tier: 'A', top: '3', min: '5', players: 'all' });
+    assert.deepStrictEqual(saved.items.find((it) => it.id === 'power').options, { split: 'split', tier: 'A', top: '3', min: '5', players: 'all' });
     assert.deepStrictEqual(Object.keys(saved).sort(), ['basis', 'items', 'month', 'updatedAt', 'updatedBy', 'version'], 'the choice and its stamp -- no figures');
     assert.match(await p.textContent('#bpStatus'), /^Saved .* by Shaun\.$/);
     assert.deepStrictEqual(app.pageErrors, []);
@@ -152,7 +152,11 @@ maybe('every figure is the canonical one: the same functions the app\'s own scre
         // Rankings: the podium and Kings of Tiers the Rankings screen draws for that month.
         activeTab = 'power'; activeSortP = 'rating'; query = ''; activeTier = 'All'; selectedMonth = m; minGames = 5;
         const podium = computeRankingsPodiumTop3();
-        eq(data('power', m, { top: '3' }).rows.map((x) => ({ name: x.name, rating: x.rating })), podium, `${m} power = podium`);
+        eq(data('power', m, { top: '3', split: 'one' }).rows.map((x) => ({ name: x.name, rating: x.rating })), podium, `${m} power = podium`);
+        // Split by tier: each tier's section is that tier's own ranking, from the same pool.
+        const pool = rankingPool(m, defaultRankingMinGames(m));
+        data('power', m, { top: 'all' }).tiers.forEach((t) => eq(t.rows.map((x) => x.name), pool.filter((x) => x.scopeTier === t.tier).map((x) => x.name), `${m} power tier ${t.tier}`));
+        eq(data('power', m, { top: 'all' }).tiers.map((t) => t.tier), groupedTiers().filter((t) => pool.some((x) => x.scopeTier === t)), `${m} power: every tier`);
         eq(data('kings', m).kings, computeKingsOfTiers(), `${m} kings`);
         // Drawn as the Rankings screen's own Kings of Tiers tiles.
         const kingsHtml = document.createElement('div');
@@ -203,14 +207,20 @@ maybe('every figure is the canonical one: the same functions the app\'s own scre
           x.winners.forEach((n) => add(n, x.isDraw ? 'draws' : 'wins'));
           x.losers.forEach((n) => add(n, x.isDraw ? 'draws' : 'losses'));
         });
-        const table = data('results_table', m).rows;
+        const table = data('results_table', m, { split: 'one' }).rows;
         eq(table.map((x) => x.name).sort(), Object.keys(tally).sort(), `${m} results table players`);
         table.forEach((x) => {
           const t = tally[x.name] || {};
           eq([x.games, x.wins, x.draws, x.losses, x.points], [t.games, t.wins, t.draws, t.losses, 3 * t.wins + t.draws], `${m} results ${x.name}`);
         });
         eq(table.map((x) => x.points), table.map((x) => x.points).slice().sort((a, b) => b - a), `${m} ordered by points`);
-        const byDiff = data('results_table', m, { sort: 'difficulty' }).rows;
+        const byDiff = data('results_table', m, { sort: 'difficulty', split: 'one' }).rows;
+        // Split by tier: the League's own split rows, each tier in the points order.
+        const splitRows = leagueSplitRows(m).filter((x) => x.games > 0);
+        const byTier = data('results_table', m);
+        eq(byTier.tiers.map((t) => t.tier), groupedTiers().filter((t) => splitRows.some((x) => x.tier === t)), `${m} results: every tier`);
+        byTier.tiers.forEach((t) => eq(t.rows.map((x) => [x.name, x.games, x.points]), sortLeagueRows(splitRows.filter((x) => x.tier === t.tier), 'points', true).map((x) => [x.name, x.games, x.points]), `${m} results tier ${t.tier}`));
+        eq(byTier.rows.reduce((n, x) => n + x.games, 0), splitRows.filter((x) => x.tier !== '?').reduce((n, x) => n + x.games, 0), `${m} results: every game in a tier`);
         eq(byDiff.map((x) => x.hardness), byDiff.map((x) => x.hardness).slice().sort((a, b) => b - a), `${m} ordered by difficulty`);
         const hardest = monthlyInformation(m, { top: 1 }).hardestGames;
         if (hardest.length && !hardest[0].names.includes(byDiff.filter((x) => x.games >= 3)[0].name)) out.push(`${m} hardest = Information's`);
@@ -454,5 +464,34 @@ maybe('partnerships carry their draws: counted from the month\'s approved draws,
     assert.ok(r.some((x) => x.expected > 0), 'the record has a pair with a draw to check');
     r.forEach((x) => assert.deepStrictEqual([x.draws, x.winpct], [x.expected, x.expectedPct], `${x.m} ${x.pair}`));
     await app.run(() => { V3_MATCHES.splice(V3_MATCHES.findIndex((x) => x.id === 'test-draw'), 1); });
+  } finally { await app.close(); }
+});
+
+maybe('split by tier, a player who moved tier mid-month is in each tier they played in, with that spell\'s games', async () => {
+  const app = await H.open({ now: NOW });
+  try {
+    const r = await app.run(() => {
+      const d = (id, o) => boardPackModuleData({ id, options: Object.assign(BoardPack.defaultOptions(id), o || {}) }, '2026-09');
+      // The busiest Tier B player, moved up to Tier A partway through their month.
+      const whole = d('results_table', { split: 'one' }).rows;
+      const mover = whole.filter((x) => historicalTierOf(x.name, '2026-09-30') === 'B').sort((a, b) => b.games - a.games)[0];
+      const games = getAllApprovedMatches().filter((m) => m.date.slice(0, 7) === '2026-09' && m.winners.concat(m.losers).includes(mover.name));
+      const dates = games.map((m) => m.date).sort();
+      const cut = dates.find((x) => x > dates[0]) || dates[0];
+      const real = historicalTierOf;
+      historicalTierOf = (name, date) => (name === mover.name ? (date >= cut ? 'A' : 'B') : real(name, date));
+      try {
+        const split = d('results_table');
+        const one = d('results_table', { split: 'one' });
+        const inTier = (t) => (split.tiers.find((x) => x.tier === t) || { rows: [] }).rows.find((x) => x.name === mover.name);
+        return { name: mover.name, total: mover.games,
+          spells: [games.filter((m) => m.date < cut).length, games.filter((m) => m.date >= cut).length],
+          A: inTier('A') && inTier('A').games, B: inTier('B') && inTier('B').games,
+          oneRows: one.rows.filter((x) => x.name === mover.name).map((x) => x.games) };
+      } finally { historicalTierOf = real; }
+    });
+    assert.ok(r.spells[0] > 0 && r.spells[1] > 0, `${r.name} played on both sides of the change (${r.spells})`);
+    assert.deepStrictEqual([r.B, r.A], r.spells, 'each tier holds that spell\'s games');
+    assert.deepStrictEqual(r.oneRows, [r.total], 'one list: one row, the whole month');
   } finally { await app.close(); }
 });

@@ -21,7 +21,7 @@ const DATA = {
   rating_movers: { risers: [{ playerId: 'KC', startRating: 1701.6, endRating: 1721, ratingChange: 19.4 }], fallers: [{ playerId: 'Ant', startRating: 1500, endRating: 1468.9, ratingChange: -31.1 }] },
   doughnuts: { received: [], given: [] },
   over_80: { min: 3, won: [], lost: [] },
-  results_table: { sort: 'points', rows: Array.from({ length: 9 }, (_, i) => stats(`P${i}`, 5, 5 - Math.min(i, 5), 0, Math.min(i, 5))) },
+  results_table: { sort: 'points', tiers: [{ tier: null, rows: Array.from({ length: 9 }, (_, i) => stats(`P${i}`, 5, 5 - Math.min(i, 5), 0, Math.min(i, 5))) }] },
 };
 
 test('one slide per selected module, in the pack\'s order; nothing to say, no slide', () => {
@@ -29,7 +29,7 @@ test('one slide per selected module, in the pack\'s order; nothing to say, no sl
   entries.splice(2, 0, { item: { kind: 'note', id: 'n1', title: 'Chair', body: 'Well played.' }, data: null });
   const deck = SD.build(M, entries);
   assert.strictEqual(deck.title, 'September 2026 Review');
-  assert.deepStrictEqual(deck.slides.map((s) => s.id), ['kings', 'overview', 'note:n1', 'league', 'most_wins'], 'empty Doughnuts and over-80% are left out');
+  assert.deepStrictEqual(deck.slides.map((s) => s.id), ['kings', 'overview', 'note:n1', 'league:A', 'league:B', 'most_wins'], 'empty Doughnuts and over-80% are left out; the League, a slide per tier');
   const note = deck.slides[2];
   assert.deepStrictEqual([note.kind, note.title, note.body], ['note', 'Chair', 'Well played.']);
 });
@@ -38,7 +38,7 @@ test('slides carry the module\'s own figures, formatted, and never a full table'
   const s = (id, o) => SD.slideFor(item(id, o), DATA[id], M);
   assert.deepStrictEqual(s('overview').stats, [{ value: '28', label: 'Games played' }, { value: '25', label: 'Players' }, { value: '5', label: 'Draws' }]);
   assert.deepStrictEqual(s('kings').groups[0].rows.map((r) => [r.label, r.name, r.value]), [['Tier A', 'Kaz', '1735'], ['Tier B', 'Rishi', '1439']]);
-  assert.deepStrictEqual(s('league').groups[0].rows.map((r) => [r.label, r.name, r.value, r.sub]), [['Tier A', 'Len', '22 pts', '7W 1D 2L'], ['Tier B', 'Rishi', '26 pts', '8W 2D 7L']]);
+  assert.deepStrictEqual(s('league', { slides: 'leaders' }).groups[0].rows.map((r) => [r.label, r.name, r.value, r.sub]), [['Tier A', 'Len', '22 pts', '7W 1D 2L'], ['Tier B', 'Rishi', '26 pts', '8W 2D 7L']]);
   assert.deepStrictEqual(s('rating_movers').groups.map((g) => [g.label, g.rows[0].name, g.rows[0].value]), [['Risers', 'KC', '+19.4'], ['Fallers', 'Ant', '−31.1']]);
   assert.strictEqual(s('results_table').groups[0].rows.length, SD.ROWS, 'a table becomes its top five');
   assert.strictEqual(s('kings').section, 'power');
@@ -58,7 +58,7 @@ test('a long note is shortened for its card; an empty one is left out', () => {
 test('players do not see slides on a section the club has made Admin only', () => {
   const deck = SD.build(M, ['overview', 'kings', 'rating_movers', 'league'].map((id) => ({ item: item(id), data: DATA[id] })));
   const shown = SD.visibleSlides(deck, (k) => k !== 'power').map((s) => s.id);
-  assert.deepStrictEqual(shown, ['overview', 'league']);
+  assert.deepStrictEqual(shown, ['overview', 'league:A', 'league:B']);
 });
 
 test('the WhatsApp summary: the headline of each slide, then the link', () => {
@@ -119,4 +119,32 @@ test('winning and losing are separate slides, each with its own threshold; Highe
   const worst = SD.slideFor(item('worst_record'), { minGames: 3, groups: [{ rank: 1, names: ['Bo'], value: 60 }], stats: { Bo: stats('Bo', 5, 2, 0, 3) } }, M);
   assert.deepStrictEqual([worst.title, worst.groups[0].rows[0].name, worst.groups[0].rows[0].value, worst.groups[0].rows[0].sub, worst.foot],
     ['Highest loss %', 'Bo', '60%', '2W 0D 3L', '3+ games played · draws count as games']);
+});
+
+test('split by tier: a slide per tier, each with that tier\'s list; one list stays one slide', () => {
+  const T = (tier, rows) => ({ tier, rows });
+  const league = SD.slidesFor(item('league'), DATA.league, M);
+  assert.deepStrictEqual(league.map((x) => [x.id, x.tier, x.title, x.groups[0].rows.map((r) => [r.rank, r.name, r.value])]), [
+    ['league:A', 'A', 'League table · Tier A', [['1', 'Len', '22 pts'], ['2', 'KC', '15 pts']]],
+    ['league:B', 'B', 'League table · Tier B', [['1', 'Rishi', '26 pts']]],
+  ]);
+  assert.deepStrictEqual(league.map((x) => x.summary), [['League Tier A: Len (22 pts)'], ['League Tier B: Rishi (26 pts)']]);
+  assert.deepStrictEqual(SD.slidesFor(item('league', { slides: 'leaders' }), DATA.league, M).map((x) => x.id), ['league']);
+
+  const power = { minGames: 5, players: 'all', tiers: [T('A', [{ name: 'Kaz', tier: 'A', rating: 1735.2, ratingChange: 4 }, { name: 'Len', tier: 'A', rating: 1700, ratingChange: null }]), T('B', [{ name: 'Rishi', tier: 'B', rating: 1439, ratingChange: -2 }])] };
+  const ps = SD.slidesFor(item('power'), power, M);
+  assert.deepStrictEqual(ps.map((x) => [x.id, x.section, x.title, x.groups[0].rows.map((r) => [r.rank, r.name, r.value, r.sub])]), [
+    ['power:A', 'power', 'At month end · Tier A', [['1', 'Kaz', '1735', '+4 pts'], ['2', 'Len', '1700', '']]],
+    ['power:B', 'power', 'At month end · Tier B', [['1', 'Rishi', '1439', '−2 pts']]],
+  ]);
+  const one = SD.slidesFor(item('power', { split: 'one' }), { minGames: 5, players: 'all', tiers: [T(null, power.tiers.flatMap((t) => t.rows))] }, M);
+  assert.deepStrictEqual([one.length, one[0].id, one[0].title, one[0].groups[0].rows[2].sub], [1, 'power', 'At month end', 'Tier B · −2 pts']);
+
+  const results = SD.slidesFor(item('results_table'), { sort: 'points', tiers: [T('A', [stats('Len', 10, 7, 1, 2)]), T('C', [stats('Fee', 4, 1, 0, 3)])] }, M);
+  assert.deepStrictEqual(results.map((x) => [x.id, x.title, x.groups[0].rows[0].name]), [['results_table:A', 'Top of the table · Tier A', 'Len'], ['results_table:C', 'Top of the table · Tier C', 'Fee']]);
+  const race = SD.slidesFor(item('race'), { minMatches: 5, tiers: [T('A', [{ playerId: 'Kaz', qualified: true, score: 41.2, played: 6 }, { playerId: 'Eli', qualified: false, score: 50, played: 3 }])] }, M);
+  assert.deepStrictEqual(race[0].groups[0].rows.map((r) => [r.rank, r.name, r.sub]), [['1', 'Kaz', '6 matches'], ['–', 'Eli', 'provisional']]);
+  // A tier with nothing to show has no slide; a module with no tiers, none.
+  assert.deepStrictEqual(SD.slidesFor(item('league'), { tiers: [T('A', [])] }, M), []);
+  assert.strictEqual(SD.slideFor(item('league'), { tiers: [] }, M), null);
 });

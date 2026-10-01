@@ -67,8 +67,11 @@ const bpTable = (headers, rows) => ({ type: 'table', headers, rows });
 
 function bpTiers(tiers, tableFor, emptyText){
   if(!tiers.length) return [bpEmpty(emptyText || 'No games recorded.')];
-  return tiers.flatMap(t => [bpSub(`Tier ${t.tier}`), tableFor(t.rows)]);
+  return tiers.flatMap(t => t.tier === null ? [tableFor(t.rows)] : [bpSub(`Tier ${t.tier}`), tableFor(t.rows)]);
 }
+
+// Said under a split list when the club's switch hides the Tier S section.
+const bpSHiddenFoot = (d) => d.sHidden ? [bpFoot('Tier S is hidden (Admin › Visible to everyone), so its section is left out; choose One list to include Tier S players.')] : [];
 
 function bpRatingMoveLine(r){
   return { name: r.playerId, value: `${Math.round(r.startRating)} → ${Math.round(r.endRating)} · ${bpSigned(r.ratingChange)} pts`
@@ -93,11 +96,13 @@ function bpThresholdBlocks(d, what, list, pct){
 function boardPackBlocks(){ return {
   overview: (d) => [{ type: 'stats', items: [{ value: String(d.games), label: 'Games' }, { value: String(d.players), label: 'Players active' }, { value: String(d.draws), label: 'Draws' }] }],
 
-  results_table: (d) => (d.rows.length
-    ? [bpTable(['#', 'Player', 'Tier', 'P', 'W', 'D', 'L', 'Pts', 'Diff'], d.rows.map((r, i) => [i + 1, r.name, r.tier,
-      r.games, r.wins, r.draws, r.losses, bpStrong(r.points), Number(r.hardness).toFixed(1)]))]
-    : [bpEmpty('No games recorded.')])
-    .concat([bpFoot(`Points: 3 for a win, 1 for a draw, 0 for a loss. Diff (difficulty) is the average strength of the games played ÷ 300 — the Monthly Information “hardest games” measure; higher is harder. Ordered by ${d.sort === 'games' ? 'games played' : d.sort === 'difficulty' ? 'difficulty' : 'points, then game difference'}.`)]),
+  results_table: (d) => bpTiers(d.tiers, rows => d.tiers[0].tier === null
+    ? bpTable(['#', 'Player', 'Tier', 'P', 'W', 'D', 'L', 'Pts', 'Diff'], rows.map((r, i) => [i + 1, r.name, r.tier,
+      r.games, r.wins, r.draws, r.losses, bpStrong(r.points), Number(r.hardness).toFixed(1)]))
+    : bpTable(['#', 'Player', 'P', 'W', 'D', 'L', 'Pts', 'Diff'], rows.map((r, i) => [i + 1, r.name,
+      r.games, r.wins, r.draws, r.losses, bpStrong(r.points), Number(r.hardness).toFixed(1)])))
+    .concat(bpSHiddenFoot(d))
+    .concat([bpFoot(`Points: 3 for a win, 1 for a draw, 0 for a loss. Diff (difficulty) is the average strength of the games played ÷ 300 — the Monthly Information “hardest games” measure; higher is harder. Ordered by ${d.sort === 'games' ? 'games played' : d.sort === 'difficulty' ? 'difficulty' : 'points, then game difference'}.${d.tiers.length && d.tiers[0].tier !== null ? ' By the tier held on each match’s date: a player who moved tier mid-month is in each tier they played in.' : ''}`)]),
 
   over_80: (d) => bpThresholdBlocks(d, 'Won', 'won', 'winpct'),
   lost_pct: (d) => bpThresholdBlocks(d, 'Lost', 'lost', 'losspct'),
@@ -117,10 +122,13 @@ function boardPackBlocks(){ return {
     ];
   },
 
-  power: (d) => (d.rows.length
-    ? [bpTable(['#', 'Player', 'Tier', 'Rating', 'Month'], d.rows.map((r, i) => [i + 1, r.name, r.tier || '–', Math.round(r.rating),
-      r.ratingChange === null ? '–' : `${bpSigned(r.ratingChange)} pts${r.rankChange ? ` · ${r.rankChange > 0 ? '▲' : '▼'}${Math.abs(r.rankChange)}` : ''}`]))]
-    : [bpEmpty('Nobody qualified.')])
+  power: (d) => bpTiers(d.tiers, rows => {
+    const one = d.tiers[0].tier === null;  // split: the section heading is the tier
+    const month = (r) => r.ratingChange === null ? '–' : `${bpSigned(r.ratingChange)} pts${r.rankChange ? ` · ${r.rankChange > 0 ? '▲' : '▼'}${Math.abs(r.rankChange)}` : ''}`;
+    return one ? bpTable(['#', 'Player', 'Tier', 'Rating', 'Month'], rows.map((r, i) => [i + 1, r.name, r.tier || '–', Math.round(r.rating), month(r)]))
+      : bpTable(['#', 'Player', 'Rating', 'Month'], rows.map((r, i) => [i + 1, r.name, Math.round(r.rating), month(r)]));
+  }, 'Nobody qualified.')
+    .concat(bpSHiddenFoot(d))
     .concat([bpFoot(`Month-end Power Rating and the tier held at the month's close; ${d.minGames}+ game${d.minGames === 1 ? '' : 's'} in the month${d.rankingsDefault ? ' (the Rankings month default)' : ''}${d.players === 'ranked' ? '; Ranked players only (2+ rated games in the 30 days to the month\'s end, not inactive)' : d.players === 'active' ? '; inactive players left out' : ''}.`)]),
 
   kings: (d) => {

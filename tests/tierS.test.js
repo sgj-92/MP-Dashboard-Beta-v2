@@ -29,7 +29,9 @@ const look = () => {
     pack: { league: d('league').tiers.map((t) => t.tier), race: d('race', { provisional: 'show' }).tiers.map((t) => t.tier), tierOption: d('league', { tier: 'S' }).tiers.length },
     // Manny is still in everything that is not a tier section.
     manny: {
-      results: d('results_table').rows.some((r) => r.name === 'Manny'),
+      results: d('results_table', { split: 'one' }).rows.some((r) => r.name === 'Manny'),
+      // Split by tier, the Tier S section follows the switch -- and says so.
+      splitResults: [d('results_table').rows.some((r) => r.name === 'Manny'), d('results_table').sHidden],
       stats: !!computeMonthlySummaryStats('2026-09').Manny,
       split: leagueSplitRows('2026-09').some((r) => r.name === 'Manny'),
       race: buildMonthlyRace('2026-09').table.some((r) => r.playerId === 'Manny'),
@@ -58,7 +60,8 @@ maybe('Tier S sections: shown by default, hidden club-wide from the Admin switch
     assert.deepStrictEqual(after.kingTiles, ['a']);
     assert.ok(!after.pack.league.includes('S') && !after.pack.race.includes('S'));
     assert.strictEqual(after.pack.tierOption, 0);
-    assert.deepStrictEqual(after.manny, { results: true, stats: true, split: true, race: true, players: true });
+    assert.deepStrictEqual(after.manny, { results: true, splitResults: [false, true], stats: true, split: true, race: true, players: true });
+    assert.deepStrictEqual(before.manny.splitResults, [true, false], 'shown by default, in its own Tier S section');
     assert.strictEqual(await app.run(() => JSON.stringify([computeMonthlySummaryStats('2026-09'), buildMonthlyRace('2026-09').table, PLAYERS.map((p) => [p.name, p.rating, p.tier])])), figures, 'no figure changes');
 
     // Admins are not exempt: it is a layout choice, not a permission.

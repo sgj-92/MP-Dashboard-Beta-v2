@@ -62,6 +62,16 @@
     return (tiers || []).filter((t) => t.rows.length).map((t) => Object.assign({ label: `Tier ${t.tier}` }, fmt(t.rows[0])));
   }
 
+  // A slide per tier section -- every tier in the pack, each with its own
+  // top five -- or the one slide when the list is not split. `make(rows,
+  // tier)` builds a slide's fields; the tier's slide is `<module>:<tier>`.
+  function perTier(tiers, make) {
+    return (tiers || []).filter((t) => t.rows.length).map((t) => {
+      const out = make(listRows(t.rows, (r) => r), t.tier);
+      return t.tier === null ? out : Object.assign({ tier: t.tier }, out, { title: `${out.title} · Tier ${t.tier}` });
+    });
+  }
+
   // "Won (or Lost) N% or more": one slide, or nothing when nobody reached it.
   function thresholdSlide(d, what, list, pct, eyebrow, everyTitle) {
     const t = d.threshold || 80;
@@ -85,16 +95,17 @@
     }),
 
     results_table: (d, o) => {
-      if (!d.rows.length) return null;
       const by = o.sort === 'games' ? 'games' : o.sort === 'difficulty' ? 'difficulty' : 'points';
       const value = { points: (r) => `${r.points} pts`, games: (r) => plural(r.games, 'game'), difficulty: (r) => Number(r.hardness).toFixed(1) }[by];
       const title = { points: 'Top of the table', games: 'Most games played', difficulty: 'Toughest schedules' }[by];
-      const rows = listRows(d.rows, (r) => ({ name: r.name, value: value(r), sub: `${record(r)}${by === 'difficulty' ? ` · ${plural(r.games, 'game')}` : ''}` }));
-      return {
-        eyebrow: 'The month’s results', title, groups: [{ rows }],
-        foot: by === 'points' ? '3 points a win, 1 a draw' : by === 'difficulty' ? 'Average strength of the games played ÷ 300' : '',
-        summary: [`${title}: ${rows[0].name} (${rows[0].value})`],
-      };
+      return perTier(d.tiers, (list, tier) => {
+        const rows = list.map((r) => ({ rank: r.rank, name: r.name, value: value(r), sub: `${record(r)}${by === 'difficulty' ? ` · ${plural(r.games, 'game')}` : ''}` }));
+        return {
+          eyebrow: 'The month’s results', title, groups: [{ rows }],
+          foot: by === 'points' ? '3 points a win, 1 a draw' : by === 'difficulty' ? 'Average strength of the games played ÷ 300' : '',
+          summary: [`${title}${tier ? ` (Tier ${tier})` : ''}: ${rows[0].name} (${rows[0].value})`],
+        };
+      });
     },
 
     over_80: (d) => thresholdSlide(d, 'Won', d.won, 'winpct', 'Out on their own', 'Perfect months'),
@@ -115,17 +126,16 @@
       };
     },
 
-    power: (d) => {
-      if (!d.rows.length) return null;
-      const rows = listRows(d.rows, (r) => ({ name: r.name, value: String(Math.round(r.rating)),
-        sub: `Tier ${r.tier || '–'}${r.ratingChange === null ? '' : ` · ${signed(r.ratingChange)} pts`}` }));
+    power: (d) => perTier(d.tiers, (list, tier) => {
+      const rows = list.map((r) => ({ rank: r.rank, name: r.name, value: String(Math.round(r.rating)),
+        sub: `${tier ? '' : `Tier ${r.tier || '–'}`}${r.ratingChange === null ? '' : `${tier ? '' : ' · '}${signed(r.ratingChange)} pts`}` }));
       return {
         eyebrow: 'Power Rankings', title: 'At month end', groups: [{ rows }],
         foot: `${d.minGames}+ game${d.minGames === 1 ? '' : 's'} in the month`
           + (d.players === 'ranked' ? ' \u00b7 Ranked players' : d.players === 'active' ? ' \u00b7 inactive left out' : ''),
-        summary: [`Power Rankings #1: ${rows[0].name} (${rows[0].value})`],
+        summary: [`Power Rankings${tier ? ` Tier ${tier}` : ''} #1: ${rows[0].name} (${rows[0].value})`],
       };
-    },
+    }),
 
     kings: (d) => {
       if (!d.kings) return null;
@@ -140,21 +150,30 @@
       };
     },
 
-    league: (d) => {
+    league: (d, o) => {
+      if (o.slides !== 'leaders') return perTier(d.tiers, (list, tier) => ({ eyebrow: 'League', title: 'League table',
+        groups: [{ rows: list.map((r) => ({ rank: r.rank, name: r.name, value: `${r.points} pts`, sub: record(r) })) }], foot: '3 points a win, 1 a draw',
+        summary: [`League Tier ${tier}: ${list[0].name} (${list[0].points} pts)`] }));
       const rows = tierLeaders(d.tiers, (r) => ({ name: r.name, value: `${r.points} pts`, sub: record(r) }));
       if (!rows.length) return null;
       return { eyebrow: 'League', title: 'League leaders', groups: [{ rows }], foot: '3 points a win, 1 a draw',
         summary: rows.map((r) => `League ${r.label}: ${r.name} (${r.value})`) };
     },
 
-    merit: (d) => {
+    merit: (d, o) => {
+      if (o.slides !== 'leaders') return perTier(d.tiers, (list, tier) => ({ eyebrow: 'Merit', title: 'Merit table',
+        groups: [{ rows: list.map((r) => ({ rank: r.rank, name: r.playerId, value: `${r.merit} pts`, sub: plural(r.hardWins, 'hard win') })) }], foot: 'Harder wins earn more',
+        summary: [`Merit Tier ${tier}: ${list[0].playerId} (${list[0].merit} pts)`] }));
       const rows = tierLeaders(d.tiers, (r) => ({ name: r.playerId, value: `${r.merit} pts`, sub: plural(r.hardWins, 'hard win') }));
       if (!rows.length) return null;
       return { eyebrow: 'Merit', title: 'Merit leaders', groups: [{ rows }], foot: 'Harder wins earn more',
         summary: rows.map((r) => `Merit ${r.label}: ${r.name} (${r.value})`) };
     },
 
-    race: (d) => {
+    race: (d, o) => {
+      if (o.slides !== 'leaders') return perTier(d.tiers, (list, tier) => ({ eyebrow: 'Monthly Race', title: 'Best month',
+        groups: [{ rows: list.map((r) => ({ rank: r.qualified ? r.rank : '–', name: r.playerId, value: signed(r.score), sub: r.qualified ? plural(r.played, 'match', 'matches') : 'provisional' })) }],
+        foot: `${d.minMatches}+ matches to qualify`, summary: [`Race Tier ${tier}: ${list[0].playerId} (${signed(list[0].score)})`] }));
       const rows = tierLeaders(d.tiers, (r) => ({ name: r.playerId, value: signed(r.score), sub: r.qualified ? plural(r.played, 'match', 'matches') : 'provisional' }));
       if (!rows.length) return null;
       return { eyebrow: 'Monthly Race', title: 'Best month', groups: [{ rows }], foot: `${d.minMatches}+ matches to qualify`,
@@ -266,6 +285,18 @@
   };
 
   // One Board Pack item and its module data -> a slide, or null.
+  // A module's slides: most make one; a list split by tier makes one per
+  // tier (`<module>:<tier>`). Empty, none.
+  function slidesFor(item, data, month) {
+    if (item.kind === 'note') { const n = slideFor(item, data, month); return n ? [n] : []; }
+    const build = BUILD[item.id];
+    if (!build || !data) return [];
+    const out = build(data, item.options || {}, month);
+    return (Array.isArray(out) ? out : [out]).filter(Boolean).map((x) => Object.assign(
+      { id: x.tier ? `${item.id}:${x.tier}` : item.id, kind: 'module', section: SECTION[item.id] || null, groups: [], stats: [], foot: '', summary: [] }, x));
+  }
+
+  // One slide: a note's, or a module's first.
   function slideFor(item, data, month) {
     if (item.kind === 'note') {
       const body = String(item.body || '').trim();
@@ -276,18 +307,14 @@
         body: body.length > NOTE_BODY_MAX ? body.slice(0, NOTE_BODY_MAX - 1).trimEnd() + '…' : body, summary: [],
       };
     }
-    const build = BUILD[item.id];
-    if (!build || !data) return null;
-    const out = build(data, item.options || {}, month);
-    if (!out) return null;
-    return Object.assign({ id: item.id, kind: 'module', section: SECTION[item.id] || null, groups: [], stats: [], foot: '', summary: [] }, out);
+    return slidesFor(item, data, month)[0] || null;
   }
 
   // The deck for a month: [{ item, data }] in the Board Pack's order.
   function build(month, entries) {
     return {
       version: VERSION, month, title: `${monthLabel(month)} Review`,
-      slides: entries.map(({ item, data }) => slideFor(item, data, month)).filter(Boolean),
+      slides: entries.flatMap(({ item, data }) => slidesFor(item, data, month)),
     };
   }
 
@@ -331,5 +358,5 @@
     return lines.join('\n');
   }
 
-  return { VERSION, ROWS, NOTE_BODY_MAX, SECTION, monthLabel, storageKey, slideFor, build, visibleSlides, publication, withdrawal, isLive, sameDeck, summaryText };
+  return { VERSION, ROWS, NOTE_BODY_MAX, SECTION, monthLabel, storageKey, slideFor, slidesFor, build, visibleSlides, publication, withdrawal, isLive, sameDeck, summaryText };
 });

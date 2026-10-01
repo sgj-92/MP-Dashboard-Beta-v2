@@ -20,7 +20,7 @@ test('a month with nothing saved starts from the catalogue, every module present
   const c = BP.defaultConfig(M);
   assert.deepStrictEqual(ids(c), BP.MODULES.map((m) => m.id));
   assert.deepStrictEqual(c.items.filter((it) => it.enabled).map((it) => it.id), BP.MODULES.filter((m) => m.on).map((m) => m.id));
-  assert.deepStrictEqual(c.items[at(c, 'power')].options, { tier: 'all', top: '10', min: '5', players: 'all' });
+  assert.deepStrictEqual(c.items[at(c, 'power')].options, { split: 'split', tier: 'all', top: '10', min: '5', players: 'all' });
   assert.deepStrictEqual([c.updatedAt, c.updatedBy, c.basis], [null, null, null]);
   // No figure anywhere in what would be stored: every option is one of the
   // module's own presentation choices.
@@ -31,7 +31,7 @@ test('the monthly results table and the over-80% list are in every new month\'s 
   const c = BP.defaultConfig(M);
   const on = BP.selected(c).map((it) => it.id);
   assert.ok(on.includes('results_table') && on.includes('over_80'));
-  assert.deepStrictEqual(c.items[at(c, 'results_table')].options, { sort: 'points', top: 'all' });
+  assert.deepStrictEqual(c.items[at(c, 'results_table')].options, { sort: 'points', split: 'split', tier: 'all', top: 'all' });
   assert.deepStrictEqual(c.items[at(c, 'over_80')].options, { threshold: '80', min: '3' });
   assert.deepStrictEqual(BP.BY_ID.results_table.options.sort.values, ['points', 'games', 'difficulty']);
   assert.deepStrictEqual(BP.BY_ID.over_80.options.min.values, ['3', '1', '5']);
@@ -39,7 +39,7 @@ test('the monthly results table and the over-80% list are in every new month\'s 
   // A pack saved before these options existed reads with the defaults.
   const old = BP.normalise({ month: M, items: [{ kind: 'module', id: 'over_80', enabled: true, options: { min: '5' } }, { kind: 'module', id: 'power', enabled: true, options: { tier: 'A' } }] }, M);
   assert.deepStrictEqual(old.items[0].options, { threshold: '80', min: '5' });
-  assert.deepStrictEqual(old.items[2].options, { tier: 'A', top: '10', min: '5', players: 'all' });
+  assert.deepStrictEqual(old.items[2].options, { split: 'split', tier: 'A', top: '10', min: '5', players: 'all' });
 });
 
 test('losing is its own module with its own threshold; a pack saved before the split keeps its losers', () => {
@@ -156,7 +156,7 @@ test('reading defensively: wrong month, junk, duplicates, bad options', () => {
     null, { kind: 'module' }, { kind: 'banana', id: 'x' },
   ] }, M);
   assert.strictEqual(c.items[0].id, 'league');
-  assert.deepStrictEqual(c.items[0].options, { tier: 'B', top: 'all' });
+  assert.deepStrictEqual(c.items[0].options, { tier: 'B', top: 'all', slides: 'each' });
   assert.strictEqual(c.items.filter((it) => it.id === 'league').length, 1);
   assert.strictEqual(c.items.length, BP.MODULES.length);
 });
@@ -169,4 +169,20 @@ test('extensible: a module added later arrives off, at the end; one this build d
   assert.deepStrictEqual(c.items.at(-1), { kind: 'module', id: 'crossovers', enabled: false, options: { top: '5' } });
   assert.deepStrictEqual(c.items[0], { kind: 'module', id: 'moment_of_the_month', enabled: true, options: { clip: 'x' } });
   assert.ok(!BP.selected(c).some((it) => it.id === 'moment_of_the_month'), 'but it is not drawn');
+});
+
+test('tiers: split by tier (every tier, its own section and slide) by default, or one list', () => {
+  const c = BP.defaultConfig(M);
+  ['results_table', 'power'].forEach((id) => {
+    assert.deepStrictEqual(BP.BY_ID[id].options.split.values, ['split', 'one'], id);
+    assert.strictEqual(c.items[at(c, id)].options.split, 'split', `${id} splits by default`);
+    assert.strictEqual(c.items[at(c, id)].options.tier, 'all', `${id} includes every tier`);
+  });
+  ['league', 'merit', 'race'].forEach((id) => {
+    assert.deepStrictEqual(BP.BY_ID[id].options.slides.values, ['each', 'leaders'], id);
+    assert.strictEqual(c.items[at(c, id)].options.slides, 'each', `${id}: a slide per tier by default`);
+  });
+  // A pack saved before these options gets the split, and keeps its tier.
+  const old = BP.normalise({ month: M, items: [{ kind: 'module', id: 'power', enabled: true, options: { tier: 'B', top: '5' } }] }, M);
+  assert.deepStrictEqual([old.items[0].options.split, old.items[0].options.tier, old.items[0].options.top], ['split', 'B', '5']);
 });
