@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`6f40764`** (Tier S sections switch + pictures, 1 Oct; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **820 / 820 on `main`** (1 Oct, after Tier S + pictures); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`f58ec1d`** (Board Pack options + autosave, 1 Oct; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **823 / 823 on `main`** (1 Oct, after Board Pack options + autosave); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,22 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Board Pack options and saving as you go — DONE (`f58ec1d`), 1 Oct.**
+Shaun's requests from his phone.
+- **"Won or lost over a set %":** the threshold is a choice (50, 60, 70,
+  75, 80 or 90%; 80 by default). It means more than the threshold, never
+  equal to it.
+- **Power Rankings at month end:**
+  - **Minimum games:** 1, 3, 5 or 10. 5 is the Rankings month default.
+  - **Players:** Everyone, Leave out inactive, or Ranked only.
+  - "Idle" is judged at the month's close.
+  - "Inactive" is the club's flag. It has no history, so it is today's
+    status.
+- **Records always read W-D-L.** Best win % used to show W-L-D.
+- **The pack saves itself after each change.** There is no Save button.
+  Saving is independent of Publish, which still only changes the review
+  link.
 
 **Tier S sections switch; Board Pack and Share Deck as pictures — DONE
 (`6f40764`), 1 Oct.** Shaun asked for all three.
@@ -3340,6 +3356,23 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 1 Oct 2026 (Board Pack options, autosave)
+
+**`f58ec1d` on `app-features-fixes` = `main`.**
+- **Threshold:** `over_80` keeps its id, so saved packs still match, and
+  gains a `threshold` option.
+- **Power Rankings:** `power` gains `min` and `players`. The state is
+  `playerStateOf(name, end of month)`.
+- **W-D-L:** best win % and partnerships.
+- **Autosave:** `boardPackQueueSave` / `boardPackSaveNow`, with a 600ms
+  debounce.
+  - The section is not redrawn on save, so a note keeps its focus.
+  - A pending change is flushed before the month changes.
+- **Tests:** 3 new browser tests, plus extended config and canonical tests;
+  all mutation-checked. **823 / 823.**
+
+Baton → Shaun / CGPT.
 
 ### CCode — 1 Oct 2026 (Tier S sections; pictures)
 
@@ -7728,6 +7761,9 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 1 Oct (later): Board Pack options, W-D-L and autosave are live
+(`f58ec1d`, 823 / 823).** Baton → Shaun / CGPT.
 
 **CCode, 1 Oct: the Tier S sections switch, and pictures from the Board
 Pack and the Share Deck, are live (`6f40764`, 820 / 820).** Baton → Shaun
