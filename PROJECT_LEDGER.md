@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`d74d466`** (whole-pack PDF and pictures, 1 Oct; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **849 / 849 on `main`** (1 Oct, after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`382f907`** (Board Pack split by tier, 1 Oct; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **852 / 852 on `main`** (1 Oct, after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,24 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Board Pack: split by tier, every tier included — DONE (`382f907`),
+1 Oct.** Shaun: "monthly race split by tier but all tiers included, power
+rankings split by tier, results table split by tier".
+- **Monthly results table and Power Rankings:** a new **Layout** option,
+  "Split by tier" (default) or "One list".
+  - Split shows every tier as its own section, with Top N per tier.
+  - The results table splits by the tier on each match's date, as the
+    League does, so a mid-month mover is in each tier with that spell's
+    games.
+- **League, Merit and Monthly Race:** a new **Slides** option, "A slide
+  per tier" (default) or "Leaders on one slide". The report was already
+  split by tier, but each slide showed only the tier's leader.
+- **The Share Deck** gives each tier its own slide ("… · Tier A") with
+  that tier's top five. Pictures, the PDFs and publishing all follow.
+- **Tier S switch (CCode's call, recorded in Section 5):** hidden, a
+  split list leaves the Tier S section out, like every tier-grouped view,
+  and the report says so. "One list" still includes Tier S players.
 
 **Save a whole pack: PDF or every picture — DONE (`d74d466`), 1 Oct.**
 Shaun's request.
@@ -2519,6 +2537,18 @@ with Shaun.**
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 1 Oct — Tier S switch and the new split lists (CCode's call)
+
+**For Shaun. Nothing is blocked.**
+- The results table and Power Rankings can now be split by tier, and are
+  by default. When the Tier S switch is set to Hidden, the split version
+  leaves out the Tier S section, as League, Merit and Race already do.
+- When Shaun asked for the switch he said he still wanted the Tier S
+  player's data in tables. That still holds for **"One list"**, and the
+  split report says the section is hidden.
+- **If Shaun would rather keep Tier S in split lists whatever the
+  switch says**, it is a one-line change.
+
 ### OPEN 1 Oct — Monthly Information: "Lowest win % (highest loss %)" ranks by win %
 
 **For Shaun / CGPT. Nothing is blocked; not changed.**
@@ -3488,6 +3518,30 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 1 Oct 2026 (Board Pack split by tier)
+
+**`382f907` on `app-features-fixes` = `main`.**
+- **Options:** `SPLIT` (`split` | `one`, default split) on
+  `results_table` (which also gains `tier`) and `power`. `SLIDES`
+  (`each` | `leaders`, default each) on `league`, `merit` and `race`.
+  Saved packs take the defaults for the new keys.
+- **Data:** `boardPackSplit(o, rows, tierOf)` returns `{ split, tiers,
+  rows, sHidden }`. A single list is one section with `tier: null`.
+  `results_table` uses `leagueSplitRows` when split.
+- **Slides:** `ShareDeck.slidesFor` (several slides per module);
+  `slideFor` is now its first. `perTier`; tier slide ids are
+  `<module>:<tier>`.
+- **Tests:**
+  - per-tier canonical checks, a mid-month mover (simulated in the page:
+    the seeded record has none), options and defaults, per-tier slides,
+    and the Tier S rule;
+  - existing tests updated for split defaults and per-tier slide ids.
+  - All new ones fail on `abc34d5`; 8 mutations caught. **852 / 852.**
+  - Snapshot: only `manage-admin` differs (new options).
+
+Baton → Shaun / CGPT. One call to confirm (Section 5): the Tier S switch
+in split lists.
 
 ### CCode — 1 Oct 2026 (save a whole pack)
 
@@ -7909,6 +7963,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `382f907` | Board Pack split by tier. Results table and Power Rankings: "Split by tier" (default) or "One list"; League, Merit and Race: "A slide per tier" (default) or leaders on one slide. The Share Deck makes one slide per tier. A mid-month mover is in each tier played. All new tests fail on `abc34d5`; 8 mutations caught; 852/852. |
 | `d74d466` | Save a whole pack. Club and player packs: the pack as one PDF (contents + every module), the slides as one PDF (players' view), or every module as a picture; before publishing, nothing written. A PDF writer of its own (`pdfDoc.js`, no library) fed by the share pictures. All new tests fail on `fe9e8b1`; 7 mutations caught; 849/849. |
 | `337c70e` | Board Pack losing modules. "Won a set % of games or more" (winners only); new "Lost a set % of games or more" with its own threshold and minimum, carried into packs saved before the split; new "Highest loss % (3+ games)" (losses ÷ games, from `monthlyInformation`'s new `highestLossPct`). Picture saving no longer drops files past the tenth. All new tests fail on `6520a04`; 9 mutations caught; 843/843. |
 | `d6e4ae1` | Player Monthly Packs. Admin › Monthly Board Pack › Player packs: a pack per player per month (8 modules plus Admin notes), Generate all, saved as you go, Share Deck preview, pictures, summary, and publish / unpublish to a private 128-bit token link (`review/?p=`) stored as a snapshot in `playerPacks`. Pure `playerMonth.js` / `playerDeck.js`; canonical selectors only. 15 tests (all fail on `501bc8f`), 14 mutations caught; 839/839. |
@@ -8008,6 +8063,10 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 1 Oct (latest): the Board Pack splits by tier with every tier
+included, in the report and the slides (`382f907`, 852 / 852).** Baton →
+Shaun / CGPT. Confirm or change the Tier S call (Section 5).
 
 **CCode, 1 Oct (latest): whole packs can be saved as PDF or as pictures
 (`d74d466`, 849 / 849).** Baton → Shaun / CGPT. Please try "Slides as
