@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`f58ec1d`** (Board Pack options + autosave, 1 Oct; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **823 / 823 on `main`** (1 Oct, after Board Pack options + autosave); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`2d43540`** (partnership draws; inclusive win/loss %, 1 Oct; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **824 / 824 on `main`** (1 Oct, after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -154,9 +154,15 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 **Board Pack options and saving as you go — DONE (`f58ec1d`), 1 Oct.**
 Shaun's requests from his phone.
-- **"Won or lost over a set %":** the threshold is a choice (50, 60, 70,
-  75, 80 or 90%; 80 by default). It means more than the threshold, never
-  equal to it.
+- **"Won or lost a set % or more"** (`2d43540`): the threshold is a choice
+  (50, 60, 70, 75, 80, 90 or 100%; 80 by default). **Reaching it counts:**
+  4 of 5 counts at 80%. This replaces the first "more than" reading.
+- **Partnerships show draws** (`2d43540`):
+  - each pair's drawn games that month are in its record (W-D-L) and in
+    its win %;
+  - chemistry still comes from decided games, because draws are not
+    rated;
+  - the list is still pairs with 2+ decided games.
 - **Power Rankings at month end:**
   - **Minimum games:** 1, 3, 5 or 10. 5 is the Rankings month default.
   - **Players:** Everyone, Leave out inactive, or Ranked only.
@@ -7761,6 +7767,9 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 1 Oct (later still): partnerships show draws, and the win/loss
+% counts at the threshold (`2d43540`, 824 / 824).** Baton → Shaun / CGPT.
 
 **CCode, 1 Oct (later): Board Pack options, W-D-L and autosave are live
 (`f58ec1d`, 823 / 823).** Baton → Shaun / CGPT.
