@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`337c70e`** (Board Pack losing modules, 1 Oct; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **843 / 843 on `main`** (1 Oct, after the Board Pack losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`d74d466`** (whole-pack PDF and pictures, 1 Oct; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **849 / 849 on `main`** (1 Oct, after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,23 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Save a whole pack: PDF or every picture — DONE (`d74d466`), 1 Oct.**
+Shaun's request.
+- **Where:** under Preview, in the club Board Pack and in each player's
+  pack. Available before publishing; nothing is written.
+- **"Board Pack as PDF"** (or "Pack as PDF" for a player): one file, a
+  contents page then every selected module and note, a page each.
+- **"Slides as PDF":** one file of the slides players would see (cover,
+  slides, closing card), 4:5 pages. Admin-only sections are left out.
+- **"All pictures":** every module as its picture at once.
+- **How:** the PDF is the same pictures the Share image buttons make,
+  embedded as JPEG (about 1 MB a pack). It is written by the app itself,
+  with no library. On a phone it opens the share sheet as a PDF
+  (WhatsApp, Files, email), otherwise it downloads.
+- **What "disappeared":** there was never a whole-pack file. The Save
+  button removed when the pack began saving itself (`f58ec1d`) saved the
+  module choices, not a copy of the pack.
 
 **Board Pack: losing has its own module and Highest loss % — DONE
 (`337c70e`), 1 Oct.** Shaun's request.
@@ -3471,6 +3488,32 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 1 Oct 2026 (save a whole pack)
+
+**`d74d466` on `app-features-fixes` = `main`.**
+- `features/review/pdfDoc.js` (pure, UMD): `PdfDoc.build(pages, { title })`
+  writes PDF 1.4 with one JPEG image per page. Pages are 0.5 pt per px
+  (1080 px is 540 pt) and the title is UTF-16.
+- `CardPainter.toPdf(canvases, name, title)`.
+- `boardPackShareFiles(makeFiles, label, title)` is the one share/save
+  path for pictures and PDFs. `boardPackShare` wraps it.
+- Club: `boardPackAllSheets`, `boardPackContentsSheet`,
+  `boardPackPackPdf`, `boardPackSlidesPdf`, `boardPackPackPictures`.
+  Player: the same three in `wirePlayerPacks`. Shared row:
+  `bpSaveAllHtml`.
+- **Tests:** `pdfDoc` (3) and `savePack` (3, browser), covering all six
+  buttons, file names, page counts and sizes, the share sheet, the
+  visibility filter, and no writes.
+  - `tests/helpers/pdfInspect.js` reads the files back. During
+    development pypdf also opened every PDF in strict mode, and the page
+    pictures decoded correctly.
+  - All fail on `fe9e8b1`; 7 mutations caught. **849 / 849.**
+  - Snapshot: only `manage-admin` differs, by the new row.
+- **To check on a phone:** "Slides as PDF" into WhatsApp from iPhone and
+  Android.
+
+Baton → Shaun / CGPT.
 
 ### CCode — 1 Oct 2026 (Board Pack: losing modules)
 
@@ -7866,6 +7909,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `d74d466` | Save a whole pack. Club and player packs: the pack as one PDF (contents + every module), the slides as one PDF (players' view), or every module as a picture; before publishing, nothing written. A PDF writer of its own (`pdfDoc.js`, no library) fed by the share pictures. All new tests fail on `fe9e8b1`; 7 mutations caught; 849/849. |
 | `337c70e` | Board Pack losing modules. "Won a set % of games or more" (winners only); new "Lost a set % of games or more" with its own threshold and minimum, carried into packs saved before the split; new "Highest loss % (3+ games)" (losses ÷ games, from `monthlyInformation`'s new `highestLossPct`). Picture saving no longer drops files past the tenth. All new tests fail on `6520a04`; 9 mutations caught; 843/843. |
 | `d6e4ae1` | Player Monthly Packs. Admin › Monthly Board Pack › Player packs: a pack per player per month (8 modules plus Admin notes), Generate all, saved as you go, Share Deck preview, pictures, summary, and publish / unpublish to a private 128-bit token link (`review/?p=`) stored as a snapshot in `playerPacks`. Pure `playerMonth.js` / `playerDeck.js`; canonical selectors only. 15 tests (all fail on `501bc8f`), 14 mutations caught; 839/839. |
 | `6291cdc` (`ux/player-reset-v2`) | Phase 2 Play. My Games \| Club with Arrange a Game; My Games by what needs doing, with answers in place; Club counters; the game sheet with the stepper and the existing fixture card; a player's "I've booked a court" (DQ6); Arrange a Game (Suggested for you, Request with optional time and venue, Paste a list). Existing screens are unchanged (content snapshot identical, 38 states × 2 widths). 9 tests; 816/816 on the branch. |
@@ -7964,6 +8008,10 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 1 Oct (latest): whole packs can be saved as PDF or as pictures
+(`d74d466`, 849 / 849).** Baton → Shaun / CGPT. Please try "Slides as
+PDF" into WhatsApp from a phone.
 
 **CCode, 1 Oct (latest): the Board Pack has its losing modules
 (`337c70e`, 843 / 843).** Baton → Shaun / CGPT. Everything below still
