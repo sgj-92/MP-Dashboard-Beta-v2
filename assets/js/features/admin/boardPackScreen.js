@@ -91,9 +91,10 @@ function boardPackBlocks(){ return {
   over_80: (d) => {
     const line = (s, pct, what) => ({ rank: '•', name: s.name, value: `${what} ${s[pct]}% · ${s.wins}W ${s.draws}D ${s.losses}L of ${s.games}` });
     const t = d.threshold || 80;
-    return [bpSub(`Won more than ${t}%`), ...bpLines(d.won.map(s => line(s, 'winpct', 'won')), 'Nobody.'),
-      bpSub(`Lost more than ${t}%`), ...bpLines(d.lost.map(s => line(s, 'losspct', 'lost')), 'Nobody.'),
-      bpFoot(`${d.min > 1 ? `Players with ${d.min}+ games that month. ` : 'Every player who played that month. '}Draws count as games played. Exactly ${t}%${t === 80 ? ' (for example 4 of 5)' : ''} is not more than ${t}%.`)];
+    const label = (what) => t === 100 ? `${what} every game` : `${what} ${t}% or more`;
+    return [bpSub(label('Won')), ...bpLines(d.won.map(s => line(s, 'winpct', 'won')), 'Nobody.'),
+      bpSub(label('Lost')), ...bpLines(d.lost.map(s => line(s, 'losspct', 'lost')), 'Nobody.'),
+      bpFoot(`${d.min > 1 ? `Players with ${d.min}+ games that month. ` : 'Every player who played that month. '}Draws count as games played.${t === 80 ? ' 4 of 5 is 80% and counts.' : ''}`)];
   },
 
   information: (d) => {
@@ -172,7 +173,8 @@ function boardPackBlocks(){ return {
     .concat(d.given.length ? [bpSub('Given'), ...bpGroups(d.given, g => `x${g.value}`)] : []),
 
   partnerships: (d) => bpLines(d.rows.map(p => ({ name: `${p.pair[0]} & ${p.pair[1]}`,
-    value: `${p.wins}W ${p.losses}L (${p.winpct}%) · ${bpSigned(p.avg_overperf)}% chemistry` })), 'No pair played twice together.'),
+    value: `${p.wins}W ${p.draws}D ${p.losses}L (${p.winpct}%) · ${bpSigned(p.avg_overperf)}% chemistry` })), 'No pair played twice together.')
+    .concat(d.rows.length ? [bpFoot('Pairs with 2+ decided games together this month, ranked by chemistry: how far they beat what the matchup predicted. Draws are in the record and the win %; chemistry comes from decided games, as draws are not rated.')] : []),
 
   tier_moves: (d) => bpLines(d.rows.map(c => ({ rank: '•', name: c.name,
     value: `${c.fromTier} → ${c.toTier} · ${dayLabel(c.date)}` })), 'No tier changes this month.'),

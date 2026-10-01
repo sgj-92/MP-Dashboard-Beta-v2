@@ -59,22 +59,22 @@ function boardPackSources(){ return {
     return { sort: o.sort, rows: sortLeagueRows(rows, key, true).slice(0, BoardPack.limit(o.top)) };
   },
 
-  // Anyone who won, or lost, MORE than 80% of the games they played that
-  // month. Draws are games played, so they count in the denominator -- the
-  // same win % and loss % as Monthly Information. Exactly 80% (4 of 5) is
-  // not more than 80%. `min` is the fewest games that make a percentage
-  // worth reporting; 3 is Monthly Information's own rule for win %.
+  // Anyone who won, or lost, the chosen % of the games they played that
+  // month OR MORE (Shaun, 1 Oct: 4 of 5 is 80%, and counts at 80%). Draws
+  // are games played, so they count in the denominator -- the same win % and
+  // loss % as Monthly Information. `min` is the fewest games that make a
+  // percentage worth reporting; 3 is Monthly Information's own rule.
   over_80(month, o){
     const min = Number(o.min);
-    // The threshold is the Admin's choice (80% unless set): more than it,
-    // never equal to it.
+    // The threshold is the Admin's choice (80% unless set), and reaching it
+    // counts. Compared in whole numbers, so 4 of 5 is exactly 80%.
     const threshold = Number(o.threshold || 80);
     const played = Object.values(computeMonthlySummaryStats(month)).filter(s => s.games > 0 && s.games >= min);
     const order = (k) => (a, b) => b[k] - a[k] || b.games - a.games || a.name.localeCompare(b.name);
     return {
       min, threshold,
-      won: played.filter(s => s.wins * 100 > threshold * s.games).sort(order('winpct')),
-      lost: played.filter(s => s.losses * 100 > threshold * s.games).sort(order('losspct')),
+      won: played.filter(s => s.wins * 100 >= threshold * s.games).sort(order('winpct')),
+      lost: played.filter(s => s.losses * 100 >= threshold * s.games).sort(order('losspct')),
     };
   },
 
@@ -200,8 +200,24 @@ function boardPackSources(){ return {
 
   partnerships(month, o){
     // The chemistry measure the Insights screen ranks by, over this month's
-    // rated games (2+ together).
-    const rows = buildPartnerships(MATCHES.filter(m => m.date.slice(0,7) === month), TIER_MAP);
+    // rated games (2+ together). Draws are not rated, so chemistry cannot
+    // include them, but they are games the pair played: each pair's record
+    // carries its drawn games from the approved matches (the same draws the
+    // League counts), and its win % has them in the denominator, as Monthly
+    // Information's does.
+    const draws = {};
+    getAllApprovedMatches().filter(m => m.isDraw && m.date.slice(0,7) === month).forEach(m => {
+      [m.winners, m.losers].forEach(team => {
+        if(team.length !== 2) return;
+        const key = [...team].sort().join('|');
+        draws[key] = (draws[key] || 0) + 1;
+      });
+    });
+    const rows = buildPartnerships(MATCHES.filter(m => m.date.slice(0,7) === month), TIER_MAP).map(p => {
+      const drawn = draws[p.pair.join('|')] || 0;
+      const games = p.wins + drawn + p.losses;
+      return { ...p, draws: drawn, played: games, winpct: Math.round(1000 * p.wins / games) / 10 };
+    });
     return { rows: rows.slice(0, BoardPack.limit(o.top)) };
   },
 

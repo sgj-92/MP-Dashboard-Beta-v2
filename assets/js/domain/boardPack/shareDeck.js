@@ -87,12 +87,12 @@
     over_80: (d) => {
       const row = (pct) => (s) => ({ name: s.name, value: `${s[pct]}%`, sub: `${record(s)} of ${s.games}` });
       const groups = nonEmpty([
-        { label: `Won more than ${d.threshold || 80}%`, rows: listRows(d.won, row('winpct')) },
-        { label: `Lost more than ${d.threshold || 80}%`, rows: listRows(d.lost, row('losspct')) },
+        { label: (d.threshold || 80) === 100 ? 'Won every game' : `Won ${d.threshold || 80}% or more`, rows: listRows(d.won, row('winpct')) },
+        { label: (d.threshold || 80) === 100 ? 'Lost every game' : `Lost ${d.threshold || 80}% or more`, rows: listRows(d.lost, row('losspct')) },
       ]);
       if (!groups.length) return null;
       return {
-        eyebrow: 'Out on their own', title: `Over ${d.threshold || 80}%`, groups,
+        eyebrow: 'Out on their own', title: (d.threshold || 80) === 100 ? 'Perfect months' : `${d.threshold || 80}% or more`, groups,
         foot: d.min > 1 ? `${d.min}+ games played` : '',
         summary: groups.map((g) => `${g.label}: ${g.rows.map((r) => `${r.name} (${r.value})`).join(', ')}`),
       };
@@ -236,7 +236,7 @@
     },
 
     partnerships: (d) => {
-      const rows = listRows(d.rows, (p) => ({ name: `${p.pair[0]} & ${p.pair[1]}`, value: `${signed(p.avg_overperf)}%`, sub: `${p.wins}W ${p.losses}L together` }));
+      const rows = listRows(d.rows, (p) => ({ name: `${p.pair[0]} & ${p.pair[1]}`, value: `${signed(p.avg_overperf)}%`, sub: `${p.wins}W ${p.draws || 0}D ${p.losses}L together` }));
       if (!rows.length) return null;
       return { eyebrow: 'Partnerships', title: 'Best pairings', groups: [{ rows }], foot: 'Chemistry: how far a pair beat what the matchup predicted',
         summary: [`Best pairing: ${rows[0].name}`] };

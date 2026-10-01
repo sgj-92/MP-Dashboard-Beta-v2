@@ -216,14 +216,14 @@ maybe('every figure is the canonical one: the same functions the app\'s own scre
         if (hardest.length && !hardest[0].names.includes(byDiff.filter((x) => x.games >= 3)[0].name)) out.push(`${m} hardest = Information's`);
         [1, 3, 5].forEach((min) => {
           const o = data('over_80', m, { min: String(min) });
-          const who = (k) => Object.keys(tally).filter((n) => tally[n].games >= min && tally[n][k] * 5 > tally[n].games * 4).sort();
-          eq(o.won.map((x) => x.name).sort(), who('wins'), `${m} won >80% (${min}+)`);
-          eq(o.lost.map((x) => x.name).sort(), who('losses'), `${m} lost >80% (${min}+)`);
+          const who = (k) => Object.keys(tally).filter((n) => tally[n].games >= min && tally[n][k] * 5 >= tally[n].games * 4).sort();
+          eq(o.won.map((x) => x.name).sort(), who('wins'), `${m} won 80%+ (${min}+)`);
+          eq(o.lost.map((x) => x.name).sort(), who('losses'), `${m} lost 80%+ (${min}+)`);
         });
-        // Any threshold the Admin picks: more than it, never equal to it.
-        ['50', '60', '70', '75', '90'].forEach((t) => {
+        // Any threshold the Admin picks, and reaching it counts.
+        ['50', '60', '70', '75', '90', '100'].forEach((t) => {
           const o = data('over_80', m, { threshold: t });
-          const who = (k) => Object.keys(tally).filter((n) => tally[n].games >= 3 && tally[n][k] * 100 > Number(t) * tally[n].games).sort();
+          const who = (k) => Object.keys(tally).filter((n) => tally[n].games >= 3 && tally[n][k] * 100 >= Number(t) * tally[n].games).sort();
           eq([o.threshold, o.won.map((x) => x.name).sort(), o.lost.map((x) => x.name).sort()], [Number(t), who('wins'), who('losses')], `${m} over ${t}%`);
         });
 
@@ -339,7 +339,7 @@ maybe('records always read wins, draws, losses', async () => {
       const s = r.stats[name.split(' / ')[0]];
       assert.ok(value.endsWith(`· ${s.wins}W ${s.draws}D ${s.losses}L`), `${name}: ${value}`);
     });
-    r.pairs.forEach((v) => assert.match(v, /^\d+W \d+L \(/));
+    r.pairs.forEach((v) => assert.match(v, /^\d+W \d+D \d+L \(/));
   } finally { await app.close(); }
 });
 
@@ -365,5 +365,32 @@ maybe('the pack saves itself as it changes, before anything is published, and to
     assert.strictEqual((await writes('2026-09')).length, 0, 'September untouched');
     assert.strictEqual(await app.run(() => window.__writes.filter((w) => /review_/.test(w.id)).length), 0, 'nothing published');
     assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+
+maybe('partnerships carry their draws: counted from the month\'s approved draws, in the record and the win %', async () => {
+  const app = await H.open({ now: NOW });
+  try {
+    // The seeded record has no draw between two qualifying pairs; add one --
+    // two September pairs who have each played twice -- while checking.
+    const shown = await app.run(() => {
+      V3_MATCHES.push({ id: 'test-draw', date: '2026-09-20', winners: ['KC', 'Rishi'], losers: ['Erf', 'Osh'], isDraw: true, sets: [[5, 5]] });
+      const rows = boardPackModuleData({ id: 'partnerships', options: { top: 'all' } }, '2026-09');
+      return boardPackBlocks().partnerships(rows, '2026-09')[0].rows.filter((x) => /KC & Rishi|Erf & Osh/.test(x.name)).map((x) => x.value);
+    });
+    assert.strictEqual(shown.length, 2);
+    shown.forEach((v) => assert.match(v, /^\d+W 1D \d+L \(/));
+    const r = await app.run(() => getAvailableMonths().map((m) => {
+      const rows = boardPackModuleData({ id: 'partnerships', options: { top: 'all' } }, m).rows;
+      const drawn = (pair) => getAllApprovedMatches().filter((x) => x.isDraw && x.date.slice(0, 7) === m
+        && [x.winners, x.losers].some((t) => t.length === 2 && [...t].sort().join('|') === pair.join('|'))).length;
+      return rows.map((p) => ({ m, pair: p.pair.join(' & '), draws: p.draws, expected: drawn(p.pair),
+        winpct: p.winpct, expectedPct: Math.round(1000 * p.wins / (p.wins + p.losses + drawn(p.pair))) / 10 }));
+    }).flat());
+    assert.ok(r.length > 0);
+    assert.ok(r.some((x) => x.expected > 0), 'the record has a pair with a draw to check');
+    r.forEach((x) => assert.deepStrictEqual([x.draws, x.winpct], [x.expected, x.expectedPct], `${x.m} ${x.pair}`));
+    await app.run(() => { V3_MATCHES.splice(V3_MATCHES.findIndex((x) => x.id === 'test-draw'), 1); });
   } finally { await app.close(); }
 });

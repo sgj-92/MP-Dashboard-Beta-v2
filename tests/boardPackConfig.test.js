@@ -35,7 +35,7 @@ test('the monthly results table and the over-80% list are in every new month\'s 
   assert.deepStrictEqual(c.items[at(c, 'over_80')].options, { threshold: '80', min: '3' });
   assert.deepStrictEqual(BP.BY_ID.results_table.options.sort.values, ['points', 'games', 'difficulty']);
   assert.deepStrictEqual(BP.BY_ID.over_80.options.min.values, ['3', '1', '5']);
-  assert.deepStrictEqual(BP.BY_ID.over_80.options.threshold.values, ['50', '60', '70', '75', '80', '90'], 'the % is the Admin\'s choice');
+  assert.deepStrictEqual(BP.BY_ID.over_80.options.threshold.values, ['50', '60', '70', '75', '80', '90', '100'], 'the % is the Admin\'s choice');
   // A pack saved before these options existed reads with the defaults.
   const old = BP.normalise({ month: M, items: [{ kind: 'module', id: 'over_80', enabled: true, options: { min: '5' } }, { kind: 'module', id: 'power', enabled: true, options: { tier: 'A' } }] }, M);
   assert.deepStrictEqual(old.items[0].options, { threshold: '80', min: '5' });

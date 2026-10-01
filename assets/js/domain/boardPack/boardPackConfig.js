@@ -43,8 +43,8 @@
       top: top('all') } },
     // Kept as 'over_80' so packs saved before the threshold became a choice
     // still find it; 80% is the default.
-    { id: 'over_80', title: 'Won or lost over a set % of games', on: true, options: {
-      threshold: { label: 'Over', values: ['50', '60', '70', '75', '80', '90'], labels: { 50: 'Over 50%', 60: 'Over 60%', 70: 'Over 70%', 75: 'Over 75%', 80: 'Over 80%', 90: 'Over 90%' }, default: '80' },
+    { id: 'over_80', title: 'Won or lost a set % of games or more', on: true, options: {
+      threshold: { label: 'At least', values: ['50', '60', '70', '75', '80', '90', '100'], labels: { 50: '50% or more', 60: '60% or more', 70: '70% or more', 75: '75% or more', 80: '80% or more', 90: '90% or more', 100: '100% (every game)' }, default: '80' },
       min: { label: 'Minimum games', values: ['3', '1', '5'], labels: { 1: 'Everyone', 3: '3+ games', 5: '5+ games' }, default: '3' } } },
     { id: 'information', title: 'Monthly Information (the players’ month review)', on: false, options: {} },
     { id: 'power', title: 'Power Rankings at month end', on: true, options: { tier: TIER, top: top('10'),
