@@ -26,7 +26,7 @@
     overview: (d) => {
       const r = d.record;
       const lines = [];
-      d.league.forEach((l) => lines.push(`League: ${ordinal(l.position)} of ${l.of} in Tier ${l.tier} (${l.points} pts)`));
+      d.league.forEach((l) => lines.push(`League: ${ordinal(l.position)} of ${l.of} in Tier ${l.tier} (${plural(l.points, 'pt')})`));
       d.race.forEach((x) => lines.push(x.qualified ? `Monthly Race: ${ordinal(x.position)} in Tier ${x.tier}` : `Monthly Race: provisional in Tier ${x.tier}`));
       return {
         eyebrow: 'Month at a glance', title: 'Your month',

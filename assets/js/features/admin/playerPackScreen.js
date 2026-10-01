@@ -242,7 +242,8 @@ function buildPlayerPacksHtml(){
     <div class="section-sub">${ppMatches(pack.model.record.played)} · ${ppRec(pack.model.record)}</div>
     <div class="bp-items">${config.items.map((it, i) => boardPackItemHtml(it, i, config.items.length, BoardPack.PLAYER)).join('')}</div>
     <div class="fg-row"><button type="button" class="preset-btn" id="bpAddNote">+ Add Admin note</button></div>
-    <div class="fg-row bp-actions"><button type="button" class="preset-btn${ppPreviewOpen ? ' active' : ''}" id="ppPreviewBtn" aria-expanded="${ppPreviewOpen}">${ppPreviewOpen ? 'Hide preview' : 'Preview'}</button></div>`;
+    <div class="fg-row bp-actions"><button type="button" class="preset-btn${ppPreviewOpen ? ' active' : ''}" id="ppPreviewBtn" aria-expanded="${ppPreviewOpen}">${ppPreviewOpen ? 'Hide preview' : 'Preview'}</button></div>
+    ${BoardPack.PLAYER.selected(config).length ? bpSaveAllHtml('pp', 'pack') : ''}`;
   html += ppPublishHtml(d, name, liveDeck);
   if(ppPreviewOpen){
     html += `<div class="fg-toggle bp-preview-mode" role="group" aria-label="Preview" style="margin:12px 0 4px;">
@@ -348,6 +349,31 @@ function wirePlayerPacks(box){
     const { cards } = ppDeckPictures(name, month);
     boardPackShare(images => cards.map((c, i) => [CardPainter.slide(c, { brand: images.brand, crown: images.crown, month: monthLabel(month) }), `money-padel-${month}-${slug}-${String(i + 1).padStart(2, '0')}-${bpSlug(c.id)}.png`]), `${cards.length} slide pictures`, title);
   });
+  // The whole pack at once: a contents page and every module, as one PDF or
+  // as pictures; or every slide as one PDF.
+  const allSheets = () => {
+    const config = ppConfig(month, name);
+    const pack = playerMonthlyPack(name, month);
+    const items = BoardPack.PLAYER.selected(config);
+    const sheets = items.map(it => ({ item: it, sheet: playerPackSheet(it, pack, config) }));
+    return { sheets, contents: boardPackContentsSheet(`${name} — Monthly Pack`, month, sheets.map(x => x.sheet.title)) };
+  };
+  const whole = (id, run) => { const el = document.getElementById(id); if(el) el.onclick = () => { el.disabled = true; run(); }; };
+  whole('ppPackPdf', () => {
+    const { sheets, contents } = allSheets();
+    boardPackShareFiles(async images => [await CardPainter.toPdf([contents].concat(sheets.map(x => x.sheet)).map(sh => CardPainter.sheet(sh, images)),
+      `money-padel-${month}-${slug}-pack.pdf`, `${title} Monthly Pack`)], 'Pack PDF', title);
+  });
+  whole('ppSlidesPdf', () => {
+    const { cards } = ppDeckPictures(name, month);
+    boardPackShareFiles(async images => [await CardPainter.toPdf(cards.map(c => CardPainter.slide(c, { brand: images.brand, crown: images.crown, month: monthLabel(month) })),
+      `money-padel-${month}-${slug}-slides.pdf`, `${title} slides`)], 'Slides PDF', title);
+  });
+  whole('ppPackPictures', () => {
+    const { sheets } = allSheets();
+    boardPackShare(images => sheets.map(x => [CardPainter.sheet(x.sheet, images), `money-padel-${month}-${slug}-${bpSlug(x.item.kind === 'note' ? 'note' : x.item.id)}.png`]), `${sheets.length} pack pictures`, title);
+  });
+
   box.querySelectorAll('[data-pp-share-item]').forEach(el => {
     el.onclick = () => {
       const key = el.dataset.ppShareItem;

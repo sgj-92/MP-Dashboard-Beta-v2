@@ -490,6 +490,7 @@ function buildBoardPackSectionHtml(){
     <div class="fg-row bp-actions">
       <button type="button" class="preset-btn${boardPackPreviewOpen ? ' active' : ''}" id="bpPreviewBtn" aria-expanded="${boardPackPreviewOpen}">${boardPackPreviewOpen ? 'Hide preview' : 'Preview'}</button>
     </div>
+    ${BoardPack.selected(boardPackDraft).length ? bpSaveAllHtml('bp', 'Board Pack') : ''}
     <div id="bpMessage" class="section-sub">${escapeHtml(boardPackMessage)}</div>
     ${boardPackShareReady ? `<div class="bp-share-ready" id="bpShareReady">
       <span>${escapeHtml(boardPackShareReady.label)} ready.</span>
@@ -634,15 +635,66 @@ function boardPackDeckPictures(){
 }
 
 async function boardPackShare(makeCanvases, label, title){
+  return boardPackShareFiles(images => Promise.all(makeCanvases(images).map(([cv, name]) => CardPainter.toFile(cv, name))), label, title);
+}
+
+// Share (or save) whatever files `makeFiles(images)` makes -- pictures or a
+// PDF -- through the phone's share sheet, with the same fallbacks.
+async function boardPackShareFiles(makeFiles, label, title){
   const images = await boardPackImages();
-  const files = await Promise.all(makeCanvases(images).map(([cv, name]) => CardPainter.toFile(cv, name)));
+  const files = await makeFiles(images);
   const meta = { title: title || `Money Padel — ${monthLabel(boardPackMonth)}` };
   const outcome = await CardPainter.share(files, meta);
+  const pdf = files.every(f => f.type === 'application/pdf');
   boardPackShareReady = outcome === 'ready' ? { files, meta, label } : null;
   boardPackMessage = outcome === 'shared' ? `${label} shared.`
-    : outcome === 'saved' ? `${label} saved to this device — post ${files.length === 1 ? 'it' : 'them'} from your photos.`
+    : outcome === 'saved' ? (pdf ? `${label} saved to this device — it is in your downloads.` : `${label} saved to this device — post ${files.length === 1 ? 'it' : 'them'} from your photos.`)
     : outcome === 'ready' ? '' : '';
   renderManage();
+}
+
+// ---- The whole pack, saved at once ------------------------------------------
+// A contents page, then every selected module and note as its picture: the
+// report exactly as the preview shows it, as one PDF or as pictures.
+function boardPackContentsSheet(title, month, parts){
+  return { title, month: monthLabel(month), blocks: parts.length
+    ? [bpSub('Contents'), { type: 'list', rows: parts.map((t, i) => ({ rank: String(i + 1), name: t, value: '' })) }]
+    : [bpEmpty('Nothing selected yet.')] };
+}
+function boardPackAllSheets(config){
+  const month = config.month;
+  const items = BoardPack.selected(config);
+  const sheets = items.map(it => ({ item: it, sheet: boardPackSheet(it, month) }));
+  return { month, items, sheets, contents: boardPackContentsSheet('Board Pack', month, sheets.map(x => x.sheet.title)) };
+}
+const bpItemSlug = (it) => bpSlug(it.kind === 'note' ? (it.title || 'commentary') : it.id);
+
+function boardPackPackPdf(config){
+  const { month, sheets, contents } = boardPackAllSheets(config);
+  return boardPackShareFiles(async images => [await CardPainter.toPdf([contents].concat(sheets.map(x => x.sheet)).map(sh => CardPainter.sheet(sh, images)),
+    `money-padel-${month}-board-pack.pdf`, `Money Padel — ${monthLabel(month)} Board Pack`)], 'Board Pack PDF');
+}
+function boardPackPackPictures(config){
+  const { month, sheets } = boardPackAllSheets(config);
+  return boardPackShare(images => sheets.map(x => [CardPainter.sheet(x.sheet, images), `money-padel-${month}-board-pack-${bpItemSlug(x.item)}.png`]), `${sheets.length} Board Pack pictures`);
+}
+function boardPackSlidesPdf(){
+  const { cards, label } = boardPackDeckPictures();
+  const month = boardPackMonth;
+  return boardPackShareFiles(async images => [await CardPainter.toPdf(cards.map(c => CardPainter.slide(c, { brand: images.brand, crown: images.crown, month: label })),
+    `money-padel-${month}-review-slides.pdf`, `Money Padel — ${label} Review`)], 'Slides PDF');
+}
+
+// The "save the whole pack" row, for the club pack or a player's.
+function bpSaveAllHtml(prefix, what){
+  return `<div class="bp-save-all">
+    <div class="bp-save-all-head">Save the whole ${what}</div>
+    <div class="bp-share-row">
+      <button type="button" class="preset-btn" id="${prefix}PackPdf">${what === 'pack' ? 'Pack' : 'Board Pack'} as PDF</button>
+      <button type="button" class="preset-btn" id="${prefix}SlidesPdf">Slides as PDF</button>
+      <button type="button" class="preset-btn" id="${prefix}PackPictures">All pictures</button>
+    </div>
+  </div>`;
 }
 
 function wireBoardPackPictures(box){
@@ -670,6 +722,13 @@ function wireBoardPackPictures(box){
     all.disabled = true;
     boardPackShare(images => cards.map((c, i) => [CardPainter.slide(c, { brand: images.brand, crown: images.crown, month: monthLabel(month) }), `money-padel-${month}-review-${String(i + 1).padStart(2, '0')}-${bpSlug(c.id)}.png`]), `${cards.length} slide pictures`);
   };
+  // The whole pack at once: busy until the files are ready.
+  const whole = (id, run) => { const el = document.getElementById(id); if(el) el.onclick = () => { el.disabled = true; run(); }; };
+  if(boardPackView === 'club'){
+    whole('bpPackPdf', () => boardPackPackPdf(boardPackDraft));
+    whole('bpSlidesPdf', () => boardPackSlidesPdf());
+    whole('bpPackPictures', () => boardPackPackPictures(boardPackDraft));
+  }
   const summary = document.getElementById('bpCopyDeckSummary');
   if(summary) summary.onclick = () => {
     const pub = boardPackPublished[month];

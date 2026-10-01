@@ -407,6 +407,17 @@
     return new File([blob], name, { type: 'image/png' });
   }
 
+  // Several pictures as one PDF, a page each (features/review/pdfDoc.js).
+  // JPEG inside: a deck of slides stays a few megabytes, not tens.
+  async function toPdf(canvases, name, title) {
+    const Pdf = (typeof PdfDoc !== 'undefined') ? PdfDoc : require('./pdfDoc.js');
+    const pages = await Promise.all(canvases.map(async (cv) => {
+      const blob = await new Promise((resolve) => cv.toBlob((b) => resolve(b), 'image/jpeg', 0.92));
+      return { jpeg: new Uint8Array(await blob.arrayBuffer()), width: cv.width, height: cv.height };
+    }));
+    return new File([Pdf.build(pages, { title })], name, { type: 'application/pdf' });
+  }
+
   // Share pictures through the phone's share sheet (WhatsApp is on it), or
   // save them where the browser cannot share files. A share sheet must be
   // opened by a tap: when preparing the pictures took that moment away, the
@@ -440,5 +451,5 @@
     }
   }
 
-  return { W, SLIDE_H, loadImage, slide, sheet, toBlob, toFile, share, save };
+  return { W, SLIDE_H, loadImage, slide, sheet, toBlob, toFile, toPdf, share, save };
 });
