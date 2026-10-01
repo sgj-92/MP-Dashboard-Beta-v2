@@ -164,3 +164,20 @@ maybe('with a share sheet the pictures go straight to it; if the moment has pass
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
+
+maybe('saving many pictures to the device loses none: a long deck is handed over one at a time', async () => {
+  const app = await H.open({ now: NOW });
+  try {
+    const p = app.page;
+    const got = []; p.on('download', (d) => got.push(d.suggestedFilename()));
+    await app.run(async () => {
+      const files = await Promise.all(Array.from({ length: 14 }, (_, i) => {
+        const cv = document.createElement('canvas'); cv.width = 4; cv.height = 4;
+        return CardPainter.toFile(cv, `slide-${String(i + 1).padStart(2, '0')}.png`);
+      }));
+      await CardPainter.save(files);
+    });
+    for (let t = 0; t < 50 && got.length < 14; t++) await p.waitForTimeout(100);
+    assert.deepStrictEqual(got, Array.from({ length: 14 }, (_, i) => `slide-${String(i + 1).padStart(2, '0')}.png`));
+  } finally { await app.close(); }
+});

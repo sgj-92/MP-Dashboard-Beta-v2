@@ -39,7 +39,46 @@ test('the monthly results table and the over-80% list are in every new month\'s 
   // A pack saved before these options existed reads with the defaults.
   const old = BP.normalise({ month: M, items: [{ kind: 'module', id: 'over_80', enabled: true, options: { min: '5' } }, { kind: 'module', id: 'power', enabled: true, options: { tier: 'A' } }] }, M);
   assert.deepStrictEqual(old.items[0].options, { threshold: '80', min: '5' });
-  assert.deepStrictEqual(old.items[1].options, { tier: 'A', top: '10', min: '5', players: 'all' });
+  assert.deepStrictEqual(old.items[2].options, { tier: 'A', top: '10', min: '5', players: 'all' });
+});
+
+test('losing is its own module with its own threshold; a pack saved before the split keeps its losers', () => {
+  const c = BP.defaultConfig(M);
+  const on = BP.selected(c).map((it) => it.id);
+  assert.deepStrictEqual(on.slice(on.indexOf('over_80'), on.indexOf('over_80') + 2), ['over_80', 'lost_pct'], 'on by default, right after winning');
+  assert.strictEqual(BP.BY_ID.over_80.title, 'Won a set % of games or more');
+  assert.strictEqual(BP.BY_ID.lost_pct.title, 'Lost a set % of games or more');
+  assert.deepStrictEqual(BP.BY_ID.lost_pct.options.threshold.values, BP.BY_ID.over_80.options.threshold.values);
+  assert.deepStrictEqual(c.items[at(c, 'lost_pct')].options, { threshold: '80', min: '3' });
+  assert.strictEqual(BP.BY_ID.worst_record.title, 'Highest loss % (3+ games)');
+  assert.strictEqual(c.items[at(c, 'worst_record')].enabled, false, 'off by default, like Best win %');
+  assert.strictEqual(at(c, 'worst_record'), at(c, 'best_record') + 1);
+
+  // The thresholds are independent.
+  let x = BP.setOption(c, at(c, 'over_80'), 'threshold', '90');
+  x = BP.setOption(x, at(x, 'lost_pct'), 'threshold', '50');
+  assert.deepStrictEqual([x.items[at(x, 'over_80')].options.threshold, x.items[at(x, 'lost_pct')].options.threshold], ['90', '50']);
+
+  // Saved before the split: losing arrives right after winning, on or off as
+  // winning was, with its threshold -- the pack still shows what it showed.
+  const before = (enabled) => BP.normalise({ month: M, items: [
+    { kind: 'module', id: 'results_table', enabled: true, options: {} },
+    { kind: 'module', id: 'over_80', enabled, options: { threshold: '70', min: '5' } },
+    { kind: 'module', id: 'league', enabled: true, options: {} }] }, M);
+  const a = before(true);
+  assert.deepStrictEqual(a.items.slice(0, 4).map((it) => [it.id, it.enabled]), [['results_table', true], ['over_80', true], ['lost_pct', true], ['league', true]]);
+  assert.deepStrictEqual(a.items[2].options, { threshold: '70', min: '5' });
+  assert.strictEqual(before(false).items[2].enabled, false);
+  // Any other new module still arrives off, at the end.
+  assert.deepStrictEqual([a.items.find((it) => it.id === 'worst_record').enabled, a.items.findIndex((it) => it.id === 'worst_record') > 3], [false, true]);
+  // Saved after the split: the Admin's own choice stands.
+  const after = BP.normalise({ month: M, items: [
+    { kind: 'module', id: 'over_80', enabled: true, options: { threshold: '70' } },
+    { kind: 'module', id: 'league', enabled: true, options: {} },
+    { kind: 'module', id: 'lost_pct', enabled: false, options: { threshold: '90' } }] }, M);
+  assert.deepStrictEqual(after.items.slice(0, 3).map((it) => [it.id, it.enabled, it.options.threshold]), [['over_80', true, '70'], ['league', true, undefined], ['lost_pct', false, '90']]);
+  // The player catalogue has no splits; nothing changes there.
+  assert.deepStrictEqual(BP.PLAYER.defaultConfig(M).items.map((it) => it.id), BP.PLAYER.MODULES.map((m) => m.id));
 });
 
 test('select and deselect keep the module\'s place and options', () => {

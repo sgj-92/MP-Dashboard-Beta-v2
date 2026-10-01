@@ -79,7 +79,7 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
       powerRows: document.querySelectorAll('#bpPreview [data-module="power"] tbody tr').length,
       powerTiers: [...document.querySelectorAll('#bpPreview [data-module="power"] tbody tr')].map((tr) => tr.children[2].textContent),
     }));
-    assert.deepStrictEqual(preview.order, ['note:Chair’s summary', 'results_table', 'over_80', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
+    assert.deepStrictEqual(preview.order, ['note:Chair’s summary', 'results_table', 'over_80', 'lost_pct', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
     assert.strictEqual(preview.noteTag, 'Admin commentary', 'manual content is marked as such');
     assert.strictEqual(preview.noteHtml, 'Good month.<br>&lt;b&gt;Not bold&lt;/b&gt;', 'and is text, not markup');
     assert.strictEqual(preview.powerRows, 3);
@@ -96,7 +96,7 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
     assert.strictEqual(saved.updatedBy, 'Shaun');
     assert.ok(saved.updatedAt && saved.basis && saved.basis.games > 0 && saved.basis.fingerprint);
     const on = saved.items.filter((it) => it.kind === 'note' || it.enabled).map((it) => it.kind === 'note' ? 'note' : it.id);
-    assert.deepStrictEqual(on, ['note', 'results_table', 'over_80', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
+    assert.deepStrictEqual(on, ['note', 'results_table', 'over_80', 'lost_pct', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
     assert.deepStrictEqual(saved.items.find((it) => it.id === 'power').options, { tier: 'A', top: '3', min: '5', players: 'all' });
     assert.deepStrictEqual(Object.keys(saved).sort(), ['basis', 'items', 'month', 'updatedAt', 'updatedBy', 'version'], 'the choice and its stamp -- no figures');
     assert.match(await p.textContent('#bpStatus'), /^Saved .* by Shaun\.$/);
@@ -119,7 +119,7 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
       powerTop: document.querySelector(`[data-bp-module="power"] [data-key="top"]`).value,
     }));
     assert.match(r.status, /^Saved .* by Shaun\.$/);
-    assert.deepStrictEqual(r, { status: r.status, drift: false, checked: ['results_table', 'over_80', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves'],
+    assert.deepStrictEqual(r, { status: r.status, drift: false, checked: ['results_table', 'over_80', 'lost_pct', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves'],
       first: true, title: 'Chair’s summary', body: 'Good month.\n<b>Not bold</b>', powerTop: '3' });
     // September was never saved: its own default, untouched by August's pack.
     await again.page.selectOption('#bpMonth', '2026-09');
@@ -216,16 +216,28 @@ maybe('every figure is the canonical one: the same functions the app\'s own scre
         if (hardest.length && !hardest[0].names.includes(byDiff.filter((x) => x.games >= 3)[0].name)) out.push(`${m} hardest = Information's`);
         [1, 3, 5].forEach((min) => {
           const o = data('over_80', m, { min: String(min) });
+          const l = data('lost_pct', m, { min: String(min) });
           const who = (k) => Object.keys(tally).filter((n) => tally[n].games >= min && tally[n][k] * 5 >= tally[n].games * 4).sort();
           eq(o.won.map((x) => x.name).sort(), who('wins'), `${m} won 80%+ (${min}+)`);
-          eq(o.lost.map((x) => x.name).sort(), who('losses'), `${m} lost 80%+ (${min}+)`);
+          eq(l.lost.map((x) => x.name).sort(), who('losses'), `${m} lost 80%+ (${min}+)`);
+          eq([o.lost, l.won], [undefined, undefined], `${m} winning and losing are separate modules`);
         });
         // Any threshold the Admin picks, and reaching it counts.
         ['50', '60', '70', '75', '90', '100'].forEach((t) => {
           const o = data('over_80', m, { threshold: t });
+          const l = data('lost_pct', m, { threshold: t });
           const who = (k) => Object.keys(tally).filter((n) => tally[n].games >= 3 && tally[n][k] * 100 >= Number(t) * tally[n].games).sort();
-          eq([o.threshold, o.won.map((x) => x.name).sort(), o.lost.map((x) => x.name).sort()], [Number(t), who('wins'), who('losses')], `${m} over ${t}%`);
+          eq([o.threshold, o.won.map((x) => x.name).sort(), l.threshold, l.lost.map((x) => x.name).sort()], [Number(t), who('wins'), Number(t), who('losses')], `${m} over ${t}%`);
         });
+        // Highest loss %: losses over games played (draws are games), 3+
+        // games, ties sharing a place -- not lowest win %.
+        const lossPct = (n) => Math.round(1000 * tally[n].losses / tally[n].games) / 10;
+        const eligible = Object.keys(tally).filter((n) => tally[n].games >= 3);
+        const worst = data('worst_record', m, { top: 'all' }).groups;
+        eq(worst.flatMap((g) => g.names).sort(), eligible.sort(), `${m} highest loss %: everyone with 3+ games`);
+        worst.forEach((g) => g.names.forEach((n) => eq(g.value, lossPct(n), `${m} loss % ${n}`)));
+        eq(worst.map((g) => g.value), worst.map((g) => g.value).slice().sort((a, b) => b - a), `${m} highest loss % first`);
+        eq(data('worst_record', m).groups, info.highestLossPct, `${m} worst record = Monthly Information's list`);
 
         // Doughnuts, the month's games, tier changes.
         const dn = computeDoughnutStats(m);
@@ -330,7 +342,8 @@ maybe('records always read wins, draws, losses', async () => {
   try {
     const r = await app.run(() => {
       const d = (id) => boardPackModuleData({ id, options: BoardPack.defaultOptions(id) }, '2026-09');
-      const best = boardPackBlocks().best_record(d('best_record'), '2026-09')[0].rows;
+      const best = boardPackBlocks().best_record(d('best_record'), '2026-09')[0].rows
+        .concat(boardPackBlocks().worst_record(d('worst_record'), '2026-09')[0].rows);
       const stats = computeMonthlySummaryStats('2026-09');
       return { best: best.map((x) => [x.name, x.value]), stats: Object.fromEntries(best.map((x) => [x.name.split(' / ')[0], stats[x.name.split(' / ')[0]]])),
         pairs: boardPackBlocks().partnerships(d('partnerships'), '2026-09')[0].rows.map((x) => x.value) };
@@ -340,6 +353,55 @@ maybe('records always read wins, draws, losses', async () => {
       assert.ok(value.endsWith(`· ${s.wins}W ${s.draws}D ${s.losses}L`), `${name}: ${value}`);
     });
     r.pairs.forEach((v) => assert.match(v, /^\d+W \d+D \d+L \(/));
+  } finally { await app.close(); }
+});
+
+maybe('winning and losing each have their own threshold; Highest loss % is losses over games played', async () => {
+  const app = await H.open({ now: NOW });
+  try {
+    await openSection(app);
+    await app.page.selectOption('#bpMonth', '2026-09');
+    await app.page.waitForSelector('#bpStatus');
+    const p = app.page;
+    const idx = (id) => p.$eval(`[data-bp-module="${id}"]`, (el) => Number(el.dataset.bpItem));
+    assert.deepStrictEqual(await p.$$eval('[data-bp-module="over_80"] .bp-check, [data-bp-module="lost_pct"] .bp-check, [data-bp-module="worst_record"] .bp-check', (els) => els.map((e) => e.textContent.trim())),
+      ['Won a set % of games or more', 'Lost a set % of games or more', 'Highest loss % (3+ games)']);
+    await p.selectOption(`[data-bp-opt="${await idx('over_80')}"][data-key="threshold"]`, '60');
+    await p.selectOption(`[data-bp-opt="${await idx('lost_pct')}"][data-key="threshold"]`, '50');
+    await p.selectOption(`[data-bp-opt="${await idx('lost_pct')}"][data-key="min"]`, '5');
+    await p.click(`[data-bp-toggle="${await idx('worst_record')}"]`);
+    await p.click('#bpPreviewBtn');
+    const r = await app.run(() => {
+      const text = (id) => document.querySelector(`#bpPreview [data-module="${id}"]`).textContent.replace(/\s+/g, ' ');
+      const item = (id) => boardPackDraft.items.find((it) => it.id === id);
+      const won = boardPackModuleData(item('over_80'), '2026-09').won;
+      const lost = boardPackModuleData(item('lost_pct'), '2026-09').lost;
+      const worst = boardPackModuleData(item('worst_record'), '2026-09').groups;
+      return {
+        won: text('over_80'), lost: text('lost_pct'), worst: text('worst_record'),
+        wonNames: won.map((x) => x.name), lostRows: lost.map((x) => [x.name, x.games, x.losspct]),
+        worstFirst: worst[0], options: [item('over_80').options, item('lost_pct').options],
+        deck: boardPackDeck(boardPackDraft).slides.filter((x) => ['over_80', 'lost_pct', 'worst_record'].includes(x.id)).map((x) => [x.id, x.title, x.groups[0].rows.length]),
+      };
+    });
+    assert.deepStrictEqual(r.options, [{ threshold: '60', min: '3' }, { threshold: '50', min: '5' }], 'set separately');
+    assert.match(r.won, /Won 60% or more/);
+    assert.ok(!/Lost/.test(r.won), 'the win module no longer lists losers');
+    assert.match(r.lost, /Lost 50% or more/);
+    assert.match(r.lost, /Players with 5\+ games that month/);
+    r.lostRows.forEach(([n, g, pct]) => { assert.ok(g >= 5 && pct >= 50, n); assert.ok(r.lost.includes(`${n}lost ${pct}%`), n); });
+    r.wonNames.forEach((n) => assert.ok(r.won.includes(n), n));
+    assert.ok(r.worstFirst && r.worst.includes(`${r.worstFirst.value}% lost`), r.worst);
+    assert.match(r.worst, /Losses ÷ games played, 3\+ games/);
+    const deck = Object.fromEntries(r.deck.map(([id, title, n]) => [id, [title, n]]));
+    if (r.wonNames.length) assert.deepStrictEqual(deck.over_80, ['Won 60% or more', Math.min(5, r.wonNames.length)]);
+    if (r.lostRows.length) assert.deepStrictEqual(deck.lost_pct, ['Lost 50% or more', Math.min(5, r.lostRows.length)]);
+    assert.strictEqual(deck.worst_record[0], 'Highest loss %');
+    await p.waitForFunction(() => /^Saved .* by Shaun\.$/.test(document.getElementById('bpStatus').textContent));
+    const saved = await app.run(() => JSON.parse(window.__writes.filter((w) => w.id === 'moneypadel_board_pack_2026-09').at(-1).doc.value));
+    assert.deepStrictEqual(saved.items.filter((it) => ['over_80', 'lost_pct', 'worst_record'].includes(it.id)).map((it) => [it.id, it.enabled, it.options.threshold || it.options.top]),
+      [['over_80', true, '60'], ['lost_pct', true, '50'], ['worst_record', true, '3']]);
+    assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
 

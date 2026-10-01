@@ -34,6 +34,19 @@ function boardPackTierAt(name, date){ return historicalTierOf(name, date); }
 
 // module id -> (month, options) -> data. A function rather than a table so
 // nothing here reads app state while the script loads.
+// Who reached a % of their games that month: `count` is wins or losses,
+// `pct` the matching percentage to order by. The threshold is the Admin's
+// choice (80% unless set) and reaching it counts -- compared in whole
+// numbers, so 4 of 5 is exactly 80%. Players under `min` games are left out.
+function boardPackThreshold(month, o){
+  const min = Number(o.min || 3);
+  const threshold = Number(o.threshold || 80);
+  const played = Object.values(computeMonthlySummaryStats(month)).filter(s => s.games > 0 && s.games >= min);
+  const reached = (count, pct) => played.filter(s => s[count] * 100 >= threshold * s.games)
+    .sort((a, b) => b[pct] - a[pct] || b.games - a.games || a.name.localeCompare(b.name));
+  return { min, threshold, reached };
+}
+
 function boardPackSources(){ return {
   overview(month){
     const approved = getAllApprovedMatches();
@@ -59,23 +72,20 @@ function boardPackSources(){ return {
     return { sort: o.sort, rows: sortLeagueRows(rows, key, true).slice(0, BoardPack.limit(o.top)) };
   },
 
-  // Anyone who won, or lost, the chosen % of the games they played that
-  // month OR MORE (Shaun, 1 Oct: 4 of 5 is 80%, and counts at 80%). Draws
-  // are games played, so they count in the denominator -- the same win % and
-  // loss % as Monthly Information. `min` is the fewest games that make a
-  // percentage worth reporting; 3 is Monthly Information's own rule.
+  // Anyone who won the chosen % of the games they played that month OR MORE
+  // (Shaun, 1 Oct: 4 of 5 is 80%, and counts at 80%). Draws are games
+  // played, so they count in the denominator -- the same win % and loss % as
+  // Monthly Information. `min` is the fewest games that make a percentage
+  // worth reporting; 3 is Monthly Information's own rule.
   over_80(month, o){
-    const min = Number(o.min);
-    // The threshold is the Admin's choice (80% unless set), and reaching it
-    // counts. Compared in whole numbers, so 4 of 5 is exactly 80%.
-    const threshold = Number(o.threshold || 80);
-    const played = Object.values(computeMonthlySummaryStats(month)).filter(s => s.games > 0 && s.games >= min);
-    const order = (k) => (a, b) => b[k] - a[k] || b.games - a.games || a.name.localeCompare(b.name);
-    return {
-      min, threshold,
-      won: played.filter(s => s.wins * 100 >= threshold * s.games).sort(order('winpct')),
-      lost: played.filter(s => s.losses * 100 >= threshold * s.games).sort(order('losspct')),
-    };
+    const t = boardPackThreshold(month, o);
+    return { min: t.min, threshold: t.threshold, won: t.reached('wins', 'winpct') };
+  },
+
+  // The same for losing, with its own threshold and minimum (Shaun, 1 Oct).
+  lost_pct(month, o){
+    const t = boardPackThreshold(month, o);
+    return { min: t.min, threshold: t.threshold, lost: t.reached('losses', 'losspct') };
   },
 
   information(month){
@@ -150,6 +160,12 @@ function boardPackSources(){ return {
   best_record(month, o){
     const info = monthlyInformation(month, { top: BoardPack.limit(o.top) });
     return { groups: info.highestWinPct, stats: info.stats, minGames: info.minGamesForRanked };
+  },
+
+  // Losses over games played, 3+ games: Monthly Information's own list.
+  worst_record(month, o){
+    const info = monthlyInformation(month, { top: BoardPack.limit(o.top) });
+    return { groups: info.highestLossPct, stats: info.stats, minGames: info.minGamesForRanked };
   },
 
   most_games(month, o){

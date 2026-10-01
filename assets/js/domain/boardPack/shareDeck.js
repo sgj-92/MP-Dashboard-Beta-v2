@@ -62,6 +62,19 @@
     return (tiers || []).filter((t) => t.rows.length).map((t) => Object.assign({ label: `Tier ${t.tier}` }, fmt(t.rows[0])));
   }
 
+  // "Won (or Lost) N% or more": one slide, or nothing when nobody reached it.
+  function thresholdSlide(d, what, list, pct, eyebrow, everyTitle) {
+    const t = d.threshold || 80;
+    const label = t === 100 ? `${what} every game` : `${what} ${t}% or more`;
+    const rows = listRows(list, (s) => ({ name: s.name, value: `${s[pct]}%`, sub: `${record(s)} of ${s.games}` }));
+    if (!rows.length) return null;
+    return {
+      eyebrow, title: t === 100 ? everyTitle : label, groups: [{ rows }],
+      foot: d.min > 1 ? `${d.min}+ games played` : '',
+      summary: [`${label}: ${rows.map((r) => `${r.name} (${r.value})`).join(', ')}`],
+    };
+  }
+
   // module id -> (data, options, month) -> slide fields, or null when there is
   // nothing to say (an empty slide is left out of the deck).
   const BUILD = {
@@ -84,19 +97,8 @@
       };
     },
 
-    over_80: (d) => {
-      const row = (pct) => (s) => ({ name: s.name, value: `${s[pct]}%`, sub: `${record(s)} of ${s.games}` });
-      const groups = nonEmpty([
-        { label: (d.threshold || 80) === 100 ? 'Won every game' : `Won ${d.threshold || 80}% or more`, rows: listRows(d.won, row('winpct')) },
-        { label: (d.threshold || 80) === 100 ? 'Lost every game' : `Lost ${d.threshold || 80}% or more`, rows: listRows(d.lost, row('losspct')) },
-      ]);
-      if (!groups.length) return null;
-      return {
-        eyebrow: 'Out on their own', title: (d.threshold || 80) === 100 ? 'Perfect months' : `${d.threshold || 80}% or more`, groups,
-        foot: d.min > 1 ? `${d.min}+ games played` : '',
-        summary: groups.map((g) => `${g.label}: ${g.rows.map((r) => `${r.name} (${r.value})`).join(', ')}`),
-      };
-    },
+    over_80: (d) => thresholdSlide(d, 'Won', d.won, 'winpct', 'Out on their own', 'Perfect months'),
+    lost_pct: (d) => thresholdSlide(d, 'Lost', d.lost, 'losspct', 'Loss rate', 'Lost every game'),
 
     information: (d) => {
       const rows = [];
@@ -170,6 +172,13 @@
       if (!rows.length) return null;
       return { eyebrow: 'Win rate', title: 'Best records', groups: [{ rows }], foot: `${d.minGames}+ games played`,
         summary: [`Best win rate: ${rows[0].name} (${rows[0].value})`] };
+    },
+
+    worst_record: (d) => {
+      const rows = groupRows(d.groups, (g) => ({ value: `${g.value}%`, sub: record(d.stats[g.names[0]]) }));
+      if (!rows.length) return null;
+      return { eyebrow: 'Loss rate', title: 'Highest loss %', groups: [{ rows }], foot: `${d.minGames}+ games played · draws count as games`,
+        summary: [`Highest loss rate: ${rows[0].name} (${rows[0].value})`] };
     },
 
     most_games: (d) => {

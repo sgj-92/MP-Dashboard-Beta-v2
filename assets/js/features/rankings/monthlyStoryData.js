@@ -25,13 +25,17 @@ function monthlyInformation(month, { top = 3 } = {}){
   const mostLosses = topNTied(statsArr, 'losses', top, true);
   const lowestWinPct = topNTied(eligible, 'winpct', top, false);
   const highestWinPct = topNTied(eligible, 'winpct', top, true);
+  // Highest loss % proper: losses over games played. Not the same list as
+  // lowest win % once there are draws (2W 2D 1L has a lower win % than
+  // 3W 0D 2L but loses less), so it is its own list.
+  const highestLossPct = topNTied(eligible, 'losspct', top, true);
   const doughnutMax = Math.max(0, ...statsArr.map(s=>s.doughnuts));
   const mostDoughnuts = doughnutMax > 0 ? statsArr.filter(s=>s.doughnuts===doughnutMax).map(s=>s.name) : [];
   const hardestGames = topNTied(eligible, 'hardness', top, true);
   const playerOfMonth = mostWins.length ? mostWins[0] : null;
   return {
     month, stats, statsArr, minGamesForRanked: MONTHLY_INFORMATION_MIN_GAMES,
-    mostGames, mostWins, mostLosses, lowestWinPct, highestWinPct,
+    mostGames, mostWins, mostLosses, lowestWinPct, highestWinPct, highestLossPct,
     mostDoughnuts, doughnutMax, hardestGames, playerOfMonth,
   };
 }

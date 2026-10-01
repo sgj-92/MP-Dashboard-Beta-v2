@@ -81,6 +81,15 @@ function bpRankMoveLine(r){
 }
 
 // module id -> (data, month) -> blocks
+// "Won (or Lost) N% or more": the players, their % and W-D-L, and the rule.
+function bpThresholdBlocks(d, what, list, pct){
+  const t = d.threshold || 80;
+  const word = what.toLowerCase();
+  return [bpSub(t === 100 ? `${what} every game` : `${what} ${t}% or more`),
+    ...bpLines(d[list].map(s => ({ rank: '•', name: s.name, value: `${word} ${s[pct]}% · ${s.wins}W ${s.draws}D ${s.losses}L of ${s.games}` })), 'Nobody.'),
+    bpFoot(`${d.min > 1 ? `Players with ${d.min}+ games that month. ` : 'Every player who played that month. '}Draws count as games played.${t === 80 ? ' 4 of 5 is 80% and counts.' : ''}`)];
+}
+
 function boardPackBlocks(){ return {
   overview: (d) => [{ type: 'stats', items: [{ value: String(d.games), label: 'Games' }, { value: String(d.players), label: 'Players active' }, { value: String(d.draws), label: 'Draws' }] }],
 
@@ -90,14 +99,8 @@ function boardPackBlocks(){ return {
     : [bpEmpty('No games recorded.')])
     .concat([bpFoot(`Points: 3 for a win, 1 for a draw, 0 for a loss. Diff (difficulty) is the average strength of the games played ÷ 300 — the Monthly Information “hardest games” measure; higher is harder. Ordered by ${d.sort === 'games' ? 'games played' : d.sort === 'difficulty' ? 'difficulty' : 'points, then game difference'}.`)]),
 
-  over_80: (d) => {
-    const line = (s, pct, what) => ({ rank: '•', name: s.name, value: `${what} ${s[pct]}% · ${s.wins}W ${s.draws}D ${s.losses}L of ${s.games}` });
-    const t = d.threshold || 80;
-    const label = (what) => t === 100 ? `${what} every game` : `${what} ${t}% or more`;
-    return [bpSub(label('Won')), ...bpLines(d.won.map(s => line(s, 'winpct', 'won')), 'Nobody.'),
-      bpSub(label('Lost')), ...bpLines(d.lost.map(s => line(s, 'losspct', 'lost')), 'Nobody.'),
-      bpFoot(`${d.min > 1 ? `Players with ${d.min}+ games that month. ` : 'Every player who played that month. '}Draws count as games played.${t === 80 ? ' 4 of 5 is 80% and counts.' : ''}`)];
-  },
+  over_80: (d) => bpThresholdBlocks(d, 'Won', 'won', 'winpct'),
+  lost_pct: (d) => bpThresholdBlocks(d, 'Lost', 'lost', 'losspct'),
 
   information: (d) => {
     if(!d.statsArr.length) return [bpEmpty('No games recorded.')];
@@ -147,6 +150,10 @@ function boardPackBlocks(){ return {
 
   best_record: (d) => bpGroups(d.groups, g => { const s = d.stats[g.names[0]];
     return `${g.value}% · ${s.wins}W ${s.draws}D ${s.losses}L`; }, `Nobody played ${d.minGames}+ games.`),
+
+  worst_record: (d) => bpGroups(d.groups, g => { const s = d.stats[g.names[0]];
+    return `${g.value}% lost · ${s.wins}W ${s.draws}D ${s.losses}L`; }, `Nobody played ${d.minGames}+ games.`)
+    .concat([bpFoot(`Losses ÷ games played, ${d.minGames}+ games. Draws count as games played.`)]),
 
   most_games: (d) => bpGroups(d.groups, g => `${g.value} game${g.value===1?'':'s'}`),
 

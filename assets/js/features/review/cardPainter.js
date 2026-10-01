@@ -420,20 +420,24 @@
         if (e && e.name === 'NotAllowedError') return 'ready';
       }
     }
-    save(files);
+    await save(files);
     return 'saved';
   }
 
-  function save(files) {
-    files.forEach((f) => {
+  // One file at a time, a moment apart: a browser drops downloads fired in
+  // one burst past about ten (Chromium did, at eleven slides), silently.
+  const SAVE_GAP = 250;
+  async function save(files) {
+    for (let i = 0; i < files.length; i++) {
+      if (i) await new Promise((r) => setTimeout(r, SAVE_GAP));
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(f);
-      a.download = f.name;
+      a.href = URL.createObjectURL(files[i]);
+      a.download = files[i].name;
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 30000);
-    });
+    }
   }
 
   return { W, SLIDE_H, loadImage, slide, sheet, toBlob, toFile, share, save };

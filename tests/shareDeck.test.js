@@ -107,3 +107,16 @@ test('unpublishing keeps the review, marked withdrawn; publishing again brings i
   assert.ok(SD.isLive(back));
   assert.ok(!SD.isLive(null));
 });
+
+test('winning and losing are separate slides, each with its own threshold; Highest loss % has its own', () => {
+  const won = SD.slideFor(item('over_80', { threshold: '60' }), { min: 3, threshold: 60, won: [stats('Len', 5, 3, 1, 1)] }, M);
+  const lost = SD.slideFor(item('lost_pct', { threshold: '50' }), { min: 3, threshold: 50, lost: [stats('Ant', 4, 1, 1, 2), stats('Bo', 5, 2, 0, 3)] }, M);
+  assert.deepStrictEqual([won.title, won.groups.length, won.groups[0].rows.map((r) => [r.name, r.value, r.sub])], ['Won 60% or more', 1, [['Len', '60%', '3W 1D 1L of 5']]]);
+  assert.deepStrictEqual([lost.title, lost.groups[0].rows.map((r) => [r.name, r.value, r.sub])], ['Lost 50% or more', [['Ant', '50%', '1W 1D 2L of 4'], ['Bo', '60%', '2W 0D 3L of 5']]]);
+  assert.deepStrictEqual(lost.summary, ['Lost 50% or more: Ant (50%), Bo (60%)']);
+  assert.strictEqual(SD.slideFor(item('lost_pct', { threshold: '100' }), { min: 3, threshold: 100, lost: [stats('Cy', 3, 0, 0, 3)] }, M).title, 'Lost every game');
+  assert.strictEqual(SD.slideFor(item('lost_pct'), { min: 3, threshold: 80, lost: [] }, M), null, 'nobody, no slide');
+  const worst = SD.slideFor(item('worst_record'), { minGames: 3, groups: [{ rank: 1, names: ['Bo'], value: 60 }], stats: { Bo: stats('Bo', 5, 2, 0, 3) } }, M);
+  assert.deepStrictEqual([worst.title, worst.groups[0].rows[0].name, worst.groups[0].rows[0].value, worst.groups[0].rows[0].sub, worst.foot],
+    ['Highest loss %', 'Bo', '60%', '2W 0D 3L', '3+ games played · draws count as games']);
+});

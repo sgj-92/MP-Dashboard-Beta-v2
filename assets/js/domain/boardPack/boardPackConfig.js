@@ -34,6 +34,9 @@
   const TIER = { label: 'Tiers', values: ['all', 'S', 'A', 'B', 'C'], labels: { all: 'All tiers', S: 'Tier S', A: 'Tier A', B: 'Tier B', C: 'Tier C' }, default: 'all' };
   const show = (values, labels) => ({ label: 'Include', values, labels, default: values[0] });
 
+  const THRESHOLD = { label: 'At least', values: ['50', '60', '70', '75', '80', '90', '100'], labels: { 50: '50% or more', 60: '60% or more', 70: '70% or more', 75: '75% or more', 80: '80% or more', 90: '90% or more', 100: '100% (every game)' }, default: '80' };
+  const PCT_MIN = { label: 'Minimum games', values: ['3', '1', '5'], labels: { 1: 'Everyone', 3: '3+ games', 5: '5+ games' }, default: '3' };
+
   // The catalogue, in its default order. `on` is whether a month with no
   // saved pack starts with it selected.
   const MODULES = [
@@ -42,10 +45,10 @@
       sort: { label: 'Order by', values: ['points', 'games', 'difficulty'], labels: { points: 'Points', games: 'Games played', difficulty: 'Hardest games' }, default: 'points' },
       top: top('all') } },
     // Kept as 'over_80' so packs saved before the threshold became a choice
-    // still find it; 80% is the default.
-    { id: 'over_80', title: 'Won or lost a set % of games or more', on: true, options: {
-      threshold: { label: 'At least', values: ['50', '60', '70', '75', '80', '90', '100'], labels: { 50: '50% or more', 60: '60% or more', 70: '70% or more', 75: '75% or more', 80: '80% or more', 90: '90% or more', 100: '100% (every game)' }, default: '80' },
-      min: { label: 'Minimum games', values: ['3', '1', '5'], labels: { 1: 'Everyone', 3: '3+ games', 5: '5+ games' }, default: '3' } } },
+    // still find it; 80% is the default. Winning and losing were one module
+    // until 1 Oct; losing is now its own (lost_pct), with its own threshold.
+    { id: 'over_80', title: 'Won a set % of games or more', on: true, options: { threshold: THRESHOLD, min: PCT_MIN } },
+    { id: 'lost_pct', title: 'Lost a set % of games or more', on: true, splitFrom: 'over_80', options: { threshold: THRESHOLD, min: PCT_MIN } },
     { id: 'information', title: 'Monthly Information (the players’ month review)', on: false, options: {} },
     { id: 'power', title: 'Power Rankings at month end', on: true, options: { tier: TIER, top: top('10'),
       min: { label: 'Minimum games', values: ['1', '3', '5', '10'], labels: { 1: 'Any (1+)', 3: '3+ games', 5: '5+ games', 10: '10+ games' }, default: '5' },
@@ -57,6 +60,7 @@
       provisional: { label: 'Provisional', values: ['hide', 'show'], labels: { hide: 'Qualifiers only', show: 'Include provisional' }, default: 'hide' } } },
     { id: 'most_wins', title: 'Most wins & points', on: false, options: { top: top('3') } },
     { id: 'best_record', title: 'Best win % (3+ games)', on: false, options: { top: top('3') } },
+    { id: 'worst_record', title: 'Highest loss % (3+ games)', on: false, options: { top: top('3') } },
     { id: 'most_games', title: 'Most games played', on: false, options: { top: top('3') } },
     { id: 'rating_movers', title: 'Power Rating risers & fallers', on: true, options: {
       show: show(['both', 'risers', 'fallers'], { both: 'Risers and fallers', risers: 'Risers', fallers: 'Fallers' }), top: top('3') } },
@@ -154,7 +158,16 @@
         items.push(BY_ID[it.id] ? moduleItem(it.id, it.enabled, it.options) : Object.assign({}, it, { enabled: !!it.enabled }));
       }
     });
-    MODULES.forEach((m) => { if (!seen.has(m.id)) items.push(moduleItem(m.id, false, {})); });
+    // A module split out of another (`splitFrom`) arrives in a pack saved
+    // before the split right after its parent, on or off as the parent was
+    // and with its options, so the pack still shows what it showed. Any
+    // other new module arrives switched off, at the end.
+    MODULES.forEach((m) => {
+      if (seen.has(m.id)) return;
+      const at = m.splitFrom ? items.findIndex((it) => it.kind === 'module' && it.id === m.splitFrom) : -1;
+      if (at === -1) { items.push(moduleItem(m.id, false, {})); return; }
+      items.splice(at + 1, 0, moduleItem(m.id, items[at].enabled, items[at].options));
+    });
     return {
       version: VERSION, month, items,
       basis: raw.basis && typeof raw.basis === 'object' ? { games: Number(raw.basis.games) || 0, fingerprint: String(raw.basis.fingerprint || '') } : null,

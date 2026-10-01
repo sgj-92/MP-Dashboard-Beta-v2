@@ -63,7 +63,7 @@ maybe('the Share Deck is the Board Pack\'s selection, in the Board Pack\'s order
       withContent: boardPackDeck(boardPackDraft).slides.map((s) => s.id),
       month: document.querySelector('#bpDeckFrame .deck-cover-title').textContent,
     }));
-    assert.deepStrictEqual(r.selected, ['league', 'results_table', 'over_80', 'power', 'kings', 'race', 'most_wins', 'rating_movers', 'tier_moves']);
+    assert.deepStrictEqual(r.selected, ['league', 'results_table', 'over_80', 'lost_pct', 'power', 'kings', 'race', 'most_wins', 'rating_movers', 'tier_moves']);
     assert.deepStrictEqual(r.withContent, r.selected.filter((id) => r.withContent.includes(id)), 'slides follow the pack\'s order');
     assert.ok(r.withContent.length >= r.selected.length - 1, 'only a module with nothing to say is left out');
     assert.deepStrictEqual(r.shown, ['cover', ...r.withContent, 'end']);
