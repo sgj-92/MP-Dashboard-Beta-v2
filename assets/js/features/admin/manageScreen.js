@@ -106,7 +106,13 @@ function renderManage(){
     <div class="alpha-row">
       <div class="alpha-name" style="font-size:13px;">${VISIBILITY_LABELS[key]}</div>
       <button class="preset-btn vis-toggle ${visibilityState[key]!==false?'active':''}" data-vis="${key}" style="width:100px;">${visibilityState[key]!==false?'Visible':'Admin only'}</button>
-    </div>`).join('') + `<div id="visMessage" class="section-sub"></div></div>`);
+    </div>`).join('')
+    + `<div class="alpha-row">
+      <div class="alpha-name" style="font-size:13px;">Tier S sections (tier tables, Kings, Board Pack)</div>
+      <button class="preset-btn ${tierSSectionsShown()?'active':''}" id="tierSToggle" style="width:100px;">${tierSSectionsShown()?'Shown':'Hidden'}</button>
+    </div>
+    <div class="section-sub" style="font-size:10.5px; margin-top:0;">Hidden drops the Tier S section from League and Merit by tier, the Monthly Race, Kings of Tiers and the Board Pack, for everyone including Admins. Tier S players stay in Power Rankings, the month's results table, Monthly Information and their profiles; no figure changes.</div>`
+    + `<div id="visMessage" class="section-sub"></div></div>`);
 
   html += adminSection('review', 'Admin monthly review', buildReviewSectionHtml());
   html += adminSection('boardpack', 'Monthly Board Pack', adminOpenSections.boardpack ? buildBoardPackSectionHtml() : '');
@@ -235,6 +241,19 @@ function renderManage(){
       renderManage();
     };
   });
+
+  on('tierSToggle', (btn)=>{ btn.onclick = async ()=>{
+    const was = tierSSectionsShown();
+    visibilityState.tierSSections = !was;
+    const ok = await saveVisibility(visibilityState);
+    if(!ok){
+      visibilityState.tierSSections = was;
+      const msg = document.getElementById('visMessage');
+      if(msg) msg.textContent = 'Save failed — try again.';
+      return;
+    }
+    renderManage();
+  }; });
 
   on('lockNowBtn', (btn)=>{ btn.onclick = async ()=>{
     isUnlocked = false;

@@ -27,7 +27,7 @@ function boardPackDefaultMonth(){
 
 // Tier sections in the club's order, limited to the one asked for.
 function boardPackTiers(tierOption){
-  return TIER_ORDER_LIST.filter(t => tierOption === 'all' || t === tierOption);
+  return groupedTiers().filter(t => tierOption === 'all' || t === tierOption);
 }
 
 function boardPackTierAt(name, date){ return historicalTierOf(name, date); }
@@ -93,7 +93,14 @@ function boardPackSources(){ return {
 
   kings(month){
     const minGames = defaultRankingMinGames(month);
-    return { minGames, kings: kingsOfTiersFor(month, minGames) };
+    const kings = kingsOfTiersFor(month, minGames);
+    // A hidden Tier S section is hidden here too (groupedTiers).
+    if(kings && !tierSSectionsShown()){
+      delete kings.S;
+      kings._fieldSize = Object.assign({}, kings._fieldSize, { S: 0 });
+      if(!TIER_ORDER_LIST.some(t => kings[t])) return { minGames, kings: null };
+    }
+    return { minGames, kings };
   },
 
   league(month, o){

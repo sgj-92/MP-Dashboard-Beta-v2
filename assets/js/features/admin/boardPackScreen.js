@@ -25,176 +25,230 @@ let boardPackPublished = {};
 let boardPackPublishConfirm = false;
 let boardPackMessage = '';
 let boardPackNoteSeq = 0;
+// The Share Deck preview's moving parts, and pictures prepared but not yet
+// shared (a share sheet must open from a tap; see CardPainter.share).
+let boardPackDeckCtl = null;
+let boardPackShareReady = null;
 
 // ---- Drawing the modules ---------------------------------------------------
+// Each module is described once, as blocks -- big numbers, a table, a list,
+// the Kings tiles, a heading, a footnote -- and drawn twice from them: as
+// HTML in the report, and as a picture (features/review/cardPainter.js) when
+// a table is shared. So a picture can only ever show what the report shows.
+//
+//   { type: 'stats', items: [{ value, label }] }
+//   { type: 'table', headers: [..], rows: [[cell]] }   cell: text, or { text, strong, note }
+//   { type: 'list', rows: [{ rank, name, value }] }
+//   { type: 'kings', tiles: [{ tier, name, rating, none }] }
+//   { type: 'sub' | 'empty' | 'foot' | 'text', text }
 
-function bpNames(names){ return names.map(n => escapeHtml(n)).join(' / '); }
+const bpSub = (text) => ({ type: 'sub', text });
+const bpEmpty = (text) => ({ type: 'empty', text });
+const bpFoot = (text) => ({ type: 'foot', text });
 function bpSigned(n){ return `${n > 0 ? '+' : ''}${n}`; }
-function bpEmpty(text){ return `<div class="bp-empty">${escapeHtml(text)}</div>`; }
-function bpSub(text){ return `<div class="bp-subhead">${escapeHtml(text)}</div>`; }
+const bpNames = (names) => names.join(' / ');
+const bpStrong = (text) => ({ text: String(text), strong: true });
 
 // Tie-grouped places: "1. A / B — value".
-function bpGroupsHtml(groups, fmt, emptyText){
-  if(!groups || !groups.length) return bpEmpty(emptyText || 'Not enough data.');
-  return `<ol class="bp-list">${groups.map(g => `<li><span class="bp-rank">${g.rank}</span><span class="bp-name">${bpNames(g.names)}</span><span class="bp-val">${fmt(g)}</span></li>`).join('')}</ol>`;
+function bpGroups(groups, fmt, emptyText){
+  if(!groups || !groups.length) return [bpEmpty(emptyText || 'Not enough data.')];
+  return [{ type: 'list', rows: groups.map(g => ({ rank: String(g.rank), name: bpNames(g.names), value: fmt(g) })) }];
 }
 
 // Plain lines: [{ rank?, name, value }].
-function bpLinesHtml(lines, emptyText){
-  if(!lines.length) return bpEmpty(emptyText || 'Nothing this month.');
-  return `<ol class="bp-list">${lines.map((l, i) => `<li><span class="bp-rank">${l.rank === undefined ? i + 1 : l.rank}</span><span class="bp-name">${l.name}</span><span class="bp-val">${l.value}</span></li>`).join('')}</ol>`;
+function bpLines(lines, emptyText){
+  if(!lines.length) return [bpEmpty(emptyText || 'Nothing this month.')];
+  return [{ type: 'list', rows: lines.map((l, i) => ({ rank: String(l.rank === undefined ? i + 1 : l.rank), name: l.name, value: l.value })) }];
 }
 
-function bpTableHtml(headers, rows){
-  return `<table class="bp-table"><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-    <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-}
+const bpTable = (headers, rows) => ({ type: 'table', headers, rows });
 
-function bpTiersHtml(tiers, tableFor, emptyText){
-  if(!tiers.length) return bpEmpty(emptyText || 'No games recorded.');
-  return tiers.map(t => bpSub(`Tier ${t.tier}`) + tableFor(t.rows)).join('');
+function bpTiers(tiers, tableFor, emptyText){
+  if(!tiers.length) return [bpEmpty(emptyText || 'No games recorded.')];
+  return tiers.flatMap(t => [bpSub(`Tier ${t.tier}`), tableFor(t.rows)]);
 }
 
 function bpRatingMoveLine(r){
-  return { name: escapeHtml(r.playerId), value: `${Math.round(r.startRating)} → ${Math.round(r.endRating)} · ${bpSigned(r.ratingChange)} pts`
+  return { name: r.playerId, value: `${Math.round(r.startRating)} → ${Math.round(r.endRating)} · ${bpSigned(r.ratingChange)} pts`
     + (r.reassessmentChange ? ` (${bpSigned(r.reassessmentChange)} by club decision)` : '') };
 }
 
 function bpRankMoveLine(r){
-  return { name: escapeHtml(r.playerId) + (r.played ? '' : ' (no games)'),
+  return { name: r.playerId + (r.played ? '' : ' (no games)'),
     value: `#${r.startRankOverall} → #${r.endRankOverall} · ${r.rankChangeOverall > 0 ? '▲' : '▼'}${Math.abs(r.rankChangeOverall)}` };
 }
 
-// module id -> (data, month) -> html
-function boardPackRenderers(){ return {
-  overview: (d) => `<div class="bp-stats">
-    <div class="bp-stat"><div class="bp-stat-num">${d.games}</div><div class="bp-stat-label">Games</div></div>
-    <div class="bp-stat"><div class="bp-stat-num">${d.players}</div><div class="bp-stat-label">Players active</div></div>
-    <div class="bp-stat"><div class="bp-stat-num">${d.draws}</div><div class="bp-stat-label">Draws</div></div>
-  </div>`,
+// module id -> (data, month) -> blocks
+function boardPackBlocks(){ return {
+  overview: (d) => [{ type: 'stats', items: [{ value: String(d.games), label: 'Games' }, { value: String(d.players), label: 'Players active' }, { value: String(d.draws), label: 'Draws' }] }],
 
   results_table: (d) => (d.rows.length
-    ? bpTableHtml(['#', 'Player', 'Tier', 'P', 'W', 'D', 'L', 'Pts', 'Diff'], d.rows.map((r, i) => [i + 1, escapeHtml(r.name), escapeHtml(r.tier),
-      r.games, r.wins, r.draws, r.losses, `<b>${r.points}</b>`, Number(r.hardness).toFixed(1)]))
-    : bpEmpty('No games recorded.'))
-    + `<div class="bp-foot">Points: 3 for a win, 1 for a draw, 0 for a loss. Diff (difficulty) is the average strength of the games played ÷ 300 — the Monthly Information “hardest games” measure; higher is harder. Ordered by ${d.sort === 'games' ? 'games played' : d.sort === 'difficulty' ? 'difficulty' : 'points, then game difference'}.</div>`,
+    ? [bpTable(['#', 'Player', 'Tier', 'P', 'W', 'D', 'L', 'Pts', 'Diff'], d.rows.map((r, i) => [i + 1, r.name, r.tier,
+      r.games, r.wins, r.draws, r.losses, bpStrong(r.points), Number(r.hardness).toFixed(1)]))]
+    : [bpEmpty('No games recorded.')])
+    .concat([bpFoot(`Points: 3 for a win, 1 for a draw, 0 for a loss. Diff (difficulty) is the average strength of the games played ÷ 300 — the Monthly Information “hardest games” measure; higher is harder. Ordered by ${d.sort === 'games' ? 'games played' : d.sort === 'difficulty' ? 'difficulty' : 'points, then game difference'}.`)]),
 
   over_80: (d) => {
-    const line = (s, pct, what) => ({ rank: '•', name: escapeHtml(s.name), value: `${what} ${s[pct]}% · ${s.wins}W ${s.draws}D ${s.losses}L of ${s.games}` });
-    return bpSub('Won more than 80%') + bpLinesHtml(d.won.map(s => line(s, 'winpct', 'won')), 'Nobody.')
-      + bpSub('Lost more than 80%') + bpLinesHtml(d.lost.map(s => line(s, 'losspct', 'lost')), 'Nobody.')
-      + `<div class="bp-foot">${d.min > 1 ? `Players with ${d.min}+ games that month. ` : 'Every player who played that month. '}Draws count as games played. Exactly 80% (for example 4 of 5) is not more than 80%.</div>`;
+    const line = (s, pct, what) => ({ rank: '•', name: s.name, value: `${what} ${s[pct]}% · ${s.wins}W ${s.draws}D ${s.losses}L of ${s.games}` });
+    return [bpSub('Won more than 80%'), ...bpLines(d.won.map(s => line(s, 'winpct', 'won')), 'Nobody.'),
+      bpSub('Lost more than 80%'), ...bpLines(d.lost.map(s => line(s, 'losspct', 'lost')), 'Nobody.'),
+      bpFoot(`${d.min > 1 ? `Players with ${d.min}+ games that month. ` : 'Every player who played that month. '}Draws count as games played. Exactly 80% (for example 4 of 5) is not more than 80%.`)];
   },
 
   information: (d) => {
-    if(!d.statsArr.length) return bpEmpty('No games recorded.');
+    if(!d.statsArr.length) return [bpEmpty('No games recorded.')];
     const s = (g) => d.stats[g.names[0]];
-    return bpSub('Most games played') + bpGroupsHtml(d.mostGames, g => `${g.value} game${g.value===1?'':'s'}`)
-      + bpSub('Most wins & highest points') + bpGroupsHtml(d.mostWins, g => `${s(g).wins} win${s(g).wins===1?'':'s'}${s(g).draws ? ` · ${s(g).draws} draw${s(g).draws===1?'':'s'}` : ''} — ${g.value} pts`)
-      + bpSub('Most losses') + bpGroupsHtml(d.mostLosses, g => `${g.value} loss${g.value===1?'':'es'}`)
-      + bpSub('Lowest win % (highest loss %)') + bpGroupsHtml(d.lowestWinPct, g => `${s(g).losspct}% loser`)
-      + bpSub('Highest win %') + bpGroupsHtml(d.highestWinPct, g => `${g.value}% wins`)
-      + bpSub('Most doughnuts received') + (d.mostDoughnuts.length ? bpLinesHtml([{ rank: 1, name: bpNames(d.mostDoughnuts), value: `x${d.doughnutMax}` }]) : bpEmpty('Nobody got doughnut’d this month.'))
-      + bpSub('Hardest games played (avg opponent strength)') + bpGroupsHtml(d.hardestGames, g => `${g.value}`)
-      + bpSub('Player of the Month') + (d.playerOfMonth ? bpLinesHtml([{ rank: '👑', name: bpNames(d.playerOfMonth.names), value: '' }]) : bpEmpty('Not enough data.'));
+    return [
+      bpSub('Most games played'), ...bpGroups(d.mostGames, g => `${g.value} game${g.value===1?'':'s'}`),
+      bpSub('Most wins & highest points'), ...bpGroups(d.mostWins, g => `${s(g).wins} win${s(g).wins===1?'':'s'}${s(g).draws ? ` · ${s(g).draws} draw${s(g).draws===1?'':'s'}` : ''} — ${g.value} pts`),
+      bpSub('Most losses'), ...bpGroups(d.mostLosses, g => `${g.value} loss${g.value===1?'':'es'}`),
+      bpSub('Lowest win % (highest loss %)'), ...bpGroups(d.lowestWinPct, g => `${s(g).losspct}% loser`),
+      bpSub('Highest win %'), ...bpGroups(d.highestWinPct, g => `${g.value}% wins`),
+      bpSub('Most doughnuts received'), ...(d.mostDoughnuts.length ? bpLines([{ rank: 1, name: bpNames(d.mostDoughnuts), value: `x${d.doughnutMax}` }]) : [bpEmpty('Nobody got doughnut’d this month.')]),
+      bpSub('Hardest games played (avg opponent strength)'), ...bpGroups(d.hardestGames, g => `${g.value}`),
+      bpSub('Player of the Month'), ...(d.playerOfMonth ? bpLines([{ rank: '👑', name: bpNames(d.playerOfMonth.names), value: '' }]) : [bpEmpty('Not enough data.')]),
+    ];
   },
 
   power: (d) => (d.rows.length
-    ? bpTableHtml(['#', 'Player', 'Tier', 'Rating', 'Month'], d.rows.map((r, i) => [i + 1, escapeHtml(r.name), r.tier || '–', Math.round(r.rating),
-      r.ratingChange === null ? '–' : `${bpSigned(r.ratingChange)} pts${r.rankChange ? ` · ${r.rankChange > 0 ? '▲' : '▼'}${Math.abs(r.rankChange)}` : ''}`]))
-    : bpEmpty('Nobody qualified.'))
-    + `<div class="bp-foot">Month-end Power Rating and the tier held at the month's close; ${d.minGames}+ games in the month (the Rankings month default).</div>`,
+    ? [bpTable(['#', 'Player', 'Tier', 'Rating', 'Month'], d.rows.map((r, i) => [i + 1, r.name, r.tier || '–', Math.round(r.rating),
+      r.ratingChange === null ? '–' : `${bpSigned(r.ratingChange)} pts${r.rankChange ? ` · ${r.rankChange > 0 ? '▲' : '▼'}${Math.abs(r.rankChange)}` : ''}`]))]
+    : [bpEmpty('Nobody qualified.')])
+    .concat([bpFoot(`Month-end Power Rating and the tier held at the month's close; ${d.minGames}+ games in the month (the Rankings month default).`)]),
 
   kings: (d) => {
-    if(!d.kings) return bpEmpty('No tier had a field of two or more.');
-    // The Rankings screen's own Kings of Tiers tiles: same crown, same
-    // tier metals, same classes (screens/rankings.css).
+    if(!d.kings) return [bpEmpty('No tier had a field of two or more.')];
     const tiles = TIER_ORDER_LIST.filter(t => d.kings[t] || d.kings._fieldSize[t]).map(t => {
       const k = d.kings[t];
-      return `<div class="kings-card bp-king kings-tier-${t.toLowerCase()}">
-        <div class="kings-crown-wrap"><img class="kings-crown" src="assets/rankings/podium-crown-laurel.png" alt="" onerror="this.style.display='none'"></div>
-        ${k ? `<div class="kings-name">${escapeHtml(k.name)}</div><div class="kings-tier-label">Tier ${t}</div><div class="kings-rating">${k.rating}</div>`
-            : `<div class="kings-name kings-name-empty">—</div><div class="kings-tier-label">Tier ${t}</div><div class="kings-rating bp-king-none">${d.kings._fieldSize[t] === 1 ? 'only one qualified' : 'nobody qualified'}</div>`}
-      </div>`;
+      return k ? { tier: t, name: k.name, rating: String(k.rating) }
+               : { tier: t, name: null, rating: null, none: d.kings._fieldSize[t] === 1 ? 'only one qualified' : 'nobody qualified' };
     });
-    return `<div class="kings-row">${tiles.join('')}</div>`
-      + `<div class="bp-foot">${d.minGames}+ games in the month; a tier needs two qualifiers to crown a king.</div>`;
+    return [{ type: 'kings', tiles }, bpFoot(`${d.minGames}+ games in the month; a tier needs two qualifiers to crown a king.`)];
   },
 
-  league: (d) => bpTiersHtml(d.tiers, rows => bpTableHtml(['#', 'Player', 'P', 'W', 'D', 'L', 'GD', 'Pts'],
-    rows.map((r, i) => [i + 1, escapeHtml(r.name), r.games, r.wins, r.draws, r.losses, bpSigned(r.gd), `<b>${r.points}</b>`]))),
+  league: (d) => bpTiers(d.tiers, rows => bpTable(['#', 'Player', 'P', 'W', 'D', 'L', 'GD', 'Pts'],
+    rows.map((r, i) => [i + 1, r.name, r.games, r.wins, r.draws, r.losses, bpSigned(r.gd), bpStrong(r.points)]))),
 
-  merit: (d) => bpTiersHtml(d.tiers, rows => bpTableHtml(['#', 'Player', 'P', 'W', 'Hard', 'Fav', 'Pts'],
-    rows.map((r, i) => [i + 1, escapeHtml(r.playerId), r.played, r.wins, r.hardWins, r.easyWins, `<b>${r.merit}</b>`])))
-    + (d.unresolved ? `<div class="bp-foot">${d.unresolved} match${d.unresolved===1?'':'es'} could not be scored: a player's tier on that date is unknown.</div>` : ''),
+  merit: (d) => bpTiers(d.tiers, rows => bpTable(['#', 'Player', 'P', 'W', 'Hard', 'Fav', 'Pts'],
+    rows.map((r, i) => [i + 1, r.playerId, r.played, r.wins, r.hardWins, r.easyWins, bpStrong(r.merit)])))
+    .concat(d.unresolved ? [bpFoot(`${d.unresolved} match${d.unresolved===1?'':'es'} could not be scored: a player's tier on that date is unknown.`)] : []),
 
-  race: (d) => bpTiersHtml(d.tiers, rows => bpTableHtml(['#', 'Player', 'P', 'W', 'D', 'L', 'Score'],
-    rows.map((r, i) => [r.qualified ? i + 1 : '–', escapeHtml(r.playerId) + (r.qualified ? '' : ' <span class="bp-dim">(provisional)</span>'), r.played, r.wins, r.draws, r.losses, `<b>${bpSigned(r.score)}</b>`])), 'No qualifier this month.')
-    + `<div class="bp-foot">Qualifying: ${d.minMatches}+ matches in the tier.</div>`
-    + (d.unresolved ? `<div class="bp-foot">${d.unresolved} match${d.unresolved===1?'':'es'} could not be scored.</div>` : ''),
+  race: (d) => bpTiers(d.tiers, rows => bpTable(['#', 'Player', 'P', 'W', 'D', 'L', 'Score'],
+    rows.map((r, i) => [r.qualified ? i + 1 : '–', r.qualified ? r.playerId : { text: r.playerId, note: '(provisional)' }, r.played, r.wins, r.draws, r.losses, bpStrong(bpSigned(r.score))])), 'No qualifier this month.')
+    .concat([bpFoot(`Qualifying: ${d.minMatches}+ matches in the tier.`)])
+    .concat(d.unresolved ? [bpFoot(`${d.unresolved} match${d.unresolved===1?'':'es'} could not be scored.`)] : []),
 
-  most_wins: (d) => bpGroupsHtml(d.groups, g => { const s = d.stats[g.names[0]];
+  most_wins: (d) => bpGroups(d.groups, g => { const s = d.stats[g.names[0]];
     return `${s.wins} win${s.wins===1?'':'s'}${s.draws ? ` · ${s.draws} draw${s.draws===1?'':'s'}` : ''} — ${g.value} pts`; }),
 
-  best_record: (d) => bpGroupsHtml(d.groups, g => { const s = d.stats[g.names[0]];
+  best_record: (d) => bpGroups(d.groups, g => { const s = d.stats[g.names[0]];
     return `${g.value}% · ${s.wins}-${s.losses}${s.draws ? `-${s.draws}` : ''}`; }, `Nobody played ${d.minGames}+ games.`),
 
-  most_games: (d) => bpGroupsHtml(d.groups, g => `${g.value} game${g.value===1?'':'s'}`),
+  most_games: (d) => bpGroups(d.groups, g => `${g.value} game${g.value===1?'':'s'}`),
 
-  rating_movers: (d) => (d.risers.length || d.fallers.length ? '' : bpEmpty('No rating movement recorded.'))
-    + (d.risers.length ? bpSub('Risers') + bpLinesHtml(d.risers.map(bpRatingMoveLine)) : '')
-    + (d.fallers.length ? bpSub('Fallers') + bpLinesHtml(d.fallers.map(bpRatingMoveLine)) : ''),
+  rating_movers: (d) => (d.risers.length || d.fallers.length ? [] : [bpEmpty('No rating movement recorded.')])
+    .concat(d.risers.length ? [bpSub('Risers'), ...bpLines(d.risers.map(bpRatingMoveLine))] : [])
+    .concat(d.fallers.length ? [bpSub('Fallers'), ...bpLines(d.fallers.map(bpRatingMoveLine))] : []),
 
-  rank_movers: (d) => (d.climbers.length || d.sliders.length ? '' : bpEmpty('No rank movement recorded.'))
-    + (d.climbers.length ? bpSub('Climbers') + bpLinesHtml(d.climbers.map(bpRankMoveLine)) : '')
-    + (d.sliders.length ? bpSub('Sliders') + bpLinesHtml(d.sliders.map(bpRankMoveLine)) : ''),
+  rank_movers: (d) => (d.climbers.length || d.sliders.length ? [] : [bpEmpty('No rank movement recorded.')])
+    .concat(d.climbers.length ? [bpSub('Climbers'), ...bpLines(d.climbers.map(bpRankMoveLine))] : [])
+    .concat(d.sliders.length ? [bpSub('Sliders'), ...bpLines(d.sliders.map(bpRankMoveLine))] : []),
 
-  performance: (d) => bpLinesHtml(d.rows.map(r => ({ name: escapeHtml(r.playerId),
+  performance: (d) => bpLines(d.rows.map(r => ({ name: r.playerId,
     value: `${bpSigned(r.performancePct)}% vs expectation · ${r.matches} games` })), 'Nobody played enough games.'),
 
   form: (d) => (d.rows.length
-    ? bpTableHtml(['#', 'Player', 'Games', 'W-D-L', 'Pts'], d.rows.map((r, i) => [i + 1, escapeHtml(r.name), r.games + (r.short ? ` <span class="bp-dim">of ${d.window}</span>` : ''), `${r.wins}-${r.draws}-${r.losses}`, `<b>${r.points}</b>`]))
-    : bpEmpty('No games this month.'))
-    + `<div class="bp-foot">Each player's last ${d.window} rated games as they stood at the month's close.</div>`,
+    ? [bpTable(['#', 'Player', 'Games', 'W-D-L', 'Pts'], d.rows.map((r, i) => [i + 1, r.name, r.short ? { text: String(r.games), note: `of ${d.window}` } : r.games, `${r.wins}-${r.draws}-${r.losses}`, bpStrong(r.points)]))]
+    : [bpEmpty('No games this month.')])
+    .concat([bpFoot(`Each player's last ${d.window} rated games as they stood at the month's close.`)]),
 
-  hard_wins: (d) => (d.hard.length || d.favoured.length ? '' : bpEmpty('No wins recorded.'))
-    + (d.hard.length ? bpSub('Hard wins (beat a stronger pairing)') + bpGroupsHtml(d.hard, g => `${g.value} win${g.value===1?'':'s'}`) : '')
-    + (d.favoured.length ? bpSub('Favoured wins (beat a weaker pairing)') + bpGroupsHtml(d.favoured, g => `${g.value} win${g.value===1?'':'s'}`) : ''),
+  hard_wins: (d) => (d.hard.length || d.favoured.length ? [] : [bpEmpty('No wins recorded.')])
+    .concat(d.hard.length ? [bpSub('Hard wins (beat a stronger pairing)'), ...bpGroups(d.hard, g => `${g.value} win${g.value===1?'':'s'}`)] : [])
+    .concat(d.favoured.length ? [bpSub('Favoured wins (beat a weaker pairing)'), ...bpGroups(d.favoured, g => `${g.value} win${g.value===1?'':'s'}`)] : []),
 
-  doughnuts: (d) => (d.received.length || d.given.length ? '' : bpEmpty('No doughnuts this month.'))
-    + (d.received.length ? bpSub('Received') + bpGroupsHtml(d.received, g => `x${g.value}`) : '')
-    + (d.given.length ? bpSub('Given') + bpGroupsHtml(d.given, g => `x${g.value}`) : ''),
+  doughnuts: (d) => (d.received.length || d.given.length ? [] : [bpEmpty('No doughnuts this month.')])
+    .concat(d.received.length ? [bpSub('Received'), ...bpGroups(d.received, g => `x${g.value}`)] : [])
+    .concat(d.given.length ? [bpSub('Given'), ...bpGroups(d.given, g => `x${g.value}`)] : []),
 
-  partnerships: (d) => bpLinesHtml(d.rows.map(p => ({ name: `${escapeHtml(p.pair[0])} &amp; ${escapeHtml(p.pair[1])}`,
+  partnerships: (d) => bpLines(d.rows.map(p => ({ name: `${p.pair[0]} & ${p.pair[1]}`,
     value: `${p.wins}-${p.losses} (${p.winpct}%) · ${bpSigned(p.avg_overperf)}% chemistry` })), 'No pair played twice together.'),
 
-  tier_moves: (d) => bpLinesHtml(d.rows.map(c => ({ rank: '•', name: escapeHtml(c.name),
-    value: `${c.fromTier} → ${c.toTier} · ${escapeHtml(dayLabel(c.date))}` })), 'No tier changes this month.'),
+  tier_moves: (d) => bpLines(d.rows.map(c => ({ rank: '•', name: c.name,
+    value: `${c.fromTier} → ${c.toTier} · ${dayLabel(c.date)}` })), 'No tier changes this month.'),
 
-  crossovers: (d) => bpLinesHtml(d.rows.map(c => ({ rank: '•', name: `${escapeHtml(c.overtook)} passed ${escapeHtml(c.overtaken)}`, value: '' })), 'Nobody changed places.'),
+  crossovers: (d) => bpLines(d.rows.map(c => ({ rank: '•', name: `${c.overtook} passed ${c.overtaken}`, value: '' })), 'Nobody changed places.'),
 }; }
 
+// Blocks as the report's HTML.
+function bpCellHtml(c){
+  if(c && typeof c === 'object'){
+    const text = escapeHtml(c.text);
+    return (c.strong ? `<b>${text}</b>` : text) + (c.note ? ` <span class="bp-dim">${escapeHtml(c.note)}</span>` : '');
+  }
+  return escapeHtml(c);
+}
+
+function bpBlocksHtml(blocks){
+  return blocks.map(b => {
+    switch(b.type){
+      case 'sub': return `<div class="bp-subhead">${escapeHtml(b.text)}</div>`;
+      case 'empty': return `<div class="bp-empty">${escapeHtml(b.text)}</div>`;
+      case 'foot': return `<div class="bp-foot">${escapeHtml(b.text)}</div>`;
+      case 'text': return `<div class="bp-note-body">${escapeHtml(b.text).replace(/\n/g, '<br>') || '<span class="bp-dim">(empty)</span>'}</div>`;
+      case 'stats': return `<div class="bp-stats">${b.items.map(x => `
+    <div class="bp-stat"><div class="bp-stat-num">${escapeHtml(x.value)}</div><div class="bp-stat-label">${escapeHtml(x.label)}</div></div>`).join('')}
+  </div>`;
+      case 'table': return `<table class="bp-table"><thead><tr>${b.headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+    <tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${bpCellHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      case 'list': return `<ol class="bp-list">${b.rows.map(l => `<li><span class="bp-rank">${escapeHtml(l.rank)}</span><span class="bp-name">${escapeHtml(l.name)}</span><span class="bp-val">${escapeHtml(l.value)}</span></li>`).join('')}</ol>`;
+      // The Rankings screen's own Kings of Tiers tiles: same crown, same
+      // tier metals, same classes (screens/rankings.css).
+      case 'kings': return `<div class="kings-row">${b.tiles.map(k => `<div class="kings-card bp-king kings-tier-${k.tier.toLowerCase()}">
+        <div class="kings-crown-wrap"><img class="kings-crown" src="assets/rankings/podium-crown-laurel.png" alt="" onerror="this.style.display='none'"></div>
+        ${k.name ? `<div class="kings-name">${escapeHtml(k.name)}</div><div class="kings-tier-label">Tier ${k.tier}</div><div class="kings-rating">${escapeHtml(k.rating)}</div>`
+            : `<div class="kings-name kings-name-empty">—</div><div class="kings-tier-label">Tier ${k.tier}</div><div class="kings-rating bp-king-none">${escapeHtml(k.none)}</div>`}
+      </div>`).join('')}</div>`;
+      default: return '';
+    }
+  }).join('');
+}
+
+// module id -> (data, month) -> html
+function boardPackRenderers(){
+  const blocks = boardPackBlocks();
+  return Object.fromEntries(Object.keys(blocks).map(id => [id, (d, m) => bpBlocksHtml(blocks[id](d, m))]));
+}
+
+// One module or note as a picture-ready sheet: its title, the month, and the
+// same blocks the report draws.
+function boardPackSheet(item, month){
+  if(item.kind === 'note') return { title: item.title || 'Admin commentary', tag: 'Admin commentary', month: monthLabel(month), blocks: [{ type: 'text', text: item.body }] };
+  return { title: BoardPack.BY_ID[item.id].title, month: monthLabel(month), blocks: boardPackBlocks()[item.id](boardPackModuleData(item, month), month) };
+}
+
 function boardPackNoteHtml(note){
-  const body = escapeHtml(note.body).replace(/\n/g, '<br>');
   return `<section class="bp-module bp-note" data-note="${escapeHtml(note.id)}">
     <div class="bp-note-tag">Admin commentary</div>
     ${note.title ? `<div class="bp-module-title">${escapeHtml(note.title)}</div>` : ''}
-    <div class="bp-note-body">${body || '<span class="bp-dim">(empty)</span>'}</div>
+    ${bpBlocksHtml([{ type: 'text', text: note.body }])}
+    <button type="button" class="preset-btn bp-share-img" data-bp-share-item="note:${escapeHtml(note.id)}">Share image</button>
   </section>`;
 }
 
-// The whole pack for a config: its selected modules and notes, in order.
+// The whole pack for a config: its selected modules and notes, in order. Each
+// part has a Share image button: the part as a picture, ready for WhatsApp.
 function boardPackHtml(config){
   const month = config.month;
   const renderers = boardPackRenderers();
   const parts = BoardPack.selected(config).map(it => {
     if(it.kind === 'note') return boardPackNoteHtml(it);
     const html = renderers[it.id](boardPackModuleData(it, month), month);
-    return `<section class="bp-module" data-module="${it.id}"><div class="bp-module-title">${escapeHtml(BoardPack.BY_ID[it.id].title)}</div>${html}</section>`;
+    return `<section class="bp-module" data-module="${it.id}"><div class="bp-module-title">${escapeHtml(BoardPack.BY_ID[it.id].title)}</div>${html}
+      <button type="button" class="preset-btn bp-share-img" data-bp-share-item="${it.id}">Share image</button></section>`;
   });
   return `<div class="bp-pack">
     <div class="bp-pack-head">Money Padel · ${escapeHtml(monthLabel(month))} Board Pack</div>
-    ${parts.length ? parts.join('') : bpEmpty('Nothing selected yet.')}
+    ${parts.length ? parts.join('') : bpBlocksHtml([bpEmpty('Nothing selected yet.')])}
   </div>`;
 }
 
@@ -305,7 +359,13 @@ function boardPackDeckPreviewHtml(liveDeck){
   const pub = boardPackPublished[boardPackMonth];
   const when = !ShareDeck.isLive(pub) ? 'will see when you publish' : ShareDeck.sameDeck(pub.deck, liveDeck) ? 'see on the review link' : 'will see once you republish';
   return `<div class="section-sub bp-deck-note">What players ${when}: one card per selected module, in the pack's order. Empty modules are left out.${hidden.length ? ` Left out because the section is Admin only: ${hidden.map(sl => escapeHtml(sl.title)).join(', ')}.` : ''}</div>
-    <div class="bp-deck-frame" id="bpDeckFrame">${DeckView.html(liveDeck, shown, { brandSrc: 'assets/brand/mp-mark.svg', crownSrc: 'assets/rankings/podium-crown-laurel.png', appLink: '' })}</div>`;
+    <div class="bp-deck-frame" id="bpDeckFrame">${DeckView.html(liveDeck, shown, { brandSrc: 'assets/brand/mp-mark.svg', crownSrc: 'assets/rankings/podium-crown-laurel.png', appLink: '' })}</div>
+    <div class="bp-share-row bp-deck-share">
+      <button type="button" class="preset-btn" id="bpShareSlide">Share this slide</button>
+      <button type="button" class="preset-btn" id="bpShareSlides">Share all slides</button>
+      <button type="button" class="preset-btn" id="bpCopyDeckSummary">Copy summary</button>
+    </div>
+    <div class="section-sub">Pictures and the summary can be shared now, before publishing. The review link needs Publish.</div>`;
 }
 
 function boardPackOptionsHtml(it, index){
@@ -375,7 +435,12 @@ function buildBoardPackSectionHtml(){
       <button type="button" class="preset-btn" id="bpSave">Save pack</button>
       <button type="button" class="preset-btn${boardPackPreviewOpen ? ' active' : ''}" id="bpPreviewBtn" aria-expanded="${boardPackPreviewOpen}">${boardPackPreviewOpen ? 'Hide preview' : 'Preview'}</button>
     </div>
-    <div id="bpMessage" class="section-sub">${escapeHtml(boardPackMessage)}</div>`;
+    <div id="bpMessage" class="section-sub">${escapeHtml(boardPackMessage)}</div>
+    ${boardPackShareReady ? `<div class="bp-share-ready" id="bpShareReady">
+      <span>${escapeHtml(boardPackShareReady.label)} ready.</span>
+      <button type="button" class="preset-btn active" id="bpShareNow">Share</button>
+      <button type="button" class="preset-btn" id="bpSaveNow">Save</button>
+    </div>` : ''}`;
   // Built once per drawing: the publish state compares it with what is
   // published, and the Share Deck preview draws it.
   const liveDeck = (ShareDeck.isLive(boardPackPublished[boardPackMonth]) || (boardPackPreviewOpen && boardPackPreviewMode === 'deck')) ? boardPackDeck(boardPackDraft) : null;
@@ -432,7 +497,8 @@ function wireBoardPackSection(){
   const modeDeck = document.getElementById('bpModeDeck');
   if(modeDeck) modeDeck.onclick = () => { boardPackPreviewMode = 'deck'; renderManage(); };
   const frame = document.getElementById('bpDeckFrame');
-  if(frame) DeckView.mount(frame);
+  boardPackDeckCtl = frame ? DeckView.mount(frame) : null;
+  wireBoardPackPictures(box);
 
   const month = boardPackMonth;
   const say = (text) => { boardPackMessage = text; const m = document.getElementById('bpMessage'); if(m) m.textContent = text; };
@@ -486,4 +552,76 @@ function wireBoardPackSection(){
     }
     renderManage();
   };
+}
+
+// ---- Pictures: a module, a slide, or the whole deck ----------------------
+
+const BOARD_PACK_IMAGES = { brand: 'assets/brand/mp-mark.svg', crown: 'assets/rankings/podium-crown-laurel.png' };
+
+async function boardPackImages(){
+  const [brand, crown] = await Promise.all([CardPainter.loadImage(BOARD_PACK_IMAGES.brand), CardPainter.loadImage(BOARD_PACK_IMAGES.crown)]);
+  return { brand, crown };
+}
+
+const bpSlug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+// The deck's pictures: the cover, then every slide players would see.
+function boardPackDeckPictures(){
+  const deck = boardPackDeck(boardPackDraft);
+  const shown = ShareDeck.visibleSlides(deck, boardPackPlayerCanSee);
+  const label = monthLabel(deck.month);
+  const end = { id: 'end', kind: 'note', eyebrow: '', title: `That’s ${label.split(' ')[0]}.`, body: 'Every table, every game and your own month are in Money Padel.', foot: '' };
+  return { deck, label, cards: [{ id: 'cover', kind: 'cover', title: label }].concat(shown, [end]) };
+}
+
+async function boardPackShare(makeCanvases, label){
+  const images = await boardPackImages();
+  const files = await Promise.all(makeCanvases(images).map(([cv, name]) => CardPainter.toFile(cv, name)));
+  const meta = { title: `Money Padel — ${monthLabel(boardPackMonth)}` };
+  const outcome = await CardPainter.share(files, meta);
+  boardPackShareReady = outcome === 'ready' ? { files, meta, label } : null;
+  boardPackMessage = outcome === 'shared' ? `${label} shared.`
+    : outcome === 'saved' ? `${label} saved to this device — post ${files.length === 1 ? 'it' : 'them'} from your photos.`
+    : outcome === 'ready' ? '' : '';
+  renderManage();
+}
+
+function wireBoardPackPictures(box){
+  const month = boardPackMonth;
+  box.querySelectorAll('[data-bp-share-item]').forEach(el => {
+    el.onclick = () => {
+      const key = el.dataset.bpShareItem;
+      const item = BoardPack.selected(boardPackDraft).find(it => (it.kind === 'note' ? `note:${it.id}` : it.id) === key);
+      if(!item) return;
+      const sheet = boardPackSheet(item, month);
+      el.disabled = true;
+      boardPackShare(images => [[CardPainter.sheet(sheet, images), `money-padel-${month}-board-pack-${bpSlug(item.kind === 'note' ? (item.title || 'commentary') : item.id)}.png`]], `${sheet.title} picture`);
+    };
+  });
+  const one = document.getElementById('bpShareSlide');
+  if(one) one.onclick = () => {
+    const { cards } = boardPackDeckPictures();
+    const i = Math.min(boardPackDeckCtl ? boardPackDeckCtl.index() : 0, cards.length - 1);
+    one.disabled = true;
+    boardPackShare(images => [[CardPainter.slide(cards[i], { brand: images.brand, crown: images.crown, month: monthLabel(month) }), `money-padel-${month}-review-${String(i + 1).padStart(2, '0')}-${bpSlug(cards[i].id)}.png`]], 'Slide picture');
+  };
+  const all = document.getElementById('bpShareSlides');
+  if(all) all.onclick = () => {
+    const { cards } = boardPackDeckPictures();
+    all.disabled = true;
+    boardPackShare(images => cards.map((c, i) => [CardPainter.slide(c, { brand: images.brand, crown: images.crown, month: monthLabel(month) }), `money-padel-${month}-review-${String(i + 1).padStart(2, '0')}-${bpSlug(c.id)}.png`]), `${cards.length} slide pictures`);
+  };
+  const summary = document.getElementById('bpCopyDeckSummary');
+  if(summary) summary.onclick = () => {
+    const pub = boardPackPublished[month];
+    const text = ShareDeck.isLive(pub) ? boardPackReviewSummary(pub) : ShareDeck.summaryText(boardPackDeck(boardPackDraft), { canSee: boardPackPlayerCanSee });
+    copyText(text).then(ok => { boardPackMessage = ok ? 'Summary copied — paste it into WhatsApp.' : 'Could not copy the summary.'; const m = document.getElementById('bpMessage'); if(m) m.textContent = boardPackMessage; });
+  };
+  const now = document.getElementById('bpShareNow');
+  if(now && boardPackShareReady) now.onclick = () => {
+    const ready = boardPackShareReady;
+    navigator.share(Object.assign({ files: ready.files }, ready.meta)).then(() => { boardPackShareReady = null; boardPackMessage = `${ready.label} shared.`; renderManage(); }, () => {});
+  };
+  const saveNow = document.getElementById('bpSaveNow');
+  if(saveNow && boardPackShareReady) saveNow.onclick = () => { CardPainter.save(boardPackShareReady.files); boardPackShareReady = null; renderManage(); };
 }

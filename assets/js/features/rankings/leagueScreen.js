@@ -331,7 +331,7 @@ function renderSummaryLeagueTable(){
     // dropped from the grouped table. Each one collapses on its own: they are
     // four separate competitions, not one block.
     let anyTierShown = false;
-    TIER_ORDER_LIST.forEach(tier=>{
+    groupedTiers().forEach(tier=>{
       const rows = splitRows.filter(s => s.tier === tier && s.games > 0);
       if(rows.length === 0) return;
       anyTierShown = true;
@@ -514,7 +514,7 @@ function renderMeritTable(){
     meritRowsByTier = {};
     table.forEach(r => { if(r.played > 0) meritRowsByTier[r.tier] = (meritRowsByTier[r.tier] || 0) + 1; });
     let anyShown = false;
-    TIER_ORDER_LIST.forEach(tier=>{
+    groupedTiers().forEach(tier=>{
       const rows = table.filter(r => r.tier === tier && r.played > 0);
       if(rows.length === 0) return;
       anyShown = true;
@@ -645,7 +645,7 @@ function renderMonthlyRace(){
 
   let anyShown = false;
   const rowsByTier = {};
-  TIER_ORDER_LIST.forEach(tier=>{
+  groupedTiers().forEach(tier=>{
     const rows = table.filter(r => r.tier === tier);
     if(rows.length === 0) return;
     anyShown = true;
