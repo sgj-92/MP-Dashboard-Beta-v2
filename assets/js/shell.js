@@ -110,6 +110,7 @@ function syncPlayHeadingVisibility(){
 // ("Shaun ▾"), reusing the same selector the first-launch flow and My
 // Player entry already use -- reverts to the plain section label elsewhere.
 function updateHeaderForSection(){
+  syncDesktopShell();   // the rail shows who is viewing
   const titleEl = document.getElementById('shellSectionTitle');
   if(!titleEl) return;
   if(activeSection === 'home'){
@@ -126,6 +127,7 @@ function updateBottomNavHighlight(){
   document.querySelectorAll('.shell-nav-item').forEach(el=>{
     el.classList.toggle('active', el.dataset.section === activeSection);
   });
+  syncDesktopShell();
 }
 
 // The header's small section label is redundant once a screen has its own
@@ -144,7 +146,7 @@ function renderSectionSubnav(){
   const container = document.getElementById('sectionSubnav');
   // Only the screens this reader may see (canSeeTab, app.js).
   const items = (SECTION_SUBNAV[activeSection] || []).filter(it => canSeeTab(it.tab));
-  if(!items.length){ container.style.display = 'none'; container.innerHTML = ''; return; }
+  if(!items.length){ container.style.display = 'none'; container.innerHTML = ''; syncDesktopShell(); return; }
   container.style.display = 'grid';
   // minmax(0, 1fr), not plain 1fr -- a grid track's implicit min-width is
   // "auto" (its content's own minimum size) just like a flex item, so a
@@ -158,6 +160,7 @@ function renderSectionSubnav(){
   container.querySelectorAll('.section-subnav-item').forEach(btn=>{
     btn.onclick = ()=>{ const b = legacyTabBtn(btn.dataset.tab); if(b) b.click(); };
   });
+  syncDesktopShell();
 }
 
 // Unlocking, locking or changing a visibility setting redraws the shell's own
@@ -646,6 +649,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   updateBottomNavHighlight();
   renderSectionSubnav();
+  // A laptop or a monitor gets the desktop layout; a phone, nothing new.
+  initDesktopShell();
 
   // The shell exists. If the record is already here, this is the half that
   // finished second and the first screen is drawn now; if it is not, init()

@@ -476,6 +476,11 @@ function buildBoardPackSectionHtml(){
     <button type="button" class="fg-toggle-btn ${boardPackView === 'club' ? 'active' : ''}" id="bpViewClub" aria-pressed="${boardPackView === 'club'}">Club pack</button>
     <button type="button" class="fg-toggle-btn ${boardPackView === 'players' ? 'active' : ''}" id="bpViewPlayers" aria-pressed="${boardPackView === 'players'}">Player packs</button>
   </div>`;
+  // With the preview open, the editor and the preview sit side by side on a
+  // laptop or monitor (bp-split, layout/desktop.css); on a phone the
+  // wrappers have no box and the preview follows the editor as before.
+  const split = boardPackView === 'club' && !!boardPackDraft && boardPackPreviewOpen;
+  if(split) html += `<div class="bp-split"><div class="bp-split-edit">`;
   html += `<div class="fg-controls">
     <div class="fg-row"><label class="fg-label" for="bpMonth">Month</label>
       <select id="bpMonth" class="fg-select">${months.map(m => `<option value="${m}" ${m === boardPackMonth ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>
@@ -510,11 +515,13 @@ function buildBoardPackSectionHtml(){
   const liveDeck = (ShareDeck.isLive(boardPackPublished[boardPackMonth]) || (boardPackPreviewOpen && boardPackPreviewMode === 'deck')) ? boardPackDeck(boardPackDraft) : null;
   html += boardPackPublishHtml(liveDeck) + `</div>`;
   if(boardPackPreviewOpen){
+    html += `</div><div class="bp-split-preview">`;
     html += `<div class="fg-toggle bp-preview-mode" role="group" aria-label="Preview" style="margin:12px 0 4px;">
       <button type="button" class="fg-toggle-btn ${boardPackPreviewMode === 'pack' ? 'active' : ''}" id="bpModePack" aria-pressed="${boardPackPreviewMode === 'pack'}">Board Pack</button>
       <button type="button" class="fg-toggle-btn ${boardPackPreviewMode === 'deck' ? 'active' : ''}" id="bpModeDeck" aria-pressed="${boardPackPreviewMode === 'deck'}">Share Deck</button>
     </div>`;
     html += `<div id="bpPreview" data-mode="${boardPackPreviewMode}">${boardPackPreviewMode === 'deck' ? boardPackDeckPreviewHtml(liveDeck) : boardPackHtml(boardPackDraft)}</div>`;
+    html += `</div></div>`;
   }
   return html;
 }

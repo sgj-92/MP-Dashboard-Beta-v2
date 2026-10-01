@@ -96,8 +96,9 @@ async function open(options = {}) {
   // where 00:30 on 1 October is still 30 September in UTC.
   // `mobile` is a touch phone at 375 x 667 -- the Monthly Review is opened
   // from WhatsApp on one, and a swipe needs a touch screen to be a swipe.
+  // `viewport` sets any other size -- a laptop or a desktop monitor, say.
   const page = await browser.newPage({
-    viewport: options.mobile ? { width: 375, height: 667 } : { width: 430, height: 932 },
+    viewport: options.viewport || (options.mobile ? { width: 375, height: 667 } : { width: 430, height: 932 }),
     ...(options.mobile ? { isMobile: true, hasTouch: true, deviceScaleFactor: 2 } : {}),
     ...(options.timezoneId ? { timezoneId: options.timezoneId } : {}),
   });

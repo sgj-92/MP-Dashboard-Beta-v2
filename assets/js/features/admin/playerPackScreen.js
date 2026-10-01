@@ -236,6 +236,8 @@ function buildPlayerPacksHtml(){
   const link = d.links[name];
   const live = link && !link.withdrawn;
   const liveDeck = (live || (ppPreviewOpen && ppPreviewMode === 'deck')) ? playerPackDeck(name, month, config, pack) : null;
+  // Editor and preview side by side on a laptop or monitor (bp-split).
+  if(ppPreviewOpen) html += `<div class="bp-split"><div class="bp-split-edit">`;
   html += `<div class="pp-head"><button type="button" class="preset-btn" id="ppBack">‹ All players</button>
     <span class="pp-title">${escapeHtml(name)} · ${escapeHtml(monthLabel(month))}</span></div>
     <div class="section-sub" id="ppStatus">${escapeHtml(ppStatusText())}</div>
@@ -246,6 +248,7 @@ function buildPlayerPacksHtml(){
     ${BoardPack.PLAYER.selected(config).length ? bpSaveAllHtml('pp', 'pack') : ''}`;
   html += ppPublishHtml(d, name, liveDeck);
   if(ppPreviewOpen){
+    html += `</div><div class="bp-split-preview">`;
     html += `<div class="fg-toggle bp-preview-mode" role="group" aria-label="Preview" style="margin:12px 0 4px;">
       <button type="button" class="fg-toggle-btn ${ppPreviewMode === 'pack' ? 'active' : ''}" id="ppModePack" aria-pressed="${ppPreviewMode === 'pack'}">Pack</button>
       <button type="button" class="fg-toggle-btn ${ppPreviewMode === 'deck' ? 'active' : ''}" id="ppModeDeck" aria-pressed="${ppPreviewMode === 'deck'}">Share Deck</button>
@@ -261,6 +264,7 @@ function buildPlayerPacksHtml(){
     } else {
       html += `<div id="ppPreview" data-mode="pack">${playerPackReportHtml(pack, config)}</div>`;
     }
+    html += `</div></div>`;
   }
   return html;
 }

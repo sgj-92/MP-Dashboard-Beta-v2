@@ -1,7 +1,8 @@
-// ===================== DESKTOP PHONE PREVIEW =====================
+// ===================== PHONE AND DESKTOP PREVIEW =====================
 // A review utility, not part of the app: it frames the real, current app in a
 // phone-sized iframe so it can be checked at phone widths on a laptop without
-// DevTools. Nothing here is loaded by index.html, and nothing in the app knows
+// DevTools -- and, at the desktop presets, at laptop and monitor sizes, so the
+// desktop layout can be checked from a smaller screen (scaled to fit). Nothing here is loaded by index.html, and nothing in the app knows
 // it is being previewed.
 //
 // The rules it keeps:
@@ -24,6 +25,11 @@
     { width: 375, height: 812, note: 'Compact iPhone · regression width' },
     { width: 390, height: 844, note: 'iPhone · primary design width' },
     { width: 412, height: 915, note: 'Larger Android / Samsung' },
+    // Desktop presets: the app's own desktop layout (assets/css/layout/
+    // desktop.css). Landscape already; there is nothing to rotate.
+    { width: 1280, height: 800, note: 'Laptop', desktop: true },
+    { width: 1440, height: 900, note: 'Large laptop', desktop: true },
+    { width: 1920, height: 1080, note: 'Desktop monitor', desktop: true },
   ];
   const DEFAULT_WIDTH = 390;
   // The frame's bezel on each side, in CSS pixels. Part of the device's size
@@ -40,7 +46,7 @@
   // The app's viewport for a preset and orientation.
   function viewport(width, landscape) {
     const p = preset(width);
-    return landscape ? { width: p.height, height: p.width } : { width: p.width, height: p.height };
+    return landscape && !p.desktop ? { width: p.height, height: p.width } : { width: p.width, height: p.height };
   }
 
   // Where the app lives, from where this page is served. The page sits in
@@ -132,7 +138,10 @@
       doc.querySelectorAll('[data-width]').forEach((b) => {
         b.setAttribute('aria-pressed', String(Number(b.dataset.width) === state.width));
       });
-      $('rotate').setAttribute('aria-pressed', String(state.landscape));
+      const desk = !!preset(state.width).desktop;
+      $('rotate').setAttribute('aria-pressed', String(state.landscape && !desk));
+      $('rotate').disabled = desk;
+      doc.body.classList.toggle('is-desktop-preset', desk);
       $('readout').textContent = `${vp.width} × ${vp.height}` + (scale < 1 ? ` · shown at ${Math.round(scale * 100)}%` : '');
       doc.body.dataset.width = String(vp.width);
       doc.body.dataset.scale = String(scale);
