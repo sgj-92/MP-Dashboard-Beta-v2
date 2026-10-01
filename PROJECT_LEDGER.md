@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`2d43540`** (partnership draws; inclusive win/loss %, 1 Oct; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **824 / 824 on `main`** (1 Oct, after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`d6e4ae1`** (Player Monthly Packs, 1 Oct; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **839 / 839 on `main`** (1 Oct, after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,26 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Player Monthly Packs — DONE (`d6e4ae1`), 1 Oct.** Shaun's brief.
+- **Where:** Admin / Manage › Monthly Board Pack › **Player packs** (a
+  Club pack | Player packs switch above the month). Admin only.
+- **What an Admin can do:** pick the month, see every player who played,
+  **Generate all** (a draft for each, one write, never published, edits
+  already made are kept), open one player, switch modules on and off,
+  reorder them, set their options, add an **Admin note**, preview the pack
+  and its mobile Share Deck, share pictures and the summary, publish,
+  republish and unpublish.
+- **Modules (default order):** Month at a glance; Matchup types;
+  Partners; Opponents and head-to-head; Best results; Where results were
+  weaker; Monthly movement; Next-month ideas. Every row shows the matches
+  it rests on.
+- **Private link:** `review/?p=<token>`, a 128-bit random token. See
+  Section 5, *OPEN 1 Oct — Player Packs*, for the access model and the one
+  Firestore setting it needs to be private in storage too.
+- **Published packs are snapshots** with revisions, as the club's review
+  is.
+- No rating, League, Merit or Race rule changed; no new stats engine.
 
 **Board Pack options and saving as you go — DONE (`f58ec1d`), 1 Oct.**
 Shaun's requests from his phone.
@@ -1509,6 +1529,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | DQ6–DQ9 as recommended | Shaun, 30 Sep 2026, before Phase 2. **DQ6:** a player in the game may record that the court is booked. It is attributed to them, only on an agreed game they are still in and that is not archived, and only an Admin can undo it. The Admin review of unrecorded bookings stays. **DQ7:** replacing a player stays Admin-only. **DQ8:** players get no "Change plan"; date, time and venue stay Admin edits. **DQ9:** a plain request may carry an optional time and venue, as a suggestion, never a booking. Implemented in `fixtureFlow.js` on `main` (`7d70cc0`). |
 | Accept all: the new Play lists, DQ1 as recommended, and the Phase 3a (Home) go-ahead | Shaun, 30 Sep 2026 ("Accept all"). **Play lists accepted:** "Upcoming, as before" and "Requests, as before" are to be retired from Club on `ux/player-reset-v2`. **DQ1:** no promotion bar and no threshold line; keep the one-line gap, worded "N pts below the lowest-rated Tier A player". **Phase 3a (Home) approved.** Shaun's same message said the Board Pack must not touch the redesign branch, so both are queued behind it (NEXT). |
 | Admin Monthly Board Pack: a stored choice, figures drawn live | Shaun's brief, 30 Sep 2026; implementation choices CCode's. **DONE `9e4a5e6`.** A per-month document `moneypadel_board_pack_YYYY-MM` holds only the admin's choice: modules (id, on/off, options) and commentary in one ordered list, who saved it and when, plus a fingerprint of the month's record. It is read when an admin opens that month, never at start-up. Figures are never stored. Whether a finalised pack should freeze its figures is Shaun's call (Section 5). |
+| Player Monthly Packs: built on the Board Pack and Share Deck; private token links; published packs are snapshots | Shaun's brief, 1 Oct 2026; implementation and the access model CCode's, as the brief asked ("propose the safest simple access model"). **DONE `d6e4ae1`.** One catalogue engine serves both packs (`BoardPack.forCatalogue`; `BoardPack.PLAYER`). The player's month is a pure model (`domain/playerPack/playerMonth.js`) fed from the canonical selectors, and its slides are the Share Deck's shape (`playerDeck.js`), so the same deck, pictures and publishing serve both. **Composition:** a team is labelled by its players' tiers on the match date, strongest first (S > A > B > C, `?` if unknown), and a matchup is "my team vs theirs" from the player's side, so one match is "BB vs AB" for one player and "AB vs BB" for an opponent. **Targets** are four fixed rules over the month's own record (rematch, partner, thin evidence, own tier), each with its reason and sample, never a forecast. **Access:** each published pack is stored under a 128-bit random token in its own `playerPacks` collection, and the link is `review/?p=<token>`; changing a name, month or id in the address reaches nothing. The storage setting that completes it is Shaun's (Section 5). |
 | A published Monthly Review is a snapshot of its slides | CCode, 30 Sep 2026, implementing Shaun's principle in the Share Deck brief ("a published monthly review should remain historically stable"). **DONE `4af924d`.** Publish stores the Share Deck exactly as shown: formatted, render-ready slides, with revision, first and last published, by whom, and the record fingerprint. It is stored in `moneypadel_review_YYYY-MM`. **Why a snapshot:** nothing month-end in the record is immutable today. Month-end ratings, ranks and tiers are recomputed from the journey on every load, so later results, corrections, club decisions or a calculation change would all move a live review. **Not a second source of truth:** it is a record of what was sent. Nothing reads it for a calculation, and it is labelled a publication. The Board Pack itself stays live (see the 30 Sep row above). |
 | Monthly Review link: `review/?m=YYYY-MM`; image export next, at 1080 × 1350 | CCode, 30 Sep 2026. **The link is a query, not a path**, so it works unchanged on every host (Vercel, Pages, local). `/review/2026-09` would need a Vercel rewrite and absolute asset paths, which break Pages. **Image export is staged as the next sub-increment.** Its format is **1080 × 1350 (4:5)**, the portrait WhatsApp shows whole in a chat; 9:16 is a stories format. The cards are already 4:5 and sized in container units, so an export will match the card. No image library was added: client-side capture without one is fragile (fonts, Safari canvas taint). **"View full stats" links to the app's home.** Deep links into a particular screen need a router entry point, which belongs with the redesign's shell and history work. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
@@ -2463,6 +2484,61 @@ with Shaun.**
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 1 Oct — Player Packs: private links, and one storage setting
+
+**For Shaun. Nothing is blocked; packs can be published and shared now.**
+- **The access model built (CCode, as the brief asked):**
+  - Each published pack is stored under a **random 128-bit token**
+    (22 URL-safe characters), in its own Firestore collection,
+    `playerPacks`. The link is `review/?p=<token>`.
+  - Nothing in the link names the player or the month. Changing a name,
+    month or id in the address reaches nothing. A wrong, unknown or
+    withdrawn token shows the same "not available" page and names nobody.
+  - The token is made on first publish and kept, so republishing never
+    breaks a link already sent. Unpublishing withdraws the pack at once,
+    and nothing is deleted.
+  - The page is `noindex` and sends no referrer, so the token is not
+    passed to any site the page links to.
+  - A section the club has made Admin-only stays out of a shared pack,
+    as it does in the club's review.
+  - The club's Monthly Review keeps its simple month link (`?m=`).
+- **What this protects, and what it does not:**
+  - It stops a player reaching another player's pack from the address
+    bar. That is the brief's bar ("not trivially enumerable").
+  - It does **not** make the stored packs secret from someone who opens
+    the browser's developer tools. The beta's Firestore has open read and
+    write (Section 3), so anyone with the app's key could list the
+    `playerPacks` collection, or read the drafts document, which holds the
+    index of tokens. The admin password hash is already exposed the same
+    way today.
+- **The decision for Shaun: add one Firestore security rule.**
+  - **What it does:** in the beta project's rules, `playerPacks` allows
+    reading **one document by its id** but not **listing** the collection
+    (`allow get; deny list`).
+  - **Its effect:** packs become private in storage too. Only someone
+    with a link can read a pack. No app code changes; the review page
+    already reads by id only.
+  - **Recommended: yes**, once the beta has any rules at all. It is a
+    console change to the shared database, so CCode has not made it.
+  - The token index in the drafts document would still be readable while
+    the `moneypadel` collection stays open. Closing that needs Admin
+    authentication, which the brief ruled out. Say if it matters.
+- **Data left out, for want of a canonical source:**
+  - **"Relevant players you did not play":** there is no agreed rule for
+    who is relevant (tier, activity, rating range). Not built.
+  - **Per-match expectation:** shown only as the engine's stored
+    performance figure (actual minus expected game share). No new
+    expectation is worked out. "Furthest above expectation" appears only
+    when a match beat it.
+  - **Win probabilities and predictions:** none, as the brief said. Next
+    month's ideas say what to play, never whom to beat.
+  - **"Inactive" status** still has no history (known, Section 5 Board
+    Pack note), so the pack does not use it.
+- **Minimums (configurable per pack, documented on the screen):**
+  head-to-head records 2+ matches (or 1 or 3); weaker results 2+
+  matches (or 1 or 3); partner chemistry 2+ decided games (the Insights
+  rule). One match is shown but never called a pattern.
+
 ### OPEN 30 Sep — Monthly Review: public links and what comes next
 
 **For Shaun. Nothing is blocked; the review works as built.**
@@ -3362,6 +3438,63 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 1 Oct 2026 (Player Monthly Packs)
+
+**`d6e4ae1` on `app-features-fixes` = `main`.**
+- **Architecture:** built on the Board Pack and Share Deck; no new stats
+  engine.
+  - `boardPackConfig.js`: the catalogue functions are now
+    `forCatalogue(MODULES)`. The club catalogue is unchanged (21
+    modules); `BoardPack.PLAYER` is the player catalogue (8 modules).
+  - `domain/playerPack/playerMonth.js` (pure): `teamLabel`, `side`,
+    `build`, `bestResults`, `weakerResults`, `targets`.
+  - `domain/playerPack/playerDeck.js` (pure): player slides in the Share
+    Deck shape, with a player cover and closing.
+  - `features/admin/playerPackData.js`: `playerMonthlyPack`,
+    `playerPackSources`, drafts storage, tokens,
+    `publishPlayerPack` / `unpublishPlayerPack`.
+  - `features/admin/playerPackScreen.js`: the Player packs view. The
+    module editor is shared with the club pack (`wirePackEditor`).
+  - `review/review.js`: `?p=<token>`. `DeckView` and `CardPainter` take
+    the player's cover and closing. `ShareDeck.summaryText` takes the
+    deck's title and link label.
+  - `fsGetIn` / `fsSetIn` for the `playerPacks` collection.
+- **Selectors reused, not re-implemented:** `computeMonthlySummaryStats`,
+  `leagueSplitRows` + `sortLeagueRows`, `MeritTable.build` (positions and
+  each win's hard / even / favoured), `buildMonthlyRace`,
+  `MonthlyViews.playerMonth`, `V3_MATCH_FACTS` (rating change and
+  performance), `buildPartnerships` (chemistry), `getAllApprovedMatches`,
+  `historicalTierOf`.
+- **Composition and target rules:** Section 3 (Decisions). Targets, in
+  order: rematch (an opponent met 2+ times, within one result); partner
+  (2+ together, more wins than losses); thin evidence (a matchup type
+  played once); own tier (fewer than half of 3+ matches all in the
+  player's tier). Each carries its reason and sample.
+- **Storage:** drafts in `moneypadel_player_packs_YYYY-MM` (every
+  player's choices and the token index), saved as you go. Published packs
+  in `playerPacks/<token>`, a snapshot with revisions.
+- **Found and fixed on the way:** the first draft's autosave never
+  wrote. Its timer cleared its own handle before saving. The Generate-all
+  test caught it.
+- **Tests:** `playerMonth` (8) and `playerPack` (7, browser), covering:
+  - scoping and W-D-L reconciliation against the club's tables, for every
+    player in August and September;
+  - perspective and mid-month tier change;
+  - Generate all, saved drafts, publish, republish and unpublish, and
+    Admin-only refusals;
+  - the private link, and wrong, guessed and withdrawn tokens;
+  - snapshot stability, no referrer, the visibility filter;
+  - the 375px deck, pictures, sample counts and no forecasting language;
+  - calculations unchanged.
+  - All 15 fail against `501bc8f`; 14 mutations, all caught.
+  - **839 / 839.** Behaviour snapshot against `501bc8f`: 37 of
+    38 states identical; `manage-admin` differs only by the new Club pack
+    | Player packs switch.
+- **To check on a phone:** opening a pack link from WhatsApp.
+
+Baton → Shaun / CGPT. One decision for Shaun: the Firestore rule
+(Section 5).
 
 ### CCode — 1 Oct 2026 (Board Pack options, autosave)
 
@@ -7671,6 +7804,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `d6e4ae1` | Player Monthly Packs. Admin › Monthly Board Pack › Player packs: a pack per player per month (8 modules plus Admin notes), Generate all, saved as you go, Share Deck preview, pictures, summary, and publish / unpublish to a private 128-bit token link (`review/?p=`) stored as a snapshot in `playerPacks`. Pure `playerMonth.js` / `playerDeck.js`; canonical selectors only. 15 tests (all fail on `501bc8f`), 14 mutations caught; 839/839. |
 | `6291cdc` (`ux/player-reset-v2`) | Phase 2 Play. My Games \| Club with Arrange a Game; My Games by what needs doing, with answers in place; Club counters; the game sheet with the stepper and the existing fixture card; a player's "I've booked a court" (DQ6); Arrange a Game (Suggested for you, Request with optional time and venue, Paste a list). Existing screens are unchanged (content snapshot identical, 38 states × 2 widths). 9 tests; 816/816 on the branch. |
 | `86beb59` | `submitGameRequest`: one path for asking for a game, carrying DQ9's optional time and venue. The Requests form behaves as before. 2 tests; 780/780. |
 | `7d70cc0` | DQ6 (player court booking, attributed, Admin-only reversal), DQ9 (request time and venue), `domain/fixtures/playView.js` (My Games / Club / stepper); the Play badge now counts My Games' Needs you. 10 tests; 778/778. |
@@ -7767,6 +7901,13 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 1 Oct (latest): Player Monthly Packs are live (`d6e4ae1`,
+839 / 839).** Baton → Shaun / CGPT.
+- **Try it:** Admin / Manage › Monthly Board Pack › Player packs ›
+  Generate all, then open a player › Preview › Publish pack › Copy link.
+- **For Shaun (Section 5, OPEN 1 Oct):** add the `playerPacks`
+  read-by-id, no-listing Firestore rule. Recommended.
 
 **CCode, 1 Oct (later still): partnerships show draws, and the win/loss
 % counts at the threshold (`2d43540`, 824 / 824).** Baton → Shaun / CGPT.
