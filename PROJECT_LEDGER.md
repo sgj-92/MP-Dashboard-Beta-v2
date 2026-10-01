@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`a5cbe84`** (Monthly Review: Unpublish + Kings tiles, 30 Sep; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **815 / 815 on `main`** (30 Sep, after Unpublish + Kings tiles); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`6f40764`** (Tier S sections switch + pictures, 1 Oct; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **820 / 820 on `main`** (1 Oct, after Tier S + pictures); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,34 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Tier S sections switch; Board Pack and Share Deck as pictures — DONE
+(`6f40764`), 1 Oct.** Shaun asked for all three.
+- **Tier S sections** (Admin › Visible to everyone): Shown or Hidden,
+  club-wide, Admins included. It defaults to Shown, so nothing changed
+  until it was switched.
+  - Hidden drops the Tier S **section** from: League and Merit by tier,
+    the Monthly Race, the Kings of Tiers panel, and the Board Pack and
+    Share Deck tier modules.
+  - The player stays in Power Rankings, the results table, Monthly
+    Information and their profile.
+  - No figure changes.
+  - League "All together" already left Tier S out; that rule is
+    unchanged.
+- **Pictures, all before publishing:**
+  - every Board Pack module and note has **Share image**;
+  - the Share Deck preview has **Share this slide**, **Share all slides**
+    and **Copy summary** (no link until it is published).
+  - **Sizes:** slides are 1080 × 1350; modules are 1080 wide and as tall
+    as needed, with League tiers in one picture and aligned columns.
+  - They open the phone's share sheet (WhatsApp is on it), or are saved
+    where a browser cannot share files.
+  - They are drawn on a canvas from the same data as the screen (no
+    library), via Board Pack "blocks", so a picture shows what the report
+    shows.
+  - Only players' slides are included; Admin-only sections stay out.
+- **This is the image export staged on 30 Sep (Section 3),** now done at
+  the agreed 1080 × 1350.
 
 **Monthly Review: Unpublish and Kings tiles — DONE (`a5cbe84`),
 30 Sep.** Shaun asked for both.
@@ -3312,6 +3340,31 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 1 Oct 2026 (Tier S sections; pictures)
+
+**`6f40764` on `app-features-fixes` = `main`.**
+- **Tier S:**
+  - `tierSSectionsShown()` and `groupedTiers()` in `permissions.js`,
+    stored as `tierSSections` in the visibility document;
+  - used by `leagueScreen` (League, Merit, Race), `rankingsChrome`
+    (Kings) and `boardPackData`.
+- **Pictures:**
+  - `features/review/cardPainter.js` (`slide`, `sheet`, `share`, `save`);
+  - Board Pack renderers refactored to `boardPackBlocks()` plus
+    `bpBlocksHtml()`, with unchanged HTML; `boardPackSheet()`;
+  - `wireBoardPackPictures()`.
+  - **Share-sheet detail:** a share sheet must open from a tap. If
+    preparing the pictures used the tap up (iPhone), the section offers a
+    one-tap **Share** with the pictures ready.
+- **Tests:** `tierS` (1) and `pictures` (4), all mutation-checked.
+  - The snapshot against `470ef73`: 37 of 38 identical; `manage-admin`
+    differs by the new switch.
+  - **820 / 820.**
+- **To check on a phone:** sharing pictures to WhatsApp, on iPhone and
+  Android. Headless tests cover the share sheet only with a stand-in.
+
+Baton → Shaun / CGPT.
 
 ### CCode — 30 Sep 2026 (Monthly Review: Unpublish, Kings tiles)
 
@@ -7675,6 +7728,11 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 1 Oct: the Tier S sections switch, and pictures from the Board
+Pack and the Share Deck, are live (`6f40764`, 820 / 820).** Baton → Shaun
+/ CGPT. Please try sharing to WhatsApp from a phone. Everything below
+still stands.
 
 **CCode, 30 Sep (later still): the Monthly Review Share Deck is live on
 `main` (`4af924d`, 810 / 810). Baton → Shaun / CGPT.**
