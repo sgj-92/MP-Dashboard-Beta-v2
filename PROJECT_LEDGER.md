@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`d6e4ae1`** (Player Monthly Packs, 1 Oct; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **839 / 839 on `main`** (1 Oct, after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`337c70e`** (Board Pack losing modules, 1 Oct; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **843 / 843 on `main`** (1 Oct, after the Board Pack losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,24 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Board Pack: losing has its own module and Highest loss % — DONE
+(`337c70e`), 1 Oct.** Shaun's request.
+- **"Won a set % of games or more"** is the old "Won or lost" module
+  (same id, `over_80`), now winners only.
+- **"Lost a set % of games or more"** (`lost_pct`) is new, with **its own
+  threshold** (50–100%, 80 by default; reaching it counts) and its own
+  minimum games. On by default, right after the winners.
+  - A pack saved before the split keeps showing its losers: the new
+    module arrives right after the winners, on or off as they were, with
+    their threshold and minimum.
+- **"Highest loss % (3+ games)"** (`worst_record`) sits beside Best win %,
+  off by default. It is losses ÷ games played, so draws count as games.
+- All three have report blocks, Share image pictures and Share Deck
+  slides.
+- **Found and fixed:** saving pictures to a device dropped any past the
+  tenth (Chromium ignores a burst of more than ten downloads). An 11-slide
+  deck lost its last picture. Files are now handed over a moment apart.
 
 **Player Monthly Packs — DONE (`d6e4ae1`), 1 Oct.** Shaun's brief.
 - **Where:** Admin / Manage › Monthly Board Pack › **Player packs** (a
@@ -2484,6 +2502,21 @@ with Shaun.**
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 1 Oct — Monthly Information: "Lowest win % (highest loss %)" ranks by win %
+
+**For Shaun / CGPT. Nothing is blocked; not changed.**
+- The Information tab's list is titled "Lowest win % (highest loss %)",
+  but it ranks by **lowest win %** and shows the first tied player's
+  loss %.
+- With draws those differ. 2W 2D 1L has a lower win % (40%) than 3W 0D 2L
+  (60%), but loses less (20% against 40%).
+- The new Board Pack module "Highest loss %" ranks by loss % proper, from
+  a new `highestLossPct` list in the same selector (`monthlyInformation`).
+- **The question:** should the Information tab's list become "Highest
+  loss %" on the same rule, or keep its title as "Lowest win %"? CCode's
+  recommendation: retitle it "Lowest win %", which is what it measures,
+  and leave the ranking alone. It is a one-line change either way.
+
 ### OPEN 1 Oct — Player Packs: private links, and one storage setting
 
 **For Shaun. Nothing is blocked; packs can be published and shared now.**
@@ -3438,6 +3471,35 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 1 Oct 2026 (Board Pack: losing modules)
+
+**`337c70e` on `app-features-fixes` = `main`.**
+- **Catalogue:** `over_80` retitled (winners only); new `lost_pct` and
+  `worst_record`. The club catalogue is now 23 modules.
+  - The modules share `THRESHOLD` / `PCT_MIN` option definitions.
+  - `splitFrom` on a catalogue module places it after its parent in a
+    pack saved before it existed, copying the parent's on/off state and
+    options. Any other new module still arrives off, at the end.
+- **Data:** `boardPackThreshold(month, o)` serves both threshold modules.
+  `monthlyInformation` gains `highestLossPct`; its existing lists are
+  unchanged.
+- **Pictures:** `CardPainter.save` is async, 250ms between files, and
+  `share()` awaits it.
+- **Tests:**
+  - canonical: lost_pct against a tally from the approved matches at
+    every threshold and minimum; worst_record's every value and order;
+  - browser: separate thresholds set in the UI, the report, the deck and
+    the saved options;
+  - config: the split migration;
+  - slides;
+  - 14 pictures saved without loss.
+  - All fail on `6520a04`; 9 mutations, all caught. **843 / 843.**
+  - Snapshot against `d6e4ae1`: 37 of 38 identical; `manage-admin`
+    differs by the module list.
+
+Baton → Shaun / CGPT. One small question (Section 5): retitle
+Information's "Lowest win % (highest loss %)".
 
 ### CCode — 1 Oct 2026 (Player Monthly Packs)
 
@@ -7804,6 +7866,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `337c70e` | Board Pack losing modules. "Won a set % of games or more" (winners only); new "Lost a set % of games or more" with its own threshold and minimum, carried into packs saved before the split; new "Highest loss % (3+ games)" (losses ÷ games, from `monthlyInformation`'s new `highestLossPct`). Picture saving no longer drops files past the tenth. All new tests fail on `6520a04`; 9 mutations caught; 843/843. |
 | `d6e4ae1` | Player Monthly Packs. Admin › Monthly Board Pack › Player packs: a pack per player per month (8 modules plus Admin notes), Generate all, saved as you go, Share Deck preview, pictures, summary, and publish / unpublish to a private 128-bit token link (`review/?p=`) stored as a snapshot in `playerPacks`. Pure `playerMonth.js` / `playerDeck.js`; canonical selectors only. 15 tests (all fail on `501bc8f`), 14 mutations caught; 839/839. |
 | `6291cdc` (`ux/player-reset-v2`) | Phase 2 Play. My Games \| Club with Arrange a Game; My Games by what needs doing, with answers in place; Club counters; the game sheet with the stepper and the existing fixture card; a player's "I've booked a court" (DQ6); Arrange a Game (Suggested for you, Request with optional time and venue, Paste a list). Existing screens are unchanged (content snapshot identical, 38 states × 2 widths). 9 tests; 816/816 on the branch. |
 | `86beb59` | `submitGameRequest`: one path for asking for a game, carrying DQ9's optional time and venue. The Requests form behaves as before. 2 tests; 780/780. |
@@ -7901,6 +7964,10 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 1 Oct (latest): the Board Pack has its losing modules
+(`337c70e`, 843 / 843).** Baton → Shaun / CGPT. Everything below still
+stands.
 
 **CCode, 1 Oct (latest): Player Monthly Packs are live (`d6e4ae1`,
 839 / 839).** Baton → Shaun / CGPT.
