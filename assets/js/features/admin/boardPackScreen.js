@@ -90,9 +90,10 @@ function boardPackBlocks(){ return {
 
   over_80: (d) => {
     const line = (s, pct, what) => ({ rank: '•', name: s.name, value: `${what} ${s[pct]}% · ${s.wins}W ${s.draws}D ${s.losses}L of ${s.games}` });
-    return [bpSub('Won more than 80%'), ...bpLines(d.won.map(s => line(s, 'winpct', 'won')), 'Nobody.'),
-      bpSub('Lost more than 80%'), ...bpLines(d.lost.map(s => line(s, 'losspct', 'lost')), 'Nobody.'),
-      bpFoot(`${d.min > 1 ? `Players with ${d.min}+ games that month. ` : 'Every player who played that month. '}Draws count as games played. Exactly 80% (for example 4 of 5) is not more than 80%.`)];
+    const t = d.threshold || 80;
+    return [bpSub(`Won more than ${t}%`), ...bpLines(d.won.map(s => line(s, 'winpct', 'won')), 'Nobody.'),
+      bpSub(`Lost more than ${t}%`), ...bpLines(d.lost.map(s => line(s, 'losspct', 'lost')), 'Nobody.'),
+      bpFoot(`${d.min > 1 ? `Players with ${d.min}+ games that month. ` : 'Every player who played that month. '}Draws count as games played. Exactly ${t}%${t === 80 ? ' (for example 4 of 5)' : ''} is not more than ${t}%.`)];
   },
 
   information: (d) => {
@@ -114,7 +115,7 @@ function boardPackBlocks(){ return {
     ? [bpTable(['#', 'Player', 'Tier', 'Rating', 'Month'], d.rows.map((r, i) => [i + 1, r.name, r.tier || '–', Math.round(r.rating),
       r.ratingChange === null ? '–' : `${bpSigned(r.ratingChange)} pts${r.rankChange ? ` · ${r.rankChange > 0 ? '▲' : '▼'}${Math.abs(r.rankChange)}` : ''}`]))]
     : [bpEmpty('Nobody qualified.')])
-    .concat([bpFoot(`Month-end Power Rating and the tier held at the month's close; ${d.minGames}+ games in the month (the Rankings month default).`)]),
+    .concat([bpFoot(`Month-end Power Rating and the tier held at the month's close; ${d.minGames}+ game${d.minGames === 1 ? '' : 's'} in the month${d.rankingsDefault ? ' (the Rankings month default)' : ''}${d.players === 'ranked' ? '; Ranked players only (2+ rated games in the 30 days to the month\'s end, not inactive)' : d.players === 'active' ? '; inactive players left out' : ''}.`)]),
 
   kings: (d) => {
     if(!d.kings) return [bpEmpty('No tier had a field of two or more.')];
@@ -142,7 +143,7 @@ function boardPackBlocks(){ return {
     return `${s.wins} win${s.wins===1?'':'s'}${s.draws ? ` · ${s.draws} draw${s.draws===1?'':'s'}` : ''} — ${g.value} pts`; }),
 
   best_record: (d) => bpGroups(d.groups, g => { const s = d.stats[g.names[0]];
-    return `${g.value}% · ${s.wins}-${s.losses}${s.draws ? `-${s.draws}` : ''}`; }, `Nobody played ${d.minGames}+ games.`),
+    return `${g.value}% · ${s.wins}W ${s.draws}D ${s.losses}L`; }, `Nobody played ${d.minGames}+ games.`),
 
   most_games: (d) => bpGroups(d.groups, g => `${g.value} game${g.value===1?'':'s'}`),
 
@@ -171,7 +172,7 @@ function boardPackBlocks(){ return {
     .concat(d.given.length ? [bpSub('Given'), ...bpGroups(d.given, g => `x${g.value}`)] : []),
 
   partnerships: (d) => bpLines(d.rows.map(p => ({ name: `${p.pair[0]} & ${p.pair[1]}`,
-    value: `${p.wins}-${p.losses} (${p.winpct}%) · ${bpSigned(p.avg_overperf)}% chemistry` })), 'No pair played twice together.'),
+    value: `${p.wins}W ${p.losses}L (${p.winpct}%) · ${bpSigned(p.avg_overperf)}% chemistry` })), 'No pair played twice together.'),
 
   tier_moves: (d) => bpLines(d.rows.map(c => ({ rank: '•', name: c.name,
     value: `${c.fromTier} → ${c.toTier} · ${dayLabel(c.date)}` })), 'No tier changes this month.'),
@@ -283,12 +284,47 @@ async function boardPackEnsureLoaded(){
 }
 
 function boardPackStatusText(){
+  if(boardPackSaveTimer || boardPackSaving) return 'Saving…';
   const stored = boardPackStored[boardPackMonth];
   const saved = stored
     ? `Saved ${stored.updatedAt ? new Date(stored.updatedAt).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}${stored.updatedBy ? ` by ${stored.updatedBy}` : ''}.`
-    : `Not saved yet for ${monthLabel(boardPackMonth)} — showing the default selection.`;
+    : `Not saved yet for ${monthLabel(boardPackMonth)} — showing the default selection. Changes save as you make them.`;
   const dirty = boardPackDraft && !BoardPack.sameChoice(boardPackDraft, boardPackBaseline(boardPackMonth));
   return saved + (dirty ? ' Unsaved changes.' : '');
+}
+
+// ---- Saving as you go ------------------------------------------------------
+// Every change to the pack -- a module on or off, its order, an option, a
+// note -- is saved a moment after it is made, without waiting for Publish
+// (which only ever changes what the review link shows). Saving does not
+// redraw the section, so a note being typed keeps its place.
+let boardPackSaveTimer = null;
+let boardPackSaving = false;
+
+function boardPackShowStatus(){
+  const el = document.getElementById('bpStatus');
+  if(el) el.textContent = boardPackStatusText();
+}
+
+function boardPackQueueSave(){
+  clearTimeout(boardPackSaveTimer);
+  boardPackSaveTimer = setTimeout(() => { boardPackSaveTimer = null; boardPackSaveNow(); }, 600);
+  boardPackShowStatus();
+}
+
+async function boardPackSaveNow(){
+  clearTimeout(boardPackSaveTimer);
+  boardPackSaveTimer = null;
+  const month = boardPackMonth, draft = boardPackDraft;
+  if(!draft || !isUnlocked || BoardPack.sameChoice(draft, boardPackBaseline(month))){ boardPackShowStatus(); return; }
+  if(boardPackSaving){ boardPackQueueSave(); return; }
+  boardPackSaving = true;
+  boardPackShowStatus();
+  const res = await saveBoardPackConfig(draft);
+  boardPackSaving = false;
+  if(res.ok) boardPackStored[month] = BoardPack.normalise(res.config, month);
+  else { boardPackMessage = res.message; const m = document.getElementById('bpMessage'); if(m) m.textContent = res.message; }
+  boardPackShowStatus();
 }
 
 function boardPackWhen(iso){
@@ -409,7 +445,7 @@ function boardPackItemHtml(it, index, count){
 function buildBoardPackSectionHtml(){
   if(!boardPackMonth) boardPackOpenMonth(boardPackDefaultMonth());
   const months = boardPackMonths();
-  let html = `<div class="section-sub">A month-end report for the board, compiled from the club's own statistics. The figures are drawn from the record every time; only your selection, order and commentary are saved. Publishing turns the same pack into the players' Monthly Review — a swipeable link for WhatsApp, fixed as published. Monthly Information stays the players' month review in the app.</div>`;
+  let html = `<div class="section-sub">A month-end report for the board, compiled from the club's own statistics. The figures are drawn from the record every time; only your selection, order, options and commentary are saved, as you make them. Publishing turns the same pack into the players' Monthly Review — a swipeable link for WhatsApp, fixed as published. Monthly Information stays the players' month review in the app.</div>`;
   if(!boardPackMonth){
     return html + `<div class="section-sub">No months with games yet.</div>`;
   }
@@ -432,7 +468,6 @@ function buildBoardPackSectionHtml(){
   html += `<div class="bp-items">${items.map((it, i) => boardPackItemHtml(it, i, items.length)).join('')}</div>
     <div class="fg-row"><button type="button" class="preset-btn" id="bpAddNote">+ Add commentary</button></div>
     <div class="fg-row bp-actions">
-      <button type="button" class="preset-btn" id="bpSave">Save pack</button>
       <button type="button" class="preset-btn${boardPackPreviewOpen ? ' active' : ''}" id="bpPreviewBtn" aria-expanded="${boardPackPreviewOpen}">${boardPackPreviewOpen ? 'Hide preview' : 'Preview'}</button>
     </div>
     <div id="bpMessage" class="section-sub">${escapeHtml(boardPackMessage)}</div>
@@ -460,10 +495,11 @@ function wireBoardPackSection(){
   if(!box || !adminOpenSections.boardpack) return;
   if(!boardPackDraft){ boardPackEnsureLoaded(); }
   const monthSel = document.getElementById('bpMonth');
-  if(monthSel) monthSel.onchange = () => { boardPackOpenMonth(monthSel.value); renderManage(); };
+  // A change still waiting to be saved belongs to the month it was made in.
+  if(monthSel) monthSel.onchange = async () => { const to = monthSel.value; await boardPackSaveNow(); boardPackOpenMonth(to); renderManage(); };
   if(!boardPackDraft) return;
 
-  const change = (next) => { boardPackDraft = next; boardPackMessage = ''; renderManage(); };
+  const change = (next) => { boardPackDraft = next; boardPackMessage = ''; renderManage(); boardPackQueueSave(); };
   const index = (el, attr) => Number(el.getAttribute(attr));
   box.querySelectorAll('[data-bp-toggle]').forEach(el => {
     el.onchange = () => change(BoardPack.setEnabled(boardPackDraft, index(el, 'data-bp-toggle'), el.checked));
@@ -479,7 +515,7 @@ function wireBoardPackSection(){
   });
   // Typing edits the pack without redrawing it, so the field keeps its focus;
   // the preview catches up when the field is left.
-  const status = () => { const s = document.getElementById('bpStatus'); if(s) s.textContent = boardPackStatusText(); };
+  const status = () => boardPackQueueSave();
   box.querySelectorAll('[data-bp-note-title]').forEach(el => {
     el.oninput = () => { boardPackDraft = BoardPack.updateNote(boardPackDraft, index(el, 'data-bp-note-title'), { title: el.value }); status(); };
     el.onchange = () => { if(boardPackPreviewOpen) renderManage(); };
@@ -520,6 +556,7 @@ function wireBoardPackSection(){
   const confirm = document.getElementById('bpPublishConfirm');
   if(confirm) confirm.onclick = async () => {
     confirm.disabled = true;
+    clearTimeout(boardPackSaveTimer); boardPackSaveTimer = null;
     const res = await publishBoardPackReview(boardPackDraft);
     boardPackPublishConfirm = false;
     if(res.config){
@@ -539,19 +576,6 @@ function wireBoardPackSection(){
   if(copyLink && pub) copyLink.onclick = () => copyText(boardPackReviewUrl(month)).then(ok => say(ok ? 'Link copied.' : 'Could not copy — the link is shown below.'));
   const copySummary = document.getElementById('bpCopySummary');
   if(copySummary && pub) copySummary.onclick = () => copyText(boardPackReviewSummary(pub)).then(ok => say(ok ? 'Summary copied — paste it into WhatsApp.' : 'Could not copy the summary.'));
-  const save = document.getElementById('bpSave');
-  if(save) save.onclick = async () => {
-    const month = boardPackMonth;
-    const res = await saveBoardPackConfig(boardPackDraft);
-    if(res.ok){
-      boardPackStored[month] = BoardPack.normalise(res.config, month);
-      if(boardPackMonth === month) boardPackDraft = boardPackStored[month];
-      boardPackMessage = 'Saved.';
-    } else {
-      boardPackMessage = res.message;
-    }
-    renderManage();
-  };
 }
 
 // ---- Pictures: a module, a slide, or the whole deck ----------------------

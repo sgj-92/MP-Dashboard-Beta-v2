@@ -68,7 +68,7 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
     const n = await p.$$eval('[data-bp-item]', (els) => els.length);
     await p.fill(`[data-bp-note-title="${n - 1}"]`, 'Chair’s summary');
     await p.fill(`[data-bp-note-body="${n - 1}"]`, 'Good month.\n<b>Not bold</b>');
-    assert.match(await p.textContent('#bpStatus'), /Unsaved changes/);
+    assert.strictEqual(await p.textContent('#bpStatus'), 'Saving…', 'changes save as they are made');
     for (let i = n - 1; i > 0; i--) await p.click(`[data-bp-move="${i}"][data-delta="-1"]`);
 
     await p.click('#bpPreviewBtn');
@@ -85,17 +85,19 @@ maybe('choose a month, select, deselect, reorder, set options, add commentary, p
     assert.strictEqual(preview.powerRows, 3);
     assert.deepStrictEqual([...new Set(preview.powerTiers)], ['A']);
 
-    await p.click('#bpSave');
-    await p.waitForFunction(() => document.getElementById('bpMessage').textContent === 'Saved.');
+    // No Save button: every change has been saved as it was made.
+    assert.strictEqual(await p.$('#bpSave'), null);
+    await p.waitForFunction(() => /^Saved .* by Shaun\.$/.test(document.getElementById('bpStatus').textContent));
     const w = await app.run((key) => window.__writes.filter((x) => x.id === key), KEY);
-    assert.strictEqual(w.length, 1, 'one document, for that month');
-    saved = JSON.parse(w[0].doc.value);
+    assert.ok(w.length >= 1, 'saved to that month\'s document');
+    assert.deepStrictEqual(await app.run(() => [...new Set(window.__writes.map((x) => x.id))]), [KEY], 'and nothing else');
+    saved = JSON.parse(w.at(-1).doc.value);
     assert.strictEqual(saved.month, '2026-08');
     assert.strictEqual(saved.updatedBy, 'Shaun');
     assert.ok(saved.updatedAt && saved.basis && saved.basis.games > 0 && saved.basis.fingerprint);
     const on = saved.items.filter((it) => it.kind === 'note' || it.enabled).map((it) => it.kind === 'note' ? 'note' : it.id);
     assert.deepStrictEqual(on, ['note', 'results_table', 'over_80', 'kings', 'power', 'league', 'merit', 'race', 'rating_movers', 'tier_moves']);
-    assert.deepStrictEqual(saved.items.find((it) => it.id === 'power').options, { tier: 'A', top: '3' });
+    assert.deepStrictEqual(saved.items.find((it) => it.id === 'power').options, { tier: 'A', top: '3', min: '5', players: 'all' });
     assert.deepStrictEqual(Object.keys(saved).sort(), ['basis', 'items', 'month', 'updatedAt', 'updatedBy', 'version'], 'the choice and its stamp -- no figures');
     assert.match(await p.textContent('#bpStatus'), /^Saved .* by Shaun\.$/);
     assert.deepStrictEqual(app.pageErrors, []);
@@ -218,6 +220,12 @@ maybe('every figure is the canonical one: the same functions the app\'s own scre
           eq(o.won.map((x) => x.name).sort(), who('wins'), `${m} won >80% (${min}+)`);
           eq(o.lost.map((x) => x.name).sort(), who('losses'), `${m} lost >80% (${min}+)`);
         });
+        // Any threshold the Admin picks: more than it, never equal to it.
+        ['50', '60', '70', '75', '90'].forEach((t) => {
+          const o = data('over_80', m, { threshold: t });
+          const who = (k) => Object.keys(tally).filter((n) => tally[n].games >= 3 && tally[n][k] * 100 > Number(t) * tally[n].games).sort();
+          eq([o.threshold, o.won.map((x) => x.name).sort(), o.lost.map((x) => x.name).sort()], [Number(t), who('wins'), who('losses')], `${m} over ${t}%`);
+        });
 
         // Doughnuts, the month's games, tier changes.
         const dn = computeDoughnutStats(m);
@@ -282,6 +290,80 @@ maybe('compiling and saving packs changes no rating, table or race', async () =>
     });
     assert.strictEqual(r.same, true);
     assert.deepStrictEqual(r.ids, ['2026-09', '2026-08', '2026-07', '2026-06'].map((m) => `moneypadel_board_pack_${m}`), 'nothing but the packs is written');
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+
+maybe('Power Rankings options: the minimum games and which players, judged at the month\'s close', async () => {
+  const app = await H.open({ now: NOW });
+  try {
+    const r = await app.run(() => {
+      const d = (o) => boardPackModuleData({ id: 'power', options: Object.assign(BoardPack.defaultOptions('power'), { top: 'all' }, o) }, '2026-09');
+      const total = (name) => computeMonthlyStats('2026-09')[name].total;
+      const out = {};
+      out.defaultIsRankings = d({}).rows.map((x) => x.name).join() === rankingPool('2026-09', 5).map((x) => x.name).join();
+      out.floors = ['1', '3', '5', '10'].map((min) => { const rows = d({ min }).rows; return [min, rows.length, rows.every((x) => total(x.name) >= Number(min))]; });
+      const monthEnd = Date.UTC(2026, 9, 1) - 1;
+      const ranked = d({ min: '1', players: 'ranked' }).rows;
+      out.ranked = ranked.every((x) => playerStateOf(x.name, monthEnd).rankable);
+      // An inactive player: left out when asked, kept by default.
+      const p = PLAYERS.find((x) => x.name === d({ min: '1' }).rows[0].name);
+      p.active = false;
+      out.inactive = [p.name, d({ min: '1' }).rows.some((x) => x.name === p.name), d({ min: '1', players: 'active' }).rows.some((x) => x.name === p.name), d({ min: '1', players: 'ranked' }).rows.some((x) => x.name === p.name)];
+      p.active = true;
+      out.foot = boardPackRenderers().power(d({ min: '3', players: 'active' }), '2026-09');
+      return out;
+    });
+    assert.strictEqual(r.defaultIsRankings, true, 'by default, the Rankings month pool');
+    const sizes = r.floors.map((f) => f[1]);
+    assert.ok(sizes[0] >= sizes[1] && sizes[1] >= sizes[2] && sizes[2] >= sizes[3] && sizes[0] > sizes[2], JSON.stringify(r.floors));
+    r.floors.forEach((f) => assert.ok(f[2], `every row has ${f[0]}+ games`));
+    assert.strictEqual(r.ranked, true);
+    assert.deepStrictEqual(r.inactive.slice(1), [true, false, false], `${r.inactive[0]} kept by default, left out on request`);
+    assert.match(r.foot, /3\+ games in the month; inactive players left out\./);
+  } finally { await app.close(); }
+});
+
+maybe('records always read wins, draws, losses', async () => {
+  const app = await H.open({ now: NOW });
+  try {
+    const r = await app.run(() => {
+      const d = (id) => boardPackModuleData({ id, options: BoardPack.defaultOptions(id) }, '2026-09');
+      const best = boardPackBlocks().best_record(d('best_record'), '2026-09')[0].rows;
+      const stats = computeMonthlySummaryStats('2026-09');
+      return { best: best.map((x) => [x.name, x.value]), stats: Object.fromEntries(best.map((x) => [x.name.split(' / ')[0], stats[x.name.split(' / ')[0]]])),
+        pairs: boardPackBlocks().partnerships(d('partnerships'), '2026-09')[0].rows.map((x) => x.value) };
+    });
+    r.best.forEach(([name, value]) => {
+      const s = r.stats[name.split(' / ')[0]];
+      assert.ok(value.endsWith(`· ${s.wins}W ${s.draws}D ${s.losses}L`), `${name}: ${value}`);
+    });
+    r.pairs.forEach((v) => assert.match(v, /^\d+W \d+L \(/));
+  } finally { await app.close(); }
+});
+
+maybe('the pack saves itself as it changes, before anything is published, and to the month it was changed in', async () => {
+  const app = await H.open({ now: NOW });
+  try {
+    await openSection(app);
+    await app.page.selectOption('#bpMonth', '2026-08');
+    await app.page.waitForSelector('#bpStatus');
+    const p = app.page;
+    const writes = (m) => app.run((key) => window.__writes.filter((x) => x.id === key).map((x) => JSON.parse(x.doc.value)), `moneypadel_board_pack_${m}`);
+    const idx = (id) => p.$eval(`[data-bp-module="${id}"]`, (el) => Number(el.dataset.bpItem));
+    await p.selectOption(`[data-bp-opt="${await idx('over_80')}"][data-key="threshold"]`, '70');
+    assert.strictEqual(await p.textContent('#bpStatus'), 'Saving…');
+    await p.waitForFunction(() => /^Saved .* by Shaun\.$/.test(document.getElementById('bpStatus').textContent));
+    assert.strictEqual((await writes('2026-08')).at(-1).items.find((it) => it.id === 'over_80').options.threshold, '70');
+
+    // Change, then straight to another month: it is saved to August, not lost.
+    await p.selectOption(`[data-bp-opt="${await idx('power')}"][data-key="min"]`, '3');
+    await p.selectOption('#bpMonth', '2026-09');
+    await p.waitForSelector('#bpStatus');
+    assert.strictEqual((await writes('2026-08')).at(-1).items.find((it) => it.id === 'power').options.min, '3');
+    assert.strictEqual((await writes('2026-09')).length, 0, 'September untouched');
+    assert.strictEqual(await app.run(() => window.__writes.filter((w) => /review_/.test(w.id)).length), 0, 'nothing published');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });

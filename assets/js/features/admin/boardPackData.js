@@ -66,12 +66,15 @@ function boardPackSources(){ return {
   // worth reporting; 3 is Monthly Information's own rule for win %.
   over_80(month, o){
     const min = Number(o.min);
+    // The threshold is the Admin's choice (80% unless set): more than it,
+    // never equal to it.
+    const threshold = Number(o.threshold || 80);
     const played = Object.values(computeMonthlySummaryStats(month)).filter(s => s.games > 0 && s.games >= min);
     const order = (k) => (a, b) => b[k] - a[k] || b.games - a.games || a.name.localeCompare(b.name);
     return {
-      min,
-      won: played.filter(s => s.wins / s.games > 0.8).sort(order('winpct')),
-      lost: played.filter(s => s.losses / s.games > 0.8).sort(order('losspct')),
+      min, threshold,
+      won: played.filter(s => s.wins * 100 > threshold * s.games).sort(order('winpct')),
+      lost: played.filter(s => s.losses * 100 > threshold * s.games).sort(order('losspct')),
     };
   },
 
@@ -80,15 +83,30 @@ function boardPackSources(){ return {
   },
 
   power(month, o){
-    const minGames = defaultRankingMinGames(month);
+    // The Rankings month pool, with the Admin's own floor (5+ games, the
+    // Rankings month default, unless set) and, if asked, without inactive or
+    // idle players -- judged at the month's close: Idle is the Rankings rule
+    // (2+ rated games in the 30 days) on the month's last day. Inactive is the
+    // club's flag, which has no history, so it is today's.
+    const minGames = Number(o.min || defaultRankingMinGames(month));
+    const players = o.players || 'all';
+    const [y, mo] = month.split('-').map(Number);
+    const monthEnd = Date.UTC(y, mo, 1) - 1;
+    const keep = (name) => {
+      if(players === 'all') return true;
+      const st = playerStateOf(name, monthEnd);
+      if(!st) return true;
+      return players === 'ranked' ? st.rankable : st.participation !== 'INACTIVE';
+    };
     const moves = monthlyMovementIndex(month);
     const rows = rankingPool(month, minGames)
+      .filter(p => keep(p.name))
       .filter(p => o.tier === 'all' || p.scopeTier === o.tier)
       .slice(0, BoardPack.limit(o.top))
       .map(p => ({ name: p.name, tier: p.scopeTier, rating: p.scopeRating, games: p.total,
         ratingChange: moves[p.name] ? moves[p.name].ratingChange : null,
         rankChange: moves[p.name] ? moves[p.name].rankChangeOverall : null }));
-    return { minGames, rows };
+    return { minGames, players, rankingsDefault: minGames === defaultRankingMinGames(month), rows };
   },
 
   kings(month){

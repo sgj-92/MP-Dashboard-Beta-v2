@@ -147,8 +147,8 @@ maybe('draft until published; editing never changes the link; republishing does,
     // Edit and save the pack: the published review is untouched.
     const i = await p.$eval('[data-bp-module="most_games"]', (el) => el.dataset.bpItem);
     await p.click(`[data-bp-toggle="${i}"]`);
-    await p.click('#bpSave');
-    await p.waitForFunction(() => document.getElementById('bpMessage').textContent === 'Saved.');
+    await p.waitForFunction(() => /^Saved /.test(document.getElementById('bpStatus').textContent));
+    assert.ok(await app.run(() => window.__writes.filter((w) => w.id === 'moneypadel_board_pack_2026-09').length >= 2), 'the change saved itself');
     assert.strictEqual((await reviewWrites()).length, 1, 'saving the pack does not publish it');
     assert.match(await p.textContent('#bpPublishState'), /differs from what players see/);
 

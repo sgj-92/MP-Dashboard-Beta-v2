@@ -41,10 +41,15 @@
     { id: 'results_table', title: 'Monthly results table', on: true, options: {
       sort: { label: 'Order by', values: ['points', 'games', 'difficulty'], labels: { points: 'Points', games: 'Games played', difficulty: 'Hardest games' }, default: 'points' },
       top: top('all') } },
-    { id: 'over_80', title: 'Won or lost over 80% of games', on: true, options: {
+    // Kept as 'over_80' so packs saved before the threshold became a choice
+    // still find it; 80% is the default.
+    { id: 'over_80', title: 'Won or lost over a set % of games', on: true, options: {
+      threshold: { label: 'Over', values: ['50', '60', '70', '75', '80', '90'], labels: { 50: 'Over 50%', 60: 'Over 60%', 70: 'Over 70%', 75: 'Over 75%', 80: 'Over 80%', 90: 'Over 90%' }, default: '80' },
       min: { label: 'Minimum games', values: ['3', '1', '5'], labels: { 1: 'Everyone', 3: '3+ games', 5: '5+ games' }, default: '3' } } },
     { id: 'information', title: 'Monthly Information (the players’ month review)', on: false, options: {} },
-    { id: 'power', title: 'Power Rankings at month end', on: true, options: { tier: TIER, top: top('10') } },
+    { id: 'power', title: 'Power Rankings at month end', on: true, options: { tier: TIER, top: top('10'),
+      min: { label: 'Minimum games', values: ['1', '3', '5', '10'], labels: { 1: 'Any (1+)', 3: '3+ games', 5: '5+ games', 10: '10+ games' }, default: '5' },
+      players: { label: 'Players', values: ['all', 'active', 'ranked'], labels: { all: 'Everyone', active: 'Leave out inactive', ranked: 'Ranked only' }, default: 'all' } } },
     { id: 'kings', title: 'Kings of Tiers', on: true, options: {} },
     { id: 'league', title: 'League table', on: true, options: { tier: TIER, top: top('all') } },
     { id: 'merit', title: 'Merit table', on: false, options: { tier: TIER, top: top('all') } },

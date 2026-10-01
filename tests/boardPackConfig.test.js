@@ -20,7 +20,7 @@ test('a month with nothing saved starts from the catalogue, every module present
   const c = BP.defaultConfig(M);
   assert.deepStrictEqual(ids(c), BP.MODULES.map((m) => m.id));
   assert.deepStrictEqual(c.items.filter((it) => it.enabled).map((it) => it.id), BP.MODULES.filter((m) => m.on).map((m) => m.id));
-  assert.deepStrictEqual(c.items[at(c, 'power')].options, { tier: 'all', top: '10' });
+  assert.deepStrictEqual(c.items[at(c, 'power')].options, { tier: 'all', top: '10', min: '5', players: 'all' });
   assert.deepStrictEqual([c.updatedAt, c.updatedBy, c.basis], [null, null, null]);
   // No figure anywhere in what would be stored: every option is one of the
   // module's own presentation choices.
@@ -32,9 +32,14 @@ test('the monthly results table and the over-80% list are in every new month\'s 
   const on = BP.selected(c).map((it) => it.id);
   assert.ok(on.includes('results_table') && on.includes('over_80'));
   assert.deepStrictEqual(c.items[at(c, 'results_table')].options, { sort: 'points', top: 'all' });
-  assert.deepStrictEqual(c.items[at(c, 'over_80')].options, { min: '3' });
+  assert.deepStrictEqual(c.items[at(c, 'over_80')].options, { threshold: '80', min: '3' });
   assert.deepStrictEqual(BP.BY_ID.results_table.options.sort.values, ['points', 'games', 'difficulty']);
   assert.deepStrictEqual(BP.BY_ID.over_80.options.min.values, ['3', '1', '5']);
+  assert.deepStrictEqual(BP.BY_ID.over_80.options.threshold.values, ['50', '60', '70', '75', '80', '90'], 'the % is the Admin\'s choice');
+  // A pack saved before these options existed reads with the defaults.
+  const old = BP.normalise({ month: M, items: [{ kind: 'module', id: 'over_80', enabled: true, options: { min: '5' } }, { kind: 'module', id: 'power', enabled: true, options: { tier: 'A' } }] }, M);
+  assert.deepStrictEqual(old.items[0].options, { threshold: '80', min: '5' });
+  assert.deepStrictEqual(old.items[1].options, { tier: 'A', top: '10', min: '5', players: 'all' });
 });
 
 test('select and deselect keep the module\'s place and options', () => {
