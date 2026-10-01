@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`382f907`** (Board Pack split by tier, 1 Oct; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **852 / 852 on `main`** (1 Oct, after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`269327c`** (desktop-friendly dashboard, 1 Oct; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **861 / 861 on `main`** (1 Oct, after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,30 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Desktop-friendly dashboard — DONE (`269327c`), 1 Oct.** Shaun's brief.
+- **One app, two presentations.** A phone is unchanged. A laptop or
+  monitor lays out the same screens, routes, handlers and data.
+- **Layout ranges:**
+  - mobile < 768 (the phone app);
+  - tablet 768–1199 (compact icon rail, one centred 760px column,
+    dialogs);
+  - desktop 1200+ (full left rail with the brand and "Viewing as",
+    1120px column, two-up layouts);
+  - wide 1600+ (1280px column, centred, never wider).
+- **Screens with desktop layouts:**
+  - **Home:** a dashboard grid, three columns at 1600+.
+  - **Rankings:** one filter toolbar, Kings of Tiers beside the podium,
+    sticky table headers.
+  - **Play:** Find a Game's brief beside its results; Games as a card
+    grid; Requests and Upcoming at a readable width.
+  - **Players:** directory | profile (master-detail).
+  - **Admin:** Board Pack and Player Pack editors beside their live
+    preview.
+  - **Sheets:** centred dialogs; a profile opened elsewhere slides in
+    from the right.
+  - **Keyboard:** Escape closes; visible focus.
+- **`/preview`** has 1280 / 1440 / 1920 presets beside the phone ones.
 
 **Board Pack: split by tier, every tier included — DONE (`382f907`),
 1 Oct.** Shaun: "monthly race split by tier but all tiers included, power
@@ -1582,6 +1606,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | DQ6–DQ9 as recommended | Shaun, 30 Sep 2026, before Phase 2. **DQ6:** a player in the game may record that the court is booked. It is attributed to them, only on an agreed game they are still in and that is not archived, and only an Admin can undo it. The Admin review of unrecorded bookings stays. **DQ7:** replacing a player stays Admin-only. **DQ8:** players get no "Change plan"; date, time and venue stay Admin edits. **DQ9:** a plain request may carry an optional time and venue, as a suggestion, never a booking. Implemented in `fixtureFlow.js` on `main` (`7d70cc0`). |
 | Accept all: the new Play lists, DQ1 as recommended, and the Phase 3a (Home) go-ahead | Shaun, 30 Sep 2026 ("Accept all"). **Play lists accepted:** "Upcoming, as before" and "Requests, as before" are to be retired from Club on `ux/player-reset-v2`. **DQ1:** no promotion bar and no threshold line; keep the one-line gap, worded "N pts below the lowest-rated Tier A player". **Phase 3a (Home) approved.** Shaun's same message said the Board Pack must not touch the redesign branch, so both are queued behind it (NEXT). |
 | Admin Monthly Board Pack: a stored choice, figures drawn live | Shaun's brief, 30 Sep 2026; implementation choices CCode's. **DONE `9e4a5e6`.** A per-month document `moneypadel_board_pack_YYYY-MM` holds only the admin's choice: modules (id, on/off, options) and commentary in one ordered list, who saved it and when, plus a fingerprint of the month's record. It is read when an admin opens that month, never at start-up. Figures are never stored. Whether a finalised pack should freeze its figures is Shaun's call (Section 5). |
+| Desktop: one responsive app; the bottom navigation becomes a left rail; CSS places existing elements | Shaun's brief, 1 Oct 2026; the shell and layout choices CCode's. **DONE `269327c`.** Layout ranges mobile < 768 / tablet 768–1199 / desktop 1200+ / wide 1600+, in `assets/css/layout/desktop.css` and `assets/js/ui/desktopShell.js`. **No second app, no desktop routes, no duplicated renderers.** The rail is `.shell-bottom-nav` restyled, so routes, highlight and gating are the phone's. Admin stays inside More, not a primary rail item. From 768px the body is a CSS grid with a centred, capped content area and a midline: existing elements (podium / Kings, directory / profile, editor / preview) are placed side by side by CSS alone. The only markup added is `display: contents` wrappers on Home and around the pack editor and preview (no box on a phone), plus the rail's brand and viewer, which are built only once a desktop-sized window is seen. **The phone is proven unchanged:** the behaviour snapshot at 390 and 360 is identical, element for element, apart from those wrappers. The fifth item stays **More** on this branch; **Me** is the redesign's (Section 5). |
 | Player Monthly Packs: built on the Board Pack and Share Deck; private token links; published packs are snapshots | Shaun's brief, 1 Oct 2026; implementation and the access model CCode's, as the brief asked ("propose the safest simple access model"). **DONE `d6e4ae1`.** One catalogue engine serves both packs (`BoardPack.forCatalogue`; `BoardPack.PLAYER`). The player's month is a pure model (`domain/playerPack/playerMonth.js`) fed from the canonical selectors, and its slides are the Share Deck's shape (`playerDeck.js`), so the same deck, pictures and publishing serve both. **Composition:** a team is labelled by its players' tiers on the match date, strongest first (S > A > B > C, `?` if unknown), and a matchup is "my team vs theirs" from the player's side, so one match is "BB vs AB" for one player and "AB vs BB" for an opponent. **Targets** are four fixed rules over the month's own record (rematch, partner, thin evidence, own tier), each with its reason and sample, never a forecast. **Access:** each published pack is stored under a 128-bit random token in its own `playerPacks` collection, and the link is `review/?p=<token>`; changing a name, month or id in the address reaches nothing. The storage setting that completes it is Shaun's (Section 5). |
 | A published Monthly Review is a snapshot of its slides | CCode, 30 Sep 2026, implementing Shaun's principle in the Share Deck brief ("a published monthly review should remain historically stable"). **DONE `4af924d`.** Publish stores the Share Deck exactly as shown: formatted, render-ready slides, with revision, first and last published, by whom, and the record fingerprint. It is stored in `moneypadel_review_YYYY-MM`. **Why a snapshot:** nothing month-end in the record is immutable today. Month-end ratings, ranks and tiers are recomputed from the journey on every load, so later results, corrections, club decisions or a calculation change would all move a live review. **Not a second source of truth:** it is a record of what was sent. Nothing reads it for a calculation, and it is labelled a publication. The Board Pack itself stays live (see the 30 Sep row above). |
 | Monthly Review link: `review/?m=YYYY-MM`; image export next, at 1080 × 1350 | CCode, 30 Sep 2026. **The link is a query, not a path**, so it works unchanged on every host (Vercel, Pages, local). `/review/2026-09` would need a Vercel rewrite and absolute asset paths, which break Pages. **Image export is staged as the next sub-increment.** Its format is **1080 × 1350 (4:5)**, the portrait WhatsApp shows whole in a chat; 9:16 is a stories format. The cards are already 4:5 and sized in container units, so an export will match the card. No image library was added: client-side capture without one is fragile (fonts, Safari canvas taint). **"View full stats" links to the app's home.** Deep links into a particular screen need a router entry point, which belongs with the redesign's shell and history work. |
@@ -2536,6 +2561,32 @@ with Shaun.**
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 1 Oct — Desktop: what was deferred, and Me
+
+**For Shaun / CGPT. Nothing is blocked; the desktop layout is live
+(`269327c`).**
+- **Me is not built on this branch.** Me exists only on the redesign
+  branch (`ux/player-reset-v2`, Phase 1). Here the fifth item is
+  **More**, as on the phone. A desktop Me dashboard belongs with the
+  redesign's Me. It will inherit this layout system (below) rather than
+  be built twice. "Viewing as" sits at the foot of the rail.
+- **Deferred from the first pass:**
+  - a persistent game-detail pane in Play (game details open as dialogs
+    instead);
+  - desktop layouts for Compare, Insights / Call-Outs, Doughnuts and the
+    More guides (they are centred and capped, and fine, not designed);
+  - sticky headers on the League's own div-based table (Merit and Race
+    tables have them);
+  - the Games admin toast, which spans the rail on desktop.
+- **For the redesign branch to inherit it:**
+  - `desktop.css` keys on `.shell-bottom-nav`, `.shell-more-sheet`,
+    `.overlay`, the body grid, and `html[data-section]` /
+    `[data-tab]`;
+  - the redesign's shell needs only to keep those hooks, or map its own
+    classes in that one file.
+  - No screen renderer was changed for layout, apart from the
+    `display: contents` wrappers.
 
 ### OPEN 1 Oct — Tier S switch and the new split lists (CCode's call)
 
@@ -3518,6 +3569,42 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 1 Oct 2026 (desktop-friendly dashboard)
+
+**`269327c` on `app-features-fixes` = `main`.**
+- **New files:**
+  - `assets/css/layout/desktop.css`, loaded last; the architecture test
+    allows it after the screens;
+  - `assets/js/ui/desktopShell.js` (`LAYOUT_RANGES`, `layoutForWidth`,
+    `initDesktopShell`, `syncDesktopShell`, Escape handling).
+  - `shell.js` calls `syncDesktopShell()` on navigation and
+    `initDesktopShell()` once.
+- **Markup touched:**
+  - Home's blocks are wrapped in `.home-block-*`;
+  - the Board Pack and Player Pack wrap editor and preview in `.bp-split`
+    while the preview is open.
+  - Both are `display: contents` on a phone.
+- **Two CSS fixes desktop needed:**
+  - `body { overflow-x: clip }` from 768. `hidden` made the body a scroll
+    container that never scrolls, so nothing could be sticky.
+  - `.admin-acc { overflow: clip }` from 1200, for the same reason.
+- **Tests:**
+  - `desktop.test.js` (8): overflow at 1024 → 2560 on 11 screens; rail
+    vs bottom bar; same routes as the phone; dialogs and Escape;
+    Rankings pairing; Players master-detail and sticky pane; Play and
+    Home grids; Board Pack and Player Pack split, plus phone wrappers.
+  - `preview.test.js`: desktop presets.
+  - The harness gains a `viewport` option.
+  - All fail on `8854107` except the no-overflow invariant; 9 mutations
+    caught. **861 / 861.**
+  - Behaviour snapshot at 390 and 360: identical apart from Home's six
+    `display: contents` wrappers. Every existing element's style and box
+    is identical.
+- **To check:** a real laptop and monitor (Chrome, Safari, Firefox).
+  `overflow: clip` and `:has` are not used for anything a phone needs.
+
+Baton → Shaun / CGPT. Deferrals and Me: Section 5.
 
 ### CCode — 1 Oct 2026 (Board Pack split by tier)
 
@@ -7963,6 +8050,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `269327c` | Desktop-friendly dashboard. Left rail (brand, sections, "Viewing as"), centred capped column, ranges 768 / 1200 / 1600; Home grid, Rankings toolbar + Kings beside podium, Find a Game beside results, Games card grid, Players master-detail, Board Pack and Player Pack editor beside live preview, dialogs and drawers, Escape and focus; `/preview` desktop presets. The phone is unchanged (snapshot at 390/360). All new tests fail on `8854107` but the overflow invariant; 9 mutations caught; 861/861. |
 | `382f907` | Board Pack split by tier. Results table and Power Rankings: "Split by tier" (default) or "One list"; League, Merit and Race: "A slide per tier" (default) or leaders on one slide. The Share Deck makes one slide per tier. A mid-month mover is in each tier played. All new tests fail on `abc34d5`; 8 mutations caught; 852/852. |
 | `d74d466` | Save a whole pack. Club and player packs: the pack as one PDF (contents + every module), the slides as one PDF (players' view), or every module as a picture; before publishing, nothing written. A PDF writer of its own (`pdfDoc.js`, no library) fed by the share pictures. All new tests fail on `fe9e8b1`; 7 mutations caught; 849/849. |
 | `337c70e` | Board Pack losing modules. "Won a set % of games or more" (winners only); new "Lost a set % of games or more" with its own threshold and minimum, carried into packs saved before the split; new "Highest loss % (3+ games)" (losses ÷ games, from `monthlyInformation`'s new `highestLossPct`). Picture saving no longer drops files past the tenth. All new tests fail on `6520a04`; 9 mutations caught; 843/843. |
@@ -8063,6 +8151,13 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 1 Oct (latest): the app is desktop-friendly (`269327c`, 861 / 861).**
+Baton → Shaun / CGPT.
+- **Try it:** open the app on a laptop, or use `/preview` at 1280, 1440
+  or 1920.
+- **Decide (Section 5):** Me on desktop arrives with the redesign's Me;
+  the deferrals are listed there.
 
 **CCode, 1 Oct (latest): the Board Pack splits by tier with every tier
 included, in the report and the slides (`382f907`, 852 / 852).** Baton →
