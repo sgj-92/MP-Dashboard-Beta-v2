@@ -176,7 +176,7 @@
       font(ctx, 12 * U, { serif: true });
       title.forEach((line) => { textAt(ctx, line, W / 2, y + 12 * U * 0.85, { color: C.bright, align: 'center' }); y += 12 * U * 1.05; });
       y += 2.2 * U;
-      font(ctx, 3.6 * U, { spacing: 0.18 }); textAt(ctx, 'MONTHLY REVIEW', W / 2, y + 3.6 * U, { color: C.goldSoft, align: 'center' });
+      font(ctx, 3.6 * U, { spacing: 0.18 }); textAt(ctx, String(s.sub || 'Monthly Review').toUpperCase(), W / 2, y + 3.6 * U, { color: C.goldSoft, align: 'center' });
       return cv;
     }
 
@@ -254,18 +254,21 @@
         const hero = single && i === 0;
         const pad = hero ? 2.5 * U : compact ? 1.1 * U : 1.7 * U;
         const nameS = (hero ? 5.8 : compact ? 4.2 : 4.6) * U, valS = (hero ? 8.8 : compact ? 5.4 : 6.2) * U;
-        const labelH = r.label ? 2.9 * U * 1.2 : 0, subH = r.sub ? 3.2 * U * 1.3 : 0;
-        const h = pad * 2 + labelH + nameS * 1.2 + subH;
-        const mid = y + h / 2;
         const rankW = r.rank ? 5.4 * U + 2.8 * U : 0;
         font(ctx, valS, { serif: true });
         const valueW = r.value ? Math.min(ctx.measureText(r.value).width, inner * 0.45) : 0;
-        if (r.rank) { font(ctx, 4.6 * U, { serif: true }); textAt(ctx, r.rank, P + 2.7 * U, mid + 4.6 * U * 0.35, { color: hero ? C.bright : C.goldSoft, align: 'center' }); }
         const nx = P + rankW, nw = inner - rankW - (valueW ? valueW + 2.8 * U : 0);
+        // A sub-line wraps (up to three lines), as it does on the card.
+        font(ctx, 3.2 * U);
+        const subLines = r.sub ? wrap(ctx, r.sub, nw).slice(0, 3) : [];
+        const labelH = r.label ? 2.9 * U * 1.2 : 0, subH = subLines.length * 3.2 * U * 1.3;
+        const h = pad * 2 + labelH + nameS * 1.2 + subH;
+        const mid = y + h / 2;
+        if (r.rank) { font(ctx, 4.6 * U, { serif: true }); textAt(ctx, r.rank, P + 2.7 * U, mid + 4.6 * U * 0.35, { color: hero ? C.bright : C.goldSoft, align: 'center' }); }
         let ty = y + pad;
         if (r.label) { font(ctx, 2.9 * U, { weight: 700, spacing: 0.1 }); textAt(ctx, fit(ctx, String(r.label).toUpperCase(), nw), nx, ty + 2.9 * U, { color: C.goldSoft }); ty += labelH; }
         font(ctx, nameS, { weight: 600 }); textAt(ctx, fit(ctx, r.name, nw), nx, ty + nameS * 0.95, { color: C.text }); ty += nameS * 1.2;
-        if (r.sub) { font(ctx, 3.2 * U); textAt(ctx, fit(ctx, r.sub, nw), nx, ty + 3.2 * U, { color: C.dim }); }
+        if (subLines.length) { font(ctx, 3.2 * U); subLines.forEach((l, k) => textAt(ctx, k === 2 ? fit(ctx, l, nw) : l, nx, ty + 3.2 * U + k * 3.2 * U * 1.3, { color: C.dim })); }
         if (r.value) { font(ctx, valS, { serif: true }); textAt(ctx, fit(ctx, r.value, inner * 0.45), R, mid + valS * 0.35, { color: hero ? C.bright : C.text, align: 'right' }); }
         y += h;
         if (i < g.rows.length - 1) hline(ctx, P, R, y - 1, 'rgba(241,233,216,0.06)');

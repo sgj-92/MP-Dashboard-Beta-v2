@@ -316,9 +316,9 @@
 
   // The WhatsApp text: plain lines, the headline of each slide, then the link.
   function summaryText(deck, { link, canSee } = {}) {
-    const lines = [`*Money Padel — ${monthLabel(deck.month)}*`];
+    const lines = [`*${deck.summaryTitle || `Money Padel — ${monthLabel(deck.month)}`}*`];
     visibleSlides(deck, canSee || (() => true)).forEach((s) => s.summary.forEach((l) => lines.push(l)));
-    if (link) lines.push('', `Full ${monthName(deck.month)} review:`, link);
+    if (link) lines.push('', deck.linkLabel || `Full ${monthName(deck.month)} review:`, link);
     return lines.join('\n');
   }
 

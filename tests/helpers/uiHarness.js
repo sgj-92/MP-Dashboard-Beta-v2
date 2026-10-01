@@ -225,6 +225,10 @@ async function open(options = {}) {
         // as the app stores them: { key: value }, each saved as { value: JSON }.
         moneypadel: Object.fromEntries(Object.entries(options.club || {})
           .map(([k, v]) => [k, { value: JSON.stringify(v), updatedAt: 0 }])),
+        // `options.collections` seeds other collections stored the same way
+        // (published Player Packs in playerPacks, say): { name: { id: value } }.
+        ...Object.fromEntries(Object.entries(options.collections || {}).map(([name, docs]) => [name,
+          Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { value: JSON.stringify(v), updatedAt: 0 }]))])),
       };
     })(),
     failReads: !!options.failReads,

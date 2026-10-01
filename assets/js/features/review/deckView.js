@@ -96,8 +96,8 @@
       <article class="deck-card deck-card-cover">
         <img class="deck-cover-mark" src="${esc(o.brandSrc)}" alt="" width="64" height="64">
         <div class="deck-cover-club">Money Padel</div>
-        <h1 class="deck-cover-title">${esc(month)}</h1>
-        <div class="deck-cover-sub">Monthly Review</div>
+        <h1 class="deck-cover-title">${esc(deck.cover ? deck.cover.title : month)}</h1>
+        <div class="deck-cover-sub">${esc(deck.cover ? deck.cover.sub : 'Monthly Review')}</div>
         <div class="deck-cover-hint" aria-hidden="true">Swipe to begin →</div>
       </article>
     </section>`;
@@ -107,8 +107,8 @@
     return `<section class="deck-slide" data-slide="end" role="group" aria-roledescription="slide" aria-label="${n} of ${n}: The full tables">
       <article class="deck-card deck-card-end">
         ${brandHtml(o, month)}
-        <h2 class="deck-title">That’s ${esc(month.split(' ')[0])}.</h2>
-        <p class="deck-end-text">Every table, every game and your own month are in Money Padel.</p>
+        <h2 class="deck-title">${esc(deck.closing ? deck.closing.title : `That’s ${month.split(' ')[0]}.`)}</h2>
+        <p class="deck-end-text">${esc(deck.closing ? deck.closing.text : 'Every table, every game and your own month are in Money Padel.')}</p>
         ${o.appLink ? `<a class="deck-end-link" href="${esc(o.appLink)}">View full stats in Money Padel</a>` : ''}
       </article>
     </section>`;
@@ -118,7 +118,9 @@
   // looking). Options: brandSrc, crownSrc, appLink.
   function html(deck, slides, o) {
     const opts = o || {};
-    const month = deck.title.replace(/ Review$/, '');
+    // A player's deck names its month and its cover itself; the club's is
+    // "<Month> Review".
+    const month = deck.monthLabel || deck.title.replace(/ Review$/, '');
     const n = slides.length + 2;
     const cards = [coverHtml(deck, n, opts, month)]
       .concat(slides.map((s, i) => slideHtml(s, i + 1, n, opts, month)))

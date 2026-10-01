@@ -25,6 +25,8 @@ let boardPackPublished = {};
 let boardPackPublishConfirm = false;
 let boardPackMessage = '';
 let boardPackNoteSeq = 0;
+// Which pack the section shows: the club's ('club') or the players' ('players').
+let boardPackView = 'club';
 // The Share Deck preview's moving parts, and pictures prepared but not yet
 // shared (a share sheet must open from a tap; see CardPainter.share).
 let boardPackDeckCtl = null;
@@ -406,8 +408,8 @@ function boardPackDeckPreviewHtml(liveDeck){
     <div class="section-sub">Pictures and the summary can be shared now, before publishing. The review link needs Publish.</div>`;
 }
 
-function boardPackOptionsHtml(it, index){
-  const def = BoardPack.BY_ID[it.id];
+function boardPackOptionsHtml(it, index, cat = BoardPack){
+  const def = cat.BY_ID[it.id];
   const keys = Object.keys(def.options);
   if(!keys.length) return '';
   return `<div class="bp-opts">${keys.map(k => {
@@ -418,20 +420,22 @@ function boardPackOptionsHtml(it, index){
   }).join('')}</div>`;
 }
 
-function boardPackItemHtml(it, index, count){
+// One row of a pack's editor. `cat` is the pack's catalogue: the club's
+// (BoardPack) or a player's (BoardPack.PLAYER) -- one editor for both.
+function boardPackItemHtml(it, index, count, cat = BoardPack){
   const moves = `<span class="bp-move">
     <button type="button" class="preset-btn bp-move-btn" data-bp-move="${index}" data-delta="-1" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button>
     <button type="button" class="preset-btn bp-move-btn" data-bp-move="${index}" data-delta="1" aria-label="Move down" ${index === count - 1 ? 'disabled' : ''}>↓</button>
   </span>`;
   if(it.kind === 'note'){
     return `<div class="bp-item bp-item-note" data-bp-item="${index}">
-      <div class="bp-item-row"><span class="bp-note-tag">Admin commentary</span>${moves}</div>
+      <div class="bp-item-row"><span class="bp-note-tag">${cat === BoardPack ? 'Admin commentary' : 'Admin note'}</span>${moves}</div>
       <input class="fg-select" data-bp-note-title="${index}" maxlength="${BoardPack.NOTE_TITLE_MAX}" placeholder="Title" value="${escapeHtml(it.title)}" />
       <textarea class="fg-select bp-note-input" data-bp-note-body="${index}" maxlength="${BoardPack.NOTE_BODY_MAX}" rows="3" placeholder="Your commentary">${escapeHtml(it.body)}</textarea>
-      <button type="button" class="preset-btn bp-remove" data-bp-remove="${index}">Remove commentary</button>
+      <button type="button" class="preset-btn bp-remove" data-bp-remove="${index}">Remove ${cat === BoardPack ? 'commentary' : 'note'}</button>
     </div>`;
   }
-  const def = BoardPack.BY_ID[it.id];
+  const def = cat.BY_ID[it.id];
   if(!def){
     return `<div class="bp-item is-unknown" data-bp-item="${index}"><div class="bp-item-row"><span class="bp-dim">${escapeHtml(it.id)} — not available in this version</span>${moves}</div></div>`;
   }
@@ -440,7 +444,7 @@ function boardPackItemHtml(it, index, count){
       <label class="bp-check"><input type="checkbox" data-bp-toggle="${index}" ${it.enabled ? 'checked' : ''} /> <span>${escapeHtml(def.title)}</span></label>
       ${moves}
     </div>
-    ${it.enabled ? boardPackOptionsHtml(it, index) : ''}
+    ${it.enabled ? boardPackOptionsHtml(it, index, cat) : ''}
   </div>`;
 }
 
@@ -451,10 +455,17 @@ function buildBoardPackSectionHtml(){
   if(!boardPackMonth){
     return html + `<div class="section-sub">No months with games yet.</div>`;
   }
+  // The club's pack, or one pack per player: the same month, the same
+  // editor, the same deck.
+  html += `<div class="fg-toggle bp-view" role="group" aria-label="Pack" style="margin:8px 0 10px;">
+    <button type="button" class="fg-toggle-btn ${boardPackView === 'club' ? 'active' : ''}" id="bpViewClub" aria-pressed="${boardPackView === 'club'}">Club pack</button>
+    <button type="button" class="fg-toggle-btn ${boardPackView === 'players' ? 'active' : ''}" id="bpViewPlayers" aria-pressed="${boardPackView === 'players'}">Player packs</button>
+  </div>`;
   html += `<div class="fg-controls">
     <div class="fg-row"><label class="fg-label" for="bpMonth">Month</label>
       <select id="bpMonth" class="fg-select">${months.map(m => `<option value="${m}" ${m === boardPackMonth ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>
     </div>`;
+  if(boardPackView === 'players') return html + buildPlayerPacksHtml() + `</div>`;
   if(!boardPackDraft){
     return html + `<div class="section-sub" id="bpLoading">Loading ${escapeHtml(monthLabel(boardPackMonth))}…</div></div>`;
   }
@@ -492,42 +503,57 @@ function buildBoardPackSectionHtml(){
   return html;
 }
 
-function wireBoardPackSection(){
-  const box = document.getElementById('manageView');
-  if(!box || !adminOpenSections.boardpack) return;
-  if(!boardPackDraft){ boardPackEnsureLoaded(); }
-  const monthSel = document.getElementById('bpMonth');
-  // A change still waiting to be saved belongs to the month it was made in.
-  if(monthSel) monthSel.onchange = async () => { const to = monthSel.value; await boardPackSaveNow(); boardPackOpenMonth(to); renderManage(); };
-  if(!boardPackDraft) return;
-
-  const change = (next) => { boardPackDraft = next; boardPackMessage = ''; renderManage(); boardPackQueueSave(); };
+// The editor's controls -- on/off, move, options, notes -- for whichever
+// pack is open: `ed` says which (its catalogue, how to read and replace its
+// config, and how it saves).
+function wirePackEditor(box, ed){
+  const change = (next) => { ed.set(next); renderManage(); ed.queueSave(); };
   const index = (el, attr) => Number(el.getAttribute(attr));
   box.querySelectorAll('[data-bp-toggle]').forEach(el => {
-    el.onchange = () => change(BoardPack.setEnabled(boardPackDraft, index(el, 'data-bp-toggle'), el.checked));
+    el.onchange = () => change(ed.cat.setEnabled(ed.get(), index(el, 'data-bp-toggle'), el.checked));
   });
   box.querySelectorAll('[data-bp-move]').forEach(el => {
-    el.onclick = () => change(BoardPack.move(boardPackDraft, index(el, 'data-bp-move'), Number(el.dataset.delta)));
+    el.onclick = () => change(ed.cat.move(ed.get(), index(el, 'data-bp-move'), Number(el.dataset.delta)));
   });
   box.querySelectorAll('[data-bp-opt]').forEach(el => {
-    el.onchange = () => change(BoardPack.setOption(boardPackDraft, index(el, 'data-bp-opt'), el.dataset.key, el.value));
+    el.onchange = () => change(ed.cat.setOption(ed.get(), index(el, 'data-bp-opt'), el.dataset.key, el.value));
   });
   box.querySelectorAll('[data-bp-remove]').forEach(el => {
-    el.onclick = () => change(BoardPack.removeNote(boardPackDraft, index(el, 'data-bp-remove')));
+    el.onclick = () => change(ed.cat.removeNote(ed.get(), index(el, 'data-bp-remove')));
   });
   // Typing edits the pack without redrawing it, so the field keeps its focus;
   // the preview catches up when the field is left.
-  const status = () => boardPackQueueSave();
   box.querySelectorAll('[data-bp-note-title]').forEach(el => {
-    el.oninput = () => { boardPackDraft = BoardPack.updateNote(boardPackDraft, index(el, 'data-bp-note-title'), { title: el.value }); status(); };
-    el.onchange = () => { if(boardPackPreviewOpen) renderManage(); };
+    el.oninput = () => { ed.set(ed.cat.updateNote(ed.get(), index(el, 'data-bp-note-title'), { title: el.value })); ed.queueSave(); };
+    el.onchange = () => { if(ed.previewOpen()) renderManage(); };
   });
   box.querySelectorAll('[data-bp-note-body]').forEach(el => {
-    el.oninput = () => { boardPackDraft = BoardPack.updateNote(boardPackDraft, index(el, 'data-bp-note-body'), { body: el.value }); status(); };
-    el.onchange = () => { if(boardPackPreviewOpen) renderManage(); };
+    el.oninput = () => { ed.set(ed.cat.updateNote(ed.get(), index(el, 'data-bp-note-body'), { body: el.value })); ed.queueSave(); };
+    el.onchange = () => { if(ed.previewOpen()) renderManage(); };
   });
   const add = document.getElementById('bpAddNote');
-  if(add) add.onclick = () => change(BoardPack.addNote(boardPackDraft, { id: `note-${Date.now().toString(36)}-${++boardPackNoteSeq}`, title: '', body: '' }));
+  if(add) add.onclick = () => change(ed.cat.addNote(ed.get(), { id: `note-${Date.now().toString(36)}-${++boardPackNoteSeq}`, title: '', body: '' }));
+}
+
+function wireBoardPackSection(){
+  const box = document.getElementById('manageView');
+  if(!box || !adminOpenSections.boardpack) return;
+  const viewClub = document.getElementById('bpViewClub');
+  if(viewClub) viewClub.onclick = async () => { await playerPackSaveNow(); boardPackView = 'club'; renderManage(); };
+  const viewPlayers = document.getElementById('bpViewPlayers');
+  if(viewPlayers) viewPlayers.onclick = async () => { await boardPackSaveNow(); boardPackView = 'players'; renderManage(); };
+  const monthSel = document.getElementById('bpMonth');
+  // A change still waiting to be saved belongs to the month it was made in.
+  if(monthSel) monthSel.onchange = async () => { const to = monthSel.value; await boardPackSaveNow(); await playerPackSaveNow(); boardPackOpenMonth(to); playerPackOpen(null); renderManage(); };
+  if(boardPackView === 'players'){ wirePlayerPacks(box); return; }
+  if(!boardPackDraft){ boardPackEnsureLoaded(); }
+  if(!boardPackDraft) return;
+
+  wirePackEditor(box, {
+    cat: BoardPack, get: () => boardPackDraft,
+    set: (next) => { boardPackDraft = next; boardPackMessage = ''; },
+    queueSave: boardPackQueueSave, previewOpen: () => boardPackPreviewOpen,
+  });
   const preview = document.getElementById('bpPreviewBtn');
   if(preview) preview.onclick = () => { boardPackPreviewOpen = !boardPackPreviewOpen; renderManage(); };
   const modePack = document.getElementById('bpModePack');
@@ -600,10 +626,10 @@ function boardPackDeckPictures(){
   return { deck, label, cards: [{ id: 'cover', kind: 'cover', title: label }].concat(shown, [end]) };
 }
 
-async function boardPackShare(makeCanvases, label){
+async function boardPackShare(makeCanvases, label, title){
   const images = await boardPackImages();
   const files = await Promise.all(makeCanvases(images).map(([cv, name]) => CardPainter.toFile(cv, name)));
-  const meta = { title: `Money Padel — ${monthLabel(boardPackMonth)}` };
+  const meta = { title: title || `Money Padel — ${monthLabel(boardPackMonth)}` };
   const outcome = await CardPainter.share(files, meta);
   boardPackShareReady = outcome === 'ready' ? { files, meta, label } : null;
   boardPackMessage = outcome === 'shared' ? `${label} shared.`

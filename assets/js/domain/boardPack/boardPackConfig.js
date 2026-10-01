@@ -72,17 +72,32 @@
     { id: 'tier_moves', title: 'Tier movements', on: true, options: {} },
     { id: 'crossovers', title: 'Crossovers', on: false, options: { top: top('5') } },
   ];
-  const BY_ID = Object.fromEntries(MODULES.map((m) => [m.id, m]));
+
+  // The Player Monthly Pack's catalogue: one player's month, from their side.
+  // Same machinery as the club pack (forCatalogue below), so selecting,
+  // ordering, options, notes and saving work identically.
+  const rivalMin = { label: 'Head-to-head minimum', values: ['2', '1', '3'], labels: { 1: '1+ match', 2: '2+ matches', 3: '3+ matches' }, default: '2' };
+  const PLAYER_MODULES = [
+    { id: 'overview', title: 'Month at a glance', on: true, options: {} },
+    { id: 'matchups', title: 'Matchup types', on: true, options: { top: top('all') } },
+    { id: 'partners', title: 'Partners', on: true, options: { top: top('5') } },
+    { id: 'rivals', title: 'Opponents and head-to-head', on: true, options: { min: rivalMin, top: top('5') } },
+    { id: 'best', title: 'Best results', on: true, options: {} },
+    { id: 'weaker', title: 'Where results were weaker', on: true, options: {
+      min: { label: 'Minimum sample', values: ['2', '3', '1'], labels: { 1: '1+ match', 2: '2+ matches', 3: '3+ matches' }, default: '2' } } },
+    { id: 'movement', title: 'Monthly movement', on: true, options: {} },
+    { id: 'targets', title: 'Next-month targets', on: true, options: {
+      top: { label: 'Show', values: ['3', '5'], labels: { 3: 'Up to 3', 5: 'Up to 5' }, default: '3' } } },
+  ];
 
   const NOTE_TITLE_MAX = 120;
   const NOTE_BODY_MAX = 4000;
 
   const isMonth = (m) => typeof m === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
 
-  function storageKey(month) {
-    if (!isMonth(month)) throw new Error(`BoardPack: not a month: ${month}`);
-    return `moneypadel_board_pack_${month}`;
-  }
+  // Everything that depends on which modules exist, for one catalogue.
+  function forCatalogue(MODULES) {
+  const BY_ID = Object.fromEntries(MODULES.map((m) => [m.id, m]));
 
   function defaultOptions(id) {
     const def = BY_ID[id];
@@ -215,8 +230,19 @@
 
   return {
     VERSION, MODULES, BY_ID, NOTE_TITLE_MAX, NOTE_BODY_MAX,
-    isMonth, storageKey, defaultOptions, defaultConfig, normalise,
+    isMonth, defaultOptions, defaultConfig, normalise,
     move, setEnabled, setOption, addNote, updateNote, removeNote,
     selected, forSave, limit, sameChoice,
   };
+  }
+
+  function storageKey(month) {
+    if (!isMonth(month)) throw new Error(`BoardPack: not a month: ${month}`);
+    return `moneypadel_board_pack_${month}`;
+  }
+
+
+  // The club pack is the module's own API (unchanged); the Player Pack's is
+  // PLAYER.
+  return Object.assign(forCatalogue(MODULES), { storageKey, forCatalogue, PLAYER: forCatalogue(PLAYER_MODULES) });
 });

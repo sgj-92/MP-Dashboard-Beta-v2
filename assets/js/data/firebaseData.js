@@ -50,6 +50,17 @@ async function fsSet(key, value){
   await db.collection(FS_COLLECTION).doc(key).set({ value, updatedAt: Date.now() });
 }
 
+// The same, in another collection -- published Player Packs live in their
+// own (playerPacks), named by their private token.
+async function fsGetIn(collection, id){
+  const doc = await db.collection(collection).doc(id).get();
+  return doc.exists ? doc.data().value : null;
+}
+
+async function fsSetIn(collection, id, value){
+  await db.collection(collection).doc(id).set({ value, updatedAt: Date.now() });
+}
+
 // Read one stored document and parse it, falling back to `fallback` if it is
 // missing or unreadable. Every caller did exactly this; having it once is what
 // makes the reads safe to fire concurrently -- a rejected promise inside a
