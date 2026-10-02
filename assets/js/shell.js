@@ -651,6 +651,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   renderSectionSubnav();
   // A laptop or a monitor gets the desktop layout; a phone, nothing new.
   initDesktopShell();
+  initMatchScorecard();
 
   // The shell exists. If the record is already here, this is the half that
   // finished second and the first screen is drawn now; if it is not, init()

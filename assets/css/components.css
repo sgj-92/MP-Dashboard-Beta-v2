@@ -388,3 +388,52 @@
 .mm-note-link:active{ opacity: .7; }
 #approveConfirmBtn[disabled]{ opacity: .45; cursor: not-allowed; }
 #bulkCreate[disabled]{ opacity: .45; cursor: not-allowed; }
+
+/* ===================== MATCH SCORECARD =====================
+   One completed match: date, context, score, winner, then each team's players
+   with the tier held on the day and their own rating movement, and the side's
+   expected / actual performance score and the difference. Opened as a sheet
+   from any [data-scorecard] control (ui/components/matchScorecard.js). */
+.scorecard-open{
+  background: none; border: 1px solid var(--gold-soft); border-radius: 999px;
+  color: var(--gold-soft); font-family: var(--font-interface);
+  font-size: 11.5px; font-weight: 600; padding: 5px 12px; cursor: pointer;
+}
+.scorecard-open:active{ opacity: .7; }
+.msc-open-row{ margin-top: 8px; }
+.msc-title-row{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.msc-title-row h3{ margin-bottom: 0; }
+.msc-close{
+  background: none; border: none; color: var(--text-dim); font-size: 16px;
+  cursor: pointer; padding: 4px 6px;
+}
+.msc{ font-family: var(--font-interface); margin-top: 12px; }
+.msc-head{ text-align: center; margin-bottom: 12px; }
+.msc-date{ font-size: 12px; color: var(--text-dim); }
+.msc-context{ font-size: 11px; color: var(--gold-soft); text-transform: uppercase; letter-spacing: .04em; margin-top: 2px; }
+.msc-score{ font-size: 22px; font-weight: 700; color: var(--text); margin-top: 6px; letter-spacing: .02em; }
+.msc-winner{ font-size: 12.5px; color: var(--gold-bright); margin-top: 2px; }
+.msc-teams{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.msc-team{
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px;
+  min-width: 0;
+}
+.msc-team.msc-won{ border-color: rgba(90,156,90,0.55); }
+.msc-team-head{
+  display: flex; justify-content: space-between; font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); margin-bottom: 6px;
+}
+.msc-won .msc-result{ color: var(--green); }
+.msc-player{ display: flex; align-items: baseline; gap: 6px; font-size: 13px; padding: 2px 0; }
+.msc-name{ color: var(--text); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msc-tier{ font-size: 10.5px; color: var(--gold-soft); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+.msc-move{ margin-left: auto; font-size: 12px; font-weight: 700; color: var(--text-dim); white-space: nowrap; }
+.msc-figs{ margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
+.msc-fig{ display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); padding: 1px 0; }
+.msc-fig b{ color: var(--text); font-weight: 700; }
+.msc-games{ font-size: 10.5px; color: var(--text-dim); margin-top: 4px; }
+.msc-pos{ color: var(--green) !important; }
+.msc-neg{ color: #e8a5a1 !important; }
+.msc-note{ font-size: 10.5px; color: var(--text-dim); line-height: 1.5; margin-top: 12px; }
+.msc-empty{ font-size: 12px; color: var(--text-dim); margin-top: 12px; }
+@media (max-width: 340px){ .msc-teams{ grid-template-columns: 1fr; } }
