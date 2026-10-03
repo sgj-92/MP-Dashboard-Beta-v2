@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`19662b1`** (completed-match scorecard, 2 Oct; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **870 / 870 on `main`** (2 Oct, after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`c6acfd9`** (Match Result Card + Match Analysis, 3 Oct; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **874 / 874 on `main`** (3 Oct, after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,22 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Match Result Card + Match Analysis — DONE (`c6acfd9`), 3 Oct.** Shaun's brief:
+the scorecard read like an analytics panel.
+- **Two layers, one view model.**
+  - **The Match Result Card opens first.** It is a celebratory,
+    shareable sports-result card:
+    - the winners' names, big, with their tier on the day;
+    - "Take the win", then the score;
+    - "over" the opponents;
+    - one story;
+    - one Expected / Performance / pp line;
+    - the winners' rating gains.
+  - **Match Analysis** sits behind "View match analysis": the full
+    two-team breakdown, losers' movements and the method note.
+- **Share result** posts the card as a picture (1080 × 1350) through the
+  phone's share sheet, e.g. WhatsApp.
 
 **Completed-match scorecard — DONE (`19662b1`), 2 Oct.** Shaun's brief.
 - **One canonical card per rated match.** It shows the date, context
@@ -1622,6 +1638,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | DQ6–DQ9 as recommended | Shaun, 30 Sep 2026, before Phase 2. **DQ6:** a player in the game may record that the court is booked. It is attributed to them, only on an agreed game they are still in and that is not archived, and only an Admin can undo it. The Admin review of unrecorded bookings stays. **DQ7:** replacing a player stays Admin-only. **DQ8:** players get no "Change plan"; date, time and venue stay Admin edits. **DQ9:** a plain request may carry an optional time and venue, as a suggestion, never a booking. Implemented in `fixtureFlow.js` on `main` (`7d70cc0`). |
 | Accept all: the new Play lists, DQ1 as recommended, and the Phase 3a (Home) go-ahead | Shaun, 30 Sep 2026 ("Accept all"). **Play lists accepted:** "Upcoming, as before" and "Requests, as before" are to be retired from Club on `ux/player-reset-v2`. **DQ1:** no promotion bar and no threshold line; keep the one-line gap, worded "N pts below the lowest-rated Tier A player". **Phase 3a (Home) approved.** Shaun's same message said the Board Pack must not touch the redesign branch, so both are queued behind it (NEXT). |
 | Admin Monthly Board Pack: a stored choice, figures drawn live | Shaun's brief, 30 Sep 2026; implementation choices CCode's. **DONE `9e4a5e6`.** A per-month document `moneypadel_board_pack_YYYY-MM` holds only the admin's choice: modules (id, on/off, options) and commentary in one ordered list, who saved it and when, plus a fingerprint of the month's record. It is read when an admin opens that month, never at start-up. Figures are never stored. Whether a finalised pack should freeze its figures is Shaun's call (Section 5). |
+| Match Result Card first, Match Analysis behind it; deterministic match stories | Shaun's brief, 3 Oct 2026; story thresholds and wording CCode's, within the brief. **DONE `c6acfd9`.** `MatchScorecard.resultCard(vm)` derives the card from the scorecard view model and copies its fields, so **no second data path**. The same model feeds the sheet (`matchResultCardHtml`), the picture (`CardPainter.matchResult`) and the analysis (`matchAnalysisHtml`). **Heroes:** the winners; on a draw (nobody won), the side that beat expectation, under "All square". **Story:** the first rule that applies, on recorded figures (`MatchScorecard.STORY`): expected < 35% → *Major upset*; < 50% → *Beat the odds*; ≥ 75% of games → *Dominant display*; ≥ +20pp as favourites → *Statement win*; ≤ 55% of games → *Too close to call*; ≥ 0pp → *Expected win, delivered*; else *Job done*; a draw → *Honours even*. On the 30 Sep record: delivered 59, beat the odds 39, dominant 19, too close 15, job done 14, major upset 12, statement 9, draws 9. A winner always banks the 20% result component (median winner +16pp), which is why *Statement* needs +20. **Winners' gains** are shown only when every winner gained. A favourite can win and still fall short of expectation, so their rating drops; 20 of 167 live wins are like that. Those cards show no reward row rather than a minus or half a row; the analysis shows every movement. A winner's shortfall appears on the card as a neutral figure, not red. |
 | Completed-match scorecard: one card per rated match, read back from the engine's record, no new persistence | Shaun's brief, 2 Oct 2026; the architecture CCode's. **DONE `19662b1`.** View model `assets/js/domain/matches/matchScorecard.js` (pure; builds the card from the app match + `MatchFacts` + a dated tier resolver); sheet `assets/js/ui/components/matchScorecard.js` with one delegated `[data-scorecard]` listener. **Sources of truth, unchanged:** Expected = the side's `preMatchExpectedScore`; Actual = `actualScore`, the engine's performance score (0.80 × game share + 0.20 × result: win 1, draw ½, loss 0); difference = `actualScore − preMatchExpectedScore` (the stored `performanceResidual`, which K multiplies); movement = each player's `ratingDelta`; tier = the event's `tierAtEvent`, falling back to `historicalTierOf` (the dated tier history) only when there is no event. Game share is shown as labelled context, never as "Actual". The card prints pp as printed Actual − printed Expected (1 dp), so it always adds up on screen. It is within 0.1pp of the stored residual (live max 0.097). **Unrated match:** the card says so; no figure is estimated. **Teams:** team 1 is the stored first side (the winners; a draw keeps its stored orientation). Within a pair the stronger tier comes first, as on every match card. **No new persistence:** every field was already stored per match and per player. |
 | Desktop: one responsive app; the bottom navigation becomes a left rail; CSS places existing elements | Shaun's brief, 1 Oct 2026; the shell and layout choices CCode's. **DONE `269327c`.** Layout ranges mobile < 768 / tablet 768–1199 / desktop 1200+ / wide 1600+, in `assets/css/layout/desktop.css` and `assets/js/ui/desktopShell.js`. **No second app, no desktop routes, no duplicated renderers.** The rail is `.shell-bottom-nav` restyled, so routes, highlight and gating are the phone's. Admin stays inside More, not a primary rail item. From 768px the body is a CSS grid with a centred, capped content area and a midline: existing elements (podium / Kings, directory / profile, editor / preview) are placed side by side by CSS alone. The only markup added is `display: contents` wrappers on Home and around the pack editor and preview (no box on a phone), plus the rail's brand and viewer, which are built only once a desktop-sized window is seen. **The phone is proven unchanged:** the behaviour snapshot at 390 and 360 is identical, element for element, apart from those wrappers. The fifth item stays **More** on this branch; **Me** is the redesign's (Section 5). |
 | Player Monthly Packs: built on the Board Pack and Share Deck; private token links; published packs are snapshots | Shaun's brief, 1 Oct 2026; implementation and the access model CCode's, as the brief asked ("propose the safest simple access model"). **DONE `d6e4ae1`.** One catalogue engine serves both packs (`BoardPack.forCatalogue`; `BoardPack.PLAYER`). The player's month is a pure model (`domain/playerPack/playerMonth.js`) fed from the canonical selectors, and its slides are the Share Deck's shape (`playerDeck.js`), so the same deck, pictures and publishing serve both. **Composition:** a team is labelled by its players' tiers on the match date, strongest first (S > A > B > C, `?` if unknown), and a matchup is "my team vs theirs" from the player's side, so one match is "BB vs AB" for one player and "AB vs BB" for an opponent. **Targets** are four fixed rules over the month's own record (rematch, partner, thin evidence, own tier), each with its reason and sample, never a forecast. **Access:** each published pack is stored under a 128-bit random token in its own `playerPacks` collection, and the link is `review/?p=<token>`; changing a name, month or id in the address reaches nothing. The storage setting that completes it is Shaun's (Section 5). |
@@ -2578,6 +2595,25 @@ with Shaun.**
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 3 Oct — Match Result Card: three small product calls (defaults in place)
+
+**For Shaun / CGPT. Nothing is blocked; the card is live (`c6acfd9`).**
+1. **The story thresholds and wording** (Section 3 row) are CCode's
+   defaults. They are tuned on the 30 Sep record so that every story
+   actually occurs and none dominates. Change any number or line and
+   every card follows; the thresholds are pinned by a test.
+2. **A win that cost rating.** When a favourite wins but falls short of
+   expectation, their rating falls. The card then shows *Job done* and
+   omits the gains row, and the analysis shows the drop.
+   - The alternative is to show the drop on the card. That is honest,
+     but it is a negative number on a celebratory card.
+3. **"Performance" is the label** for the engine's actual score on both
+   views, as the brief suggested. "Actual" is no longer shown.
+- **For the design system (not blocking):** the card has its own sports-
+  card styling (`.mrc-*`: serif hero names, a big score, a story panel).
+  If the redesign's tokens or primitives should own a "share card"
+  pattern, this and the Board Pack pictures would move onto it together.
 
 ### OPEN 2 Oct — Match scorecard: the scale of "Expected" and "Actual", and an older label
 
@@ -3617,6 +3653,40 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 3 Oct 2026 (Match Result Card + Match Analysis)
+
+**`c6acfd9` on `app-features-fixes` = `main`.**
+- **Refactor, not rewrite.**
+  - `matchScorecard.js` (domain) gains `resultCard(vm)`,
+    `story(vm, hero)` and `STORY`. `build()` is unchanged, as is every
+    rating figure it reads.
+  - The UI file splits into `matchResultCardHtml` and
+    `matchAnalysisHtml` (the old card, with teams named by their players
+    rather than "Team 1 / 2").
+  - One sheet holds both views: the Result Card first, "View match
+    analysis" / "← Back to result", and "Share result".
+- **New:**
+  - `CardPainter.matchResult(card)`, a 1080 × 1350 picture;
+  - `shareMatchResult(id)`, using the existing share-sheet path. It
+    offers "Tap to share" when the phone needs a fresh tap.
+- **Unchanged:**
+  - the rating engine, MatchFacts and the stored data;
+  - the entry points (Games card, approval outcome);
+  - `scorecardButtonHtml(id)` for reuse (its label is now "🏆 Match
+    result").
+- **Tests:** `tests/matchScorecard.test.js` (13, up from 9).
+  - The Result Card copies the scorecard field for field on every seeded
+    match.
+  - The story thresholds are tested at their edges, and the values are
+    pinned.
+  - An unrated card shows no figures; singles wording is covered.
+  - **In the browser:** the Result Card first, against the engine
+    record; Analysis and back; Share result (one PNG, "Tap to share",
+    re-share of the same picture).
+  - 19 mutations caught. **874 / 874.**
+
+Baton → Shaun / CGPT: Section 5 (three small calls; defaults in place).
 
 ### CCode — 2 Oct 2026 (completed-match scorecard)
 
@@ -8146,6 +8216,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `c6acfd9` | Match Result Card + Match Analysis. The celebratory card opens first: winners as heroes with their tier on the day, a big score, one deterministic story, Expected / Performance / pp, and the winners' gains. The full breakdown is one tap behind it. Share result paints the card as a picture for WhatsApp. One view model, no new data path; 874/874. |
 | `19662b1` | Completed-match scorecard: one card per rated match, opened from Play › Games and from the approval confirmation. It shows players with their tier on the day, score, winner, Expected / Actual / pp per team, and each player's movement. Every figure is read back from the engine's recorded events; there is no new persistence and no recomputation. 9 tests, 10 mutations caught; 870/870. |
 | `269327c` | Desktop-friendly dashboard. Left rail (brand, sections, "Viewing as"), centred capped column, ranges 768 / 1200 / 1600; Home grid, Rankings toolbar + Kings beside podium, Find a Game beside results, Games card grid, Players master-detail, Board Pack and Player Pack editor beside live preview, dialogs and drawers, Escape and focus; `/preview` desktop presets. The phone is unchanged (snapshot at 390/360). All new tests fail on `8854107` but the overflow invariant; 9 mutations caught; 861/861. |
 | `382f907` | Board Pack split by tier. Results table and Power Rankings: "Split by tier" (default) or "One list"; League, Merit and Race: "A slide per tier" (default) or leaders on one slide. The Share Deck makes one slide per tier. A mid-month mover is in each tier played. All new tests fail on `abc34d5`; 8 mutations caught; 852/852. |
@@ -8248,6 +8319,13 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 3 Oct (latest): the Match Result Card is live (`c6acfd9`, 874 / 874).**
+Baton → Shaun / CGPT.
+- **Try it:** Play › Games → tap a game → **🏆 Match result**. Then
+  **Share result**, or **View match analysis**.
+- **Decide (Section 5):** the story thresholds and wording; a win that
+  cost rating; the label "Performance".
 
 **CCode, 2 Oct (latest): the completed-match scorecard is live (`19662b1`, 870 / 870).**
 Baton → Shaun / CGPT.
