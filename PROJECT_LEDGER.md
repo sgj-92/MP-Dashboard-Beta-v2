@@ -1638,6 +1638,7 @@ Shaun's decisions, including where an agent recommended otherwise.
 | DQ6–DQ9 as recommended | Shaun, 30 Sep 2026, before Phase 2. **DQ6:** a player in the game may record that the court is booked. It is attributed to them, only on an agreed game they are still in and that is not archived, and only an Admin can undo it. The Admin review of unrecorded bookings stays. **DQ7:** replacing a player stays Admin-only. **DQ8:** players get no "Change plan"; date, time and venue stay Admin edits. **DQ9:** a plain request may carry an optional time and venue, as a suggestion, never a booking. Implemented in `fixtureFlow.js` on `main` (`7d70cc0`). |
 | Accept all: the new Play lists, DQ1 as recommended, and the Phase 3a (Home) go-ahead | Shaun, 30 Sep 2026 ("Accept all"). **Play lists accepted:** "Upcoming, as before" and "Requests, as before" are to be retired from Club on `ux/player-reset-v2`. **DQ1:** no promotion bar and no threshold line; keep the one-line gap, worded "N pts below the lowest-rated Tier A player". **Phase 3a (Home) approved.** Shaun's same message said the Board Pack must not touch the redesign branch, so both are queued behind it (NEXT). |
 | Admin Monthly Board Pack: a stored choice, figures drawn live | Shaun's brief, 30 Sep 2026; implementation choices CCode's. **DONE `9e4a5e6`.** A per-month document `moneypadel_board_pack_YYYY-MM` holds only the admin's choice: modules (id, on/off, options) and commentary in one ordered list, who saved it and when, plus a fingerprint of the month's record. It is read when an admin opens that month, never at start-up. Figures are never stored. Whether a finalised pack should freeze its figures is Shaun's call (Section 5). |
+| Phase 3a Home: the clubhouse lobby on `ux/player-reset-v2` | Shaun's Home brief, 3 Oct 2026 (it supersedes any earlier CGPT Home v2 brief that conflicts); the layout and copy CCode's, within the IA and DQ31. **DONE `659e32c`, on `ux/player-reset-v2` only.** The order is the IA's: hero → Needs you → Next game → Last time out → Around the club. **Hero:** the club photograph stays, with a compact, live-data hero that leads with the viewer's League position for Home's month, named by tier and month. Tapping it opens Rankings › This Month (League) on Home's month without recording a month choice. **Position source:** `leagueStandingOf(name, month)` in `monthlyTablesData.js`, the League's own rows and standing order. It now also serves the Player Pack, replacing its private copy (same figures). A mid-month mover is placed by their current spell (DQ24). With no game that month, the hero says so in words. Power Rating, Tier Rank (of N), form and the DQ1 gap line form one demoted line; the Power movement names its month (DQ2). **Needs you / Next game:** `myGamesVisible()` in `playScreens.js` (My Games' list with D4 visibility), so the Play badge, My Games and Home are one list. Needs you shows Play's own rows and answer buttons, two at most, then "N more in My Games", and is absent when empty. Next game is Upcoming only. **Last time out:** the same recorded facts; the result is now the centre. **Around the club:** Club Pulse as a swipeable rail (2–3 items, DQ30), plus the month's review link. **Removed from Home:** Match ideas (now in Arrange a Game, DQ32), the monthly recap block, the tagline and the Your Game card. |
 | Match Result Card first, Match Analysis behind it; deterministic match stories | Shaun's brief, 3 Oct 2026; story thresholds and wording CCode's, within the brief. **DONE `c6acfd9`.** `MatchScorecard.resultCard(vm)` derives the card from the scorecard view model and copies its fields, so **no second data path**. The same model feeds the sheet (`matchResultCardHtml`), the picture (`CardPainter.matchResult`) and the analysis (`matchAnalysisHtml`). **Heroes:** the winners; on a draw (nobody won), the side that beat expectation, under "All square". **Story:** the first rule that applies, on recorded figures (`MatchScorecard.STORY`): expected < 35% → *Major upset*; < 50% → *Beat the odds*; ≥ 75% of games → *Dominant display*; ≥ +20pp as favourites → *Statement win*; ≤ 55% of games → *Too close to call*; ≥ 0pp → *Expected win, delivered*; else *Job done*; a draw → *Honours even*. On the 30 Sep record: delivered 59, beat the odds 39, dominant 19, too close 15, job done 14, major upset 12, statement 9, draws 9. A winner always banks the 20% result component (median winner +16pp), which is why *Statement* needs +20. **Winners' gains** are shown only when every winner gained. A favourite can win and still fall short of expectation, so their rating drops; 20 of 167 live wins are like that. Those cards show no reward row rather than a minus or half a row; the analysis shows every movement. A winner's shortfall appears on the card as a neutral figure, not red. |
 | Completed-match scorecard: one card per rated match, read back from the engine's record, no new persistence | Shaun's brief, 2 Oct 2026; the architecture CCode's. **DONE `19662b1`.** View model `assets/js/domain/matches/matchScorecard.js` (pure; builds the card from the app match + `MatchFacts` + a dated tier resolver); sheet `assets/js/ui/components/matchScorecard.js` with one delegated `[data-scorecard]` listener. **Sources of truth, unchanged:** Expected = the side's `preMatchExpectedScore`; Actual = `actualScore`, the engine's performance score (0.80 × game share + 0.20 × result: win 1, draw ½, loss 0); difference = `actualScore − preMatchExpectedScore` (the stored `performanceResidual`, which K multiplies); movement = each player's `ratingDelta`; tier = the event's `tierAtEvent`, falling back to `historicalTierOf` (the dated tier history) only when there is no event. Game share is shown as labelled context, never as "Actual". The card prints pp as printed Actual − printed Expected (1 dp), so it always adds up on screen. It is within 0.1pp of the stored residual (live max 0.097). **Unrated match:** the card says so; no figure is estimated. **Teams:** team 1 is the stored first side (the winners; a draw keeps its stored orientation). Within a pair the stronger tier comes first, as on every match card. **No new persistence:** every field was already stored per match and per player. |
 | Desktop: one responsive app; the bottom navigation becomes a left rail; CSS places existing elements | Shaun's brief, 1 Oct 2026; the shell and layout choices CCode's. **DONE `269327c`.** Layout ranges mobile < 768 / tablet 768–1199 / desktop 1200+ / wide 1600+, in `assets/css/layout/desktop.css` and `assets/js/ui/desktopShell.js`. **No second app, no desktop routes, no duplicated renderers.** The rail is `.shell-bottom-nav` restyled, so routes, highlight and gating are the phone's. Admin stays inside More, not a primary rail item. From 768px the body is a CSS grid with a centred, capped content area and a midline: existing elements (podium / Kings, directory / profile, editor / preview) are placed side by side by CSS alone. The only markup added is `display: contents` wrappers on Home and around the pack editor and preview (no box on a phone), plus the rail's brand and viewer, which are built only once a desktop-sized window is seen. **The phone is proven unchanged:** the behaviour snapshot at 390 and 360 is identical, element for element, apart from those wrappers. The fifth item stays **More** on this branch; **Me** is the redesign's (Section 5). |
@@ -2595,6 +2596,39 @@ with Shaun.**
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 3 Oct — Phase 3a Home: review it, and four small calls
+
+**For Shaun / CGPT. Home is built on `ux/player-reset-v2` (`659e32c`); nothing
+is merged to `main`.**
+- **Review it:** the branch's Vercel preview. Home at 390px, and a laptop.
+- **This Ledger entry is on the redesign branch only.** The brief said to
+  leave `main` and `app-features-fixes` untouched, so it reaches `main`
+  only when the branch is merged, or if Shaun asks CCode to copy it
+  across.
+- **The branch now carries `main`** (`64621f7`): the desktop layout, the
+  packs and the Match Result Card, as the Ledger queued. The desktop
+  layout keys on Me as the fifth item on this branch.
+- **Calls, with defaults in place:**
+  1. **"Why it moved" (map 1b / 4.2a) is not built.** Last time out's
+     "View match" keeps today's route (the profile, or Games for a
+     draw). The card carries its match id, so it can open the Match
+     Result Card from `main` instead (one line). Which should it open?
+  2. **No movement in League position.** Nothing records last week's
+     position, so the hero shows the month's **Power Rating** movement
+     instead, labelled with the month (DQ2). A position movement needs
+     a snapshot first, which is a data decision.
+  3. **The hero shows League only.** Merit is not in the hero, and the
+     Race stays out while it is a trial (DQ31). The prototype's
+     three-figure "Your September" strip is folded into one story.
+  4. **Queued but not in this brief:** retiring "Upcoming, as before"
+     and "Requests, as before" from Club. It is still to do.
+- **Prototype differences, deliberate:**
+  - no court number (not recorded, DQ10);
+  - no promotion bar (DQ1);
+  - the photograph kept as the hero's background (map 4.2);
+  - section labels in the primitives' small caps;
+  - no emoji (💡 left with Match ideas).
 
 ### OPEN 3 Oct — Match Result Card: three small product calls (defaults in place)
 
@@ -3653,6 +3687,41 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 3 Oct 2026 (Phase 3a: Home, on `ux/player-reset-v2`)
+
+**`659e32c` on `ux/player-reset-v2`; `main` and `app-features-fixes`
+untouched.**
+- **First:** `main` was merged into the branch (`64621f7`).
+  - Conflicts resolved in `index.html`, `shell.js` (the redesign's
+    section control now calls `syncDesktopShell()`), `components.css`
+    (main's rules, then the Phase 0 block) and `desktop.css` /
+    `desktop.test.js` (Me is the fifth item).
+- **Home** (`features/home/homeScreen.js`, `screens/home.css`, the Home
+  part of `layout/desktop.css`): see Section 3 for what each section
+  reads.
+- **New shared helpers:**
+  - `leagueStandingOf` (the Player Pack now uses it);
+  - `myGamesVisible` (My Games uses it);
+  - `homeMonthStory`.
+- **No rating, tier, League, Merit, Race, request or fixture rule
+  changed.**
+- **Tests:**
+  - `tests/homeLobby.test.js` (12): the IA order and the first
+    viewport; the hero against the League's own order; the tier on the
+    day; the empty month; no viewer; Needs you present / absent / two
+    shown / answered from Home; Next game Upcoming only and its empty
+    state; D4 visibility; the rail; 360 / 375 / 390 with long names
+    and 44px targets.
+  - The superseded Home tests now cover the new Home, and the redesign
+    guards list Home.
+  - 13 mutations, 12 caught; the survivor is a font-size tweak.
+  - **922 / 922** on the branch.
+- **Verified by screenshot** on the 30 Sep live snapshot (read-only):
+  375, 390 and 360 (long names), tablet 1024, and desktop 1440 / 1920.
+
+Baton → Shaun / CGPT: review Home on the preview; Section 5 has four
+calls.
 
 ### CCode — 3 Oct 2026 (Match Result Card + Match Analysis)
 
@@ -8216,6 +8285,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `659e32c` | **`ux/player-reset-v2`:** Phase 3a, Home as the clubhouse lobby. A live This Month hero (League position by tier and month; tap opens This Month) over the club photograph, then Needs you (only when needed), Next game (Upcoming only), Last time out with the result at the centre, and a light Around the club rail. Match ideas and the monthly recap left Home. `main` merged into the branch first (`64621f7`). 922/922. |
 | `c6acfd9` | Match Result Card + Match Analysis. The celebratory card opens first: winners as heroes with their tier on the day, a big score, one deterministic story, Expected / Performance / pp, and the winners' gains. The full breakdown is one tap behind it. Share result paints the card as a picture for WhatsApp. One view model, no new data path; 874/874. |
 | `19662b1` | Completed-match scorecard: one card per rated match, opened from Play › Games and from the approval confirmation. It shows players with their tier on the day, score, winner, Expected / Actual / pp per team, and each player's movement. Every figure is read back from the engine's recorded events; there is no new persistence and no recomputation. 9 tests, 10 mutations caught; 870/870. |
 | `269327c` | Desktop-friendly dashboard. Left rail (brand, sections, "Viewing as"), centred capped column, ranges 768 / 1200 / 1600; Home grid, Rankings toolbar + Kings beside podium, Find a Game beside results, Games card grid, Players master-detail, Board Pack and Player Pack editor beside live preview, dialogs and drawers, Escape and focus; `/preview` desktop presets. The phone is unchanged (snapshot at 390/360). All new tests fail on `8854107` but the overflow invariant; 9 mutations caught; 861/861. |
@@ -8319,6 +8389,18 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 3 Oct (latest, `ux/player-reset-v2`): Phase 3a Home is built
+(`659e32c`, 922 / 922).** Baton → Shaun / CGPT.
+- **Review:** Home on the branch's Vercel preview, at phone and laptop
+  sizes.
+- **Decide (Section 5):**
+  - what "View match" opens;
+  - Power movement in the hero, in place of a position movement;
+  - League-only hero;
+  - when to retire "as before".
+- Other screens do not take Home's components until Home is accepted
+  as the reference.
 
 **CCode, 3 Oct (latest): the Match Result Card is live (`c6acfd9`, 874 / 874).**
 Baton → Shaun / CGPT.
