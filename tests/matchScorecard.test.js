@@ -162,6 +162,68 @@ test('facts that do not line up with the teams are not shown against the wrong t
   });
 });
 
+test('Result Card: every figure is a field of the scorecard, copied -- one source, two views', () => {
+  const { b, facts } = backfill();
+  const seen = {};
+  b.matches.forEach((m) => {
+    const vm = SC.build(appMatch(m), facts[m.id], {});
+    const card = SC.resultCard(vm);
+    const hero = vm.teams[card.heroNo - 1], other = vm.teams[2 - card.heroNo];
+    seen[card.story.key] = (seen[card.story.key] || 0) + 1;
+    if (!vm.isDraw) assert.strictEqual(card.heroNo, 1, `${m.id}: the winners are the heroes`);
+    else assert.ok(hero.vsExpectedPp >= other.vsExpectedPp, `${m.id}: a draw leads with the side that beat expectation`);
+    assert.deepStrictEqual(card.heroes, hero.players.map((p) => ({ name: p.name, tier: p.tier })));
+    assert.deepStrictEqual(card.opponents, other.players.map((p) => ({ name: p.name, tier: p.tier })));
+    assert.deepStrictEqual(card.stats, { names: hero.names, expectedPct: hero.expectedPct, performancePct: hero.actualPct, vsExpectedPp: hero.vsExpectedPp });
+    assert.deepStrictEqual(card.sets, vm.sets.map((s) => (card.heroNo === 1 ? s : [s[1], s[0]])));
+    const gained = hero.players.every((p) => p.movement > 0);
+    assert.deepStrictEqual(card.rewards, gained ? hero.players.map((p) => ({ name: p.name, movement: p.movement })) : [],
+      `${m.id}: rewards are the heroes' own gains, or nothing`);
+    card.rewards.forEach((rw) => assert.ok(rw.movement > 0));
+    assert.strictEqual(card.headline, vm.isDraw ? `${hero.names.join(' & ')} and ${other.names.join(' & ')}: all square` : `${hero.names.join(' & ')} ${hero.names.length === 1 ? 'takes' : 'take'} the win`);
+    assert.deepStrictEqual(card.story, SC.story(vm, hero), 'the same match always tells the same story');
+  });
+  ['beat_the_odds', 'delivered', 'dominant', 'too_close', 'job_done', 'major_upset', 'all_square'].forEach((k) =>
+    assert.ok(seen[k] > 0, `the club's record has a ${k} match`));
+});
+
+test('Result Card: the story thresholds, at their edges', () => {
+  const T = SC.STORY;
+  const vm = { isDraw: false };
+  const hero = (E, R, G) => ({ expectedPct: E, vsExpectedPp: R, gameSharePct: G, games: 12, opponentGames: 5 });
+  const key = (E, R, G) => SC.story(vm, hero(E, R, G)).key;
+  assert.strictEqual(key(T.MAJOR_UPSET_BELOW - 0.1, 30, 60), 'major_upset');
+  assert.strictEqual(key(T.MAJOR_UPSET_BELOW, 30, 60), 'beat_the_odds');
+  assert.strictEqual(key(T.UNDERDOG_BELOW - 0.1, 5, 90), 'beat_the_odds', 'an underdog win is the story even when it was dominant');
+  assert.strictEqual(key(T.UNDERDOG_BELOW, 5, T.DOMINANT_SHARE), 'dominant');
+  assert.strictEqual(key(60, T.STATEMENT_PP, T.DOMINANT_SHARE - 0.1), 'statement');
+  assert.strictEqual(key(60, T.STATEMENT_PP - 0.1, T.CLOSE_SHARE), 'too_close');
+  assert.strictEqual(key(60, 0, T.CLOSE_SHARE + 0.1), 'delivered');
+  assert.strictEqual(key(80, -0.1, 60), 'job_done');
+  assert.strictEqual(SC.story({ isDraw: true }, hero(30, 10, 50)).key, 'all_square');
+  // Unrated: only what the score says, nothing about expectation.
+  assert.strictEqual(key(null, null, 80), 'dominant');
+  assert.strictEqual(key(null, null, 52), 'too_close');
+  assert.strictEqual(key(null, null, 62), 'win');
+  // The thresholds themselves are a product decision (Ledger, 3 Oct): a
+  // change to any of them is a change to what the club's cards say.
+  assert.deepStrictEqual(T, { MAJOR_UPSET_BELOW: 35, UNDERDOG_BELOW: 50, DOMINANT_SHARE: 75, STATEMENT_PP: 20, CLOSE_SHARE: 55 });
+});
+
+test('Result Card for an unrated match: the result, the people and the score -- no figures', () => {
+  const vm = SC.build({ id: 'x', date: '2026-10-01', winners: ['Ann', 'Bob'], losers: ['Cat', 'Dan'], sets: [[6, 4], [6, 3]], type: 'doubles', isDraw: false },
+    null, { tierOf: (n) => ({ Ann: 'A', Bob: 'B', Cat: 'B', Dan: 'C' })[n] });
+  const card = SC.resultCard(vm);
+  assert.strictEqual(card.rated, false);
+  assert.strictEqual(card.stats, null);
+  assert.deepStrictEqual(card.rewards, []);
+  assert.strictEqual(card.headline, 'Ann & Bob take the win');
+  assert.deepStrictEqual(card.heroes, [{ name: 'Ann', tier: 'A' }, { name: 'Bob', tier: 'B' }]);
+  const singles = SC.resultCard(SC.build({ id: 's', date: '2026-10-01', winners: ['Ann'], losers: ['Cat'], sets: [[6, 4]], type: 'singles', isDraw: false }, null, {}));
+  assert.strictEqual(singles.headline, 'Ann takes the win');
+  assert.strictEqual(singles.kicker, 'Takes the win');
+});
+
 test('no parallel calculation: the module reads the record and never re-derives a rating figure', () => {
   const src = fs.readFileSync(path.join(ROOT, 'assets/js/domain/matches/matchScorecard.js'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
   ['expectedScore(', 'actualScores(', 'pairRating(', 'kUsed', 'processMatch', 'document', 'window', 'V3_', 'PLAYERS']
@@ -170,12 +232,14 @@ test('no parallel calculation: the module reads the record and never re-derives 
 
 const skip = !H.available();
 
-test('Games: a played match opens its scorecard, which matches the engine record', { skip }, async () => {
+test('Games: a played match opens its Result Card first, with the Match Analysis one tap behind', { skip }, async () => {
   const app = await H.open();
   try {
     const r = await app.run(() => {
       document.querySelector('#tabrow .tab-btn[data-tab="games"]').click();
       const out = [];
+      const sign = (v, u) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${Math.abs(v).toFixed(1)}${u}`;
+      const pct = (v) => Math.round(v * 1000) / 10;
       // A decided match and a draw.
       const ids = [getAllApprovedMatches().filter((m) => !m.isDraw).slice(-1)[0].id, getAllApprovedMatches().find((m) => m.isDraw).id];
       ids.forEach((id) => {
@@ -185,6 +249,46 @@ test('Games: a played match opens its scorecard, which matches the engine record
         const modal = document.getElementById('matchScorecardModal');
         const m = getAllApprovedMatches().find((x) => x.id === id);
         const f = V3_MATCH_FACTS[id];
+        const tierOf = (n) => historicalTierOf(n, m.date);
+
+        // The Result Card, straight from the engine's record.
+        const card = modal.querySelector('.mrc');
+        const heroSide = (() => {
+          if (!m.isDraw) return f.byPlayer[m.winners[0]].side;
+          const a = f.byPlayer[m.winners[0]].side, b = a === 'A' ? 'B' : 'A';
+          const diff = (s) => Math.round((pct(f.sides[s].actual) - pct(f.sides[s].expected)) * 10) / 10;
+          return diff(b) > diff(a) ? b : a;
+        })();
+        const heroNames = Object.values(f.byPlayer).filter((p) => p.side === heroSide).map((p) => p.playerId);
+        const heroes = GameType.orderTeam(m.winners.includes(heroNames[0]) ? m.winners : m.losers, tierOf);
+        const hs = f.sides[heroSide];
+        const e = pct(hs.expected), a = pct(hs.actual);
+        const gains = heroes.every((n) => f.byPlayer[n].ratingDelta > 0);
+        const result = {
+          heroes: [...card.querySelectorAll('.mrc-hero')].map((h) => [h.querySelector('.mrc-hero-name').textContent, h.querySelector('.mrc-tier').textContent]),
+          kicker: card.querySelector('.mrc-kicker').textContent,
+          sets: [...card.querySelectorAll('.mrc-set')].map((x) => x.textContent),
+          expected: card.querySelector('[data-fig="expected"]').textContent,
+          performance: card.querySelector('[data-fig="performance"]').textContent,
+          pp: card.querySelector('[data-fig="pp"]').textContent,
+          rewards: [...card.querySelectorAll('.mrc-reward')].map((x) => x.textContent),
+          story: card.querySelector('.mrc-story-title').textContent,
+          teamWords: /Team [12]/.test(card.textContent),
+          analysisInCard: !!card.querySelector('.msc-team'),
+        };
+        const heroFirst = m.winners.includes(heroes[0]);
+        const wantResult = {
+          heroes: heroes.map((n) => [n, tierOf(n)]),
+          kicker: m.isDraw ? 'All square' : 'Take the win',
+          sets: m.sets.map((s) => (heroFirst ? `${s[0]}–${s[1]}` : `${s[1]}–${s[0]}`)),
+          expected: e.toFixed(1) + '%', performance: a.toFixed(1) + '%', pp: sign(Math.round((a - e) * 10) / 10, 'pp'),
+          rewards: gains ? heroes.map((n) => `${n} ${sign(f.byPlayer[n].ratingDelta, '')}`) : [],
+          story: matchResultCardFor(id).story.title,
+          teamWords: false, analysisInCard: false,
+        };
+
+        // One tap: the Match Analysis, every figure, losers included.
+        modal.querySelector('[data-scorecard-view="analysis"]').click();
         const teams = [...modal.querySelectorAll('.msc-team')].map((t) => ({
           names: [...t.querySelectorAll('.msc-name')].map((n) => n.textContent),
           tiers: [...t.querySelectorAll('.msc-tier')].map((n) => n.textContent),
@@ -193,32 +297,67 @@ test('Games: a played match opens its scorecard, which matches the engine record
           actual: t.querySelector('[data-fig="actual"]').textContent,
           pp: t.querySelector('[data-fig="pp"]').textContent,
         }));
-        const sign = (v, u) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${Math.abs(v).toFixed(1)}${u}`;
         const want = [m.winners, m.losers].map((names) => {
-          const side = f.byPlayer[names[0]].side;
-          const s = f.sides[side];
-          const e = Math.round(s.expected * 1000) / 10, a = Math.round(s.actual * 1000) / 10;
-          const ordered = GameType.orderTeam(names, (n) => historicalTierOf(n, m.date));
-          return { names: ordered, tiers: ordered.map((n) => historicalTierOf(n, m.date)),
+          const s = f.sides[f.byPlayer[names[0]].side];
+          const e2 = pct(s.expected), a2 = pct(s.actual);
+          const ordered = GameType.orderTeam(names, tierOf);
+          return { names: ordered, tiers: ordered.map(tierOf),
             moves: ordered.map((n) => sign(f.byPlayer[n].ratingDelta, '')),
-            expected: e.toFixed(1) + '%', actual: a.toFixed(1) + '%', pp: sign(Math.round((a - e) * 10) / 10, 'pp') };
+            expected: e2.toFixed(1) + '%', actual: a2.toFixed(1) + '%', pp: sign(Math.round((a2 - e2) * 10) / 10, 'pp') };
         });
-        out.push({ id, open: modal.classList.contains('show'), stillExpanded: expandedGameId === id,
-          teams, want, score: modal.querySelector('.msc-score').textContent, wantScore: m.sets.map((s) => s.join('-')).join(', '),
-          winner: modal.querySelector('.msc-winner').textContent, isDraw: m.isDraw });
+        const analysis = { teams, score: modal.querySelector('.msc-score').textContent, winner: modal.querySelector('.msc-winner').textContent };
+        modal.querySelector('[data-scorecard-view="result"]').click();
+        const back = !!modal.querySelector('.mrc') && !modal.querySelector('.msc');
+        out.push({ id, open: modal.classList.contains('show'), stillExpanded: expandedGameId === id, isDraw: m.isDraw,
+          result, wantResult, analysis, want, wantScore: m.sets.map((s) => s.join('-')).join(', '), back });
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
         out[out.length - 1].closed = !modal.classList.contains('show');
       });
       return out;
     });
     r.forEach((c) => {
-      assert.ok(c.open, `${c.id}: the scorecard opens`);
+      assert.ok(c.open, `${c.id}: it opens`);
       assert.ok(c.stillExpanded, `${c.id}: opening it does not collapse the card behind it`);
-      assert.deepStrictEqual(c.teams, c.want, `${c.id}`);
-      assert.strictEqual(c.score, c.wantScore);
-      assert.strictEqual(c.winner, c.isDraw ? 'Draw' : `${c.want[0].names.join(' & ')} won`);
+      assert.deepStrictEqual(c.result, c.wantResult, `${c.id}: the Result Card`);
+      assert.deepStrictEqual(c.analysis.teams, c.want, `${c.id}: the analysis`);
+      assert.strictEqual(c.analysis.score, c.wantScore);
+      assert.strictEqual(c.analysis.winner, c.isDraw ? 'Draw' : `${c.want[0].names.join(' & ')} won`);
+      assert.ok(c.back, 'Back returns to the Result Card');
       assert.ok(c.closed, 'Escape closes it');
     });
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+test('Share result paints the Result Card and hands one picture to the share sheet', { skip }, async () => {
+  const app = await H.open();
+  try {
+    const r = await app.run(async () => {
+      const id = getAllApprovedMatches().filter((m) => !m.isDraw).slice(-1)[0].id;
+      const card = matchResultCardFor(id);
+      const cv = CardPainter.matchResult(card, { when: matchResultContext(card) });
+      const calls = [];
+      const real = CardPainter.share;
+      CardPainter.share = async (files, meta) => { calls.push({ files: files.map((x) => ({ name: x.name, type: x.type, size: x.size })), meta }); return calls.length === 1 ? 'ready' : 'shared'; };
+      try {
+        openMatchScorecard(id);
+        const modal = document.getElementById('matchScorecardModal');
+        await shareMatchResult(id);
+        const label = modal.querySelector('[data-scorecard-share]').textContent;
+        await shareMatchResult(id);
+        return { size: [cv.width, cv.height], calls, label, message: modal.querySelector('.msc-message').textContent, headline: card.headline };
+      } finally { CardPainter.share = real; }
+    });
+    assert.deepStrictEqual(r.size, [1080, 1350]);
+    assert.strictEqual(r.calls.length, 2);
+    assert.strictEqual(r.calls[0].files.length, 1);
+    assert.strictEqual(r.calls[0].files[0].type, 'image/png');
+    assert.ok(r.calls[0].files[0].size > 10000, 'a real picture');
+    assert.match(r.calls[0].files[0].name, /^money-padel-.+-result\.png$/);
+    assert.strictEqual(r.calls[0].meta.title, r.headline);
+    assert.strictEqual(r.label, 'Tap to share', 'a share sheet that needs a fresh tap gets one');
+    assert.deepStrictEqual(r.calls[1].files, r.calls[0].files, 'the tap shares the picture already made');
+    assert.strictEqual(r.message, 'Shared.');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
@@ -244,7 +383,7 @@ test('approving a result offers its scorecard straight away, rated from the new 
       const vm = matchScorecardFor(matchId);
       const modal = document.getElementById('matchScorecardModal');
       return { matchId, planned, button: !!btn, open: !!modal && modal.classList.contains('show'),
-        shown: modal ? modal.querySelector('.msc').dataset.match : null,
+        shown: modal ? modal.querySelector('.mrc').dataset.match : null,
         rated: vm.rated, moves: vm.teams.flatMap((t) => t.players.map((p) => [p.name, p.movement])) };
     });
     assert.ok(r.button, 'the approval outcome carries a scorecard button');

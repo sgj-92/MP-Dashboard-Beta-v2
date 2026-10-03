@@ -24,9 +24,23 @@
 // A match the engine has no record for (not yet rated) gets a card that says
 // so -- its rating figures are absent, never estimated.
 //
+// Two views are drawn from that ONE view model, never from a second source:
+//
+//   build(...)       the full scorecard -- the Match Analysis: both teams'
+//                    expected / actual / difference, game share, and every
+//                    player's movement, winners and losers alike.
+//   resultCard(vm)   the Match Result Card -- the celebratory, shareable face
+//                    of the same match: the winners as the heroes, the score,
+//                    one story, one expected-vs-performance line, and the
+//                    winners' rating gains. Every number on it is a field of
+//                    the scorecard, copied, not recalculated.
+//
+// The story is chosen by fixed thresholds on recorded figures (STORY below),
+// so the same match always tells the same story -- no generated commentary.
+//
 // PURE. Inputs are passed in; it reads nothing global, writes nothing, touches
-// no DOM. The same view model feeds the on-screen sheet today and can feed a
-// shared picture (CardPainter) later.
+// no DOM. The on-screen sheet and the shared picture (CardPainter) both draw
+// these view models.
 
 (function (root, factory) {
   const api = factory(root);
@@ -158,5 +172,103 @@
     };
   }
 
-  return { build };
+  // ---- The Match Result Card ---------------------------------------------
+  //
+  // The story thresholds, on the heroes' recorded figures. `expected` is the
+  // engine's pre-match expected score, so under 50 means the engine had them
+  // as underdogs. A winning side always banks the 20% result component, so a
+  // winner's difference is usually positive (median about +16pp on the club's
+  // record); a "statement" therefore needs a margin in the top quarter of wins.
+  // On the 30 Sep record these give: delivered 59, beat the odds 39, dominant
+  // 19, too close 15, job done 14, major upset 12, statement 9, all square 9.
+  const STORY = {
+    MAJOR_UPSET_BELOW: 35,   // expected % -- heavy underdogs who won
+    UNDERDOG_BELOW: 50,      // expected % -- underdogs who won
+    DOMINANT_SHARE: 75,      // % of the games won -- e.g. 6-2, 6-2
+    STATEMENT_PP: 20,        // pp above expectation, as favourites
+    CLOSE_SHARE: 55,         // % of the games won -- a handful in it
+  };
+
+  // One story per match, in order of how remarkable it is: the first that
+  // applies is the one told. Every rule reads a field already on the card.
+  function story(vm, hero) {
+    if (vm.isDraw) {
+      return { key: 'all_square', title: 'Honours even', line: 'Nothing to separate them on the day.' };
+    }
+    const E = hero.expectedPct, R = hero.vsExpectedPp, G = hero.gameSharePct;
+    const rated = typeof E === 'number';
+    if (rated && E < STORY.MAJOR_UPSET_BELOW) {
+      return { key: 'major_upset', title: 'Major upset', line: 'Heavy underdogs going in — and they won.' };
+    }
+    if (rated && E < STORY.UNDERDOG_BELOW) {
+      return { key: 'beat_the_odds', title: 'Beat the odds', line: 'Underdogs going in, winners coming out.' };
+    }
+    if (G >= STORY.DOMINANT_SHARE) {
+      return { key: 'dominant', title: 'Dominant display', line: `Took ${Math.round(G)}% of the games — ${hero.games}–${hero.opponentGames}.` };
+    }
+    if (rated && R >= STORY.STATEMENT_PP) {
+      return { key: 'statement', title: 'Statement win', line: 'Favourites, and they made it count.' };
+    }
+    if (G <= STORY.CLOSE_SHARE) {
+      return { key: 'too_close', title: 'Too close to call', line: `Decided by a handful of games — ${hero.games}–${hero.opponentGames}.` };
+    }
+    if (rated && R >= 0) {
+      return { key: 'delivered', title: 'Expected win, delivered', line: 'Favourites going in, and they delivered.' };
+    }
+    if (rated) {
+      return { key: 'job_done', title: 'Job done', line: 'Favourites going in, and they got it done.' };
+    }
+    return { key: 'win', title: 'The win', line: `${hero.games}–${hero.opponentGames} in games.` };
+  }
+
+  // The celebratory card, from the scorecard view model and nothing else.
+  //
+  // Heroes: the winners. On a draw nobody won, so the card leads with the side
+  // that did better than expected (the stored first side if neither did), and
+  // says plainly that it was all square.
+  //
+  // Rewards: the heroes' own rating gains, shown only when every hero gained.
+  // A favourite can win and still fall short of expectation, which moves their
+  // rating DOWN; a celebratory card does not print that, and does not print a
+  // partial line either. The full movement, either way, is in the analysis.
+  function resultCard(vm) {
+    if (!vm) return null;
+    const [t1, t2] = vm.teams;
+    const heroNo = vm.isDraw && typeof t2.vsExpectedPp === 'number' && t2.vsExpectedPp > t1.vsExpectedPp ? 2 : 1;
+    const hero = heroNo === 1 ? t1 : t2;
+    const other = heroNo === 1 ? t2 : t1;
+    const person = (p) => ({ name: p.name, tier: p.tier });
+    const names = hero.names.join(' & ');
+    const gains = vm.rated && hero.players.every((p) => typeof p.movement === 'number' && p.movement > 0);
+    return {
+      matchId: vm.matchId,
+      date: vm.date,
+      format: vm.format,
+      matchup: vm.matchup,
+      isDraw: vm.isDraw,
+      rated: vm.rated,
+      headline: vm.isDraw ? `${names} and ${other.names.join(' & ')}: all square` : `${names} ${hero.names.length === 1 ? 'takes' : 'take'} the win`,
+      // The card reads as one sentence: "Eli & Denis / take the win / 6–2 6–3
+      // / over Rishi & Erf".
+      kicker: vm.isDraw ? 'All square' : (hero.names.length === 1 ? 'Takes the win' : 'Take the win'),
+      against: vm.isDraw ? 'with' : 'over',
+      heroNo,
+      heroes: hero.players.map(person),
+      opponents: other.players.map(person),
+      // The score as the heroes would say it: their games first.
+      sets: vm.sets.map((s) => (heroNo === 1 ? [s[0], s[1]] : [s[1], s[0]])),
+      story: story(vm, hero),
+      // One line of evidence, the heroes' own. Absent, not estimated, when the
+      // match has no rating record.
+      stats: vm.rated ? {
+        names: hero.names.slice(),
+        expectedPct: hero.expectedPct,
+        performancePct: hero.actualPct,
+        vsExpectedPp: hero.vsExpectedPp,
+      } : null,
+      rewards: gains ? hero.players.map((p) => ({ name: p.name, movement: p.movement })) : [],
+    };
+  }
+
+  return { build, resultCard, story, STORY };
 });

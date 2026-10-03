@@ -10,6 +10,7 @@
 //               so the picture matches the card on screen.
 //   sheet(...)  1080 wide, as tall as the module: a Board Pack table, list,
 //               the Kings tiles or a note, from its blocks.
+//   matchResult(...)  1080 x 1350, one played match's Result Card.
 //
 // Knows nothing about the app. Loads before app.js; declarations only.
 
@@ -398,6 +399,143 @@
     return out;
   }
 
+  // ---- Match Result Card -----------------------------------------------------
+  // One played match as a 1080 x 1350 picture, from the Result Card's view
+  // model (MatchScorecard.resultCard): the heroes, the score, the story, one
+  // line of evidence and the winners' rating gains -- the card on screen,
+  // painted. Nothing here reads the app; `o.when` is the context line.
+  function tierBadge(ctx, tier, x, yMid, size) {
+    const label = tier || '—';
+    font(ctx, size * 0.62, { weight: 700 });
+    const w = Math.max(size, ctx.measureText(label).width + size * 0.5);
+    ctx.strokeStyle = C.border; ctx.lineWidth = 3;
+    roundRect(ctx, x, yMid - size / 2, w, size, size * 0.22); ctx.stroke();
+    textAt(ctx, label, x + w / 2, yMid + 1, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+    return w;
+  }
+
+  // A run of [text, tier] pairs joined by " & ", centred; its width at `size`.
+  function peopleWidth(ctx, people, size, serif, weight) {
+    let w = 0;
+    people.forEach((p, i) => {
+      font(ctx, size, { serif, weight });
+      w += ctx.measureText(p.name).width + size * 0.18 + Math.max(size * 0.62, size * 0.5) + size * 0.18;
+      if (i) { font(ctx, size, { serif, weight }); w += ctx.measureText(' & ').width; }
+    });
+    return w;
+  }
+  function people(ctx, list, cx, y, size, { serif, weight, color } = {}) {
+    let x = cx - peopleWidth(ctx, list, size, serif, weight) / 2;
+    list.forEach((p, i) => {
+      if (i) { font(ctx, size, { serif, weight }); textAt(ctx, ' & ', x, y, { color: C.dim, baseline: 'middle' }); x += ctx.measureText(' & ').width; }
+      font(ctx, size, { serif, weight });
+      textAt(ctx, p.name, x, y, { color: color || C.text, baseline: 'middle' });
+      x += ctx.measureText(p.name).width + size * 0.18;
+      x += tierBadge(ctx, p.tier, x, y, size * 0.62) + size * 0.18;
+    });
+  }
+
+  function matchResult(card, o = {}) {
+    const H = SLIDE_H, M = 80, cx = W / 2;
+    const cv = canvas(W, H);
+    const ctx = cv.getContext('2d');
+    background(ctx, W, H);
+    brand(ctx, o.brand, '', M, 72, 64, W - M);
+    // When and what: its own line, under the brand, so neither crowds the other.
+    font(ctx, 32, { spacing: 0.06 });
+    textAt(ctx, fit(ctx, o.when || '', W - 2 * M), cx, 206, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+
+    // The heroes: as large as one line allows, else one per line.
+    let y = 340;
+    let size = 96;
+    while (size > 68 && peopleWidth(ctx, card.heroes, size, true, 400) > W - 2 * M) size -= 4;
+    if (peopleWidth(ctx, card.heroes, size, true, 400) <= W - 2 * M) {
+      people(ctx, card.heroes, cx, y, size, { serif: true, color: C.bright });
+    } else {
+      size = 84; y = 300;
+      card.heroes.forEach((p, i) => people(ctx, [p], cx, y + i * 104, size, { serif: true, color: C.bright }));
+      y += 104;
+    }
+    y += 104;
+    font(ctx, 40, { weight: 700, spacing: 0.2 });
+    textAt(ctx, card.kicker.toUpperCase(), cx, y, { color: C.gold, align: 'center', baseline: 'middle' });
+
+    // The score, big.
+    y += 150;
+    font(ctx, 150, { weight: 700 });
+    const sets = card.sets.map((s) => `${s[0]}–${s[1]}`);
+    const gap = 80;
+    const widths = sets.map((t) => ctx.measureText(t).width);
+    let x = cx - (widths.reduce((a, b) => a + b, 0) + gap * (sets.length - 1)) / 2;
+    sets.forEach((t, i) => { textAt(ctx, t, x, y, { color: C.text, baseline: 'middle' }); x += widths[i] + gap; });
+
+    y += 130;
+    font(ctx, 38);
+    const lead = `${card.against} `;
+    const leadW = ctx.measureText(lead).width;
+    const oppW = peopleWidth(ctx, card.opponents, 38, false, 400);
+    textAt(ctx, lead, cx - (leadW + oppW) / 2, y, { color: C.dim, baseline: 'middle' });
+    people(ctx, card.opponents, cx + leadW / 2, y, 38, { color: C.soft });
+
+    // The story, in its own panel.
+    y += 62;
+    const panelH = 210;
+    ctx.fillStyle = 'rgba(212,175,55,0.07)';
+    roundRect(ctx, M, y, W - 2 * M, panelH, 36); ctx.fill();
+    ctx.strokeStyle = C.border; ctx.lineWidth = 2; ctx.stroke();
+    font(ctx, 66, { serif: true });
+    textAt(ctx, card.story.title, cx, y + 76, { color: C.bright, align: 'center', baseline: 'middle' });
+    font(ctx, 36);
+    wrap(ctx, card.story.line, W - 2 * M - 80).slice(0, 2).forEach((line, i) =>
+      textAt(ctx, line, cx, y + 146 + i * 44, { color: C.soft, align: 'center', baseline: 'middle' }));
+
+    // One line of evidence: expected, performance, the difference.
+    y += panelH + 92;
+    if (card.stats && card.isDraw) {
+      font(ctx, 28, { spacing: 0.04 });
+      textAt(ctx, fit(ctx, `${card.stats.names.join(' & ')} vs expectation`, W - 2 * M), cx, y - 64, { color: C.dim, align: 'center', baseline: 'middle' });
+    }
+    if (card.stats) {
+      const st = card.stats;
+      const cols = [
+        [`${st.expectedPct.toFixed(1)}%`, 'Expected', C.text],
+        [`${st.performancePct.toFixed(1)}%`, 'Performance', C.text],
+        [`${st.vsExpectedPp > 0 ? '+' : st.vsExpectedPp < 0 ? '−' : '±'}${Math.abs(st.vsExpectedPp).toFixed(1)}pp`, 'vs expectation', st.vsExpectedPp > 0 ? '#8fcf8f' : C.text],
+      ];
+      const colW = (W - 2 * M) / 3;
+      cols.forEach(([v, label, color], i) => {
+        const ccx = M + colW * i + colW / 2;
+        font(ctx, 64, { weight: 700 });
+        textAt(ctx, v, ccx, y, { color, align: 'center', baseline: 'middle' });
+        font(ctx, 30, { spacing: 0.08 });
+        textAt(ctx, label.toUpperCase(), ccx, y + 58, { color: C.dim, align: 'center', baseline: 'middle' });
+      });
+    }
+
+    // The winners' rating gains, quietly, at the foot.
+    if (card.rewards.length) {
+      const fy = H - 96;
+      hline(ctx, M, W - M, fy - 64, C.rule);
+      const parts = card.rewards.map((r) => [r.name + ' ', `+${r.movement.toFixed(1)}`]);
+      font(ctx, 30, { weight: 700, spacing: 0.14 });
+      const label = 'RATING';
+      const labelW = ctx.measureText(label).width + 40;
+      font(ctx, 40);
+      const partW = parts.map(([n, d]) => { font(ctx, 40); const a = ctx.measureText(n).width; font(ctx, 40, { weight: 700 }); return a + ctx.measureText(d).width; });
+      let fx = cx - (labelW + partW.reduce((a, b) => a + b, 0) + 56 * (parts.length - 1)) / 2;
+      font(ctx, 30, { weight: 700, spacing: 0.14 });
+      textAt(ctx, label, fx, fy, { color: C.goldSoft, baseline: 'middle' });
+      fx += labelW;
+      parts.forEach(([n, d], i) => {
+        font(ctx, 40); textAt(ctx, n, fx, fy, { color: C.soft, baseline: 'middle' });
+        const nw = ctx.measureText(n).width;
+        font(ctx, 40, { weight: 700 }); textAt(ctx, d, fx + nw, fy, { color: '#8fcf8f', baseline: 'middle' });
+        fx += partW[i] + 56;
+      });
+    }
+    return cv;
+  }
+
   function toBlob(cv) {
     return new Promise((resolve) => cv.toBlob((b) => resolve(b), 'image/png'));
   }
@@ -451,5 +589,5 @@
     }
   }
 
-  return { W, SLIDE_H, loadImage, slide, sheet, toBlob, toFile, toPdf, share, save };
+  return { W, SLIDE_H, loadImage, slide, sheet, matchResult, toBlob, toFile, toPdf, share, save };
 });
