@@ -46,6 +46,22 @@ function leagueSplitRows(month){
     .map(s => ({ ...s, tier: s.segmentTier || '?' }));
 }
 
+// One player's place in the League for a month, by tier: a row for each tier
+// they played in (a mid-month mover has two), each with their position in
+// that tier's table in the League's own standing order (points first). The
+// rows are the League's own, so the record and points are the table's.
+// Empty when they played no game that month. The Player Pack and Home read
+// this; neither ranks a table for itself.
+function leagueStandingOf(name, month){
+  const split = leagueSplitRows(month).filter(s => s.games > 0);
+  return split.filter(s => s.name === name).map(s => {
+    const rows = sortLeagueRows(split.filter(x => x.tier === s.tier), 'points', true);
+    return { tier: s.tier, position: rows.findIndex(x => x.name === name) + 1, of: rows.length,
+      points: s.points, games: s.games, wins: s.wins, draws: s.draws, losses: s.losses,
+      lastDate: (s.segmentDates || []).slice().sort().pop() || null };
+  });
+}
+
 // Last 10 as it stood at the close of a month: the same table, built from the
 // record up to and including that month's last day -- so a past month's form
 // is that month's, not today's.

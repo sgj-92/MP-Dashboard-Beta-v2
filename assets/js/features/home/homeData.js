@@ -98,3 +98,17 @@ function computeRecentFormSequence(name, windowSize){
     .slice(0, windowSize);
   return own.reverse().map(m => MatchOutcome.letterFor(m, name));
 }
+
+// The viewer's month, for Home's hero (DQ31): their place in the League of
+// Home's month, read from the League's own table (leagueStandingOf). A
+// mid-month mover is placed by their current spell -- the tier they played in
+// last that month (DQ24) -- and the record and points are that spell's row.
+// `power` is the Power Rating movement over the same month, from the monthly
+// views, labelled with its period wherever it is shown (DQ2). Nothing here
+// ranks or scores anything itself; with no game that month there is no spell.
+function homeMonthStory(name, month){
+  const spells = month ? leagueStandingOf(name, month) : [];
+  const spell = spells.slice().sort((a, b) => String(a.lastDate || '').localeCompare(String(b.lastDate || ''))).pop() || null;
+  const mv = (month && typeof MONTHLY_VIEWS !== 'undefined' && MONTHLY_VIEWS) ? MonthlyViews.playerMonth(MONTHLY_VIEWS, month, name) : null;
+  return { month, spell, tiersPlayed: spells.length, power: mv && typeof mv.ratingChange === 'number' ? mv.ratingChange : null };
+}

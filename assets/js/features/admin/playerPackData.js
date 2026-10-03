@@ -48,11 +48,7 @@ function playerMonthlyPack(name, month){
   const stats = computeMonthlySummaryStats(month)[name] || null;
 
   // League by tier: the player's place in each tier they played in.
-  const split = leagueSplitRows(month).filter(s => s.games > 0);
-  const league = split.filter(s => s.name === name).map(s => {
-    const rows = sortLeagueRows(split.filter(x => x.tier === s.tier), 'points', true);
-    return { tier: s.tier, position: rows.findIndex(x => x.name === name) + 1, of: rows.length, points: s.points };
-  });
+  const league = leagueStandingOf(name, month).map(s => ({ tier: s.tier, position: s.position, of: s.of, points: s.points }));
   // Merit by tier, in the Merit table's own order.
   const meritTable = MeritTable.build(meritMatches(month), historicalTierOf, { tierForRow: historicalTierOf }).table.filter(r => r.played > 0);
   const merit = meritTable.filter(r => r.playerId === name).map(r => {

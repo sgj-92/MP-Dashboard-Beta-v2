@@ -3164,56 +3164,32 @@ test('All Insights lands at the top of Insights, not part-way down', { skip }, a
   } finally { await app.close(); }
 });
 
-test('Match ideas is collapsed by default and expands on demand', { skip }, async () => {
+// Phase 3a (DQ32): Match Ideas left Home. Its suggestion lives in Play ›
+// Arrange a Game, from the same computeMatchToMake, so nothing was lost.
+test('Match ideas has left Home; its suggestion is in Arrange a Game', { skip }, async () => {
   const app = await H.open();
   try {
     const r = await app.run(() => {
       render();
       setCurrentViewer('Ant Slice');
       goToSection('home');
-      homeIdeasOpen = false;
-      renderHomeDashboard();
-
-      const head = document.getElementById('homeIdeasToggle');
-      const closed = {
-        bodyDisplay: document.getElementById('homeIdeasBody').style.display,
-        expanded: head.getAttribute('aria-expanded'),
-        cta: head.innerText.replace(/\n+/g, ' '),
-        matchupVisible: !!document.querySelector('#homeIdeasBody .home-matchup-card') &&
-          document.getElementById('homeIdeasBody').style.display !== 'none',
-      };
-
-      document.getElementById('homeIdeasToggle').click();
-      const openState = {
-        bodyDisplay: document.getElementById('homeIdeasBody').style.display,
-        expanded: document.getElementById('homeIdeasToggle').getAttribute('aria-expanded'),
-        cta: document.getElementById('homeIdeasToggle').innerText.replace(/\n+/g, ' '),
-        hasMatchup: !!document.querySelector('#homeIdeasBody .home-matchup-card, #homeIdeasBody .home-card'),
-      };
-
-      document.getElementById('homeIdeasToggle').click();
-      const reclosed = document.getElementById('homeIdeasBody').style.display;
-      homeIdeasOpen = false;
-      return { closed, openState, reclosed };
+      const home = document.getElementById('homeDashboard');
+      const out = { onHome: !!home.querySelector('#homeIdeasToggle, #homeIdeasBody, .home-matchup-card') || /Match ideas/i.test(home.innerText) };
+      const m = computeMatchToMake('Ant Slice');
+      openArrangeGame('find');
+      const sheet = document.querySelector('#arrangeSheet .arrange-body');
+      out.suggestion = !!sheet.querySelector('.arrange-suggestion');
+      out.names = m ? [m.partner.name, m.opponents[0].name, m.opponents[1].name].every((n) => sheet.textContent.includes(n)) : null;
+      return out;
     });
-
-    assert.strictEqual(r.closed.bodyDisplay, 'none', 'collapsed by default');
-    assert.strictEqual(r.closed.expanded, 'false');
-    assert.match(r.closed.cta, /Match ideas/);
-    assert.match(r.closed.cta, /Balanced games suggested for you/);
-    assert.match(r.closed.cta, /Show suggestions/);
-    assert.strictEqual(r.closed.matchupVisible, false);
-
-    assert.strictEqual(r.openState.bodyDisplay, 'block', 'expands on tap');
-    assert.strictEqual(r.openState.expanded, 'true');
-    assert.strictEqual(r.openState.hasMatchup, true, 'the existing matchup card is what it reveals');
-
-    assert.strictEqual(r.reclosed, 'none', 'and collapses again');
+    assert.strictEqual(r.onHome, false, 'no Match ideas on Home');
+    assert.strictEqual(r.suggestion, true, 'Arrange a Game carries the suggestion');
+    assert.strictEqual(r.names, true, 'the same matchup Home used to suggest');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
 
-test('Next on Court is gone, replaced by the latest rated result', { skip }, async () => {
+test('Last time out is the latest rated result, read from the record', { skip }, async () => {
   const app = await H.open();
   try {
     const r = await app.run(() => {
@@ -3244,26 +3220,26 @@ test('Next on Court is gone, replaced by the latest rated result', { skip }, asy
         expectedDate: latest.date,
         opponents: m.winners.includes(name) ? m.losers : m.winners,
         partner: (m.winners.includes(name) ? m.winners : m.losers).filter((n) => n !== name),
-        monthlyStillThere: /VIEW FULL REVIEW/i.test(dash.innerText),
+        monthlyStillThere: !!document.getElementById('homeFullReviewBtn'),
       };
     });
 
     assert.doesNotMatch(r.text, /Next on Court/i, 'Next on Court must be gone from Home');
-    assert.doesNotMatch(r.text, /Nothing booked yet/i);
-    assert.strictEqual(r.hasCard, true, 'a Last Time Out card must be there instead');
+    assert.strictEqual(r.hasCard, true, 'a Last Time Out card must be there');
     assert.match(r.text, /Last Time Out/i);
 
     // Sourced from the persisted facts, and pointing at that match.
     assert.strictEqual(r.cardMatchId, r.expectedMatchId);
-    const deltaText = (r.expectedDelta > 0 ? '+' : '') + r.expectedDelta;
+    // A real minus sign, so a fall never reads as a dash.
+    const deltaText = (r.expectedDelta > 0 ? '+' : r.expectedDelta < 0 ? '−' : '±') + Math.abs(r.expectedDelta);
     assert.ok(r.cardText.includes(deltaText),
       `the card must show the recorded movement ${deltaText}, got: ${r.cardText}`);
     r.opponents.concat(r.partner).forEach((n) => {
       assert.ok(r.cardText.includes(n), `the card must name ${n}`);
     });
-    assert.match(r.cardText, /Rating change/);
+    assert.match(r.cardText, /Power Rating/, 'the movement says what moved');
 
-    // And the monthly snapshot is still there, as asked.
+    // The month's review is still one tap away, from Around the club.
     assert.strictEqual(r.monthlyStillThere, true);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }

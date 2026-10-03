@@ -40,7 +40,7 @@
 
 /* Wrappers that give a laptop something to arrange: no box of their own on
    a phone, so the page there is exactly as it was. */
-.home-block, .bp-split, .bp-split-edit, .bp-split-preview{ display: contents; }
+.bp-split, .bp-split-edit, .bp-split-preview{ display: contents; }
 
 /* The rail's own pieces exist only once a desktop-sized window was seen. */
 .shell-rail-brand, .shell-rail-foot{ display: none; }
@@ -181,25 +181,27 @@
   .shell-header .shell-section-title{ display: none !important; }
 }
 
-/* ---- Home: a dashboard ------------------------------------------------- */
+/* ---- Home: the lobby, two-up --------------------------------------------
+   The phone's order is the authority; a monitor uses the width. The hero runs
+   the full width over the photograph; the player's own business (Needs you,
+   Next game) takes the left column and Last time out the right; Around the
+   club runs underneath, its cards side by side instead of a rail. */
 @media (min-width: 1200px){
   html[data-section="home"] #homeDashboard{
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 24px; align-items: start;
+    column-gap: 28px; align-items: start; padding: 0 0 var(--space-6);
   }
-  .home-block{ display: block; min-width: 0; }
-  .home-block-hero, .home-block-pulse, .home-block-ideas{ grid-column: 1 / -1; }
-  .home-block-yourgame{ grid-column: 1; grid-row: 2 / span 2; }
-  .home-block-last{ grid-column: 2; grid-row: 2; }
-  .home-block-month{ grid-column: 2; grid-row: 3; }
-  .home-block > .mp-card-standard:first-child{ margin-top: 0; }
-}
-@media (min-width: 1600px){
-  html[data-section="home"] #homeDashboard{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .home-block-yourgame{ grid-column: 1; grid-row: 2; }
-  .home-block-last{ grid-column: 2; grid-row: 2; }
-  .home-block-month{ grid-column: 3; grid-row: 2; }
+  .home-block{ min-width: 0; }
+  .home-block-hero, .home-block-club{ grid-column: 1 / -1; }
+  .home-block-needs, .home-block-next{ grid-column: 1; }
+  .home-block-last{ grid-column: 2; grid-row: 2 / span 2; }
+  .home-hero{ margin: 0; padding: var(--space-5) var(--space-5) var(--space-4); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+  .home-hero .home-month, .home-hero .home-standing{ max-width: 560px; }
+  .home-month-headline{ font-size: 48px; }
+  .home-club-rail{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; margin: 0; padding: 0; }
+  .home-club-item{ max-width: none; }
+  .home-pulse-card:hover, .home-month:hover .home-month-headline, .lr-view:hover, .home-head-link:hover{ color: var(--accent-bright); }
 }
 
 /* ---- Rankings: a toolbar, Kings beside the podium ---------------------- */

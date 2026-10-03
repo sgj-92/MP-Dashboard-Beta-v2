@@ -56,7 +56,7 @@ maybe('D4: a player reaches Find a Game from Play, and it recommends matchups wi
   } finally { await app.close(); }
 });
 
-maybe('D4: an admin still sees the prediction layer in Find a Game, Home and a fixture card', async () => {
+maybe('D4: an admin still sees the prediction layer in Find a Game, Arrange a Game and a fixture card', async () => {
   const req = { id: 'fxP', requestedBy: 'Shaun', requestedAt: '2026-09-18T09:00:00.000Z', agreedAt: '2026-09-18T09:00:00.000Z',
     players: ['Shaun', 'Tom', 'Max', 'KC'], teams: [['Shaun', 'Tom'], ['Max', 'KC']], preferredDate: '', confirmations: { Shaun: true, Tom: true, Max: true, KC: true },
     status: 'confirmed', courtBookingMade: true };
@@ -70,7 +70,7 @@ maybe('D4: an admin still sees the prediction layer in Find a Game, Home and a f
       openArrangeGame('find');
       const arrange = document.querySelector('#arrangeSheet .arrange-body').textContent;
       document.getElementById('arrangeSheet').classList.remove('show');
-      homeIdeasOpen = true; goToSection('home');
+      goToSection('home');
       const home = document.getElementById('homeDashboard').innerHTML;
       goToSection('play'); document.querySelector('#tabrow .tab-btn[data-tab="upcoming"]').click();
       document.querySelector('.fx-card[data-fixture-id="fxP"] .fx-head').click();
@@ -79,7 +79,9 @@ maybe('D4: an admin still sees the prediction layer in Find a Game, Home and a f
     });
     assert.match(r.find, /\d+% – \d+%/, 'Find a Game shows the split to an admin');
     assert.match(r.arrange, /Expected to win about \d+% of the games/, 'and Arrange a Game\'s suggestion does, in the approved wording');
-    assert.match(r.home, /home-matchup-pct/, 'Home match ideas show it to an admin');
+    // Match Ideas left Home for Arrange a Game (DQ32), which is where the
+    // admin's split now shows (above).
+    assert.doesNotMatch(r.home, /home-matchup|homeIdeas/, 'Home no longer carries Match ideas');
     assert.match(r.fixture, /Expected to win about \d+% of the games/, 'and the fixture prediction is still there');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
@@ -94,7 +96,7 @@ maybe('D4: no player surface leaks a prediction — Home, Find a Game, Requests,
     const r = await app.run(() => {
       setCurrentViewer('Shaun');
       const seen = {};
-      homeIdeasOpen = true; goToSection('home');
+      goToSection('home');
       seen.home = document.getElementById('homeDashboard').innerHTML;
       goToSection('play');
       seen.mygames = document.getElementById('myGamesView').innerHTML;
@@ -150,7 +152,7 @@ maybe('D4: a screen switched to Admin only is hidden by every route — sub-navi
       document.getElementById('rankingsMoreSheet').classList.remove('show');
       openInsightsFromTop();
       out.insights = activeTab;
-      homeIdeasOpen = true; goToSection('home');
+      goToSection('home');
       const home = document.getElementById('homeDashboard');
       out.home = { ideas: !!home.querySelector('#homeIdeasToggle'), insights: !!home.querySelector('#homeAllInsightsBtn') };
       openSheet('Shaun');

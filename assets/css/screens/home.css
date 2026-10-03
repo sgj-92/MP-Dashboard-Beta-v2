@@ -1,147 +1,144 @@
 /* ==========================================================================
-   Home: the personalised dashboard.
-   Moved out of app.css unchanged (docs/architecture/PARALLEL_DEVELOPMENT_SPLIT.md).
+   Home: the player's clubhouse lobby (Phase 3a, Ledger IA 30 Sep).
+   A compact photographic hero led by this month's League position, then
+   Needs you (only when something is), Next game, Last time out, and a light
+   Around the club. Redesign tokens (tokens.css, DQ20) and primitives
+   (components.css) throughout; the one-off look of the old dashboard cards
+   is gone with them.
    ========================================================================== */
 
-#homeDashboard{ padding-bottom: 16px; }
-/* Hero -- reserved area for the production artwork ChatGPT will provide.
-   Explicit min-height (not content-driven) so the space is stable once the
-   image lands; background-size:cover + top-right position matches the same
-   strategy already used for the Rankings hero image, for consistency.
-   Once the asset exists: add `url("../../home/home-hero.webp") top right/cover
-   no-repeat` as the last layer of the background shorthand below. */
-/* Hero -- production artwork from ChatGPT. Composition is dark-left/warm-
-   right by design, so two overlay gradients stack: a left-to-right darkening
-   for greeting readability (fades out before the racket/ball), and a
-   top/bottom fade so the image blends into the page rather than reading as
-   a rectangular photo card. No border/radius -- it's meant to feel like part
-   of the page, not a framed image. */
+#homeDashboard{ padding: 0 var(--space-4) var(--space-6); font-family: var(--font-ui); }
+
+/* ---- Hero ------------------------------------------------------------------
+   The club photograph stays (dark-left, warm-right by design), but the hero is
+   now live data, not a banner: greeting, the month's position, and one line of
+   standing. Two gradients keep the left legible and blend the photo into the
+   page; no frame, it is part of the page. It is sized by its content -- no
+   reserved height -- so Needs you and Next game start inside the first screen. */
 .home-hero{
-  position: relative; min-height: 280px; box-sizing: border-box;
-  padding: var(--space-5) var(--space-4) var(--space-3);
-  display: flex; flex-direction: column; justify-content: center;
+  position: relative; margin: 0 calc(-1 * var(--space-4)); box-sizing: border-box;
+  padding: var(--space-4) var(--space-4) var(--space-3);
   background:
-    linear-gradient(90deg, rgba(10,10,9,0.88) 0%, rgba(10,10,9,0.55) 45%, rgba(10,10,9,0.08) 72%, transparent 100%),
-    linear-gradient(180deg, rgba(10,10,9,0.05) 0%, rgba(10,10,9,0.3) 50%, var(--surface-0) 82%, var(--surface-0) 100%),
-    url("../../home/home-hero-padel.png") right 42% / cover no-repeat,
+    linear-gradient(90deg, rgba(10,10,9,0.92) 0%, rgba(10,10,9,0.72) 46%, rgba(10,10,9,0.18) 78%, rgba(10,10,9,0.05) 100%),
+    linear-gradient(180deg, rgba(10,10,9,0) 0%, rgba(10,10,9,0.2) 55%, var(--surface-0) 100%),
+    url("../../home/home-hero-padel.png") right 40% / cover no-repeat,
     var(--surface-0);
 }
-.home-greeting{ font-size: 28px; line-height: 1.2; margin-top: 6px; }
-.home-greeting-name{ color: var(--gold-bright); }
-.home-hero-sub{ font-family: var(--font-interface); font-size: 11px; letter-spacing: 0.06em; color: var(--text-dim); margin-top: 8px; text-transform: uppercase; }
-.home-hero-tagline{ font-family: var(--font-interface); font-size: 9.5px; letter-spacing: 0.1em; color: var(--gold-soft); margin-top: 10px; text-transform: uppercase; }
+.home-hello{ display: flex; flex-direction: column; gap: 2px; }
+.home-hello-date{ font-size: 12px; color: var(--text-dim); }
+.home-hello-greeting{ font-family: var(--font-display); font-size: 22px; line-height: 1.15; color: var(--text); }
+.home-greeting-name{ color: var(--accent-bright); }
 
-.home-card{ margin: 0 var(--space-4) var(--space-4); padding: var(--space-4); }
-.home-card-header{
-  display: flex; justify-content: space-between; align-items: center;
-  font-family: var(--font-interface); font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--text); margin-bottom: var(--space-2);
+/* This month: the story of the hero, and a door into Rankings › This Month. */
+.home-month{
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  width: 100%; min-height: var(--touch-min); margin-top: var(--space-3); padding: var(--space-2) 28px var(--space-2) 0;
+  background: none; border: 0; border-radius: var(--radius-sm); color: var(--text); text-align: left;
+  font-family: var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-/* Extra top space specifically between major Home sections (Your Game ->
-   Club Pulse -> Match to Make -> Next on Court -> Monthly Review) without
-   making the cards themselves any taller. */
-.home-section-header{ padding: 0 4px; margin-top: 30px; }
-.home-card-link{ background: none; border: none; color: var(--gold-soft); font-family: var(--font-interface); font-size: 10px; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em; }
+.home-month-static{ cursor: default; }
+.home-month-label{ font-size: 12px; color: var(--accent); }
+.home-month-headline{ font-family: var(--font-display); font-size: 40px; line-height: 1.02; color: var(--text); }
+.home-month-empty .home-month-headline{ font-size: 30px; }
+.home-month-line{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 13.5px; color: var(--text-soft); }
+.home-month-chev{
+  position: absolute; right: 6px; top: 50%; width: 9px; height: 9px; margin-top: -5px;
+  border-right: 1.5px solid var(--accent); border-top: 1.5px solid var(--accent); transform: rotate(45deg);
+}
+.home-month:active .home-month-headline{ opacity: .75; }
+.home-hero .mm-note{ margin: 2px 0 0; }
+.home-choose{ margin-top: var(--space-3); }
 
-/* Your Game -- three deliberate stacked groups (tier/rank, rating, recent
-   form), separated by subtle dividers, rather than everything competing on
-   one horizontal line. */
-.home-yourgame-group{ display: flex; align-items: center; gap: 10px; padding: 10px 0; }
-.home-yourgame-divider{ border-top: 1px solid var(--surface-border-soft); }
-.home-tier-sub{ font-family: var(--font-interface); font-size: 11.5px; color: var(--text-dim); }
-.home-yourgame-rating{ flex-direction: column; align-items: flex-start; gap: 2px; }
-.home-rating-num{ font-family: var(--font-interface); font-weight: 700; font-size: 30px; color: var(--text); }
-/* Recent Form needs its own vertical layout (label, then dots+record) --
-   the shared .home-yourgame-group flex-row (used for the Tier badge+text
-   pairing above) was being applied here too, squeezing the label, dots and
-   record text into one fighting-for-space row -- the actual cause of the
-   wrapping on players with a full 10-game window. */
-.home-yourgame-form{ flex-direction: column; align-items: flex-start; gap: 6px; }
-.home-form-row{
-  display: flex; align-items: center; flex-wrap: wrap; row-gap: 4px; column-gap: 10px;
+/* Standing: Power Rating, Tier Rank and form -- one quiet line (DQ31). */
+.home-standing{
+  display: flex; flex-direction: column; gap: 4px; width: 100%; min-height: var(--touch-min);
+  margin-top: var(--space-3); padding: var(--space-2) 0 0;
+  background: none; border: 0; border-top: 1px solid var(--surface-border); color: var(--text-soft);
+  font-family: var(--font-ui); font-size: 13px; text-align: left; cursor: pointer;
 }
-.home-form-dots{ display: flex; gap: 4px; flex-wrap: nowrap; flex-shrink: 0; }
-.home-form-record{ font-family: var(--font-interface); font-size: 10.5px; color: var(--text-dim); white-space: nowrap; }
-.home-insight{
-  margin-top: var(--space-3); padding: 10px 12px; background: var(--surface-2); border-radius: var(--radius-sm);
-  font-family: var(--font-interface); font-size: 12px; color: var(--text);
-}
+.home-standing-row{ display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.home-standing-item{ display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.home-standing-label{ color: var(--text-dim); }
+.home-standing-num{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text); }
+.home-standing-move{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.is-up{ color: var(--move-up); }
+.is-down{ color: var(--move-down); }
+.home-form-dots{ display: inline-flex; gap: 3px; }
+.home-form-dots .form-dot{ width: 7px; height: 7px; }
+.home-form-record{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--text-dim); }
+.home-standing-gap{ font-size: 12px; color: var(--text-dim); }
 
-.home-pulse-row{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 0 var(--space-4) var(--space-4); }
-.home-pulse-card{ padding: var(--space-4) var(--space-2); text-align: center; }
-.home-pulse-title{ font-family: var(--font-interface); font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; opacity: 0.75; }
-.home-pulse-name{ font-family: var(--font-prestige); font-size: 16px; color: var(--text); font-weight: 400; }
-/* ---- Home: Club Pulse cards are doors, not posters --------------------- */
-.home-pulse-clickable{
-  position: relative; text-align: left; cursor: pointer;
-  border: 1px solid var(--line); background: var(--bg1);
-  font: inherit; color: inherit; width: 100%;
-}
-.home-pulse-chev{
-  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-  color: var(--gold-soft); font-size: 16px; line-height: 1;
+/* ---- Sections -------------------------------------------------------------- */
+.home-section{ margin-top: var(--space-5); }
+.home-section > .mp-section-head{ margin-top: 0; min-height: var(--touch-min); margin-bottom: var(--space-1); }
+.home-head-link{
+  margin-left: auto; min-height: var(--touch-min); padding: 0 0 0 var(--space-3);
+  background: none; border: 0; color: var(--accent); font-family: var(--font-ui); font-size: 13px; font-weight: 500; cursor: pointer;
 }
 
-/* ---- Home: Match ideas, collapsed by default --------------------------- */
-.home-ideas-head{
-  display: flex; align-items: center; gap: 12px; cursor: pointer;
+/* Play's own rows, on a quiet surface. Needs you is the one lit panel. */
+.home-section .play-list,
+.home-section .shell-list{
+  background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-md); overflow: hidden;
 }
-.home-ideas-icon{ font-size: 20px; flex: none; }
-.home-ideas-text{ min-width: 0; flex: 1; }
-.home-ideas-title{ font-family: var(--font-interface); font-size: 15px; font-weight: 700; color: var(--text); }
-.home-ideas-cta{
-  flex: none; font-family: var(--font-interface); font-size: 11.5px; font-weight: 600;
-  color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px;
+.home-block-needs .play-list{ border-color: var(--accent-hairline); }
+.home-section .play-list + .shell-list{ margin-top: var(--space-2); }
+.home-section .play-row:last-child{ border-bottom: 0; }
+.home-section .mp-game-row{ padding-left: var(--space-4); padding-right: var(--space-4); }
+.home-section .play-row-actions{ padding-left: calc(var(--space-4) + 52px + var(--space-3)); padding-right: var(--space-4); }
+
+/* ---- Last time out: the result is the centre -------------------------------- */
+.home-lastresult{
+  padding: var(--space-3) var(--space-4) var(--space-3);
+  background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-md);
 }
-.home-ideas-chev{ color: var(--gold-soft); }
-
-/* ---- Home: Last Time Out ----------------------------------------------- */
-.home-lastresult{ display: flex; gap: 12px; align-items: stretch; }
-.lr-stamp{
-  flex: none; width: 92px; border-radius: 10px; border: 1px solid var(--line);
-  background: rgba(212,175,55,.04); padding: 10px 8px; text-align: center;
-  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+.home-lastresult-empty{ padding: var(--space-4); }
+.lr-context{ font-size: 12px; color: var(--text-dim); }
+.lr-score{ display: flex; flex-direction: column; gap: 4px; margin-top: var(--space-2); }
+.lr-side{
+  display: grid; grid-template-columns: minmax(0, 1fr) repeat(var(--lr-sets, 2), 26px); align-items: center; column-gap: 4px;
+  color: var(--text-dim);
 }
-.lr-date{ font-family: var(--font-interface); font-size: 10px; letter-spacing: .04em; color: var(--text); }
-.lr-tier{ font-family: var(--font-interface); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); }
-.lr-body{ min-width: 0; flex: 1; }
-.lr-headline{ font-family: var(--font-interface); font-size: 13.5px; color: var(--text); line-height: 1.4; }
-.lr-vs{ color: var(--text-dim); font-weight: 400; }
-.lr-score{ font-family: var(--font-interface); font-size: 14px; font-weight: 700; color: var(--text); margin-top: 4px; letter-spacing: .04em; }
-.lr-note{ font-family: var(--font-interface); font-size: 11.5px; color: var(--text-soft); line-height: 1.5; margin-top: 6px; }
-.lr-foot{ display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: 10px; }
-.lr-delta{ font-family: var(--font-interface); font-size: 16px; font-weight: 700; }
-.lr-arrow{ font-size: 11px; }
-.lr-view{ flex: none; }
-
-.home-pulse-sub{ font-family: var(--font-interface); font-size: 11.5px; color: var(--gold-soft); margin-top: 3px; font-weight: 600; }
-
-.home-matchup-card{ padding: var(--space-3) var(--space-4); }
-.home-matchup-pct{ font-family: var(--font-interface); font-weight: 700; font-size: 22px; color: var(--gold-bright); margin: 2px 0 0; }
-/* Horizontal: each player gets their own circle+name (not stacked pairs),
-   grouped around a compact VS -- "S R  VS  D R" with names underneath. */
-.home-matchup-players{ display: flex; align-items: flex-start; justify-content: center; gap: 6px; }
-.home-player-block{ display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; min-width: 0; }
-.home-avatar{
-  width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--surface-border);
-  display: flex; align-items: center; justify-content: center; font-family: var(--font-interface); font-size: 11px; font-weight: 700; color: var(--text);
-  flex-shrink: 0;
+.lr-names{ font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lr-side-won .lr-names{ color: var(--text); }
+.lr-set{ font-family: var(--font-display); font-size: 26px; line-height: 1; text-align: center; color: var(--icon-inactive); }
+.lr-set-won{ color: var(--text); }
+.lr-foot{
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  margin-top: var(--space-3); padding-top: var(--space-2); border-top: 1px solid var(--surface-border-soft);
 }
-.home-player-name{ font-family: var(--font-interface); font-size: 10.5px; color: var(--text-dim); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.home-matchup-vs{
-  font-family: var(--font-interface); font-size: 10px; font-weight: 700; color: var(--text-dim);
-  align-self: center; padding: 0 2px; flex: 0 0 auto;
+.lr-result{ font-size: 13.5px; color: var(--text-soft); }
+.lr-delta{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-weight: 600; }
+.lr-view{
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-min); padding: 0;
+  background: none; border: 0; color: var(--accent); font-family: var(--font-ui); font-size: 13.5px; font-weight: 500; cursor: pointer;
 }
+.lr-view::after{ content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-top: 1.5px solid currentColor; transform: rotate(45deg); }
+.lr-note{ margin-top: 2px; font-size: 12.5px; line-height: 1.45; color: var(--text-dim); }
 
-.home-nextcourt{ display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-
-.home-monthly-grid{ display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; text-align: center; }
-.home-monthly-stat{ padding: 4px 0; }
-.home-monthly-num{ font-family: var(--font-interface); font-weight: 700; font-size: 20px; color: var(--gold-bright); margin-bottom: 2px; }
-
-@media (max-width: 380px){
-  .home-pulse-row{ grid-template-columns: 1fr; }
-  .home-monthly-grid{ grid-template-columns: 1fr 1fr; row-gap: 14px; }
-
+/* ---- Around the club: a light rail ------------------------------------------
+   Swipeable on a phone, each card wide enough to read and narrow enough that
+   the next one shows; native momentum and snap, no scrollbar. */
+.home-club-rail{
+  display: flex; gap: var(--space-2); overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scroll-padding: 0 var(--space-4);
+  margin: 0 calc(-1 * var(--space-4)); padding: 0 var(--space-4) 2px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
-.home-section-header + .mm-note{ margin: -4px 2px 8px; }
+.home-club-rail::-webkit-scrollbar{ display: none; }
+.home-club-item{ flex: 0 0 62%; max-width: 260px; scroll-snap-align: start; }
+.home-pulse-card{
+  display: flex; flex-direction: column; gap: 2px; width: 100%; min-height: 92px; padding: var(--space-3) var(--space-4);
+  background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-md);
+  color: var(--text); text-align: left; font-family: var(--font-ui); cursor: pointer;
+}
+.home-pulse-card:active{ background: var(--surface-2); }
+.home-pulse-title{ font-size: 12px; color: var(--text-dim); }
+.home-pulse-name{ font-family: var(--font-display); font-size: 24px; line-height: 1.1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.home-pulse-sub{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--accent); }
+.home-pulse-sub.is-up{ color: var(--move-up); }
+.home-club-review{ margin-top: var(--space-2); }
+
+/* Focus is always visible on Home's own controls. */
+.home-month:focus-visible, .home-standing:focus-visible, .home-pulse-card:focus-visible,
+.lr-view:focus-visible, .home-head-link:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }

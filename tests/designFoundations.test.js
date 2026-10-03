@@ -208,11 +208,11 @@ test('the stepper marks the steps before the current one done, and only one curr
 
 // The helpers belong to the redesigned screens as each phase builds them;
 // the legacy screens keep their own markup until their phase.
-test('only redesigned screens use the helpers (Phases 1-2): the shell, Me, and Play\'s new lists', () => {
+test('only redesigned screens use the helpers (Phases 1-3a): the shell, Me, Play\'s new lists and Home', () => {
   const { appScriptFiles, readAppScript } = require('./helpers/appSource.js');
   const users = appScriptFiles().filter((f) => f !== 'ui/components/primitives.js'
     && /\bmp(CountBadge|Pill|DateBlock|Segmented|ListRow|SectionHead|Stepper)Html\(/.test(readAppScript(f)));
-  assert.deepStrictEqual(users.sort(), ['features/me/meScreen.js', 'features/play/arrangeScreen.js', 'features/play/playScreens.js', 'shell.js']);
+  assert.deepStrictEqual(users.sort(), ['features/home/homeScreen.js', 'features/me/meScreen.js', 'features/play/arrangeScreen.js', 'features/play/playScreens.js', 'shell.js']);
 });
 
 // ---------- in a browser ----------
@@ -229,7 +229,7 @@ function host() {
 }
 
 // Phase 1 adopted the type roles for the shell's own navigation; the screens
-// themselves keep theirs until their phase.
+// themselves keep theirs until their phase. Home is rebuilt in Phase 3a.
 maybe('the app fetches only its own fonts, and no screen\'s content is set in a new family yet', async () => {
   const app = await H.open();
   try {
@@ -242,7 +242,7 @@ maybe('the app fetches only its own fonts, and no screen\'s content is set in a 
     }
     const origin = await app.run(() => location.origin);
     assert.deepStrictEqual(fonts.filter((u) => !u.startsWith(origin + '/assets/fonts/')), [], 'self-hosted only');
-    const CHROME = '.shell-header, #sectionSubnav, .shell-bottom-nav, #meView, .shell-more-sheet';
+    const CHROME = '.shell-header, #sectionSubnav, .shell-bottom-nav, #meView, .shell-more-sheet, #homeDashboard';
     const families = await app.run((chrome) => [...new Set([...document.querySelectorAll('body *')]
       .filter((el) => !el.closest(chrome)).map((el) => getComputedStyle(el).fontFamily))]
       .filter((f) => /Instrument Serif|Inter/.test(f)), CHROME);

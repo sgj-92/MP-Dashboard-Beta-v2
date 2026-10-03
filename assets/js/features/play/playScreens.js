@@ -111,23 +111,34 @@ function wirePlayList(box){
 
 // ---- My Games ------------------------------------------------------------------
 
+// My Games' lists for one player, as this reader may see them: requests and
+// agreed games each follow their own visibility setting (D4). My Games and
+// Home's Needs You / Next Game both read this, so they cannot disagree.
+function myGamesVisible(viewerName, now){
+  const canReq = canSeeTab('wishlist'), canAgreed = canSeeTab('upcoming');
+  const keep = (r) => (r.status === FixtureFlow.STATUS.PENDING ? canReq : canAgreed);
+  const g = myGamesFor(viewerName, now);
+  return { canReq, canAgreed,
+    needsYou: g.needsYou.filter(x => keep(x.req)),
+    upcoming: g.upcoming.filter(keep), calledOut: g.calledOut.filter(keep),
+    waitingOnOthers: g.waitingOnOthers.filter(keep), archived: g.archived.filter(keep) };
+}
+
 function renderMyGames(){
   const box = document.getElementById('myGamesView');
   if(!box) return;
   const viewer = getCurrentViewer();
   const now = playNow();
   // Requests and agreed games each follow their own visibility setting (D4).
-  const canReq = canSeeTab('wishlist'), canAgreed = canSeeTab('upcoming');
-  const keep = (r) => (r.status === FixtureFlow.STATUS.PENDING ? canReq : canAgreed);
+  const canReq = canSeeTab('wishlist');
   let html = `<div class="play-inner"><div class="mp-section-label">Play</div><h2 class="mp-serif-display play-title">My Games</h2>`;
   if(fixtureFlashMessage) html += `<div class="play-flash" role="status">${escapeHtml(fixtureFlashMessage)}</div>`;
   if(!viewer){
     html += playWhoAreYouHtml();
   } else {
-    const g = myGamesFor(viewer.name, now);
-    const needs = g.needsYou.filter(x => keep(x.req));
-    const upcoming = g.upcoming.filter(keep), calledOut = g.calledOut.filter(keep);
-    const waiting = g.waitingOnOthers.filter(keep), archived = g.archived.filter(keep);
+    const g = myGamesVisible(viewer.name, now);
+    const needs = g.needsYou, upcoming = g.upcoming, calledOut = g.calledOut;
+    const waiting = g.waitingOnOthers, archived = g.archived;
     const opts = { viewer: viewer.name, now };
     if(needs.length){
       html += mpSectionHeadHtml({ title: 'Needs you', count: needs.length, countLabel: 'waiting on you' });

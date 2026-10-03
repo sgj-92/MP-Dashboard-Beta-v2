@@ -206,7 +206,7 @@ maybe('Players: the directory beside the profile -- choosing a player fills the 
   } finally { await phone.close(); }
 });
 
-maybe('Play and Home use the width: Find a Game beside its results, results as a card grid, Home as a dashboard', async () => {
+maybe('Play and Home use the width: Find a Game beside its results, results as a card grid, Home two-up', async () => {
   const app = await open(1440, 900);
   try {
     const r = await app.run(() => {
@@ -217,12 +217,17 @@ maybe('Play and Home use the width: Find a Game beside its results, results as a
       legacyTabBtn('games').click();
       const cards = [...document.querySelectorAll('#gamesView > .callout-card')].slice(0, 2).map(b);
       goToSection('home');
-      const yg = b(document.querySelector('.home-block-yourgame')), last = b(document.querySelector('.home-block-last')), month = b(document.querySelector('.home-block-month'));
+      // Phase 3a: the hero across the top; Next game on the left beside Last
+      // time out; Around the club underneath, its cards side by side.
+      const hero = b(document.querySelector('.home-block-hero')), next = b(document.querySelector('.home-block-next')),
+        last = b(document.querySelector('.home-block-last')), club = b(document.querySelector('.home-block-club'));
+      const pulse = [...document.querySelectorAll('.home-club-item')].map(b);
       return { findgame: [brief.right <= results.left, Math.abs(brief.top - results.top) < 16],
         games: cards.length === 2 && Math.round(cards[0].top) === Math.round(cards[1].top) && cards[0].right <= cards[1].left,
-        home: [yg.right <= last.left, Math.round(yg.top) === Math.round(last.top), month.top >= last.bottom - 1] };
+        home: [hero.width >= last.right - next.left - 1, next.right <= last.left, Math.round(next.top) === Math.round(last.top),
+          club.top >= Math.max(next.bottom, last.bottom) - 1, pulse.length > 1 && pulse.every((p) => Math.round(p.top) === Math.round(pulse[0].top))] };
     });
-    assert.deepStrictEqual(r, { findgame: [true, true], games: true, home: [true, true, true] });
+    assert.deepStrictEqual(r, { findgame: [true, true], games: true, home: [true, true, true, true, true] });
   } finally { await app.close(); }
 });
 
