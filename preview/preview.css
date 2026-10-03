@@ -113,3 +113,8 @@ body.is-narrow .narrow {
   text-decoration: none;
   font-weight: 600;
 }
+
+/* Desktop presets: a monitor's square corners, not a phone's. */
+body.is-desktop-preset .device { border-radius: 12px; }
+body.is-desktop-preset .device iframe { border-radius: 6px; }
+.toolbar button:disabled { opacity: .4; cursor: default; }

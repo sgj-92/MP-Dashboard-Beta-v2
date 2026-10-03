@@ -175,6 +175,7 @@ function syncPlayHeadingVisibility(){
 // ("Shaun ▾"), reusing the same selector the first-launch flow and My
 // Player entry already use -- reverts to the plain section label elsewhere.
 function updateHeaderForSection(){
+  syncDesktopShell();   // the rail shows who is viewing
   const titleEl = document.getElementById('shellSectionTitle');
   if(!titleEl) return;
   if(activeSection === 'home'){
@@ -190,6 +191,7 @@ function updateBottomNavHighlight(){
   document.querySelectorAll('.shell-nav-item').forEach(el=>{
     el.classList.toggle('active', el.dataset.section === activeSection);
   });
+  syncDesktopShell();
 }
 
 // The header's small section label is redundant once a screen has its own
@@ -215,7 +217,7 @@ function renderSectionSubnav(){
         .map(it => ({ attr: `data-tab="${it.tab}"`, label: it.label, on: it.tab === activeTab && !activeShellScreen }));
   const moreTables = activeSection === 'rankings' ? rankingsMoreTablesVisible() : [];
   const arrange = activeSection === 'play' ? arrangeModesVisible() : [];
-  if(entries.length < 2 && !moreTables.length && !arrange.length){ container.style.display = 'none'; container.innerHTML = ''; return; }
+  if(entries.length < 2 && !moreTables.length && !arrange.length){ container.style.display = 'none'; container.innerHTML = ''; syncDesktopShell(); return; }
   container.style.display = 'flex';
   const onMore = moreTables.some(it => it.tab === activeTab);
   container.innerHTML = `<div class="mp-seg" role="tablist" aria-label="${escapeHtml(SECTION_LABELS[activeSection] || '')}">`
@@ -244,6 +246,7 @@ function renderSectionSubnav(){
   if(more) more.onclick = openRankingsMoreTables;
   const arr = document.getElementById('arrangeGameBtn');
   if(arr) arr.onclick = ()=> openArrangeGame();
+  syncDesktopShell();
 }
 
 function rankingsMoreTablesVisible(){
@@ -756,6 +759,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
   updateBottomNavHighlight();
   renderSectionSubnav();
   shellHistoryInstall();
+  // A laptop or a monitor gets the desktop layout; a phone, nothing new.
+  initDesktopShell();
+  initMatchScorecard();
 
   // The shell exists. If the record is already here, this is the half that
   // finished second and the first screen is drawn now; if it is not, init()

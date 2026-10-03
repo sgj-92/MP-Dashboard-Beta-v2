@@ -50,6 +50,17 @@ async function fsSet(key, value){
   await db.collection(FS_COLLECTION).doc(key).set({ value, updatedAt: Date.now() });
 }
 
+// The same, in another collection -- published Player Packs live in their
+// own (playerPacks), named by their private token.
+async function fsGetIn(collection, id){
+  const doc = await db.collection(collection).doc(id).get();
+  return doc.exists ? doc.data().value : null;
+}
+
+async function fsSetIn(collection, id, value){
+  await db.collection(collection).doc(id).set({ value, updatedAt: Date.now() });
+}
+
 // Read one stored document and parse it, falling back to `fallback` if it is
 // missing or unreadable. Every caller did exactly this; having it once is what
 // makes the reads safe to fire concurrently -- a rejected promise inside a
@@ -132,6 +143,39 @@ async function saveNorthSouthResults(results){
     await fsSet(STORAGE_KEY_NS_RESULTS, JSON.stringify(results));
     return true;
   } catch(e){ lastStorageError = (e && e.message) ? e.message : String(e); console.error('save north vs south results failed', e); return false; }
+}
+
+// The Admin Monthly Board Pack: one document per month
+// (moneypadel_board_pack_YYYY-MM, domain/boardPack/boardPackConfig.js), read
+// when an admin opens that month's pack rather than at start-up -- no player
+// ever needs it. It holds the admin's choice for the month, never figures.
+async function loadBoardPack(month){
+  try { const v = await fsGet(BoardPack.storageKey(month)); if(v) return JSON.parse(v); } catch(e){ console.error('load board pack failed', e); }
+  return null;
+}
+
+async function saveBoardPack(config){
+  try {
+    await fsSet(BoardPack.storageKey(config.month), JSON.stringify(config));
+    return true;
+  } catch(e){ lastStorageError = (e && e.message) ? e.message : String(e); console.error('save board pack failed', e); return false; }
+}
+
+// A published Monthly Review (moneypadel_review_YYYY-MM, domain/boardPack/
+// shareDeck.js): the slides exactly as they were published, so the link a
+// player opens months later shows the month as it was shared. Written only by
+// an Admin's Publish; read by the public review page (review/) and by the
+// Board Pack section.
+async function loadPublishedReview(month){
+  try { const v = await fsGet(ShareDeck.storageKey(month)); if(v) return JSON.parse(v); } catch(e){ console.error('load published review failed', e); }
+  return null;
+}
+
+async function savePublishedReview(doc){
+  try {
+    await fsSet(ShareDeck.storageKey(doc.month), JSON.stringify(doc));
+    return true;
+  } catch(e){ lastStorageError = (e && e.message) ? e.message : String(e); console.error('save published review failed', e); return false; }
 }
 
 // Four independent documents. Read together rather than one after another:

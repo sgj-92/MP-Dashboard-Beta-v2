@@ -29,6 +29,77 @@ function isRankingEligible(name){
   return st ? st.rankable : false;
 }
 
+// ---- The ranked pool for a scope ----------------------------------------
+// Who the podium and Kings of Tiers rank, and in what order, for one scope
+// ('all' or a 'YYYY-MM') and qualifying threshold -- the same filter sequence
+// as the list beneath them (month merge, then min-games, then a month-end
+// rating in a month view, or All-Time eligibility). Each row carries the
+// rating and tier FOR THAT SCOPE: the month-end rating and the tier held at
+// that month's close, never today's. Highest rating first. The Rankings
+// screen asks for its own month; the Admin Board Pack asks for any month.
+function tierAtMonthClose(name, month){
+  if(!MONTHLY_VIEWS) return null;
+  const row = MonthlyViews.playerMonth(MONTHLY_VIEWS, month, name);
+  return row ? row.tierAtMonthEnd : null;
+}
+
+function rankingPool(month, minGamesFloor){
+  const inMonthView = month !== 'all';
+  let rows = PLAYERS.slice();
+  if(inMonthView){
+    const monthly = computeMonthlyStats(month);
+    const monthlyRatings = monthEndRatings(month);
+    rows = rows.map(p => ({...p, ...(monthly[p.name] || ZERO_MONTH_STATS),
+      month_rating: (p.name in monthlyRatings) ? Math.round(monthlyRatings[p.name]*10)/10 : null}));
+  }
+  rows = rows.filter(p => p.total >= minGamesFloor);
+  if(inMonthView) rows = rows.filter(p => p.month_rating !== null && p.month_rating !== undefined);
+  // All-time can only feature currently-eligible players -- same rule, same
+  // test, as the list. A month's pool only has to have played that month.
+  if(!inMonthView) rows = rows.filter(p => isRankingEligible(p.name));
+  return rows
+    .map(p => ({...p,
+      scopeRating: inMonthView ? p.month_rating : p.rating,
+      scopeTier: inMonthView ? tierAtMonthClose(p.name, month) : p.tier }))
+    .sort((a,b)=> b.scopeRating - a.scopeRating);
+}
+
+// The default qualifying threshold differs by scope on purpose (10 for
+// all-time, 5 for a single month, since monthly game counts are naturally
+// lower).
+function defaultRankingMinGames(month){
+  return month === 'all' ? 10 : 5;
+}
+
+// Kings of Tiers for any scope: each tier's highest-rated member of the pool.
+// A king of a field of one is not a king. Where only one player qualifies in
+// a tier there is nothing to have won, so no crown is awarded and the card
+// says why. This applies to every tier, not just Tier S -- the principle is
+// about the size of the field, and hardcoding it to S would make it look
+// like a rule about Manny.
+function kingsOfTiersFor(month, minGamesFloor){
+  const rows = rankingPool(month, minGamesFloor);
+  const MIN_FIELD = 2;
+  const kings = {};
+  const fieldSize = {};
+  TIER_ORDER_LIST.forEach(tier=>{
+    // Historical tier, not today's. Without this, June's Tier C king vanishes
+    // the moment he is promoted in July and reappears in Tier B's June board.
+    const tierRows = rows.filter(p=>p.scopeTier===tier);
+    fieldSize[tier] = tierRows.length;
+    if(tierRows.length >= MIN_FIELD){
+      const p = tierRows[0];
+      kings[tier] = { name: p.name, rating: Math.round(p.scopeRating),
+        // Carried so the panel can say why a past king sits in a tier they are
+        // no longer in, rather than leaving it looking like a bug.
+        currentTier: p.tier };
+    }
+  });
+  if(!TIER_ORDER_LIST.some(t=>kings[t])) return null;
+  kings._fieldSize = fieldSize;
+  return kings;
+}
+
 // ---- Rankings podium -----------------------------------------------------
 // Podium now applies to any tier and any month (per the product change) --
 // it always represents the top 3 of whatever leaderboard is currently on
@@ -40,35 +111,14 @@ function computeRankingsPodiumTop3(){
   if(activeTab !== 'power') return null;
   if(activeSortP !== 'rating') return null;
   if(query !== '') return null;
-  // The default qualifying threshold differs by scope on purpose (10 for all-time, 5 for a
-  // single month, since monthly game counts are naturally lower) -- the podium should respect
-  // whichever default applies to the scope currently selected, not a single hardcoded number.
-  const defaultMinGames = selectedMonth === 'all' ? 10 : 5;
-  if(minGames !== defaultMinGames) return null;
+  if(minGames !== defaultRankingMinGames(selectedMonth)) return null;
 
   // Tier is scope-relative: in a month view this is the tier held at that
   // month's close, so the podium's "Tier B · June 2026" caption is true.
-  let rows = PLAYERS.filter(matchesActiveTier);
-  const inMonthView = selectedMonth !== 'all';
-  if(inMonthView){
-    const monthly = computeMonthlyStats(selectedMonth);
-    const monthlyRatings = monthEndRatings(selectedMonth);
-    rows = rows.map(p => ({...p, ...(monthly[p.name] || ZERO_MONTH_STATS),
-      month_rating: (p.name in monthlyRatings) ? Math.round(monthlyRatings[p.name]*10)/10 : null}));
-  }
-  rows = rows.filter(p => p.total >= minGames);
-  if(inMonthView) rows = rows.filter(p => p.month_rating !== null && p.month_rating !== undefined);
-  // All-time podium can only feature currently-eligible players -- same rule, same test, as the
-  // list beneath it, so the two can never show a different "top 3". Monthly scope is untouched.
-  if(!inMonthView) rows = rows.filter(p => isRankingEligible(p.name));
-
-  const sorted = rows.slice().sort((a,b)=>{
-    const av = inMonthView ? a.month_rating : a.rating;
-    const bv = inMonthView ? b.month_rating : b.rating;
-    return bv - av;
-  });
+  const sorted = rankingPool(selectedMonth, minGames)
+    .filter(p => activeTier === 'All' || p.scopeTier === activeTier);
   if(sorted.length < 3) return null;
-  return sorted.slice(0,3).map(p=>({ name: p.name, rating: inMonthView ? p.month_rating : p.rating }));
+  return sorted.slice(0,3).map(p=>({ name: p.name, rating: p.scopeRating }));
 }
 
 // ---- Kings of Tiers -------------------------------------------------------
@@ -85,50 +135,6 @@ function computeKingsOfTiers(){
   if(activeSortP !== 'rating') return null;
   if(query !== '') return null;
   if(activeTier !== 'All') return null;
-  const defaultMinGames = selectedMonth === 'all' ? 10 : 5;
-  if(minGames !== defaultMinGames) return null;
-
-  const inMonthView = selectedMonth !== 'all';
-  let rows = PLAYERS.slice();
-  if(inMonthView){
-    const monthly = computeMonthlyStats(selectedMonth);
-    const monthlyRatings = monthEndRatings(selectedMonth);
-    rows = rows.map(p => ({...p, ...(monthly[p.name] || ZERO_MONTH_STATS),
-      month_rating: (p.name in monthlyRatings) ? Math.round(monthlyRatings[p.name]*10)/10 : null}));
-  }
-  rows = rows.filter(p => p.total >= minGames);
-  if(inMonthView) rows = rows.filter(p => p.month_rating !== null && p.month_rating !== undefined);
-  // Same All-Time eligibility rule as the podium/list -- a monthly king only
-  // has to have actually played that month, an all-time king has to still
-  // be an active-enough part of the group right now.
-  if(!inMonthView) rows = rows.filter(p => isRankingEligible(p.name));
-
-  // A king of a field of one is not a king. Where only one player qualifies in
-  // a tier there is nothing to have won, so no crown is awarded and the card
-  // says why. This applies to every tier, not just Tier S -- the principle is
-  // about the size of the field, and hardcoding it to S would make it look
-  // like a rule about Manny.
-  const MIN_FIELD = 2;
-  const kings = {};
-  const fieldSize = {};
-  TIER_ORDER_LIST.forEach(tier=>{
-    // Historical tier, not today's. Without this, June's Tier C king vanishes
-    // the moment he is promoted in July and reappears in Tier B's June board.
-    const tierRows = rows.filter(p=>tierInScope(p)===tier).sort((a,b)=>{
-      const av = inMonthView ? a.month_rating : a.rating;
-      const bv = inMonthView ? b.month_rating : b.rating;
-      return bv - av;
-    });
-    fieldSize[tier] = tierRows.length;
-    if(tierRows.length >= MIN_FIELD){
-      const p = tierRows[0];
-      kings[tier] = { name: p.name, rating: Math.round(inMonthView ? p.month_rating : p.rating),
-        // Carried so the panel can say why a past king sits in a tier they are
-        // no longer in, rather than leaving it looking like a bug.
-        currentTier: p.tier };
-    }
-  });
-  if(!TIER_ORDER_LIST.some(t=>kings[t])) return null;
-  kings._fieldSize = fieldSize;
-  return kings;
+  if(minGames !== defaultRankingMinGames(selectedMonth)) return null;
+  return kingsOfTiersFor(selectedMonth, minGames);
 }

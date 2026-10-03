@@ -134,7 +134,7 @@ function renderKingsOfTiersPanel(){
   const tierNames = Object.fromEntries(TIER_ORDER_LIST.map(t=>[t, 'Tier ' + t]));
   // A king of Tier C in June who is Tier B today is not a mistake, and the
   // panel says so rather than leaving the reader to assume it is one.
-  const movedSince = TIER_ORDER_LIST
+  const movedSince = groupedTiers()
     .filter(t => kings[t] && kings[t].currentTier && kings[t].currentTier !== t)
     .map(t => `${kings[t].name} is Tier ${kings[t].currentTier} now.`);
 
@@ -147,7 +147,7 @@ function renderKingsOfTiersPanel(){
       <span class="kings-panel-period">${periodLabel}</span>
     </div>
     <div class="kings-row">
-      ${TIER_ORDER_LIST.filter(tier=>kings[tier] || (kings._fieldSize||{})[tier]).map(tier=>{
+      ${groupedTiers().filter(tier=>kings[tier] || (kings._fieldSize||{})[tier]).map(tier=>{
         const k = kings[tier];
         const field = (kings._fieldSize || {})[tier] || 0;
         return `<div class="kings-card kings-tier-${tier.toLowerCase()}" ${k ? `data-player="${k.name}"` : ''}>

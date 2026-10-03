@@ -306,7 +306,8 @@ async function commitApproval(){
         : (a.fixtureChoice && a.fixtureChoice !== 'none' ? ' Its fixture is marked played.' : ' Fixtures left as they were.');
     }
     await loadV3State();
-    approvalMessage = `Rated as ${a.matchId}. ${a.planned.playersMoved.map(p=>`${p.playerId} ${p.delta>0?'+':''}${p.delta}`).join(', ')}.${fixtureNote}`;
+    approvalMessage = `Rated as ${a.matchId}. ${a.planned.playersMoved.map(p=>`${p.playerId} ${p.delta>0?'+':''}${p.delta}`).join(', ')}.${fixtureNote}`
+      + ` ${scorecardButtonHtml(a.matchId)}`;
   } catch(e){
     approvalMessage = 'Nothing was rated: ' + e.message;
   }

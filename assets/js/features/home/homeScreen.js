@@ -151,14 +151,19 @@ function renderHomeDashboard(){
   // should not depend on that being complete. The feature itself is untouched
   // and still lives in Play.
 
+  // Each part sits in a home-block: no box on a phone (display: contents),
+  // a place in the grid on a laptop or monitor (layout/desktop.css).
   dash.innerHTML = `
+    <div class="home-block home-block-hero">
     <div class="home-hero">
       <div class="mp-section-label">${dateLabel}</div>
       <div class="mp-display-title home-greeting">${greeting},<br><span class="home-greeting-name">${viewer.name}.</span></div>
       <div class="home-hero-sub">READY FOR THE NEXT GAME?</div>
       <div class="home-hero-tagline">SAME GAME. HIGHER STANDARDS.</div>
     </div>
+    </div>
 
+    <div class="home-block home-block-yourgame">
     <div class="mp-card-standard home-card">
       <div class="home-card-header"><span>Your Game</span><button class="home-card-link" id="homeViewProfileBtn">View Profile ›</button></div>
       <div class="home-yourgame-group">
@@ -185,18 +190,22 @@ function renderHomeDashboard(){
       </div>
       <div class="home-insight">${insight}</div>
     </div>
+    </div>
 
+    <div class="home-block home-block-pulse">
     <div class="home-card-header home-section-header"><span>Club Pulse</span>${canSee('callouts') ? `<button class="home-card-link" id="homeAllInsightsBtn">All Insights ›</button>` : ''}</div>
     <div class="home-pulse-row">
       ${pulseCardHtml('#1 Ranked', pulse.topRanked, pulse.topRanked ? `${Math.round(pulse.topRanked.rating)}` : '', '')}
       ${pulseCardHtml('In Form', pulse.inForm, pulse.inForm ? `+${pulse.inForm.recent_form}%` : '', 'perf-pos')}
       ${pulseCardHtml('Promotion Watch', pulse.promotionWatch, pulse.promotionWatch ? `Tier ${pulse.promotionWatch.tier} · ${pulse.promotionWatch.gap} pts` : '', '')}
     </div>
+    </div>
 
     <!-- Collapsed by default: occasionally useful, not worth permanent space.
          Matchmaking is Find a Game's content, so it follows that setting;
          its predicted split is Admin-only (canSeePredictions). -->
     ${canSee('findgame') ? `
+    <div class="home-block home-block-ideas">
     <div class="mp-card-standard home-card home-ideas-head" id="homeIdeasToggle" role="button" tabindex="0" aria-expanded="${homeIdeasOpen}">
       <div class="home-ideas-icon">💡</div>
       <div class="home-ideas-text">
@@ -223,14 +232,18 @@ function renderHomeDashboard(){
       </div>
     ` : `<div class="mp-card-standard home-card"><div class="section-sub">Not enough eligible players to suggest a matchup right now.</div></div>`}
 
+    </div>
     </div>` : ''}
 
     <!-- Built automatically from the player's own most recent RATED match.
          Upcoming is maintained by hand, so Home no longer depends on it; the
          Upcoming feature itself is untouched and still lives in Play. -->
+    <div class="home-block home-block-last">
     <div class="home-card-header home-section-header"><span>Last Time Out</span><button class="home-card-link" id="homeAllResultsBtn">View all results ›</button></div>
     ${buildLastResultCardHtml(viewer.name)}
+    </div>
 
+    <div class="home-block home-block-month">
     <div class="home-card-header home-section-header"><span>${currentMonth ? monthLabel(currentMonth).toUpperCase() : 'THIS MONTH'} AT MONEY PADEL</span><button class="home-card-link" id="homeFullReviewBtn">View Full Review ›</button></div>
     ${meaningfulMonthNoteHtml(homeMonthDefault, currentMonth, 'homeMonth', false)}
     <div class="mp-card-standard home-card home-monthly-grid">
@@ -238,6 +251,7 @@ function renderHomeDashboard(){
       <div class="home-monthly-stat"><div class="home-monthly-num" style="font-size:16px;">${mostActive ? mostActive.names[0] : '–'}</div><div class="section-sub">Most active${mostActive ? ` · ${mostActive.value} games` : ''}</div></div>
       <div class="home-monthly-stat"><div class="home-monthly-num" style="font-size:16px;">${highestWinPct ? highestWinPct.names[0] : '–'}</div><div class="section-sub">Highest win rate${highestWinPct ? ` · ${highestWinPct.value}%` : ''}</div></div>
       <div class="home-monthly-stat"><div class="home-monthly-num" style="font-size:16px;">${mostWins ? mostWins.names[0] : '–'}</div><div class="section-sub">Player of the Month</div></div>
+    </div>
     </div>
   `;
 

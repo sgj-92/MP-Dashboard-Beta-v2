@@ -35,6 +35,23 @@ const VISIBILITY_LABELS = {
   upcoming: 'Upcoming tab (confirmed games)',
 };
 
+// Tier S sections. With one Tier S player a whole tier section is mostly
+// empty screen, so the club can hide it from the tier-grouped views -- League
+// and Merit by tier, the Monthly Race, Kings of Tiers and the Board Pack's
+// tier modules. A layout choice, not a permission: it applies to Admins too,
+// and it hides only the SECTION -- the player stays in Power Rankings, the
+// month's results table, Monthly Information and their profile, and no
+// calculation changes. Stored beside the visibility settings; shown unless
+// switched off.
+function tierSSectionsShown(){
+  return !visibilityState || visibilityState.tierSSections !== false;
+}
+
+// The tiers a tier-grouped view lists, in the club's order.
+function groupedTiers(){
+  return TIER_ORDER_LIST.filter(t => t !== 'S' || tierSSectionsShown());
+}
+
 // Admins see everything; everyone else only sees what's switched on.
 function canSee(section){
   if(isUnlocked) return true;

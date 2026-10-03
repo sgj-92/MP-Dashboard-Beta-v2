@@ -294,8 +294,7 @@ function renderSummaryLeagueTable(){
     };
   };
 
-  const splitRows = Object.values(computeMonthlySummaryStats(summaryMonth, { splitByTier: true }))
-    .map(s => withForm(s, s.segmentTier || '?'));
+  const splitRows = leagueSplitRows(summaryMonth).map(s => withForm(s, s.tier));
 
   const wholeRows = Object.values(computeMonthlySummaryStats(summaryMonth)).map(s => {
     // The tier column shows the month as it was LIVED, not as it was played:
@@ -332,7 +331,7 @@ function renderSummaryLeagueTable(){
     // dropped from the grouped table. Each one collapses on its own: they are
     // four separate competitions, not one block.
     let anyTierShown = false;
-    TIER_ORDER_LIST.forEach(tier=>{
+    groupedTiers().forEach(tier=>{
       const rows = splitRows.filter(s => s.tier === tier && s.games > 0);
       if(rows.length === 0) return;
       anyTierShown = true;
@@ -515,7 +514,7 @@ function renderMeritTable(){
     meritRowsByTier = {};
     table.forEach(r => { if(r.played > 0) meritRowsByTier[r.tier] = (meritRowsByTier[r.tier] || 0) + 1; });
     let anyShown = false;
-    TIER_ORDER_LIST.forEach(tier=>{
+    groupedTiers().forEach(tier=>{
       const rows = table.filter(r => r.tier === tier && r.played > 0);
       if(rows.length === 0) return;
       anyShown = true;
@@ -646,7 +645,7 @@ function renderMonthlyRace(){
 
   let anyShown = false;
   const rowsByTier = {};
-  TIER_ORDER_LIST.forEach(tier=>{
+  groupedTiers().forEach(tier=>{
     const rows = table.filter(r => r.tier === tier);
     if(rows.length === 0) return;
     anyShown = true;
@@ -692,8 +691,11 @@ function renderSummaryInformation(){
   const box = document.getElementById('summaryContent');
   let html = '';
 
-  const stats = computeMonthlySummaryStats(summaryMonth);
-  const statsArr = Object.values(stats);
+  // The review itself is monthlyInformation() (monthlyStoryData.js): the
+  // Admin Board Pack reads the same derivation.
+  const info = monthlyInformation(summaryMonth);
+  const { stats, statsArr, minGamesForRanked, mostGames, mostWins, mostLosses, lowestWinPct,
+    highestWinPct, mostDoughnuts, doughnutMax, hardestGames, playerOfMonth } = info;
   const label = summaryMonth === 'all' ? 'All Time' : monthLabel(summaryMonth);
 
   if(statsArr.length === 0){
@@ -703,19 +705,6 @@ function renderSummaryInformation(){
   }
 
   html += `<div class="section-heading" style="margin-top:6px;">📊 ${label} Stats Review</div>`;
-
-  const minGamesForRanked = 3;
-  const eligible = statsArr.filter(s=>s.games >= minGamesForRanked);
-
-  const mostGames = topNTied(statsArr, 'games', 3, true);
-  const mostWins = topNTied(statsArr.filter(s=>s.games>0), 'points', 3, true);
-  const mostLosses = topNTied(statsArr, 'losses', 3, true);
-  const lowestWinPct = topNTied(eligible, 'winpct', 3, false);
-  const highestWinPct = topNTied(eligible, 'winpct', 3, true);
-  const doughnutMax = Math.max(0, ...statsArr.map(s=>s.doughnuts));
-  const mostDoughnuts = doughnutMax > 0 ? statsArr.filter(s=>s.doughnuts===doughnutMax).map(s=>s.name) : [];
-  const hardestGames = topNTied(eligible, 'hardness', 3, true);
-  const playerOfMonth = mostWins.length ? mostWins[0] : null;
 
   function nameLinks(names){
     return names.map(n=>`<span class="request-player-link" data-player="${n}" style="text-decoration:underline; cursor:pointer;">${n}</span>`).join(' / ');

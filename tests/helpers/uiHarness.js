@@ -71,7 +71,9 @@ function serve(files = {}) {
       res.writeHead(200, { 'Content-Type': TYPES[path.extname(rel)] || 'application/octet-stream' });
       res.end(files[rel]); return;
     }
-    const file = path.join(ROOT, rel);
+    // A folder serves its index.html, as every real host does (review/).
+    let file = path.join(ROOT, rel);
+    if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
     if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404); res.end('not found'); return;
     }
@@ -92,8 +94,12 @@ async function open(options = {}) {
   const browser = await pw.chromium.launch();
   // `timezoneId` lets a test put the reader somewhere specific -- London, say,
   // where 00:30 on 1 October is still 30 September in UTC.
+  // `mobile` is a touch phone at 375 x 667 -- the Monthly Review is opened
+  // from WhatsApp on one, and a swipe needs a touch screen to be a swipe.
+  // `viewport` sets any other size -- a laptop or a desktop monitor, say.
   const page = await browser.newPage({
-    viewport: { width: 430, height: 932 },
+    viewport: options.viewport || (options.mobile ? { width: 375, height: 667 } : { width: 430, height: 932 }),
+    ...(options.mobile ? { isMobile: true, hasTouch: true, deviceScaleFactor: 2 } : {}),
     ...(options.timezoneId ? { timezoneId: options.timezoneId } : {}),
   });
   // `now` fixes the reader's clock. Anything that depends on which month it
@@ -220,6 +226,10 @@ async function open(options = {}) {
         // as the app stores them: { key: value }, each saved as { value: JSON }.
         moneypadel: Object.fromEntries(Object.entries(options.club || {})
           .map(([k, v]) => [k, { value: JSON.stringify(v), updatedAt: 0 }])),
+        // `options.collections` seeds other collections stored the same way
+        // (published Player Packs in playerPacks, say): { name: { id: value } }.
+        ...Object.fromEntries(Object.entries(options.collections || {}).map(([name, docs]) => [name,
+          Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { value: JSON.stringify(v), updatedAt: 0 }]))])),
       };
     })(),
     failReads: !!options.failReads,
@@ -227,7 +237,17 @@ async function open(options = {}) {
     tapDuringBoot: options.tapDuringBoot || null,
   });
 
-  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'domcontentloaded' });
+  // `path` opens another page of the site (the public Monthly Review, say),
+  // and `readyWhen` says when that page is ready instead of DATA_READY.
+  await page.goto(`http://127.0.0.1:${port}/${options.path || 'index.html'}`, { waitUntil: 'domcontentloaded' });
+  if (options.readyWhen) {
+    await page.waitForFunction(options.readyWhen, null, { timeout: 20000 });
+    return {
+      page, pageErrors, port,
+      async close() { await browser.close(); server.close(); },
+      run(fn, arg) { return page.evaluate(fn, arg); },
+    };
+  }
   // DATA_READY, not V3_STATE: the record arriving and the app being ready to
   // draw are two different moments, and start-up now finishes by drawing
   // whichever screen is active. Waiting on the earlier one meant waiting a

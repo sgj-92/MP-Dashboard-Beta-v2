@@ -40,6 +40,8 @@
       kUsed: e.kUsed,
       previousReliability: e.previousReliability,
       newReliability: e.newReliability,
+      // The tier the player was rated in, written on the same event.
+      tierAtEvent: e.tierAtEvent || null,
     })).sort((a, b) => (a.playerId < b.playerId ? -1 : 1));
     const first = events[0];
     return {

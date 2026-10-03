@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`8e1c91e`** (desktop phone preview). The redesign branching point is still **`f75a493`**. |
-| Tests | **762 / 762 passing** (250 of them drive a real browser) |
+| Last verified implementation commit | **`c6acfd9`** (Match Result Card + Match Analysis, 3 Oct; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **874 / 874 on `main`** (3 Oct, after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,283 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Match Result Card + Match Analysis — DONE (`c6acfd9`), 3 Oct.** Shaun's brief:
+the scorecard read like an analytics panel.
+- **Two layers, one view model.**
+  - **The Match Result Card opens first.** It is a celebratory,
+    shareable sports-result card:
+    - the winners' names, big, with their tier on the day;
+    - "Take the win", then the score;
+    - "over" the opponents;
+    - one story;
+    - one Expected / Performance / pp line;
+    - the winners' rating gains.
+  - **Match Analysis** sits behind "View match analysis": the full
+    two-team breakdown, losers' movements and the method note.
+- **Share result** posts the card as a picture (1080 × 1350) through the
+  phone's share sheet, e.g. WhatsApp.
+
+**Completed-match scorecard — DONE (`19662b1`), 2 Oct.** Shaun's brief.
+- **One canonical card per rated match.** It shows the date, context
+  (doubles / singles, game type), score and winner. For each team it
+  shows the players with the tier held on the day, Expected %, Actual %,
+  the difference in percentage points, and each player's own rating
+  movement.
+- **Every rating figure is read back** from the engine's recorded
+  `MATCH_UPDATE` events (via MatchFacts). Nothing is recomputed, and
+  nothing new is persisted.
+- **Where it opens:**
+  - Play › Games: an expanded played match;
+  - the admin's approval confirmation: the new match's scorecard, as
+    soon as it is rated.
+- **Any other surface** opens it with one line:
+  `scorecardButtonHtml(matchId)`.
+
+**Desktop-friendly dashboard — DONE (`269327c`), 1 Oct.** Shaun's brief.
+- **One app, two presentations.** A phone is unchanged. A laptop or
+  monitor lays out the same screens, routes, handlers and data.
+- **Layout ranges:**
+  - mobile < 768 (the phone app);
+  - tablet 768–1199 (compact icon rail, one centred 760px column,
+    dialogs);
+  - desktop 1200+ (full left rail with the brand and "Viewing as",
+    1120px column, two-up layouts);
+  - wide 1600+ (1280px column, centred, never wider).
+- **Screens with desktop layouts:**
+  - **Home:** a dashboard grid, three columns at 1600+.
+  - **Rankings:** one filter toolbar, Kings of Tiers beside the podium,
+    sticky table headers.
+  - **Play:** Find a Game's brief beside its results; Games as a card
+    grid; Requests and Upcoming at a readable width.
+  - **Players:** directory | profile (master-detail).
+  - **Admin:** Board Pack and Player Pack editors beside their live
+    preview.
+  - **Sheets:** centred dialogs; a profile opened elsewhere slides in
+    from the right.
+  - **Keyboard:** Escape closes; visible focus.
+- **`/preview`** has 1280 / 1440 / 1920 presets beside the phone ones.
+
+**Board Pack: split by tier, every tier included — DONE (`382f907`),
+1 Oct.** Shaun: "monthly race split by tier but all tiers included, power
+rankings split by tier, results table split by tier".
+- **Monthly results table and Power Rankings:** a new **Layout** option,
+  "Split by tier" (default) or "One list".
+  - Split shows every tier as its own section, with Top N per tier.
+  - The results table splits by the tier on each match's date, as the
+    League does, so a mid-month mover is in each tier with that spell's
+    games.
+- **League, Merit and Monthly Race:** a new **Slides** option, "A slide
+  per tier" (default) or "Leaders on one slide". The report was already
+  split by tier, but each slide showed only the tier's leader.
+- **The Share Deck** gives each tier its own slide ("… · Tier A") with
+  that tier's top five. Pictures, the PDFs and publishing all follow.
+- **Tier S switch (CCode's call, recorded in Section 5):** hidden, a
+  split list leaves the Tier S section out, like every tier-grouped view,
+  and the report says so. "One list" still includes Tier S players.
+
+**Save a whole pack: PDF or every picture — DONE (`d74d466`), 1 Oct.**
+Shaun's request.
+- **Where:** under Preview, in the club Board Pack and in each player's
+  pack. Available before publishing; nothing is written.
+- **"Board Pack as PDF"** (or "Pack as PDF" for a player): one file, a
+  contents page then every selected module and note, a page each.
+- **"Slides as PDF":** one file of the slides players would see (cover,
+  slides, closing card), 4:5 pages. Admin-only sections are left out.
+- **"All pictures":** every module as its picture at once.
+- **How:** the PDF is the same pictures the Share image buttons make,
+  embedded as JPEG (about 1 MB a pack). It is written by the app itself,
+  with no library. On a phone it opens the share sheet as a PDF
+  (WhatsApp, Files, email), otherwise it downloads.
+- **What "disappeared":** there was never a whole-pack file. The Save
+  button removed when the pack began saving itself (`f58ec1d`) saved the
+  module choices, not a copy of the pack.
+
+**Board Pack: losing has its own module and Highest loss % — DONE
+(`337c70e`), 1 Oct.** Shaun's request.
+- **"Won a set % of games or more"** is the old "Won or lost" module
+  (same id, `over_80`), now winners only.
+- **"Lost a set % of games or more"** (`lost_pct`) is new, with **its own
+  threshold** (50–100%, 80 by default; reaching it counts) and its own
+  minimum games. On by default, right after the winners.
+  - A pack saved before the split keeps showing its losers: the new
+    module arrives right after the winners, on or off as they were, with
+    their threshold and minimum.
+- **"Highest loss % (3+ games)"** (`worst_record`) sits beside Best win %,
+  off by default. It is losses ÷ games played, so draws count as games.
+- All three have report blocks, Share image pictures and Share Deck
+  slides.
+- **Found and fixed:** saving pictures to a device dropped any past the
+  tenth (Chromium ignores a burst of more than ten downloads). An 11-slide
+  deck lost its last picture. Files are now handed over a moment apart.
+
+**Player Monthly Packs — DONE (`d6e4ae1`), 1 Oct.** Shaun's brief.
+- **Where:** Admin / Manage › Monthly Board Pack › **Player packs** (a
+  Club pack | Player packs switch above the month). Admin only.
+- **What an Admin can do:** pick the month, see every player who played,
+  **Generate all** (a draft for each, one write, never published, edits
+  already made are kept), open one player, switch modules on and off,
+  reorder them, set their options, add an **Admin note**, preview the pack
+  and its mobile Share Deck, share pictures and the summary, publish,
+  republish and unpublish.
+- **Modules (default order):** Month at a glance; Matchup types;
+  Partners; Opponents and head-to-head; Best results; Where results were
+  weaker; Monthly movement; Next-month ideas. Every row shows the matches
+  it rests on.
+- **Private link:** `review/?p=<token>`, a 128-bit random token. See
+  Section 5, *OPEN 1 Oct — Player Packs*, for the access model and the one
+  Firestore setting it needs to be private in storage too.
+- **Published packs are snapshots** with revisions, as the club's review
+  is.
+- No rating, League, Merit or Race rule changed; no new stats engine.
+
+**Board Pack options and saving as you go — DONE (`f58ec1d`), 1 Oct.**
+Shaun's requests from his phone.
+- **"Won or lost a set % or more"** (`2d43540`): the threshold is a choice
+  (50, 60, 70, 75, 80, 90 or 100%; 80 by default). **Reaching it counts:**
+  4 of 5 counts at 80%. This replaces the first "more than" reading.
+- **Partnerships show draws** (`2d43540`):
+  - each pair's drawn games that month are in its record (W-D-L) and in
+    its win %;
+  - chemistry still comes from decided games, because draws are not
+    rated;
+  - the list is still pairs with 2+ decided games.
+- **Power Rankings at month end:**
+  - **Minimum games:** 1, 3, 5 or 10. 5 is the Rankings month default.
+  - **Players:** Everyone, Leave out inactive, or Ranked only.
+  - "Idle" is judged at the month's close.
+  - "Inactive" is the club's flag. It has no history, so it is today's
+    status.
+- **Records always read W-D-L.** Best win % used to show W-L-D.
+- **The pack saves itself after each change.** There is no Save button.
+  Saving is independent of Publish, which still only changes the review
+  link.
+
+**Tier S sections switch; Board Pack and Share Deck as pictures — DONE
+(`6f40764`), 1 Oct.** Shaun asked for all three.
+- **Tier S sections** (Admin › Visible to everyone): Shown or Hidden,
+  club-wide, Admins included. It defaults to Shown, so nothing changed
+  until it was switched.
+  - Hidden drops the Tier S **section** from: League and Merit by tier,
+    the Monthly Race, the Kings of Tiers panel, and the Board Pack and
+    Share Deck tier modules.
+  - The player stays in Power Rankings, the results table, Monthly
+    Information and their profile.
+  - No figure changes.
+  - League "All together" already left Tier S out; that rule is
+    unchanged.
+- **Pictures, all before publishing:**
+  - every Board Pack module and note has **Share image**;
+  - the Share Deck preview has **Share this slide**, **Share all slides**
+    and **Copy summary** (no link until it is published).
+  - **Sizes:** slides are 1080 × 1350; modules are 1080 wide and as tall
+    as needed, with League tiers in one picture and aligned columns.
+  - They open the phone's share sheet (WhatsApp is on it), or are saved
+    where a browser cannot share files.
+  - They are drawn on a canvas from the same data as the screen (no
+    library), via Board Pack "blocks", so a picture shows what the report
+    shows.
+  - Only players' slides are included; Admin-only sections stay out.
+- **This is the image export staged on 30 Sep (Section 3),** now done at
+  the agreed 1080 × 1350.
+
+**Monthly Review: Unpublish and Kings tiles — DONE (`a5cbe84`),
+30 Sep.** Shaun asked for both.
+- **Unpublish** (Admin only, with a confirmation):
+  - The link immediately says the month's review "is no longer
+    available".
+  - The review is kept, marked withdrawn; nothing is deleted.
+  - "Publish again" brings it back as the next revision.
+  - Messages already sent in WhatsApp keep their text.
+- **Kings of Tiers**, in the deck and in the Board Pack report, now uses
+  the app's own crowned tiles: the laurel crown, tier metals, serif
+  names and bold ratings.
+  - In the deck the tiles share the card: one large; two side by side;
+    three with the top tier across the top; four in a square.
+  - Reviews published earlier keep the look they were published with.
+
+**Monthly Review Share Deck — DONE on `app-features-fixes` = `main`
+(`4af924d`), 30 Sep.** Shaun's brief. The redesign branch is untouched.
+- **Admin Board Pack → players' Share Deck.** The same selected modules,
+  in the same order, from the same module data. There is no second
+  configuration and no second calculation.
+- **Each module has a slide form:** a headline, the top 3–5 and big
+  figures, never a full table. Commentary becomes a "From the club" card.
+  A module with nothing to say that month is left out. A cover card opens
+  the deck, and a closing card links to the app.
+- **The deck:**
+  - portrait 4:5 cards in the dark and gold look;
+  - swipe (native scroll-snap), previous / next, dots (a count and a bar
+    past 12 cards), arrow keys, and announced position;
+  - safe-area aware, no sideways scroll at 375px, reduced motion
+    respected.
+- **The link:** `…/review/?m=YYYY-MM` is stable across revisions and
+  needs no unlock. It works on Vercel, GitHub Pages and locally, and
+  Vercel redirects `/review` to `/review/`.
+  - The page reads only the published review and the visibility settings.
+    It loads none of the app, so it cannot recalculate anything.
+  - Players can Share (the phone's share sheet) or Copy link.
+- **In the Board Pack section:**
+  - Preview: **Board Pack | Share Deck**.
+  - **Draft → Publish** (with an inline confirmation) **→ Republish** as
+    the next revision.
+  - Editing or saving the pack never changes the link. The section says
+    when the pack differs from what players see.
+  - Open review, Share, Copy link, and **Copy summary**, the WhatsApp text
+    built from the published slides.
+- **Visibility:** a slide built on a section made Admin only (Power
+  Rating, Partnerships) is left out for players, and out of the summary.
+  The Admin preview names what was left out.
+
+**Admin Monthly Board Pack — DONE on `app-features-fixes` = `main`
+(`9e4a5e6`), 30 Sep.** Shaun's brief; no redesign-branch change.
+- **Where:** Admin / Manage › Monthly Board Pack. Admin only, like the
+  rest of Manage.
+- **What an admin does:** choose a month; select or deselect modules;
+  order them with Move up / Move down; set each module's options; add
+  commentary sections (title + body); preview; save. Export / print is
+  not built.
+- **Commentary is marked** "Admin commentary" in the pack, and is shown
+  as text, never markup.
+- **Monthly Information is unchanged** and stays the players' month
+  review. The pack can include it as a module.
+- **19 modules**, each drawn from the function the app's own screen uses:
+  - Month overview (games, players active, draws), Monthly Information;
+  - Power Rankings at month end, Kings of Tiers;
+  - League, Merit, Monthly Race;
+  - Most wins & points, Best win %, Most games;
+  - Power Rating risers & fallers, ranking climbers & sliders, Monthly
+    Performance, crossovers;
+  - Form at month end (Last 10), Hard & favoured wins, Doughnuts,
+    Partnerships of the month, Tier movements.
+  - Options are presentation only: top 3 / 5 / 10 / all, all tiers or
+    one, which half (risers, fallers or both, and so on), qualifiers only
+    or with provisional (Race).
+- **Selectors moved out of renderers**, so the screens and the pack read
+  one derivation:
+  - `monthlyInformation`, `monthlyStories` (`monthlyStoryData.js`);
+  - `rankingPool`, `kingsOfTiersFor`, `tierAtMonthClose`
+    (`rankingsData.js`);
+  - `leagueSplitRows`, `lastTenAtMonthEnd`, and sort orders callable
+    without the screen's state (`monthlyTablesData.js`).
+  - **Proof:** the behaviour snapshot against `21a2de2` is identical in
+    37 of 38 states, including Rankings, League, Merit, Race and
+    Information. The one difference, Manage with every section open, is
+    the new section.
+- **Storage:** Section 5, "Board Pack: saved figures or live ones?".
+  Stats left out for want of a canonical source are listed there.
+- **Added the same day (`e666a96`), at Shaun's request:** two more
+  modules, both on by default.
+  - **Monthly results table:** one row per player for the whole month,
+    from the League / Information aggregation. Columns: Tier (as held, for
+    example "B → A"), P, W, D, L, Pts (3 / 1 / 0) and Diff, the
+    Information "hardest games" measure. It can be ordered by points,
+    games or difficulty.
+  - **Won or lost over 80%:** players who won, or lost, more than 80% of
+    their games. Draws count as games; exactly 80% is not flagged. The
+    minimum is 3 games by default, Information's own rule, with
+    "everyone" or 5+ as options.
+  - 21 modules in all.
 
 **Player Experience Reset — Phase 2 (Play) DONE on `ux/player-reset-v2`
 (`6291cdc`), with the rules on `main` (`7d70cc0`, `86beb59`).** Shaun,
@@ -1359,6 +1636,14 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Booked is steel blue `#8FB3D9`; aligned numbers use Inter, not Instrument Serif | CCode, 30 Sep 2026, Phase 0. Both are implementation choices within DQ20 (Shaun/CGPT). DQ20 asked for Booked to get a distinct hue: `#8FB3D9` is 8.6:1 on cards and over 45° of hue from Tier B sage, upward movement, attention and the accent. The map asked whether Instrument Serif has tabular figures before using it for numbers: it has none, so tables, points, scores and counts use Inter with `tabular-nums`. Either is a one-token change if CGPT prefers otherwise. |
 | Play badge: "genuinely act on" read strictly; interim Play / Players entries | CCode, 30 Sep 2026, Phase 1, implementing DQ29 and the IA. **The badge** counts For me requests plus Needs attention games the player is in, **but not a game they backed out of themselves**, since nothing is left for them to do on it (an Admin replaces them). It is hidden whenever Requests or Upcoming is hidden from the reader (D4: it never points at a screen they cannot open). **Play and Players keep their existing entries in Phase 1**: My Games \| Club, Arrange a Game and Directory → Profile are new screens, so they arrive with Phases 2 and 5 rather than as relabelled old screens. Any of this is quick to change if CGPT prefers otherwise. |
 | DQ6–DQ9 as recommended | Shaun, 30 Sep 2026, before Phase 2. **DQ6:** a player in the game may record that the court is booked. It is attributed to them, only on an agreed game they are still in and that is not archived, and only an Admin can undo it. The Admin review of unrecorded bookings stays. **DQ7:** replacing a player stays Admin-only. **DQ8:** players get no "Change plan"; date, time and venue stay Admin edits. **DQ9:** a plain request may carry an optional time and venue, as a suggestion, never a booking. Implemented in `fixtureFlow.js` on `main` (`7d70cc0`). |
+| Accept all: the new Play lists, DQ1 as recommended, and the Phase 3a (Home) go-ahead | Shaun, 30 Sep 2026 ("Accept all"). **Play lists accepted:** "Upcoming, as before" and "Requests, as before" are to be retired from Club on `ux/player-reset-v2`. **DQ1:** no promotion bar and no threshold line; keep the one-line gap, worded "N pts below the lowest-rated Tier A player". **Phase 3a (Home) approved.** Shaun's same message said the Board Pack must not touch the redesign branch, so both are queued behind it (NEXT). |
+| Admin Monthly Board Pack: a stored choice, figures drawn live | Shaun's brief, 30 Sep 2026; implementation choices CCode's. **DONE `9e4a5e6`.** A per-month document `moneypadel_board_pack_YYYY-MM` holds only the admin's choice: modules (id, on/off, options) and commentary in one ordered list, who saved it and when, plus a fingerprint of the month's record. It is read when an admin opens that month, never at start-up. Figures are never stored. Whether a finalised pack should freeze its figures is Shaun's call (Section 5). |
+| Match Result Card first, Match Analysis behind it; deterministic match stories | Shaun's brief, 3 Oct 2026; story thresholds and wording CCode's, within the brief. **DONE `c6acfd9`.** `MatchScorecard.resultCard(vm)` derives the card from the scorecard view model and copies its fields, so **no second data path**. The same model feeds the sheet (`matchResultCardHtml`), the picture (`CardPainter.matchResult`) and the analysis (`matchAnalysisHtml`). **Heroes:** the winners; on a draw (nobody won), the side that beat expectation, under "All square". **Story:** the first rule that applies, on recorded figures (`MatchScorecard.STORY`): expected < 35% → *Major upset*; < 50% → *Beat the odds*; ≥ 75% of games → *Dominant display*; ≥ +20pp as favourites → *Statement win*; ≤ 55% of games → *Too close to call*; ≥ 0pp → *Expected win, delivered*; else *Job done*; a draw → *Honours even*. On the 30 Sep record: delivered 59, beat the odds 39, dominant 19, too close 15, job done 14, major upset 12, statement 9, draws 9. A winner always banks the 20% result component (median winner +16pp), which is why *Statement* needs +20. **Winners' gains** are shown only when every winner gained. A favourite can win and still fall short of expectation, so their rating drops; 20 of 167 live wins are like that. Those cards show no reward row rather than a minus or half a row; the analysis shows every movement. A winner's shortfall appears on the card as a neutral figure, not red. |
+| Completed-match scorecard: one card per rated match, read back from the engine's record, no new persistence | Shaun's brief, 2 Oct 2026; the architecture CCode's. **DONE `19662b1`.** View model `assets/js/domain/matches/matchScorecard.js` (pure; builds the card from the app match + `MatchFacts` + a dated tier resolver); sheet `assets/js/ui/components/matchScorecard.js` with one delegated `[data-scorecard]` listener. **Sources of truth, unchanged:** Expected = the side's `preMatchExpectedScore`; Actual = `actualScore`, the engine's performance score (0.80 × game share + 0.20 × result: win 1, draw ½, loss 0); difference = `actualScore − preMatchExpectedScore` (the stored `performanceResidual`, which K multiplies); movement = each player's `ratingDelta`; tier = the event's `tierAtEvent`, falling back to `historicalTierOf` (the dated tier history) only when there is no event. Game share is shown as labelled context, never as "Actual". The card prints pp as printed Actual − printed Expected (1 dp), so it always adds up on screen. It is within 0.1pp of the stored residual (live max 0.097). **Unrated match:** the card says so; no figure is estimated. **Teams:** team 1 is the stored first side (the winners; a draw keeps its stored orientation). Within a pair the stronger tier comes first, as on every match card. **No new persistence:** every field was already stored per match and per player. |
+| Desktop: one responsive app; the bottom navigation becomes a left rail; CSS places existing elements | Shaun's brief, 1 Oct 2026; the shell and layout choices CCode's. **DONE `269327c`.** Layout ranges mobile < 768 / tablet 768–1199 / desktop 1200+ / wide 1600+, in `assets/css/layout/desktop.css` and `assets/js/ui/desktopShell.js`. **No second app, no desktop routes, no duplicated renderers.** The rail is `.shell-bottom-nav` restyled, so routes, highlight and gating are the phone's. Admin stays inside More, not a primary rail item. From 768px the body is a CSS grid with a centred, capped content area and a midline: existing elements (podium / Kings, directory / profile, editor / preview) are placed side by side by CSS alone. The only markup added is `display: contents` wrappers on Home and around the pack editor and preview (no box on a phone), plus the rail's brand and viewer, which are built only once a desktop-sized window is seen. **The phone is proven unchanged:** the behaviour snapshot at 390 and 360 is identical, element for element, apart from those wrappers. The fifth item stays **More** on this branch; **Me** is the redesign's (Section 5). |
+| Player Monthly Packs: built on the Board Pack and Share Deck; private token links; published packs are snapshots | Shaun's brief, 1 Oct 2026; implementation and the access model CCode's, as the brief asked ("propose the safest simple access model"). **DONE `d6e4ae1`.** One catalogue engine serves both packs (`BoardPack.forCatalogue`; `BoardPack.PLAYER`). The player's month is a pure model (`domain/playerPack/playerMonth.js`) fed from the canonical selectors, and its slides are the Share Deck's shape (`playerDeck.js`), so the same deck, pictures and publishing serve both. **Composition:** a team is labelled by its players' tiers on the match date, strongest first (S > A > B > C, `?` if unknown), and a matchup is "my team vs theirs" from the player's side, so one match is "BB vs AB" for one player and "AB vs BB" for an opponent. **Targets** are four fixed rules over the month's own record (rematch, partner, thin evidence, own tier), each with its reason and sample, never a forecast. **Access:** each published pack is stored under a 128-bit random token in its own `playerPacks` collection, and the link is `review/?p=<token>`; changing a name, month or id in the address reaches nothing. The storage setting that completes it is Shaun's (Section 5). |
+| A published Monthly Review is a snapshot of its slides | CCode, 30 Sep 2026, implementing Shaun's principle in the Share Deck brief ("a published monthly review should remain historically stable"). **DONE `4af924d`.** Publish stores the Share Deck exactly as shown: formatted, render-ready slides, with revision, first and last published, by whom, and the record fingerprint. It is stored in `moneypadel_review_YYYY-MM`. **Why a snapshot:** nothing month-end in the record is immutable today. Month-end ratings, ranks and tiers are recomputed from the journey on every load, so later results, corrections, club decisions or a calculation change would all move a live review. **Not a second source of truth:** it is a record of what was sent. Nothing reads it for a calculation, and it is labelled a publication. The Board Pack itself stays live (see the 30 Sep row above). |
+| Monthly Review link: `review/?m=YYYY-MM`; image export next, at 1080 × 1350 | CCode, 30 Sep 2026. **The link is a query, not a path**, so it works unchanged on every host (Vercel, Pages, local). `/review/2026-09` would need a Vercel rewrite and absolute asset paths, which break Pages. **Image export is staged as the next sub-increment.** Its format is **1080 × 1350 (4:5)**, the portrait WhatsApp shows whole in a chat; 9:16 is a stories format. The cards are already 4:5 and sized in container units, so an export will match the card. No image library was added: client-side capture without one is fragile (fonts, Safari canvas taint). **"View full stats" links to the app's home.** Deep links into a particular screen need a router entry point, which belongs with the redesign's shell and history work. |
 | League Table disclosure correction — per-tier, not global | **DONE `11ed091`.** Shaun, 21 Sep 2026. **Supersedes only the disclosure layout from the 20 Sep League refinement.** `How this table works` must be a subtle inline text/chevron disclosure with no large bordered block. Remove the global `Tier tables` accordion. Tier S, A, B and C each get their own independent subtle chevron and collapse state, default **expanded** when entering By tier. Collapsing one tier must not affect any other. Keep the existing `By tier / All together / Last 10` selector and all underlying split-month/Last-10 behaviour. |
 | Predict a Matchup remains Admin-only and returns to plain-language result copy | **Copy DONE `55d2fa7`; visual render still awaited.** Shaun, 21 Sep 2026. Predict a Matchup stays in **Admin / More** and is deliberately not exposed to normal players, because players could use predictions to avoid agreed games or cherry-pick favourable ones. Real workflow: players agree a match in the group, then send Shaun the four-player matchup for prediction. The result UI should return to the older, simpler language: clearly name the **predicted winning team**, show the **expected share of games (%)**, and show the **rating-point advantage**. Remove user-facing `Expected performance score` / 80:20 engine terminology from the result card; the underlying Sequential-v1 calculation is unchanged. Do not prescribe a new visual layout yet. Keep the copy simplification and information hierarchy only; visual redesign is deferred until Shaun provides/approves a visual render. Keep only a small muted note that it is based on current Power Ratings and records nothing. |
 | A one-player tier section arrives collapsed | Shaun, 22 Sep 2026: *"Tier S should be collapsed by default as there's only one player there."* **Supersedes "tier sections default expanded on entry to By tier" (21 Sep) for one-player sections only**; populated sections are unchanged. Implemented as the reason rather than as the letter S, so a section that gains a second player opens on its own and any tier that thins to one folds without the rule being revisited. The heading always renders, so collapsed is one tap from open, and an explicit tap always beats the default. Applies to both the League and Merit tier sections. **DONE `1781ed5`.** |
@@ -2311,6 +2596,244 @@ with Shaun.**
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
+### OPEN 3 Oct — Match Result Card: three small product calls (defaults in place)
+
+**For Shaun / CGPT. Nothing is blocked; the card is live (`c6acfd9`).**
+1. **The story thresholds and wording** (Section 3 row) are CCode's
+   defaults. They are tuned on the 30 Sep record so that every story
+   actually occurs and none dominates. Change any number or line and
+   every card follows; the thresholds are pinned by a test.
+2. **A win that cost rating.** When a favourite wins but falls short of
+   expectation, their rating falls. The card then shows *Job done* and
+   omits the gains row, and the analysis shows the drop.
+   - The alternative is to show the drop on the card. That is honest,
+     but it is a negative number on a celebratory card.
+3. **"Performance" is the label** for the engine's actual score on both
+   views, as the brief suggested. "Actual" is no longer shown.
+- **For the design system (not blocking):** the card has its own sports-
+  card styling (`.mrc-*`: serif hero names, a big score, a story panel).
+  If the redesign's tokens or primitives should own a "share card"
+  pattern, this and the Board Pack pictures would move onto it together.
+
+### OPEN 2 Oct — Match scorecard: the scale of "Expected" and "Actual", and an older label
+
+**For Shaun / CGPT. Nothing is blocked; the scorecard is live (`19662b1`).**
+- **The scales do not mix.** The engine's expected and actual are
+  performance scores (0.80 × share of games + 0.20 × result), not shares
+  of games. The brief's example ("Actual = game share 44% vs Expected
+  62% → −18pp") puts a game share beside a performance score.
+- **What the card does:**
+  - Expected and Actual are both on the engine's scale; the pp
+    difference is the one that moved the ratings.
+  - The game share sits underneath ("Games 13–7 (65.0% of games)").
+  - A note on the card says what the figures are.
+- **Decide if you want something else.** For example, an "expected game
+  share" would be a new quantity the engine does not produce; it would
+  need a methodology decision first.
+- **An older label to correct.** The Games card's expanded detail still
+  says "Expected 71% of games · won 13/20 (65%)". That "Expected" is the
+  performance score, so the line compares two different scales, contrary
+  to `MatchFacts`' own rule.
+  - **Recommendation:** reword it to "Expected score 71% · scored 72%",
+    or drop it now the scorecard is one tap away.
+  - Not changed here: it is player-visible wording outside the brief.
+- **Reuse, not built (each is one `scorecardButtonHtml(id)` in that
+  surface's markup):**
+  - Home › Recent Results;
+  - the profile's match history (beside "Why X's rating moved");
+  - Rankings drill-downs (Monthly Breakdown, P/W/D/L lists).
+- **Share Match:** the view model is plain data, so a CardPainter picture
+  of it is the natural next step. Match sharing stays parked (Section 5)
+  until promoted.
+
+### OPEN 1 Oct — Desktop: what was deferred, and Me
+
+**For Shaun / CGPT. Nothing is blocked; the desktop layout is live
+(`269327c`).**
+- **Me is not built on this branch.** Me exists only on the redesign
+  branch (`ux/player-reset-v2`, Phase 1). Here the fifth item is
+  **More**, as on the phone. A desktop Me dashboard belongs with the
+  redesign's Me. It will inherit this layout system (below) rather than
+  be built twice. "Viewing as" sits at the foot of the rail.
+- **Deferred from the first pass:**
+  - a persistent game-detail pane in Play (game details open as dialogs
+    instead);
+  - desktop layouts for Compare, Insights / Call-Outs, Doughnuts and the
+    More guides (they are centred and capped, and fine, not designed);
+  - sticky headers on the League's own div-based table (Merit and Race
+    tables have them);
+  - the Games admin toast, which spans the rail on desktop.
+- **For the redesign branch to inherit it:**
+  - `desktop.css` keys on `.shell-bottom-nav`, `.shell-more-sheet`,
+    `.overlay`, the body grid, and `html[data-section]` /
+    `[data-tab]`;
+  - the redesign's shell needs only to keep those hooks, or map its own
+    classes in that one file.
+  - No screen renderer was changed for layout, apart from the
+    `display: contents` wrappers.
+
+### OPEN 1 Oct — Tier S switch and the new split lists (CCode's call)
+
+**For Shaun. Nothing is blocked.**
+- The results table and Power Rankings can now be split by tier, and are
+  by default. When the Tier S switch is set to Hidden, the split version
+  leaves out the Tier S section, as League, Merit and Race already do.
+- When Shaun asked for the switch he said he still wanted the Tier S
+  player's data in tables. That still holds for **"One list"**, and the
+  split report says the section is hidden.
+- **If Shaun would rather keep Tier S in split lists whatever the
+  switch says**, it is a one-line change.
+
+### OPEN 1 Oct — Monthly Information: "Lowest win % (highest loss %)" ranks by win %
+
+**For Shaun / CGPT. Nothing is blocked; not changed.**
+- The Information tab's list is titled "Lowest win % (highest loss %)",
+  but it ranks by **lowest win %** and shows the first tied player's
+  loss %.
+- With draws those differ. 2W 2D 1L has a lower win % (40%) than 3W 0D 2L
+  (60%), but loses less (20% against 40%).
+- The new Board Pack module "Highest loss %" ranks by loss % proper, from
+  a new `highestLossPct` list in the same selector (`monthlyInformation`).
+- **The question:** should the Information tab's list become "Highest
+  loss %" on the same rule, or keep its title as "Lowest win %"? CCode's
+  recommendation: retitle it "Lowest win %", which is what it measures,
+  and leave the ranking alone. It is a one-line change either way.
+
+### OPEN 1 Oct — Player Packs: private links, and one storage setting
+
+**For Shaun. Nothing is blocked; packs can be published and shared now.**
+- **The access model built (CCode, as the brief asked):**
+  - Each published pack is stored under a **random 128-bit token**
+    (22 URL-safe characters), in its own Firestore collection,
+    `playerPacks`. The link is `review/?p=<token>`.
+  - Nothing in the link names the player or the month. Changing a name,
+    month or id in the address reaches nothing. A wrong, unknown or
+    withdrawn token shows the same "not available" page and names nobody.
+  - The token is made on first publish and kept, so republishing never
+    breaks a link already sent. Unpublishing withdraws the pack at once,
+    and nothing is deleted.
+  - The page is `noindex` and sends no referrer, so the token is not
+    passed to any site the page links to.
+  - A section the club has made Admin-only stays out of a shared pack,
+    as it does in the club's review.
+  - The club's Monthly Review keeps its simple month link (`?m=`).
+- **What this protects, and what it does not:**
+  - It stops a player reaching another player's pack from the address
+    bar. That is the brief's bar ("not trivially enumerable").
+  - It does **not** make the stored packs secret from someone who opens
+    the browser's developer tools. The beta's Firestore has open read and
+    write (Section 3), so anyone with the app's key could list the
+    `playerPacks` collection, or read the drafts document, which holds the
+    index of tokens. The admin password hash is already exposed the same
+    way today.
+- **The decision for Shaun: add one Firestore security rule.**
+  - **What it does:** in the beta project's rules, `playerPacks` allows
+    reading **one document by its id** but not **listing** the collection
+    (`allow get; deny list`).
+  - **Its effect:** packs become private in storage too. Only someone
+    with a link can read a pack. No app code changes; the review page
+    already reads by id only.
+  - **Recommended: yes**, once the beta has any rules at all. It is a
+    console change to the shared database, so CCode has not made it.
+  - The token index in the drafts document would still be readable while
+    the `moneypadel` collection stays open. Closing that needs Admin
+    authentication, which the brief ruled out. Say if it matters.
+- **Data left out, for want of a canonical source:**
+  - **"Relevant players you did not play":** there is no agreed rule for
+    who is relevant (tier, activity, rating range). Not built.
+  - **Per-match expectation:** shown only as the engine's stored
+    performance figure (actual minus expected game share). No new
+    expectation is worked out. "Furthest above expectation" appears only
+    when a match beat it.
+  - **Win probabilities and predictions:** none, as the brief said. Next
+    month's ideas say what to play, never whom to beat.
+  - **"Inactive" status** still has no history (known, Section 5 Board
+    Pack note), so the pack does not use it.
+- **Minimums (configurable per pack, documented on the screen):**
+  head-to-head records 2+ matches (or 1 or 3); weaker results 2+
+  matches (or 1 or 3); partner chemistry 2+ decided games (the Insights
+  rule). One match is shown but never called a pattern.
+
+### OPEN 30 Sep — Monthly Review: public links and what comes next
+
+**For Shaun. Nothing is blocked; the review works as built.**
+- **Who can open a review link:** anyone who has it. No unlock is
+  needed, as the brief asked.
+  - The address is predictable (`?m=2026-09`), so anyone who knows the
+    app's address could guess another month's link.
+  - This exposes nothing new. The beta's shared storage is already
+    readable by anyone with the app (Section 3, "permanent open
+    read/write"), and every figure on a slide is already on a public
+    screen.
+  - The page is marked `noindex`. A slide built on a section the club has
+    made Admin only is not shown.
+  - **If Shaun wants links that cannot be guessed,** a random token per
+    published month is a small change. CCode's recommendation: not needed
+    while the app itself is open.
+- **Next sub-increments, not started:**
+  1. **Export slides as images**, 1080 × 1350 (Section 3).
+  2. **"View full stats" into a particular screen**, with the redesign's
+     router.
+- **Unpublishing: added 30 Sep (`a5cbe84`) at Shaun's request,** as a
+  withdrawal rather than a deletion. The review stays stored, marked
+  withdrawn, and can be published again.
+
+### OPEN 30 Sep — Board Pack: saved figures or live ones?
+
+**Update, 30 Sep (Share Deck):** the part of this that mattered most is
+now settled. A **published Monthly Review is frozen** as sent (Section 3).
+The Board Pack itself stays live, with its warning when a month's record
+changes. The finalise question below now applies only to the Admin's
+Board Pack report, if the board wants that frozen too.
+
+**For Shaun. Nothing is blocked; the pack works as built.**
+- **What is stored:** only the admin's choice for the month (Section 3).
+  Every figure is recomputed from the record each time the pack is
+  opened.
+- **So a past month's pack can change afterwards.** Any of these would do
+  it:
+  - a late result approved into that month;
+  - an edit or deletion of one of its matches;
+  - a club decision or reassessment that moves a month-end rating;
+  - a correction to a tier change.
+- **What CCode added so it is never silent:**
+  - a saved pack carries a fingerprint of the month's matches, month-end
+    ratings and tier changes;
+  - when that no longer matches, the section says so: "The record for
+    August 2026 has changed since this pack was saved…";
+  - no figures are stored.
+- **The question:** should the board be able to **finalise** a pack?
+  That would freeze a copy of the figures as presented.
+- **CCode's recommendation:** stay live for now. Add a "Finalise" action
+  that stores a frozen copy only when the pack becomes something the
+  board formally signs off or circulates. A frozen copy is a second
+  record of the figures, so it should exist only where a signed-off
+  version is actually needed.
+
+**Stats not included, for want of a canonical source.** A new selector
+or definition would be needed first, and the brief ruled out a new stat
+engine.
+- **Head-to-head and rivalries for a month:** `H2H` is all-time only;
+  nothing is scoped to a month.
+- **Notable results:** there is no definition of a notable result.
+  - Hard wins, Merit's own classification of beating a stronger pairing,
+    are included instead.
+  - Upset counts exist per player on Rankings, but not as a list of
+    matches.
+
+**How some included modules are sourced**, recorded so nobody reads them
+as something else:
+- **Form** is Last 10 **as it stood at the month's close**
+  (`LastTen.build` on the record up to that day). It is not the League's
+  "Form (10g)" column, which is today's form.
+- **Power Rankings at month end** is the podium's pool: the month-end
+  rating, the tier at the month's close, and 5+ games that month. It
+  deliberately leaves out the Rankings list's current Ranked / Idle
+  filter, which is a statement about today.
+- **Partnerships** use the Insights chemistry function (`buildPartnerships`)
+  over that month's rated games, 2+ together. Tiers are not shown, because
+  that function's tiers are today's.
+
 ### OPEN 30 Sep — redesign branch: waiting on Shaun's IA review
 
 **RESOLVED 30 Sep: `ux/player-reset-v2` created.** Shaun gave the
@@ -2476,7 +2999,7 @@ In every case the real rule stays until someone decides otherwise.
 
 | # | Question | CCode's recommendation |
 |---|---|---|
-| DQ1 | The design makes the next tier a target: a "58 pts to Tier 1" bar and a threshold line on the journey. Tiers are board decisions, not rating thresholds. | No bar or line. Keep today's one-line gap, worded as "N pts below the lowest-rated Tier A player". |
+| DQ1 | **RESOLVED 30 Sep (Shaun: as recommended).** The design makes the next tier a target: a "58 pts to Tier 1" bar and a threshold line on the journey. Tiers are board decisions, not rating thresholds. | No bar or line. Keep today's one-line gap, worded as "N pts below the lowest-rated Tier A player". |
 | DQ3 | The design's Power view is today's ratings. Rankings opens on the Meaningful Month's month-end view. | Power shows today, which matches Tier Rank (D5). Month-end history moves to the Month segment. |
 | DQ4 | The monthly switch leads with Best Month (the Monthly Race), which is still a trial. | League · Merit · Race until the trial is confirmed. |
 | DQ6 | Can a participant record "Court booked"? This has been open since 27 Sep, and the design assumes yes. | Yes for the four players, attributed and reversible by an Admin. The Admin review list stays. |
@@ -3130,6 +3653,441 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 3 Oct 2026 (Match Result Card + Match Analysis)
+
+**`c6acfd9` on `app-features-fixes` = `main`.**
+- **Refactor, not rewrite.**
+  - `matchScorecard.js` (domain) gains `resultCard(vm)`,
+    `story(vm, hero)` and `STORY`. `build()` is unchanged, as is every
+    rating figure it reads.
+  - The UI file splits into `matchResultCardHtml` and
+    `matchAnalysisHtml` (the old card, with teams named by their players
+    rather than "Team 1 / 2").
+  - One sheet holds both views: the Result Card first, "View match
+    analysis" / "← Back to result", and "Share result".
+- **New:**
+  - `CardPainter.matchResult(card)`, a 1080 × 1350 picture;
+  - `shareMatchResult(id)`, using the existing share-sheet path. It
+    offers "Tap to share" when the phone needs a fresh tap.
+- **Unchanged:**
+  - the rating engine, MatchFacts and the stored data;
+  - the entry points (Games card, approval outcome);
+  - `scorecardButtonHtml(id)` for reuse (its label is now "🏆 Match
+    result").
+- **Tests:** `tests/matchScorecard.test.js` (13, up from 9).
+  - The Result Card copies the scorecard field for field on every seeded
+    match.
+  - The story thresholds are tested at their edges, and the values are
+    pinned.
+  - An unrated card shows no figures; singles wording is covered.
+  - **In the browser:** the Result Card first, against the engine
+    record; Analysis and back; Share result (one PNG, "Tap to share",
+    re-share of the same picture).
+  - 19 mutations caught. **874 / 874.**
+
+Baton → Shaun / CGPT: Section 5 (three small calls; defaults in place).
+
+### CCode — 2 Oct 2026 (completed-match scorecard)
+
+**`19662b1` on `app-features-fixes` = `main`.**
+- **Data flow confirmed:** submission → admin approval
+  (`prepareApproval` → `ReplayForward.plan` append →
+  `ReplayForward.commit`) → the match doc and four `MATCH_UPDATE` events
+  written → `loadV3State()` → `V3_MATCH_FACTS` rebuilt → the scorecard
+  reads it. No step was changed.
+- **Historical data audit:**
+  - **Already persisted:** everything on the card. That is:
+    - the match doc: date, teams, sets, outcome, type;
+    - per player per match: pre / post rating, expected, actual,
+      residual, K, delta, `tierAtEvent`.
+  - **Needs new snapshot persistence:** nothing.
+  - **Reconstructed:** game share and games, from the stored sets via
+    `RatingEngine.gameShares`; the game type, from the recorded tiers via
+    `GameType.classify`.
+  - **Unsafe to infer, so never inferred:**
+    - an expectation from today's ratings;
+    - a tier from today's tiers;
+    - any figure for an unrated match.
+  - **Tiers:** `tierAtEvent` and `historicalTierOf` agree on all 596
+    seeded and 704 live events. The existing tier history already solved
+    the tier requirement; the card reads the event's own tier first.
+- **Verified on the live snapshot (30 Sep, read-only):**
+  - 176 / 176 matches are rated;
+  - expected, actual (from each match's own sets and outcome), residual
+    and movement reconcile with 0 mismatches;
+  - pp is within 0.1 of the stored residual.
+- **Changed:**
+  - `matchFacts.js` also carries `tierAtEvent`;
+  - the Games card's expanded detail opens the scorecard;
+  - the approval outcome carries the new match's scorecard, and stays
+    visible when the pending list empties;
+  - CSS lives in `components.css` (`.msc-*`).
+  - The rating engine, the store and replay-forward are untouched.
+- **Tests:** `tests/matchScorecard.test.js` (9).
+  - On every seeded match, it checks expected, actual, pp, movement, K ×
+    residual and the tiers against the engine.
+  - **Stability:** a replay of the first 40 matches gives identical cards.
+  - Unrated and misaligned facts are not displayed against the wrong team.
+  - **No parallel calculation:** a source guard.
+  - **In the browser:** the Games scorecard; approval → scorecard; the
+    fallback tier.
+  - 10 mutations caught. **870 / 870.**
+
+Baton → Shaun / CGPT: Section 5 (scale and the older Games label).
+
+### CCode — 1 Oct 2026 (desktop-friendly dashboard)
+
+**`269327c` on `app-features-fixes` = `main`.**
+- **New files:**
+  - `assets/css/layout/desktop.css`, loaded last; the architecture test
+    allows it after the screens;
+  - `assets/js/ui/desktopShell.js` (`LAYOUT_RANGES`, `layoutForWidth`,
+    `initDesktopShell`, `syncDesktopShell`, Escape handling).
+  - `shell.js` calls `syncDesktopShell()` on navigation and
+    `initDesktopShell()` once.
+- **Markup touched:**
+  - Home's blocks are wrapped in `.home-block-*`;
+  - the Board Pack and Player Pack wrap editor and preview in `.bp-split`
+    while the preview is open.
+  - Both are `display: contents` on a phone.
+- **Two CSS fixes desktop needed:**
+  - `body { overflow-x: clip }` from 768. `hidden` made the body a scroll
+    container that never scrolls, so nothing could be sticky.
+  - `.admin-acc { overflow: clip }` from 1200, for the same reason.
+- **Tests:**
+  - `desktop.test.js` (8): overflow at 1024 → 2560 on 11 screens; rail
+    vs bottom bar; same routes as the phone; dialogs and Escape;
+    Rankings pairing; Players master-detail and sticky pane; Play and
+    Home grids; Board Pack and Player Pack split, plus phone wrappers.
+  - `preview.test.js`: desktop presets.
+  - The harness gains a `viewport` option.
+  - All fail on `8854107` except the no-overflow invariant; 9 mutations
+    caught. **861 / 861.**
+  - Behaviour snapshot at 390 and 360: identical apart from Home's six
+    `display: contents` wrappers. Every existing element's style and box
+    is identical.
+- **To check:** a real laptop and monitor (Chrome, Safari, Firefox).
+  `overflow: clip` and `:has` are not used for anything a phone needs.
+
+Baton → Shaun / CGPT. Deferrals and Me: Section 5.
+
+### CCode — 1 Oct 2026 (Board Pack split by tier)
+
+**`382f907` on `app-features-fixes` = `main`.**
+- **Options:** `SPLIT` (`split` | `one`, default split) on
+  `results_table` (which also gains `tier`) and `power`. `SLIDES`
+  (`each` | `leaders`, default each) on `league`, `merit` and `race`.
+  Saved packs take the defaults for the new keys.
+- **Data:** `boardPackSplit(o, rows, tierOf)` returns `{ split, tiers,
+  rows, sHidden }`. A single list is one section with `tier: null`.
+  `results_table` uses `leagueSplitRows` when split.
+- **Slides:** `ShareDeck.slidesFor` (several slides per module);
+  `slideFor` is now its first. `perTier`; tier slide ids are
+  `<module>:<tier>`.
+- **Tests:**
+  - per-tier canonical checks, a mid-month mover (simulated in the page:
+    the seeded record has none), options and defaults, per-tier slides,
+    and the Tier S rule;
+  - existing tests updated for split defaults and per-tier slide ids.
+  - All new ones fail on `abc34d5`; 8 mutations caught. **852 / 852.**
+  - Snapshot: only `manage-admin` differs (new options).
+
+Baton → Shaun / CGPT. One call to confirm (Section 5): the Tier S switch
+in split lists.
+
+### CCode — 1 Oct 2026 (save a whole pack)
+
+**`d74d466` on `app-features-fixes` = `main`.**
+- `features/review/pdfDoc.js` (pure, UMD): `PdfDoc.build(pages, { title })`
+  writes PDF 1.4 with one JPEG image per page. Pages are 0.5 pt per px
+  (1080 px is 540 pt) and the title is UTF-16.
+- `CardPainter.toPdf(canvases, name, title)`.
+- `boardPackShareFiles(makeFiles, label, title)` is the one share/save
+  path for pictures and PDFs. `boardPackShare` wraps it.
+- Club: `boardPackAllSheets`, `boardPackContentsSheet`,
+  `boardPackPackPdf`, `boardPackSlidesPdf`, `boardPackPackPictures`.
+  Player: the same three in `wirePlayerPacks`. Shared row:
+  `bpSaveAllHtml`.
+- **Tests:** `pdfDoc` (3) and `savePack` (3, browser), covering all six
+  buttons, file names, page counts and sizes, the share sheet, the
+  visibility filter, and no writes.
+  - `tests/helpers/pdfInspect.js` reads the files back. During
+    development pypdf also opened every PDF in strict mode, and the page
+    pictures decoded correctly.
+  - All fail on `fe9e8b1`; 7 mutations caught. **849 / 849.**
+  - Snapshot: only `manage-admin` differs, by the new row.
+- **To check on a phone:** "Slides as PDF" into WhatsApp from iPhone and
+  Android.
+
+Baton → Shaun / CGPT.
+
+### CCode — 1 Oct 2026 (Board Pack: losing modules)
+
+**`337c70e` on `app-features-fixes` = `main`.**
+- **Catalogue:** `over_80` retitled (winners only); new `lost_pct` and
+  `worst_record`. The club catalogue is now 23 modules.
+  - The modules share `THRESHOLD` / `PCT_MIN` option definitions.
+  - `splitFrom` on a catalogue module places it after its parent in a
+    pack saved before it existed, copying the parent's on/off state and
+    options. Any other new module still arrives off, at the end.
+- **Data:** `boardPackThreshold(month, o)` serves both threshold modules.
+  `monthlyInformation` gains `highestLossPct`; its existing lists are
+  unchanged.
+- **Pictures:** `CardPainter.save` is async, 250ms between files, and
+  `share()` awaits it.
+- **Tests:**
+  - canonical: lost_pct against a tally from the approved matches at
+    every threshold and minimum; worst_record's every value and order;
+  - browser: separate thresholds set in the UI, the report, the deck and
+    the saved options;
+  - config: the split migration;
+  - slides;
+  - 14 pictures saved without loss.
+  - All fail on `6520a04`; 9 mutations, all caught. **843 / 843.**
+  - Snapshot against `d6e4ae1`: 37 of 38 identical; `manage-admin`
+    differs by the module list.
+
+Baton → Shaun / CGPT. One small question (Section 5): retitle
+Information's "Lowest win % (highest loss %)".
+
+### CCode — 1 Oct 2026 (Player Monthly Packs)
+
+**`d6e4ae1` on `app-features-fixes` = `main`.**
+- **Architecture:** built on the Board Pack and Share Deck; no new stats
+  engine.
+  - `boardPackConfig.js`: the catalogue functions are now
+    `forCatalogue(MODULES)`. The club catalogue is unchanged (21
+    modules); `BoardPack.PLAYER` is the player catalogue (8 modules).
+  - `domain/playerPack/playerMonth.js` (pure): `teamLabel`, `side`,
+    `build`, `bestResults`, `weakerResults`, `targets`.
+  - `domain/playerPack/playerDeck.js` (pure): player slides in the Share
+    Deck shape, with a player cover and closing.
+  - `features/admin/playerPackData.js`: `playerMonthlyPack`,
+    `playerPackSources`, drafts storage, tokens,
+    `publishPlayerPack` / `unpublishPlayerPack`.
+  - `features/admin/playerPackScreen.js`: the Player packs view. The
+    module editor is shared with the club pack (`wirePackEditor`).
+  - `review/review.js`: `?p=<token>`. `DeckView` and `CardPainter` take
+    the player's cover and closing. `ShareDeck.summaryText` takes the
+    deck's title and link label.
+  - `fsGetIn` / `fsSetIn` for the `playerPacks` collection.
+- **Selectors reused, not re-implemented:** `computeMonthlySummaryStats`,
+  `leagueSplitRows` + `sortLeagueRows`, `MeritTable.build` (positions and
+  each win's hard / even / favoured), `buildMonthlyRace`,
+  `MonthlyViews.playerMonth`, `V3_MATCH_FACTS` (rating change and
+  performance), `buildPartnerships` (chemistry), `getAllApprovedMatches`,
+  `historicalTierOf`.
+- **Composition and target rules:** Section 3 (Decisions). Targets, in
+  order: rematch (an opponent met 2+ times, within one result); partner
+  (2+ together, more wins than losses); thin evidence (a matchup type
+  played once); own tier (fewer than half of 3+ matches all in the
+  player's tier). Each carries its reason and sample.
+- **Storage:** drafts in `moneypadel_player_packs_YYYY-MM` (every
+  player's choices and the token index), saved as you go. Published packs
+  in `playerPacks/<token>`, a snapshot with revisions.
+- **Found and fixed on the way:** the first draft's autosave never
+  wrote. Its timer cleared its own handle before saving. The Generate-all
+  test caught it.
+- **Tests:** `playerMonth` (8) and `playerPack` (7, browser), covering:
+  - scoping and W-D-L reconciliation against the club's tables, for every
+    player in August and September;
+  - perspective and mid-month tier change;
+  - Generate all, saved drafts, publish, republish and unpublish, and
+    Admin-only refusals;
+  - the private link, and wrong, guessed and withdrawn tokens;
+  - snapshot stability, no referrer, the visibility filter;
+  - the 375px deck, pictures, sample counts and no forecasting language;
+  - calculations unchanged.
+  - All 15 fail against `501bc8f`; 14 mutations, all caught.
+  - **839 / 839.** Behaviour snapshot against `501bc8f`: 37 of
+    38 states identical; `manage-admin` differs only by the new Club pack
+    | Player packs switch.
+- **To check on a phone:** opening a pack link from WhatsApp.
+
+Baton → Shaun / CGPT. One decision for Shaun: the Firestore rule
+(Section 5).
+
+### CCode — 1 Oct 2026 (Board Pack options, autosave)
+
+**`f58ec1d` on `app-features-fixes` = `main`.**
+- **Threshold:** `over_80` keeps its id, so saved packs still match, and
+  gains a `threshold` option.
+- **Power Rankings:** `power` gains `min` and `players`. The state is
+  `playerStateOf(name, end of month)`.
+- **W-D-L:** best win % and partnerships.
+- **Autosave:** `boardPackQueueSave` / `boardPackSaveNow`, with a 600ms
+  debounce.
+  - The section is not redrawn on save, so a note keeps its focus.
+  - A pending change is flushed before the month changes.
+- **Tests:** 3 new browser tests, plus extended config and canonical tests;
+  all mutation-checked. **823 / 823.**
+
+Baton → Shaun / CGPT.
+
+### CCode — 1 Oct 2026 (Tier S sections; pictures)
+
+**`6f40764` on `app-features-fixes` = `main`.**
+- **Tier S:**
+  - `tierSSectionsShown()` and `groupedTiers()` in `permissions.js`,
+    stored as `tierSSections` in the visibility document;
+  - used by `leagueScreen` (League, Merit, Race), `rankingsChrome`
+    (Kings) and `boardPackData`.
+- **Pictures:**
+  - `features/review/cardPainter.js` (`slide`, `sheet`, `share`, `save`);
+  - Board Pack renderers refactored to `boardPackBlocks()` plus
+    `bpBlocksHtml()`, with unchanged HTML; `boardPackSheet()`;
+  - `wireBoardPackPictures()`.
+  - **Share-sheet detail:** a share sheet must open from a tap. If
+    preparing the pictures used the tap up (iPhone), the section offers a
+    one-tap **Share** with the pictures ready.
+- **Tests:** `tierS` (1) and `pictures` (4), all mutation-checked.
+  - The snapshot against `470ef73`: 37 of 38 identical; `manage-admin`
+    differs by the new switch.
+  - **820 / 820.**
+- **To check on a phone:** sharing pictures to WhatsApp, on iPhone and
+  Android. Headless tests cover the share sheet only with a stand-in.
+
+Baton → Shaun / CGPT.
+
+### CCode — 30 Sep 2026 (Monthly Review: Unpublish, Kings tiles)
+
+**`a5cbe84` on `app-features-fixes` = `main`.**
+- **Unpublish:**
+  - `ShareDeck.withdrawal` / `isLive`;
+  - `unpublishBoardPackReview` (Admin only);
+  - three publish states in the section: Draft, Published and
+    Unpublished;
+  - the public page's "no longer available".
+  - No document is ever deleted, and a test checks that.
+- **Kings tiles:**
+  - Share Deck slides carry `layout: 'kings'`, and `DeckView` draws the
+    crowned grid.
+  - The Board Pack report reuses the Rankings `.kings-card` markup.
+- **Tests:** 5 new (2 pure, 3 browser), plus the Board Pack Kings tiles
+  in the canonical test. All mutation-checked. **815 / 815.**
+
+Baton → Shaun / CGPT.
+
+### CCode — 30 Sep 2026 (Monthly Review Share Deck)
+
+**`4af924d` on `app-features-fixes` = `main`. Nothing on
+`ux/player-reset-v2`.**
+- **New files:**
+  - `domain/boardPack/shareDeck.js`: slides, summary and publication.
+    It is pure.
+  - `features/review/deckView.js`: the drawing, shared by the Admin
+    preview and the public page.
+  - `assets/css/screens/review.css`.
+  - `review/index.html` and `review/review.js`.
+- **Changed:**
+  - `boardPackData.js`: `boardPackDeck`, `publishBoardPackReview` and the
+    review URL and summary.
+  - `boardPackScreen.js`: the preview mode, publish, and share.
+  - `firebaseData.js`: `loadPublishedReview` and `savePublishedReview`.
+  - The test harness: it can open another path, wait on a ready signal,
+    emulate a 375px touch phone, and serve a folder's index.
+- **For the redesign stream:** a redesigned screen can consume the same
+  things.
+  - `boardPackDeck(config)` gives a month's slides.
+  - `DeckView` draws them.
+  - The slide shape is documented in `shareDeck.js`, with room for later
+    slide kinds (Moment of the Month, photos, season recap, awards).
+- **Tests: 14 new.** 6 are pure (`shareDeck`) and 8 run in the browser
+  (`review`). They cover:
+  - selection and order to slides, and the preview being what is
+    published;
+  - canonical figures and the summary for every month;
+  - draft, publish, edit and republish, with the link changing only on
+    Publish;
+  - the direct link for each month;
+  - no Admin control and no stats engine on the public page;
+  - at 375px: no overflow, no clipping, and 4:5 cards;
+  - buttons, dots, keys, and a sideways scroll gesture;
+  - the stored slides shown verbatim;
+  - unpublished and bad links;
+  - Admin-only sections hidden.
+  - All fail on the old code. Five deliberate breakages were each caught.
+  - **Limitation:** headless Chromium here cannot synthesise a touch
+    scroll. The swipe is tested as a sideways trackpad gesture on the
+    same native scroller.
+- **Behaviour snapshot against `b1dc91a`:** 37 of 38 states are
+  identical. `manage-admin` differs only by the section's publish block.
+- **Full suite: 810 / 810.**
+- **For Shaun (Section 5):**
+  - Are predictable review links acceptable? The recommendation is yes,
+    while the app is open.
+  - Image export is the next sub-increment.
+
+Baton → Shaun / CGPT.
+
+### CCode — 30 Sep 2026 (Board Pack: results table and over-80%)
+
+**`e666a96` on `app-features-fixes` = `main`.**
+- **Shaun asked** that the pack cover, for any month: games played,
+  wins, losses, points (3 / 1 / 0), most difficult games, and anyone who
+  won or lost more than 80%.
+- **Already covered:** the League module (split by tier) and the top 3
+  hardest games in Monthly Information.
+- **Added:** the **Monthly results table** and **Won or lost over 80%**
+  modules (Section 1).
+- **Tests:** P / W / D / L / Pts are checked against a tally taken
+  straight from the month's approved matches, not only against the
+  function that feeds the module. 796 / 796.
+- **Checked against a read-only pull of the live beta (30 Sep):**
+  - **September:** 55 games, 9 draws, 27 players. Nobody with 3+ games
+    passed 80% either way. With every player included, Omar won 1 of 1
+    and Tee lost 1 of 1.
+  - **August:** Erf won 5 of 6 (83.3%) and Shaun lost 5 of 6 (83.3%).
+- **For Shaun:** is the 80% line strictly "more than"? Exactly 80% (4 of
+  5) is not flagged today; that is a one-word change.
+
+Baton → Shaun / CGPT.
+
+### CCode — 30 Sep 2026 (Admin Monthly Board Pack)
+
+**On `app-features-fixes` = `main`, `9e4a5e6`. Nothing on
+`ux/player-reset-v2`.**
+- **New files:**
+  - `domain/boardPack/boardPackConfig.js` holds the stored choice. It is
+    pure and extensible: a module added later arrives switched off, and
+    an unknown id is kept.
+  - `features/admin/boardPackData.js` holds what each module shows, the
+    save path (Admin only) and the record fingerprint.
+  - `features/admin/boardPackScreen.js` holds the section and the
+    preview.
+  - `features/rankings/monthlyStoryData.js`.
+- **Selectors extracted, with the screens now using them:**
+  - Information and the Power Rankings stories;
+  - the Rankings podium and Kings, via `rankingPool` / `kingsOfTiersFor`;
+  - the League's By tier rows.
+  - **Proof:** 37 of 38 snapshot states are identical to `21a2de2`;
+    `manage-admin` differs only by the new section.
+- **Storage:** `moneypadel_board_pack_YYYY-MM`, one document per month,
+  read lazily. It holds only the choice, the stamp and the fingerprint.
+- **Tests: 15 new.**
+  - `boardPackConfig`: 9.
+  - `boardPack`: 6, in the browser. They cover:
+    - Admin-only access, and no read at start-up;
+    - month choice, select / deselect, ordering, options and commentary;
+    - the saved pack reloading exactly;
+    - the drift warning;
+    - a canonical-source proof against the screens' own functions for
+      every month (podium, Kings, the Information tab's text, the
+      stories, League, Merit, Race, Doughnuts, the game count, tier
+      changes);
+    - historical tiers: Fatch is Tier C in July's pack and B today;
+    - month scoping, and Form at the month's close;
+    - no effect on ratings, League, Merit or Race.
+  - All 15 fail on the old code. Five deliberate breakages were each
+    caught.
+  - **Full suite: 795 / 795.**
+- **Recorded:** Shaun's "Accept all" (Section 3; DQ1 resolved). The
+  redesign follow-ups are queued in NEXT, not started, per the brief.
+- **For Shaun:** the finalise / snapshot question, and the stats left out
+  (Section 5).
+
+Baton → Shaun / CGPT.
 
 ### CCode — 30 Sep 2026 (Player Experience Reset: Phase 2 Play)
 
@@ -7258,6 +8216,13 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `c6acfd9` | Match Result Card + Match Analysis. The celebratory card opens first: winners as heroes with their tier on the day, a big score, one deterministic story, Expected / Performance / pp, and the winners' gains. The full breakdown is one tap behind it. Share result paints the card as a picture for WhatsApp. One view model, no new data path; 874/874. |
+| `19662b1` | Completed-match scorecard: one card per rated match, opened from Play › Games and from the approval confirmation. It shows players with their tier on the day, score, winner, Expected / Actual / pp per team, and each player's movement. Every figure is read back from the engine's recorded events; there is no new persistence and no recomputation. 9 tests, 10 mutations caught; 870/870. |
+| `269327c` | Desktop-friendly dashboard. Left rail (brand, sections, "Viewing as"), centred capped column, ranges 768 / 1200 / 1600; Home grid, Rankings toolbar + Kings beside podium, Find a Game beside results, Games card grid, Players master-detail, Board Pack and Player Pack editor beside live preview, dialogs and drawers, Escape and focus; `/preview` desktop presets. The phone is unchanged (snapshot at 390/360). All new tests fail on `8854107` but the overflow invariant; 9 mutations caught; 861/861. |
+| `382f907` | Board Pack split by tier. Results table and Power Rankings: "Split by tier" (default) or "One list"; League, Merit and Race: "A slide per tier" (default) or leaders on one slide. The Share Deck makes one slide per tier. A mid-month mover is in each tier played. All new tests fail on `abc34d5`; 8 mutations caught; 852/852. |
+| `d74d466` | Save a whole pack. Club and player packs: the pack as one PDF (contents + every module), the slides as one PDF (players' view), or every module as a picture; before publishing, nothing written. A PDF writer of its own (`pdfDoc.js`, no library) fed by the share pictures. All new tests fail on `fe9e8b1`; 7 mutations caught; 849/849. |
+| `337c70e` | Board Pack losing modules. "Won a set % of games or more" (winners only); new "Lost a set % of games or more" with its own threshold and minimum, carried into packs saved before the split; new "Highest loss % (3+ games)" (losses ÷ games, from `monthlyInformation`'s new `highestLossPct`). Picture saving no longer drops files past the tenth. All new tests fail on `6520a04`; 9 mutations caught; 843/843. |
+| `d6e4ae1` | Player Monthly Packs. Admin › Monthly Board Pack › Player packs: a pack per player per month (8 modules plus Admin notes), Generate all, saved as you go, Share Deck preview, pictures, summary, and publish / unpublish to a private 128-bit token link (`review/?p=`) stored as a snapshot in `playerPacks`. Pure `playerMonth.js` / `playerDeck.js`; canonical selectors only. 15 tests (all fail on `501bc8f`), 14 mutations caught; 839/839. |
 | `6291cdc` (`ux/player-reset-v2`) | Phase 2 Play. My Games \| Club with Arrange a Game; My Games by what needs doing, with answers in place; Club counters; the game sheet with the stepper and the existing fixture card; a player's "I've booked a court" (DQ6); Arrange a Game (Suggested for you, Request with optional time and venue, Paste a list). Existing screens are unchanged (content snapshot identical, 38 states × 2 widths). 9 tests; 816/816 on the branch. |
 | `86beb59` | `submitGameRequest`: one path for asking for a game, carrying DQ9's optional time and venue. The Requests form behaves as before. 2 tests; 780/780. |
 | `7d70cc0` | DQ6 (player court booking, attributed, Admin-only reversal), DQ9 (request time and venue), `domain/fixtures/playView.js` (My Games / Club / stepper); the Play badge now counts My Games' Needs you. 10 tests; 778/778. |
@@ -7354,6 +8319,97 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 3 Oct (latest): the Match Result Card is live (`c6acfd9`, 874 / 874).**
+Baton → Shaun / CGPT.
+- **Try it:** Play › Games → tap a game → **🏆 Match result**. Then
+  **Share result**, or **View match analysis**.
+- **Decide (Section 5):** the story thresholds and wording; a win that
+  cost rating; the label "Performance".
+
+**CCode, 2 Oct (latest): the completed-match scorecard is live (`19662b1`, 870 / 870).**
+Baton → Shaun / CGPT.
+- **Try it:** Play › Games → tap a game → **Match scorecard**.
+- **Decide (Section 5):**
+  - keep Expected / Actual on the engine's scale (recommended);
+  - reword or drop the older "Expected X% of games" line;
+  - which surfaces get the button next.
+
+**CCode, 1 Oct (latest): the app is desktop-friendly (`269327c`, 861 / 861).**
+Baton → Shaun / CGPT.
+- **Try it:** open the app on a laptop, or use `/preview` at 1280, 1440
+  or 1920.
+- **Decide (Section 5):** Me on desktop arrives with the redesign's Me;
+  the deferrals are listed there.
+
+**CCode, 1 Oct (latest): the Board Pack splits by tier with every tier
+included, in the report and the slides (`382f907`, 852 / 852).** Baton →
+Shaun / CGPT. Confirm or change the Tier S call (Section 5).
+
+**CCode, 1 Oct (latest): whole packs can be saved as PDF or as pictures
+(`d74d466`, 849 / 849).** Baton → Shaun / CGPT. Please try "Slides as
+PDF" into WhatsApp from a phone.
+
+**CCode, 1 Oct (latest): the Board Pack has its losing modules
+(`337c70e`, 843 / 843).** Baton → Shaun / CGPT. Everything below still
+stands.
+
+**CCode, 1 Oct (latest): Player Monthly Packs are live (`d6e4ae1`,
+839 / 839).** Baton → Shaun / CGPT.
+- **Try it:** Admin / Manage › Monthly Board Pack › Player packs ›
+  Generate all, then open a player › Preview › Publish pack › Copy link.
+- **For Shaun (Section 5, OPEN 1 Oct):** add the `playerPacks`
+  read-by-id, no-listing Firestore rule. Recommended.
+
+**CCode, 1 Oct (later still): partnerships show draws, and the win/loss
+% counts at the threshold (`2d43540`, 824 / 824).** Baton → Shaun / CGPT.
+
+**CCode, 1 Oct (later): Board Pack options, W-D-L and autosave are live
+(`f58ec1d`, 823 / 823).** Baton → Shaun / CGPT.
+
+**CCode, 1 Oct: the Tier S sections switch, and pictures from the Board
+Pack and the Share Deck, are live (`6f40764`, 820 / 820).** Baton → Shaun
+/ CGPT. Please try sharing to WhatsApp from a phone. Everything below
+still stands.
+
+**CCode, 30 Sep (later still): the Monthly Review Share Deck is live on
+`main` (`4af924d`, 810 / 810). Baton → Shaun / CGPT.**
+- **Try it:**
+  1. Admin / Manage › Monthly Board Pack.
+  2. Preview › Share Deck.
+  3. Publish review.
+  4. Copy summary, or Share, into WhatsApp.
+- **For Shaun (Section 5):**
+  - Are predictable month links acceptable?
+  - Go-ahead for image export (1080 × 1350) as the next sub-increment.
+- The queued redesign work below is unchanged. Retire "as before", then
+  Phase 3a (Home).
+
+**CCode, 30 Sep (later): the Board Pack now also has the Monthly results
+table and "Won or lost over 80%" (`e666a96`, 796 / 796).** Everything
+below still stands.
+
+**CCode, 30 Sep: the Admin Monthly Board Pack is DONE on `main`
+(`9e4a5e6`, 795 / 795). Baton → Shaun / CGPT.**
+- **Review it:** Admin / Manage › Monthly Board Pack, on the production
+  deployment of `main`.
+- **For Shaun (Section 5):**
+  - Should a finalised pack freeze its figures? The recommendation is
+    not yet.
+  - Two stats were left out for want of a canonical source: monthly
+    head-to-head and "notable results".
+- **Approved and queued for CCode, on `ux/player-reset-v2`:** Shaun
+  accepted all three on 30 Sep. They wait only because the Board Pack
+  brief said to leave the redesign branch alone. The next `Ledger CCode`
+  starts them in this order:
+  1. Retire "Upcoming, as before" and "Requests, as before" from Club
+     (the new Play lists are accepted).
+  2. **Phase 3a (Home)**, with DQ1 as resolved: no bar or threshold line;
+     the one-line gap reads "N pts below the lowest-rated Tier A player".
+     The sections are the live This Month hero (DQ31), Needs You, Next
+     Game, Last Time Out and Around the Club. Power Rating, Tier Rank and
+     form become one line, and Match Ideas leaves Home.
+  - Merge `main` into the branch first, so the Board Pack comes with it.
 
 **CCode, 30 Sep: Phase 2 (Play) is DONE on `ux/player-reset-v2` (`6291cdc`).
 Baton → Shaun.**

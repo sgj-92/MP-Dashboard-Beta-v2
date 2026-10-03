@@ -215,6 +215,12 @@ Player C &amp; Player D"></textarea>
 
   const pendingFiltered = PlayerFilter.filter(pending, gamesPlayerIds, playerIdFor);
 
+  // Approving the last submission empties the list above, and the outcome of
+  // that approval (and its scorecard) must not vanish with it.
+  if(!pendingFiltered.length && approvalMessage && isUnlocked){
+    html += `<div class="section-sub approval-outcome" style="color:var(--gold-bright);">${approvalMessage}</div>`;
+  }
+
   if(pendingFiltered.length > 0){
     html += `<div class="section-heading">⏳ Pending approval (${pendingFiltered.length})</div>`;
     html += `<div class="section-sub">Submitted but not yet counted in any rating. Approving a game rates it: it joins the record and moves the four players' ratings.</div>`;
@@ -285,8 +291,11 @@ Player C &amp; Player D"></textarea>
     // A draw is not a win or a loss for anyone, but it IS rated: the engine
     // scores the result at 0.5 and moves every player accordingly. Saying it
     // "doesn't affect any rating" was simply untrue.
+    // The scorecard is the canonical card for a played match; the expanded
+    // detail opens it rather than repeating it.
     const detailContent = isExpanded
-      ? (m.isDraw ? buildDrawDetailBlock(m) : (enriched ? buildMatchDetailBlock(enriched, false) : ''))
+      ? `<div class="msc-open-row">${scorecardButtonHtml(m.id)}</div>`
+        + (m.isDraw ? buildDrawDetailBlock(m) : (enriched ? buildMatchDetailBlock(enriched, false) : ''))
       : '';
     let cardStyle = '';
     if(focusName && !m.isDraw){
@@ -357,6 +366,9 @@ Player C &amp; Player D"></textarea>
       // re-rendered it -- so the disclosure looked completely inert. It worked
       // on the profile card only because that card has no click handler.
       if(ev.target.closest && ev.target.closest('details')) return;
+      // The scorecard button opens its own sheet (one delegated listener);
+      // it must not also collapse the card behind it.
+      if(ev.target.closest && ev.target.closest('[data-scorecard]')) return;
       const id = el.dataset.gameid;
       expandedGameId = (expandedGameId === id) ? null : id;
       renderGamesTab();

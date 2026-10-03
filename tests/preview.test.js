@@ -18,8 +18,10 @@ const P = require('../preview/preview.js');
 const ROOT = path.join(__dirname, '..');
 const maybe = H.available() ? test : test.skip;
 
-test('presets: 375, 390 and 412 wide, 390 the default', () => {
-  assert.deepStrictEqual(P.PRESETS.map((p) => [p.width, p.height]), [[375, 812], [390, 844], [412, 915]]);
+test('presets: 375, 390 and 412 wide, 390 the default; and three desktop sizes', () => {
+  assert.deepStrictEqual(P.PRESETS.map((p) => [p.width, p.height, !!p.desktop]), [[375, 812, false], [390, 844, false], [412, 915, false],
+    [1280, 800, true], [1440, 900, true], [1920, 1080, true]]);
+  assert.deepStrictEqual(P.viewport(1440, true), { width: 1440, height: 900 }, 'a desktop size does not rotate');
   assert.strictEqual(P.DEFAULT_WIDTH, 390);
   assert.deepStrictEqual(P.viewport(390, false), { width: 390, height: 844 });
   assert.deepStrictEqual(P.viewport(412, true), { width: 915, height: 412 }, 'landscape swaps the sides');
@@ -191,5 +193,22 @@ maybe('on a phone: a link to the app, no frame', async () => {
     assert.strictEqual(new URL(await link.evaluate((a) => a.href)).pathname, '/');
     assert.ok(!(await v.page.locator('#toolbar').isVisible()));
     assert.ok(!v.requested.some((p) => p === '/' || p.startsWith('/assets/')), 'the app is not loaded behind the message');
+  } finally { await v.close(); }
+});
+
+maybe('a desktop preset frames the app at that size, in its desktop layout, scaled to fit; rotate is off', async () => {
+  const v = await openPreview();
+  try {
+    await v.page.click('[data-width="1440"]');
+    const r = await v.page.evaluate(() => {
+      const f = document.getElementById('appFrame');
+      return { w: f.style.width, h: f.style.height, scale: Number(document.body.dataset.scale), rotate: document.getElementById('rotate').disabled,
+        desk: document.body.classList.contains('is-desktop-preset'), inner: f.contentWindow.innerWidth };
+    });
+    assert.deepStrictEqual([r.w, r.h, r.rotate, r.desk, r.inner], ['1440px', '900px', true, true, 1440]);
+    assert.ok(r.scale > 0 && r.scale < 1, 'scaled down to fit the window');
+    await v.page.waitForFunction(() => document.getElementById('appFrame').contentDocument.documentElement.dataset.layout === 'desktop', null, { timeout: 15000 });
+    await v.page.click('[data-width="390"]');
+    assert.strictEqual(await v.page.evaluate(() => document.getElementById('rotate').disabled), false);
   } finally { await v.close(); }
 });

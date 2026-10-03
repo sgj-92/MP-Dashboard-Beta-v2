@@ -1,0 +1,290 @@
+/* ==========================================================================
+   LAYOUT: LAPTOP AND DESKTOP
+   The same app on a bigger screen. A phone is untouched: every layout rule
+   here sits behind a min-width media query, and the few rules outside one
+   (focus and hover) only apply while an element is focused or hovered.
+
+   Layout ranges (the same in assets/js/ui/desktopShell.js):
+     mobile   < 768     the phone app, unchanged
+     tablet   768-1199  compact icon rail; one centred column; dialogs
+     desktop  1200+     full rail with brand and viewer; two-up layouts
+     wide     1600+     a wider column, centred; nothing grows past it
+
+   How it works: from 768px the body is a grid -- a rail column (the fixed
+   navigation sits over it), gutters, and a centred content area with a
+   midline, so two existing elements can sit side by side (podium | Kings,
+   directory | profile) with no change to how they are rendered. Screens
+   stay one column unless a rule below places them. The navigation is the
+   phone's own bottom navigation, restyled as a rail: same buttons, same
+   routes, same permissions.
+
+   html[data-layout] / [data-section] / [data-tab] are set by the desktop
+   shell (desktopShell.js) only once a desktop-sized window has been seen.
+   ========================================================================== */
+
+/* ---- Keyboard and pointer, every size --------------------------------- */
+:where(button, a, input, select, textarea, summary, [tabindex]):focus-visible{
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine){
+  .shell-nav-item:hover{ opacity: 1; color: var(--text); }
+  .shell-nav-item.active:hover{ color: var(--gold-bright); }
+  .pdir-row:hover, .home-pulse-clickable:hover, .kings-card[data-player]:hover,
+  .podium-slot[data-player]:hover, .shell-more-item:hover, .section-subnav-item:hover{
+    border-color: var(--gold-hairline);
+  }
+  .shell-more-item:hover{ color: var(--gold-bright); }
+  .pdir-row, .home-pulse-clickable, .kings-card[data-player], .podium-slot[data-player], .row[data-name]{ cursor: pointer; }
+}
+
+/* Wrappers that give a laptop something to arrange: no box of their own on
+   a phone, so the page there is exactly as it was. */
+.home-block, .bp-split, .bp-split-edit, .bp-split-preview{ display: contents; }
+
+/* The rail's own pieces exist only once a desktop-sized window was seen. */
+.shell-rail-brand, .shell-rail-foot{ display: none; }
+
+/* ---- Tablet and up: the rail, the column, dialogs ---------------------- */
+@media (min-width: 768px){
+  :root{
+    --rail-w: 92px;
+    --content-max: 760px;
+    --gutter: 24px;
+    --desk-top: calc(var(--shell-header-height) + 12px);
+  }
+  body{
+    display: grid;
+    grid-template-columns:
+      [rail-start] var(--rail-w)
+      [rail-end full-start] minmax(var(--gutter), 1fr)
+      [content-start] minmax(0, calc(var(--content-max) / 2))
+      [mid] minmax(0, calc(var(--content-max) / 2))
+      [content-end] minmax(var(--gutter), 1fr) [full-end];
+    align-content: start;
+    padding-bottom: 48px;
+    /* 'clip', not 'hidden': still no sideways scroll, but the body is not a
+       scroll container, so sticky panes (profile, preview) follow the page. */
+    overflow-x: clip;
+  }
+  body > *{ grid-column: content-start / content-end; min-width: 0; }
+  body > .shell-header{ grid-column: full-start / full-end; }
+
+  /* The bottom navigation becomes a left rail. */
+  .shell-bottom-nav{
+    top: 0; right: auto; bottom: 0; left: 0;
+    width: var(--rail-w); height: auto;
+    flex-direction: column; justify-content: flex-start; align-items: stretch;
+    gap: 4px; padding: calc(var(--shell-header-height) + 12px) 8px 16px;
+    border-top: none; border-right: 1px solid var(--surface-border);
+  }
+  .shell-nav-item{ flex: 0 0 auto; height: 64px; padding: 0; border-radius: var(--radius-sm); }
+  .shell-nav-item.active{ background: var(--gold-wash); }
+  .shell-nav-item.active::before{
+    top: 50%; left: -8px; transform: translateY(-50%);
+    width: 3px; height: 26px; border-radius: 0 2px 2px 0;
+  }
+
+  /* Sheets become centred dialogs; the profile sheet a dialog too. */
+  .shell-more-sheet.show{ align-items: center; justify-content: center; padding: 24px; }
+  .shell-more-panel{
+    width: min(560px, 100%);
+    border: 1px solid var(--surface-border); border-radius: var(--radius-lg);
+    max-height: 86vh; padding-bottom: var(--space-5);
+    box-shadow: 0 24px 80px rgba(0,0,0,.55);
+  }
+  .overlay{ align-items: center; padding: 24px; z-index: 45; }  /* over the sticky header */
+  .overlay .sheet{
+    max-width: 640px; max-height: 88vh;
+    border-radius: var(--radius-lg); border-bottom: 1px solid var(--line);
+    box-shadow: 0 24px 80px rgba(0,0,0,.55);
+  }
+}
+
+/* ---- Desktop: full rail, wider column, two-up layouts ------------------ */
+@media (min-width: 1200px){
+  :root{
+    --rail-w: 236px;
+    --content-max: 1120px;
+    --gutter: 40px;
+  }
+  /* A half-width element (Kings, the profile pane) fills the row beside its
+     partner even when something full-width sits between them in the page.
+     Full-width elements keep their order: they can only use an empty row. */
+  body{ grid-auto-flow: row dense; }
+  .shell-bottom-nav{ padding: 22px 16px 18px; gap: 2px; }
+  .shell-rail-brand{
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 10px 22px; margin-bottom: 10px;
+    border-bottom: 1px solid var(--surface-border);
+  }
+  .shell-rail-mark{ width: 28px; height: 28px; }
+  .shell-rail-wordmark{
+    font-family: var(--font-prestige); color: var(--text);
+    font-size: 14px; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
+  }
+  .shell-rail-wordmark b{ color: var(--gold-bright); font-weight: 400; }
+  .shell-nav-item{
+    flex-direction: row; justify-content: flex-start; gap: 14px;
+    height: 46px; padding: 0 14px;
+    font-size: 14px; font-weight: 500; opacity: .8;
+  }
+  .shell-nav-item svg, .shell-nav-item .nav-icon-fallback{ width: 20px; height: 20px; }
+  .shell-nav-item.active::before{ left: -16px; }
+  .shell-rail-foot{ display: block; margin-top: auto; padding: 14px 6px 0; border-top: 1px solid var(--surface-border); }
+  .shell-rail-label{
+    font-family: var(--font-interface); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-dim); margin: 0 8px 6px;
+  }
+  .shell-rail-viewer{
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    background: var(--surface-2); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font-interface); font-size: 13px; font-weight: 600;
+    padding: 8px 10px; cursor: pointer; text-align: left;
+  }
+  .shell-rail-viewer > :last-child{ margin-left: auto; color: var(--text-dim); }
+  .shell-rail-avatar{
+    width: 26px; height: 26px; border-radius: 50%; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--gold-wash); border: 1px solid var(--gold-hairline);
+    color: var(--gold-bright); font-size: 10.5px;
+  }
+  .shell-rail-name{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* The brand lives in the rail; the header is the page's context bar. */
+  .shell-header{ padding-left: var(--space-5); padding-right: var(--space-5); }
+  .shell-header .brand-mark, .shell-header .brand-wordmark{ display: none; }
+  .shell-section-title{ margin-left: 0; font-size: 11px; }
+  .shell-header .home-viewer-switch{ display: none; }
+
+  /* A profile opened anywhere but Players slides in from the right. */
+  .overlay{ justify-content: flex-end; align-items: stretch; padding: 0; }
+  .overlay .sheet{
+    max-width: 560px; max-height: none; height: 100%;
+    border-radius: 0; border: none; border-left: 1px solid var(--line);
+    padding: 24px 28px 32px;
+  }
+}
+
+/* ---- Desktop: the header names the page ------------------------------- */
+@media (min-width: 1200px){
+  .shell-header::before{
+    font-family: var(--font-prestige); color: var(--text); font-size: 17px; letter-spacing: .02em;
+  }
+  html[data-section="home"] .shell-header::before{ content: 'Home'; }
+  html[data-section="rankings"] .shell-header::before{ content: 'Rankings'; }
+  html[data-section="play"] .shell-header::before{ content: 'Play'; }
+  html[data-section="players"] .shell-header::before{ content: 'Players'; }
+  html[data-section="more"] .shell-header::before{ content: 'More'; }
+  html[data-section="me"] .shell-header::before{ content: 'Me'; }
+  html[data-tab="manage"] .shell-header::before{ content: 'Admin'; }
+  .shell-header .shell-section-title{ display: none !important; }
+}
+
+/* ---- Home: a dashboard ------------------------------------------------- */
+@media (min-width: 1200px){
+  html[data-section="home"] #homeDashboard{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px; align-items: start;
+  }
+  .home-block{ display: block; min-width: 0; }
+  .home-block-hero, .home-block-pulse, .home-block-ideas{ grid-column: 1 / -1; }
+  .home-block-yourgame{ grid-column: 1; grid-row: 2 / span 2; }
+  .home-block-last{ grid-column: 2; grid-row: 2; }
+  .home-block-month{ grid-column: 2; grid-row: 3; }
+  .home-block > .mp-card-standard:first-child{ margin-top: 0; }
+}
+@media (min-width: 1600px){
+  html[data-section="home"] #homeDashboard{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .home-block-yourgame{ grid-column: 1; grid-row: 2; }
+  .home-block-last{ grid-column: 2; grid-row: 2; }
+  .home-block-month{ grid-column: 3; grid-row: 2; }
+}
+
+/* ---- Rankings: a toolbar, Kings beside the podium ---------------------- */
+@media (min-width: 1200px){
+  html[data-tab="power"] .controls{
+    flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px 16px;
+  }
+  html[data-tab="power"] #rankingsToolbar{ flex: 1 1 520px; }
+  html[data-tab="power"] #sortbarPower{ flex: 1 1 420px; }
+  html[data-tab="power"] #stateFilterRow{ flex: 0 0 auto; }
+  html[data-tab="power"] #rankingsMonthNoteHost:empty{ display: none; }
+  html[data-tab="power"] #kingsOfTiersPanel{ grid-column: content-start / mid; margin-right: 8px; }
+  html[data-tab="power"] #rankingsPodium{ grid-column: mid / content-end; margin-left: 8px; }
+  html[data-tab="power"] #kingsOfTiersPanel, html[data-tab="power"] #rankingsPodium{ align-self: stretch; }
+  /* Tables have room: headers stay in view while a long table scrolls. */
+  .merit-table thead th{ position: sticky; top: var(--shell-header-height); background: var(--surface-1); z-index: 1; }
+}
+
+/* ---- Play: fewer screen changes ---------------------------------------- */
+@media (min-width: 1200px){
+  /* Find a Game: the brief beside its results. */
+  html[data-tab="findgame"] #findGameView{
+    display: grid !important; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+    gap: 24px; align-items: start;
+  }
+  html[data-tab="findgame"] #findGameView > .play-brief{ position: sticky; top: var(--desk-top); }
+  html[data-tab="findgame"] #findGameView > :not(.play-brief):not(#fgResults){ grid-column: 1 / -1; }
+  /* Games: the results as a card grid, each day's heading across it. */
+  html[data-tab="games"] #gamesView{
+    display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px;
+  }
+  html[data-tab="games"] #gamesView > :not(.callout-card){ grid-column: 1 / -1; }
+  /* Requests and Upcoming read as lists: a readable width, not 1100px cards. */
+  html[data-tab="wishlist"] #wishlistView, html[data-tab="upcoming"] #upcomingView,
+  html[data-tab="callouts"] #calloutsView{
+    width: 100%; max-width: 880px; justify-self: center;
+  }
+}
+
+/* ---- Players: directory and profile side by side ----------------------- */
+@media (min-width: 1200px){
+  html[data-tab="players"] #playersView{ grid-column: content-start / mid; }
+  html[data-tab="players"] #overlay{
+    inset: auto; position: sticky; top: var(--desk-top);
+    grid-column: mid / content-end; align-self: start;
+    display: block; z-index: auto; padding: 0; margin-left: 20px;
+    height: calc(100vh - var(--desk-top) - 16px);
+    background: none;
+  }
+  html[data-tab="players"] #overlay .sheet{
+    max-width: none; height: 100%; max-height: none;
+    border: 1px solid var(--line); border-radius: var(--radius-lg);
+    box-shadow: none;
+  }
+  html[data-tab="players"] #overlay:not(.show) .sheet{ display: none; }
+  html[data-tab="players"] #overlay:not(.show){
+    border: 1px dashed var(--surface-border); border-radius: var(--radius-lg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  html[data-tab="players"] #overlay:not(.show)::before{
+    content: 'Choose a player to see their profile here.';
+    font-family: var(--font-interface); font-size: 13px; color: var(--text-dim);
+  }
+}
+
+/* ---- Admin: the pack editor beside its live preview -------------------- */
+@media (min-width: 1200px){
+  .bp-split{
+    display: grid; grid-template-columns: minmax(380px, 1fr) minmax(420px, 1.15fr);
+    gap: 28px; align-items: start;
+  }
+  .bp-split-edit{ display: block; min-width: 0; }
+  .bp-split-preview{
+    display: block; min-width: 0;
+    position: sticky; top: var(--desk-top);
+    max-height: calc(100vh - var(--desk-top) - 16px); overflow-y: auto;
+    padding-right: 4px;
+  }
+  .bp-split-preview > .bp-preview-mode{ margin-top: 0 !important; }
+  /* The section still clips its corners, but 'clip' is not a scroll
+     container, so the preview can stay in view while the editor scrolls. */
+  .admin-acc{ overflow: clip; }
+}
+
+/* ---- Wide: a wider column, still capped and centred -------------------- */
+@media (min-width: 1600px){
+  :root{ --content-max: 1280px; }
+}

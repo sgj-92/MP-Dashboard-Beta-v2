@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  // Served as /review (no trailing slash), the relative links below would
+  // resolve beside this folder instead of inside it. Normalise first, on any
+  // host -- Vercel, GitHub Pages or a local server.
+  (function () {
+    var p = location.pathname;
+    if (!/\/$/.test(p) && !/\.html$/.test(p)) location.replace(p + '/' + location.search + location.hash);
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0a08">
+<meta name="robots" content="noindex">
+<!-- A Player Pack link carries its private key in the address: never pass
+     it on to another site as the referrer. -->
+<meta name="referrer" content="no-referrer">
+<title>Money Padel · Monthly Review</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="Money Padel · Monthly Review">
+<meta property="og:description" content="The month at Money Padel: kings, leaders, movers and more.">
+<link rel="icon" href="../assets/brand/mp-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/screens/review.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body class="review-page">
+  <header class="review-top">
+    <span class="review-top-title" id="reviewTitle">Monthly Review</span>
+    <span class="review-actions" id="reviewActions"></span>
+  </header>
+  <main class="review-main" id="reviewMain" aria-live="polite">
+    <div class="review-empty"><h1>Loading…</h1></div>
+  </main>
+  <div class="review-toast" id="reviewToast" role="status"></div>
+  <!-- A published review is read, never calculated: this page loads the
+       stored review and the drawing, and none of the app's statistics. -->
+  <script src="../assets/js/data/firebaseData.js"></script>
+  <script src="../assets/js/domain/boardPack/shareDeck.js"></script>
+  <script src="../assets/js/features/review/deckView.js"></script>
+  <script src="review.js"></script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+/* ==========================================================================
+   Monthly Review: the Share Deck (features/review/deckView.js).
+   Used twice: the public review page (review/index.html) and the Admin's
+   Board Pack preview, so both show the same card.
+
+   Each card is a 4:5 portrait artboard -- the shape WhatsApp shows whole --
+   and its type is sized in container units, so a card scales as one piece:
+   the same layout at 343px on a small phone, 440px on a large one, and 1080px
+   when cards are exported as images later. Pixel sizes come first as the
+   fallback for a browser without container units.
+   ========================================================================== */
+
+.deck{ position:relative; outline:none; --deck-card-max:440px; }
+.deck:focus-visible .deck-card{ box-shadow:0 0 0 2px var(--gold-soft), 0 18px 40px rgba(0,0,0,.55); }
+
+/* A swipe is native horizontal scrolling that snaps to one card. */
+.deck-track{
+  display:flex; overflow-x:auto; overflow-y:hidden;
+  scroll-snap-type:x mandatory; overscroll-behavior-x:contain;
+  scrollbar-width:none; -webkit-overflow-scrolling:touch;
+}
+.deck-track::-webkit-scrollbar{ display:none; }
+.deck-slide{
+  flex:0 0 100%; min-width:0; box-sizing:border-box;
+  scroll-snap-align:center; scroll-snap-stop:always;
+  display:flex; justify-content:center; align-items:center;
+  padding:6px 16px 10px;
+}
+
+.deck-card{
+  container-type:inline-size;
+  width:min(100%, var(--deck-card-max)); aspect-ratio:4 / 5; box-sizing:border-box;
+  display:flex; flex-direction:column; overflow:hidden;
+  padding:20px; padding:5.5cqw;
+  border-radius:22px; border:1px solid rgba(212,175,55,0.24);
+  background:
+    radial-gradient(ellipse 95% 55% at 50% -8%, rgba(212,175,55,0.16) 0%, transparent 70%),
+    linear-gradient(180deg, #1b1712 0%, #100e0b 100%);
+  box-shadow:0 18px 40px rgba(0,0,0,.55);
+  color:var(--text); font-family:var(--font-interface);
+}
+
+.deck-brand{ display:flex; align-items:center; gap:8px; gap:2.2cqw; flex:none; }
+.deck-mark{ width:22px; height:22px; width:6.2cqw; height:6.2cqw; }
+.deck-brand-name{ font-size:11px; font-size:3cqw; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--text-soft); }
+.deck-brand-month{ margin-left:auto; font-size:11px; font-size:3cqw; letter-spacing:.06em; color:var(--gold-soft); }
+
+.deck-eyebrow{ margin-top:16px; margin-top:4.4cqw; font-size:11px; font-size:3cqw; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); flex:none; }
+.deck-title{
+  margin:4px 0 12px; margin:1cqw 0 3.4cqw; flex:none;
+  font-family:var(--font-prestige); font-weight:400; line-height:1.08;
+  font-size:29px; font-size:8cqw; color:var(--text);
+}
+.deck-body{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+.deck-foot{ flex:none; margin-top:8px; margin-top:2.2cqw; font-size:11px; font-size:3cqw; color:var(--text-dim); line-height:1.35; }
+
+/* Lists: rank, who, figure. */
+.deck-group + .deck-group{ margin-top:10px; margin-top:2.8cqw; padding-top:8px; padding-top:2.2cqw; border-top:1px solid rgba(212,175,55,0.14); }
+.deck-group-label{ font-size:11px; font-size:3cqw; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:2px; }
+.deck-rows{ list-style:none; margin:0; padding:0; }
+.deck-row{
+  display:flex; align-items:center; gap:10px; gap:2.8cqw;
+  padding:6px 0; padding:1.7cqw 0;
+  border-bottom:1px solid rgba(241,233,216,0.06);
+}
+.deck-row:last-child{ border-bottom:0; }
+.deck-rank{ flex:none; width:20px; width:5.4cqw; text-align:center; font-family:var(--font-prestige); font-size:17px; font-size:4.6cqw; color:var(--gold-soft); }
+.deck-who{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+.deck-row-label{ font-size:10.5px; font-size:2.9cqw; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-soft); line-height:1.2; }
+.deck-name{ font-size:16.5px; font-size:4.6cqw; font-weight:600; color:var(--text); line-height:1.2; overflow-wrap:anywhere; }
+.deck-sub{ font-size:11.5px; font-size:3.2cqw; color:var(--text-dim); line-height:1.3; }
+.deck-value{ flex:none; max-width:45%; text-align:right; font-family:var(--font-prestige); font-size:22px; font-size:6.2cqw; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.1; }
+.deck-row.is-hero{ padding:8px 0 10px; padding:2.2cqw 0 2.8cqw; }
+.deck-row.is-hero .deck-name{ font-size:21px; font-size:5.8cqw; }
+.deck-row.is-hero .deck-value{ font-size:32px; font-size:8.8cqw; color:var(--gold-bright); }
+.deck-row.is-hero .deck-rank{ color:var(--gold-bright); }
+/* Two lists on one card (risers and fallers): a little tighter. */
+.deck-group + .deck-group .deck-row, .deck-group:has(+ .deck-group) .deck-row{ padding:4px 0; padding:1.1cqw 0; }
+.deck-group + .deck-group .deck-name, .deck-group:has(+ .deck-group) .deck-name{ font-size:15px; font-size:4.2cqw; }
+.deck-group + .deck-group .deck-value, .deck-group:has(+ .deck-group) .deck-value{ font-size:19px; font-size:5.4cqw; }
+
+/* Big numbers: the first is the headline. */
+.deck-stats{ display:grid; grid-template-columns:1fr 1fr; gap:14px; gap:4cqw; margin-top:4px; margin-top:1cqw; }
+.deck-stat{ padding:10px 0; padding:2.8cqw 0; border-top:1px solid rgba(212,175,55,0.16); }
+.deck-stat.is-hero{ grid-column:1 / -1; border-top:0; padding-top:0; }
+.deck-stat-value{ font-family:var(--font-prestige); font-size:36px; font-size:10cqw; line-height:1; color:var(--text); font-variant-numeric:tabular-nums; }
+.deck-stat.is-hero .deck-stat-value{ font-size:66px; font-size:18cqw; color:var(--gold-bright); }
+.deck-stat-label{ margin-top:4px; margin-top:1.2cqw; font-size:11.5px; font-size:3.2cqw; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); }
+
+/* The admin's commentary: words, not figures. */
+.deck-note{ font-size:15.5px; font-size:4.3cqw; line-height:1.5; color:var(--text-soft); overflow-wrap:anywhere; }
+.deck-note p{ margin:0 0 10px; margin:0 0 2.8cqw; }
+
+/* Cover and closing cards. */
+.deck-card-cover{ align-items:center; justify-content:center; text-align:center; }
+.deck-cover-mark{ width:64px; height:64px; width:17cqw; height:17cqw; }
+.deck-cover-club{ margin-top:14px; margin-top:3.8cqw; font-size:12px; font-size:3.4cqw; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--text-soft); }
+.deck-cover-title{ margin:10px 0 0; margin:2.8cqw 0 0; font-family:var(--font-prestige); font-weight:400; font-size:43px; font-size:12cqw; line-height:1.05; color:var(--gold-bright); }
+.deck-cover-sub{ margin-top:8px; margin-top:2.2cqw; font-size:13px; font-size:3.6cqw; letter-spacing:.18em; text-transform:uppercase; color:var(--gold-soft); }
+.deck-cover-hint{ margin-top:36px; margin-top:10cqw; font-size:12px; font-size:3.3cqw; color:var(--text-dim); letter-spacing:.04em; }
+.deck-card-end .deck-title{ margin-top:auto; }
+.deck-end-text{ margin:0 0 18px; margin:0 0 5cqw; font-size:15.5px; font-size:4.3cqw; line-height:1.5; color:var(--text-soft); }
+.deck-end-link{
+  align-self:flex-start; margin-bottom:auto;
+  display:inline-flex; align-items:center; min-height:44px; padding:0 18px; padding:0 5cqw;
+  border-radius:999px; border:1px solid var(--gold-soft); color:var(--gold-bright);
+  font-size:14px; font-size:3.9cqw; font-weight:600; text-decoration:none;
+}
+
+/* Previous, the dots, next. The arrows are full-size tap targets. */
+.deck-controls{ display:flex; align-items:center; justify-content:center; gap:6px; padding:4px 16px 0; }
+.deck-arrow{
+  flex:none; width:44px; height:44px; border-radius:50%;
+  border:1px solid rgba(212,175,55,0.28); background:rgba(255,255,255,0.02);
+  color:var(--gold-bright); font-size:24px; line-height:1; cursor:pointer;
+}
+.deck-arrow:disabled{ opacity:.3; cursor:default; }
+.deck-dots{ display:flex; flex-wrap:wrap; justify-content:center; max-width:calc(100% - 110px); }
+.deck-dot{ width:18px; height:24px; padding:0; border:0; background:none; cursor:pointer; position:relative; }
+.deck-dot::after{ content:''; position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px 0 0 -3px; border-radius:50%; background:rgba(241,233,216,0.28); transition:transform .2s ease, background .2s ease; }
+.deck-dot[aria-current="true"]::after{ background:var(--gold-bright); transform:scale(1.4); }
+.deck-live{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+@media (prefers-reduced-motion: reduce){ .deck-dot::after{ transition:none; } }
+
+/* ---- The public review page ------------------------------------------- */
+body.review-page{
+  padding:env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  min-height:100vh; min-height:100dvh; display:flex; flex-direction:column;
+}
+.review-top{
+  display:flex; align-items:center; gap:10px; min-height:52px; padding:0 16px;
+  font-family:var(--font-interface);
+}
+.review-top-title{ font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--text-soft); min-width:0; }
+.review-actions{ margin-left:auto; display:flex; gap:8px; }
+.review-btn{
+  min-height:36px; padding:0 14px; border-radius:999px;
+  border:1px solid rgba(212,175,55,0.35); background:transparent; color:var(--gold-bright);
+  font-family:var(--font-interface); font-size:13px; font-weight:600; cursor:pointer;
+}
+.review-main{ flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; padding-bottom:12px; }
+.review-main .deck{ --deck-card-max:min(440px, calc((100dvh - 52px - 80px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 0.8)); }
+.review-toast{ min-height:18px; text-align:center; font-family:var(--font-interface); font-size:12px; color:var(--text-dim); }
+.review-empty{ margin:auto 16px; padding:28px 22px; text-align:center; font-family:var(--font-interface); color:var(--text-soft); border:1px solid rgba(212,175,55,0.2); border-radius:18px; }
+.review-empty h1{ font-family:var(--font-prestige); font-weight:400; font-size:26px; color:var(--text); margin:0 0 8px; }
+.review-empty a{ color:var(--gold-bright); }
+
+/* ---- Inside the Admin Board Pack preview ------------------------------- */
+.bp-deck-frame{
+  max-width:390px; margin:10px auto 4px; padding:12px 0 10px;
+  border-radius:18px; border:1px solid var(--surface-border); background:var(--bg0);
+}
+.bp-deck-frame .deck{ --deck-card-max:358px; }
+
+/* A long deck: a count and a bar instead of dots. */
+.deck-progress{ flex:1 1 auto; max-width:200px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.deck-count{ font-family:var(--font-interface); font-size:13px; font-variant-numeric:tabular-nums; color:var(--text-soft); letter-spacing:.04em; }
+.deck-bar{ width:100%; height:3px; border-radius:2px; background:rgba(241,233,216,0.14); overflow:hidden; }
+.deck-bar span{ display:block; height:100%; width:0; background:var(--gold-bright); transition:width .25s ease; }
+@media (prefers-reduced-motion: reduce){ .deck-bar span{ transition:none; } }
+
+/* ---- Kings of Tiers: the app's crowned tiles, filling the card --------- */
+.deck-kings{
+  flex:1 1 auto; min-height:0; display:grid; gap:10px; gap:2.8cqw;
+  grid-template-columns:1fr 1fr; grid-auto-rows:minmax(0, 1fr);
+}
+.deck-kings[data-count="1"]{ grid-template-columns:1fr; }
+.deck-kings[data-count="3"] .deck-king:first-child{ grid-column:1 / -1; }
+.deck-king{
+  position:relative; overflow:hidden; min-width:0; min-height:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  padding:10px 6px; padding:2.8cqw 1.6cqw;
+  border-radius:16px; border:1px solid var(--surface-border);
+  background:var(--surface-2);
+}
+.deck-king::before{
+  content:''; position:absolute; inset:0; pointer-events:none; opacity:.7;
+  background:radial-gradient(ellipse 90% 60% at 50% 0%, var(--kings-glow, transparent) 0%, transparent 75%);
+}
+.deck-king-a{ --kings-glow:rgba(245,213,118,0.18); --king-metal:var(--kings-a-bright); }
+.deck-king-b{ --kings-glow:rgba(217,204,163,0.15); --king-metal:var(--kings-b-bright); }
+.deck-king-c{ --kings-glow:rgba(201,154,99,0.17); --king-metal:var(--kings-c-bright); }
+.deck-king-s{ --kings-glow:rgba(240,223,160,0.18); --king-metal:var(--tier-s-text); }
+.deck-king > *{ position:relative; z-index:1; }
+.deck-king-crown{ width:62%; max-width:120px; max-width:32cqw; height:auto; aspect-ratio:2 / 1; object-fit:contain; margin-bottom:6px; margin-bottom:1.8cqw; }
+/* The same crown for every tier; a filter shifts its metal, as in the app. */
+.deck-king-b .deck-king-crown{ filter:saturate(0.45) brightness(1.1); }
+.deck-king-c .deck-king-crown{ filter:sepia(0.35) saturate(0.85) brightness(0.8) hue-rotate(-8deg); }
+.deck-king-name{
+  max-width:100%; font-family:var(--font-prestige); color:var(--text); line-height:1.1;
+  font-size:24px; font-size:6.6cqw; overflow-wrap:anywhere;
+}
+.deck-king-tier{ margin-top:4px; margin-top:1.1cqw; font-size:11px; font-size:3cqw; letter-spacing:.1em; text-transform:uppercase; color:var(--king-metal, var(--gold-bright)); }
+.deck-king-rating{ margin-top:4px; margin-top:1.1cqw; font-weight:700; font-variant-numeric:tabular-nums; font-size:26px; font-size:7.4cqw; color:var(--king-metal, var(--gold-bright)); }
+/* One king, or the top tier's across the top of three: a little grander. */
+.deck-kings[data-count="1"] .deck-king-name, .deck-kings[data-count="3"] .deck-king:first-child .deck-king-name{ font-size:30px; font-size:8.4cqw; }
+.deck-kings[data-count="1"] .deck-king-rating, .deck-kings[data-count="3"] .deck-king:first-child .deck-king-rating{ font-size:32px; font-size:9cqw; }
+.deck-kings[data-count="3"] .deck-king-crown, .deck-kings[data-count="4"] .deck-king-crown{ width:46%; }
+.deck-kings[data-count="3"] .deck-king:first-child .deck-king-crown{ width:34%; }
+/* Fewer kings, bigger tiles: the crown and type grow to fill them. */
+.deck-kings[data-count="2"] .deck-king-crown{ width:84%; max-width:none; }
+.deck-kings[data-count="2"] .deck-king-name{ font-size:30px; font-size:8.4cqw; }
+.deck-kings[data-count="2"] .deck-king-tier{ font-size:12px; font-size:3.4cqw; }
+.deck-kings[data-count="2"] .deck-king-rating{ font-size:34px; font-size:9.6cqw; }
+.deck-kings[data-count="1"] .deck-king-crown{ width:52%; max-width:none; }
+.deck-kings[data-count="1"] .deck-king-name{ font-size:40px; font-size:11cqw; }
+.deck-kings[data-count="1"] .deck-king-tier{ font-size:13px; font-size:3.6cqw; }
+.deck-kings[data-count="1"] .deck-king-rating{ font-size:44px; font-size:12cqw; }
