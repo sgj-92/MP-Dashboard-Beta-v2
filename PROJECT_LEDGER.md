@@ -165,6 +165,8 @@ never recalculated. The old automatic "Player of the Month" (the points leader)
 is gone from every surface. Handoff in Section 6; decisions in Section 3; open
 items in Section 5.
 
+**CGPT reconciliation — 4 Oct.** Reviewed Shaun's Player of the Month product brief against the delivered implementation. The intended product principle is confirmed as: **Money Padel recommends candidates; the group chooses the winner.** Recommendations are evidence-backed cases rather than an automatic POTM ranking; match volume is only one reason to nominate someone and must not dominate by itself; Admin curates the shortlist; the group vote decides; and the confirmed award/history remains a permanent snapshot with its supporting story. This adds no new implementation request beyond `7dca948`; it records CGPT/product alignment after reading the current Ledger.
+
 **Player status model + archived players — DONE (`4cbfeb7`), 4 Oct.** Shaun's brief:
 a player who has left should disappear from the live app without losing a single
 historical fact. Three admin-set statuses on the player's own v3 record —
