@@ -54,6 +54,72 @@ function potmCardHtml(card, { admin = false, remove = false, pick = false, picke
   </div>`;
 }
 
+// ---- The nominees as one picture, for the group's WhatsApp -----------------
+// Painted by CardPainter.nominees from the same cards the screen shows (the
+// players' version: no Admin extras), and shared through the phone's share
+// sheet like the Match Result Card. What is shared is the finalised
+// shortlist, or -- before that -- Admin's current list.
+let potmShare = { month: null, ready: null, message: '' };
+
+function potmNomineesView(month, cards){
+  const monthName = monthLabel(month).split(' ')[0];
+  return {
+    month: monthLabel(month),
+    title: `${monthName} nominees`,
+    sub: 'In no particular order. Cast your vote in the group!',
+    foot: 'Money Padel recommends · the group chooses',
+    cards: cards.map(c => ({
+      name: potmNameOf(c.playerId) || c.name,
+      tier: c.tier || null,
+      reasons: (c.stories || []).map(r => ({ title: r.title, line: r.line })),
+      support: c.support || potmMetricsLine(c.metrics),
+    })),
+  };
+}
+
+function potmShareCards(month){
+  return potmShortlistOf(month) || (potmDraft && potmDraft.month === month ? potmDraft.entries : []);
+}
+
+function potmShareHtml(month){
+  if(!potmShareCards(month).length) return '';
+  const mine = potmShare.month === month;
+  return `<div class="potm-share-row">
+    <button type="button" class="preset-btn potm-share" data-potm-share="${month}">${mine && potmShare.ready ? 'Tap to share' : '📷 Share nominees picture'}</button>
+    ${mine && potmShare.message ? `<div class="section-sub potm-share-msg">${escapeHtml(potmShare.message)}</div>` : ''}
+  </div>`;
+}
+
+async function sharePotmNominees(month, redraw){
+  const say = (message) => { potmShare.message = message; if(redraw) redraw(); };
+  if(potmShare.month !== month) potmShare = { month, ready: null, message: '' };
+  try {
+    let pending = potmShare.ready;
+    if(!pending){
+      const cards = potmShareCards(month);
+      if(!cards.length) return;
+      const view = potmNomineesView(month, cards);
+      const brand = await CardPainter.loadImage('assets/brand/mp-mark.svg');
+      const cv = CardPainter.nominees(view, { brand });
+      pending = {
+        files: [await CardPainter.toFile(cv, `money-padel-player-of-the-month-${month}-nominees.png`)],
+        meta: { title: `${view.month} Player of the Month nominees`,
+          text: `Player of the Month — ${view.title}: ${view.cards.map(c => c.name).join(', ')}. Cast your vote!` },
+      };
+    }
+    const outcome = await CardPainter.share(pending.files, pending.meta);
+    potmShare.ready = outcome === 'ready' ? pending : null;
+    say(outcome === 'shared' ? 'Shared.' : outcome === 'saved' ? 'Saved to this device — post it from your photos.' : '');
+  } catch(e){
+    potmShare.ready = null;
+    say('Could not make the picture: ' + (e && e.message ? e.message : String(e)));
+  }
+}
+
+function wirePotmShare(box, redraw){
+  box.querySelectorAll('[data-potm-share]').forEach(b => { b.onclick = () => sharePotmNominees(b.dataset.potmShare, redraw); });
+}
+
 function potmHistoryHtml(){
   const hist = potmHistory();
   if(!hist.length) return `<div class="section-sub">No winners confirmed yet.</div>`;
@@ -124,6 +190,7 @@ function buildPotmSectionHtml(){
       <div class="section-sub">Finalised${record.shortlistedBy ? ` by ${escapeHtml(record.shortlistedBy)}` : ''}. Everyone can see it in League › Information. When the group has voted, choose who won.</div>`;
     const pickId = potmPick && potmPick.month === month ? potmPick.playerId : null;
     html += record.shortlist.map(c => potmCardHtml(c, { admin: true, pick: complete, picked: c.playerId === pickId })).join('');
+    html += potmShareHtml(month);
     if(pickId){
       const entry = record.shortlist.find(c => c.playerId === pickId);
       const name = potmNameOf(pickId) || entry.name;
@@ -149,6 +216,7 @@ function buildPotmSectionHtml(){
       html += `<div class="section-sub potm-trim" id="potmTrim">${draft.entries.length} strong cases this month. A vote works best between ${PlayerOfMonth.SHORTLIST_MIN} and ${PlayerOfMonth.SHORTLIST_COMFORT} — remove any you'd leave out.</div>`;
     }
     html += `<div id="potmCandidates">${draft.entries.map(c => potmCardHtml(c, { admin: true, remove: true })).join('')}</div>`;
+    html += potmShareHtml(month);
     const onList = new Set(draft.entries.map(e => e.playerId));
     const addable = potmPlayerMonths(month).filter(p => !p.archived && PlayerOfMonth.qualifies(p.metrics) && !onList.has(p.playerId))
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -216,6 +284,7 @@ function wirePotmSection(){
   on('potmReopen', () => { potmAsk = 'reopen'; redraw(); });
   on('potmReopenYes', () => potmReopen());
   on('potmAskNo', () => { potmAsk = null; redraw(); });
+  wirePotmShare(box, redraw);
 }
 
 function potmAdminName(){ return currentUserName || adminRole || 'admin'; }
@@ -290,7 +359,7 @@ function potmPublicHtml(month){
     </div>`;
   } else if(list){
     html += `<div class="section-sub" id="potmPublicShortlist">${escapeHtml(monthLabel(month).split(' ')[0])}'s nominees, in no particular order. Cast your vote in the group.</div>`
-      + list.map(c => potmCardHtml(c)).join('');
+      + list.map(c => potmCardHtml(c)).join('') + potmShareHtml(month);
   } else {
     html += `<div class="section-sub" id="potmPublicNone">${potmMonthComplete(month) ? 'Not chosen yet. Admin puts a shortlist to the group, and the group votes.' : 'Chosen by the group once the month is over.'}</div>`;
   }

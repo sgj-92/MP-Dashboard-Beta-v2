@@ -747,6 +747,7 @@ function renderSummaryInformation(){
 
   box.innerHTML = html;
   wireRequestPlayerLinks(box);
+  wirePotmShare(box, renderSummaryInformation);
 
   document.getElementById('copySummaryBtn').onclick = ()=>{
     const text = buildWhatsAppSummaryText(summaryMonth, stats, {mostGames, mostWins, mostLosses, lowestWinPct, highestWinPct, mostDoughnuts, doughnutMax, hardestGames, playerOfMonth});

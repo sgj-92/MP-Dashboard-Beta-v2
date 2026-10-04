@@ -637,3 +637,63 @@ maybe('an award confirmed under the earlier rules reads exactly as it was confir
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
+
+// ===================== Sharing the nominees =====================
+// One picture of every nominee, for the group's WhatsApp: painted from the
+// players' version of the cards and handed to the phone's share sheet, like
+// the Match Result Card.
+
+maybe('Admin and players can share one picture of all the nominees', async () => {
+  const app = await openApp();
+  try {
+    const r = await app.run(async () => {
+      const tick = () => new Promise((res) => setTimeout(res, 30));
+      const calls = [];
+      const until = async (n) => { for (let k = 0; k < 200 && calls.length < n; k++) await tick(); await tick(); };
+      const real = CardPainter.share;
+      CardPainter.share = async (files, meta) => { calls.push({ files: files.map((x) => ({ name: x.name, type: x.type, size: x.size })), meta }); return calls.length === 1 ? 'ready' : 'shared'; };
+      try {
+        legacyTabBtn('manage').click(); adminOpenSections.potm = true; potmOpenMonth('2026-09'); renderManage();
+        const add = document.getElementById('potmAdd'); add.value = 'Tom'; document.getElementById('potmAddBtn').click();
+        const view = potmNomineesView('2026-09', potmShareCards('2026-09'));
+        const brand = await CardPainter.loadImage('assets/brand/mp-mark.svg');
+        const cv = CardPainter.nominees(view, { brand });
+        // Admin, before finalising: the list being drawn up.
+        document.querySelector('[data-acc="potm"] [data-potm-share]').click(); await until(1);
+        const label = document.querySelector('[data-acc="potm"] [data-potm-share]').textContent;
+        document.querySelector('[data-acc="potm"] [data-potm-share]').click(); await until(2);
+        const message = document.querySelector('[data-acc="potm"] .potm-share-msg').textContent;
+        // Players, from the finalised shortlist.
+        document.getElementById('potmFinalise').click(); await tick();
+        isUnlocked = false;
+        legacyTabBtn('summary').click(); summaryMonth = '2026-09'; summaryMode = 'information'; renderSummary();
+        const publicBtn = document.querySelector('#summaryContent [data-potm-share]');
+        publicBtn.click(); await until(3);
+        // Nothing to share before there is a list.
+        summaryMonth = '2026-08'; renderSummary();
+        const noneYet = !!document.getElementById('potmPublicNone') && !document.querySelector('#summaryContent [data-potm-share]');
+        return { view, size: [cv.width, cv.height], calls, label, message, publicBtn: !!publicBtn, noneYet };
+      } finally { CardPainter.share = real; }
+    });
+    assert.deepStrictEqual(r.view.cards.map((c) => c.name), ['KC', 'Len', 'Rishi', 'Tom'], 'every nominee, in name order');
+    assert.strictEqual(r.view.title, 'September nominees');
+    assert.deepStrictEqual(r.view.cards[2].reasons.map((x) => x.title), ['Triple Crown', 'Most Active']);
+    assert.strictEqual(r.view.cards[3].support, '6 matches · 3 wins · 50% win rate · +13.5pp vs expectation', 'an Admin-added nominee still shows their month');
+    assert.doesNotMatch(JSON.stringify(r.view), /Added by Admin|Remove|admin|alsoTitles|No qualified/i, 'the players\' version only');
+    assert.strictEqual(r.size[0], 1080);
+    assert.ok(r.size[1] >= 1350, 'at least the 4:5 card; taller when the nominees need it');
+    assert.strictEqual(r.calls.length, 3);
+    assert.strictEqual(r.calls[0].files.length, 1, 'one picture with everyone on it');
+    assert.strictEqual(r.calls[0].files[0].type, 'image/png');
+    assert.ok(r.calls[0].files[0].size > 20000, 'a real picture');
+    assert.strictEqual(r.calls[0].files[0].name, 'money-padel-player-of-the-month-2026-09-nominees.png');
+    assert.strictEqual(r.calls[0].meta.text, 'Player of the Month — September nominees: KC, Len, Rishi, Tom. Cast your vote!');
+    assert.strictEqual(r.label, 'Tap to share', 'a share sheet that needs a fresh tap gets one');
+    assert.deepStrictEqual(r.calls[1].files, r.calls[0].files, 'the tap shares the picture already made');
+    assert.strictEqual(r.message, 'Shared.');
+    assert.ok(r.publicBtn, 'players can share the finalised shortlist too');
+    assert.strictEqual(r.calls[2].meta.text, r.calls[0].meta.text);
+    assert.ok(r.noneYet);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});

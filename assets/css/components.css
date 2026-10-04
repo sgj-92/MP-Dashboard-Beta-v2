@@ -557,3 +557,6 @@
 .potm-hist-name{ color: var(--text); font-weight: 600; }
 .potm-hist-title{ color: var(--text-dim); font-size: 11px; text-align: right; }
 .pp-hero-award{ margin-top: 6px; font-size: 11.5px; color: var(--gold-soft); letter-spacing: .02em; }
+.potm-share-row{ margin: 4px 0 12px; }
+.potm-share-row .preset-btn{ width: 100%; }
+.potm-share-msg{ margin-top: 6px; color: var(--gold-soft); }
