@@ -35,7 +35,7 @@ function populateBuildMatchSelects(){
   const withSel = document.getElementById('fgPlayWithSelect');
   const againstSel = document.getElementById('fgPlayAgainstSelect');
   if(!withSel || !againstSel) return;
-  const names = [...PLAYERS].map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+  const names = livePlayerNames();
 
   // Validation: the selected player can't appear in either list, and Play
   // With / Play Against can't offer each other's current value -- never
@@ -51,19 +51,25 @@ function populateBuildMatchSelects(){
 
 function initFindGame(){
   const sel = document.getElementById('fgPlayerSelect');
-  if(sel.options.length === 0){
-    const sorted = [...PLAYERS].sort((a,b)=>a.name.localeCompare(b.name));
-    sorted.forEach(p=>{
-      const opt = document.createElement('option');
-      opt.value = p.name;
-      opt.textContent = `${p.name} (Tier ${p.tier})`;
-      sel.appendChild(opt);
-    });
-    // Initialise from the app-wide selected player (the same identity Home
-    // and Player Profile use) rather than an arbitrary default -- falls
-    // back to the alphabetically-first player only if nobody's selected one.
+  // The options are rebuilt on every visit, so a player archived or restored
+  // in Admin since the last one leaves or rejoins the list.
+  const sorted = livePlayers().sort((a,b)=>a.name.localeCompare(b.name));
+  sel.innerHTML = '';
+  sorted.forEach(p=>{
+    const opt = document.createElement('option');
+    opt.value = p.name;
+    opt.textContent = `${p.name} (Tier ${p.tier})`;
+    sel.appendChild(opt);
+  });
+  // Initialise from the app-wide selected player (the same identity Home
+  // and Player Profile use) rather than an arbitrary default -- falls
+  // back to the alphabetically-first player only if nobody's selected one.
+  if(!fgPlayer || !sorted.some(p=>p.name===fgPlayer)){
     const viewer = getCurrentViewer();
-    fgPlayer = (viewer && PLAYERS.find(p=>p.name===viewer.name)) ? viewer.name : sorted[0].name;
+    fgPlayer = (viewer && sorted.find(p=>p.name===viewer.name)) ? viewer.name : (sorted[0] ? sorted[0].name : '');
+  }
+  if(!sel.dataset.wired){
+    sel.dataset.wired = '1';
     sel.addEventListener('change', e=>{
       fgPlayer = e.target.value;
       const v = getCurrentViewer();

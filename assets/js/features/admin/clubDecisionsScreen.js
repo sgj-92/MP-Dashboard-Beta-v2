@@ -395,7 +395,8 @@ function reviewToday(){ return new Date().toISOString().slice(0,10); }
 // a prompt for a human look, never a queue of things to approve.
 function reviewCandidates(){
   if(!V3_STATE.loaded) return [];
-  return PLAYERS
+  // A tier review is for the group as it is: an archived player is not one.
+  return livePlayers()
     .filter(p => p.risk === 'promotion_watch' || p.risk === 'demotion_watch')
     .map(p => ({
       name: p.name,

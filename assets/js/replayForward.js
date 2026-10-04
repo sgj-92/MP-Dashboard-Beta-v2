@@ -245,7 +245,10 @@
   // no longer appears to replay to itself. The same would be true of any field
   // added to a player document later, which is why the list is a constant here
   // rather than a special case for renaming.
-  const PLAYER_LABEL_FIELDS = ['displayName', 'previousDisplayNames'];
+  // Fields an admin sets on a player's record that no replay can derive: the
+  // name, and their standing in the group (playerStatus.js). Carried over as
+  // stored, so an approval or a correction never resets them.
+  const PLAYER_LABEL_FIELDS = ['displayName', 'previousDisplayNames', 'status', 'statusChangedAt', 'statusChangedBy'];
 
   // The matches written are the ones replayed, taken from the inputs. Deriving
   // them from the replay's own records would be re-reading the engine's working

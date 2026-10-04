@@ -886,7 +886,7 @@ test('Player tags reads as a record list and expands in place', { skip }, async 
       out.controls = {
         tier: !!open.querySelector('.ptag-tier'),
         starting: !!open.querySelector('.ptag-starting'),
-        active: !!open.querySelector('.ptag-active'),
+        status: !!open.querySelector('.ptag-status-actions'),
       };
       // Nothing may clip at phone width.
       out.clipped = [...open.querySelectorAll('.ptag-controls select')]
@@ -906,7 +906,7 @@ test('Player tags reads as a record list and expands in place', { skip }, async 
       `admin typography, not the public player-name serif: got ${r.fontFamily}`);
     assert.match(r.fontFamily, /sans-serif|Helvetica|Arial/i);
     assert.strictEqual(r.openOne, 1, 'tapping opens exactly one row, in place');
-    assert.deepStrictEqual(r.controls, { tier: true, starting: true, active: true });
+    assert.deepStrictEqual(r.controls, { tier: true, starting: true, status: true });
     assert.strictEqual(r.clipped, 0, 'no control may be cut off at phone width');
     assert.strictEqual(r.closedAgain, 0);
     assert.deepStrictEqual(app.pageErrors, []);
@@ -1296,14 +1296,15 @@ test('Active does not shout on every row; Inactive still does', { skip }, async 
   const app = await H.open();
   try {
     const r = await app.run(() => {
+      const away = PLAYERS.find((p) => p.name === 'Max'); away.status = 'temporarilyInactive'; away.active = false;   // the fixture's only flagged player is archived, so mark one away
       goToSection('players');
       renderPlayersTab();
       const view = document.getElementById('playersView');
       const rows = [...view.querySelectorAll('.pdir-row')];
       return {
         rows: rows.length,
-        activePlayers: PLAYERS.filter((p) => p.active).length,
-        inactivePlayers: PLAYERS.filter((p) => !p.active).length,
+        activePlayers: livePlayers().filter((p) => p.active).length,
+        inactivePlayers: livePlayers().filter((p) => !p.active).length,
         badges: view.querySelectorAll('.pdir-inactive').length,
         saysActive: /\bACTIVE\b/i.test(view.innerText.replace(/Inactive/gi, '')),
         // Identity leads, in the public serif; the rest is interface.
@@ -2633,6 +2634,7 @@ test('including idle or inactive merges them into the ranked list and renumbers 
           note: (document.getElementById('eligibilityDivider') || {}).textContent || null,
         };
       };
+      const away = PLAYERS.find((p) => p.name === 'Max'); away.status = 'temporarilyInactive'; away.active = false;   // the fixture's only flagged player is archived, so mark one away
       activeTab = 'power'; selectedMonth = 'all'; activeTier = 'All'; minGames = 0; query = '';
       activeSortP = 'rating';
       const out = {};
@@ -2674,7 +2676,7 @@ test('including idle or inactive merges them into the ranked list and renumbers 
     assert.ok(r.withInactive.inactive > 0);
     assert.strictEqual(r.withInactive.idle, 0, 'the two toggles are independent');
     assert.strictEqual(r.withInactive.order.length, r.official.order.length + r.withInactive.inactive);
-    assert.match(r.withInactive.note, /Including inactive players/);
+    assert.match(r.withInactive.note, /Including temporarily inactive players/);
 
     // Both: one ordered list containing all three states.
     assert.strictEqual(r.withBoth.order.length,
@@ -2682,7 +2684,7 @@ test('including idle or inactive merges them into the ranked list and renumbers 
     assert.ok(r.withBoth.idle > 0 && r.withBoth.inactive > 0);
     const sortedBoth = [...r.withBoth.order].sort((a, b) => r.ratings[b] - r.ratings[a]);
     assert.deepStrictEqual(r.withBoth.order, sortedBoth);
-    assert.match(r.withBoth.note, /Including idle and inactive players/);
+    assert.match(r.withBoth.note, /Including idle and temporarily inactive players/);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });

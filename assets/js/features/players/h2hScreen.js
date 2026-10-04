@@ -11,7 +11,10 @@ let h2hPlayerB = null;
 
 function renderH2H(){
   const box = document.getElementById('h2hView');
-  const names = [...PLAYERS].map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+  // The group as it is now -- plus a player already chosen (say, from an old
+  // result), so a comparison opened from history still shows who it is about.
+  const names = livePlayerNames();
+  [h2hPlayerA, h2hPlayerB].forEach(n => { if(n && !names.includes(n) && PLAYERS.some(p => p.name === n)) names.push(n); });
   if(!h2hPlayerA) h2hPlayerA = names[0];
   if(!h2hPlayerB) h2hPlayerB = names.find(n=>n!==h2hPlayerA) || names[0];
 

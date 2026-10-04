@@ -200,6 +200,10 @@ function render(){
   rows = rows.filter(p => {
     const st = playerStateOf(p.name);
     if(!st) return true;
+    // Archived players have left the group: never in the current (All time)
+    // list, whatever the toggles say. A past month is history, and they stay
+    // in it exactly as before -- with the temporarily inactive toggle.
+    if(st.archived && selectedMonth === 'all') return false;
     if(st.participation === 'INACTIVE') return includeInactive;
     return st.ranking === 'RANKED' || includeIdle;
   });

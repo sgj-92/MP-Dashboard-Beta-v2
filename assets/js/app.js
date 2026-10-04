@@ -273,6 +273,7 @@ function playerStateOf(name, asOf){
     name,
     asOf: asOf === undefined ? Date.now() : asOf,
     active: p ? p.active !== false : true,
+    status: p ? p.status : undefined,
   });
 }
 
@@ -838,6 +839,15 @@ function recomputeAllNow(){
   DRAW_MATCHES = enrichMatches(getAllApprovedMatches().filter(m => m.isDraw));
   PLAYERS = buildPlayers(MATCHES, ratings, TIER_MAP, ACTIVE_MAP);
   PLAYERS.forEach(p=>V3Bridge.decoratePlayer(p, V3_STATE, PRODUCTION_SNAPSHOT_INDEX));
+  // Each player's standing in the group (playerStatus.js): the status on their
+  // record, else the legacy Admin flag -- looked up under any name they have
+  // had -- else active. `active` keeps its old meaning for every engine that
+  // reads it: playing now, so not temporarily inactive and not archived.
+  PLAYERS.forEach(p=>{
+    const legacy = [p.name].concat(p.previousDisplayNames || []).map(n => ACTIVE_MAP[n]).find(v => typeof v === 'boolean');
+    p.status = PlayerStatus.statusOf({ stored: p.storedStatus, legacyActive: legacy });
+    p.active = PlayerStatus.isPlaying(p.status);
+  });
 
   // v3 rates draws; wins/losses cannot. Counting them here is what makes a
   // player's record reconcile with the evidence behind their rating:
@@ -1944,8 +1954,37 @@ function navigateToGamesTabForResult(req){
 document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeSheet(); });
 
 
-function allPlayerNames(){
-  return [...PLAYERS].map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+// ===================== WHO IS IN THE LIVE APP =====================
+// PLAYERS is everyone the record knows, archived players included, because
+// every calculation and every piece of history needs them. Anything that
+// offers players as CURRENT people -- "Who are you?", the directory, a name
+// field, a selector, an autocomplete, a suggestion pool -- asks here instead,
+// so an archived player can never be offered by a screen that forgot to
+// filter. History (results, scorecards, past tables, the Rating Journey)
+// resolves names from the record and is untouched by this.
+function livePlayers(){
+  return PLAYERS.filter(p => PlayerStatus.isLive(p.status));
+}
+function livePlayerNames(){
+  return livePlayers().map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+}
+// The name older call sites use. Live players only, like livePlayerNames().
+function allPlayerNames(){ return livePlayerNames(); }
+// One player's status, by any name they are shown under; null if unknown.
+function playerStatusOf(name){
+  const p = PLAYERS.find(x => x.name === name);
+  return p ? p.status : null;
+}
+function isArchivedPlayer(name){ return playerStatusOf(name) === PlayerStatus.STATUS.ARCHIVED; }
+// The archived names among some typed names (any case), and what to say about
+// them: a new game, request or result cannot include someone who has left the
+// group. An admin restores them first; their history never needed it.
+function archivedAmong(names){
+  return (names || []).map(n => PLAYERS.find(p => p.name.toLowerCase() === String(n || '').trim().toLowerCase()))
+    .filter(p => p && p.status === PlayerStatus.STATUS.ARCHIVED).map(p => p.name);
+}
+function archivedRefusal(names){
+  return `${names.join(', ')} ${names.length > 1 ? 'are' : 'is'} archived. Restore them in Admin › Player tags to include them in a new game.`;
 }
 
 // Admin / Manage: features/admin/manageScreen.js (the accordion, settings,

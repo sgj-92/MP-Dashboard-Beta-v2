@@ -12,9 +12,12 @@
 //
 // Owning stream: functional. Loads before app.js; declarations only.
 
-// Every player who played in the month, by name.
+// Every player who played in the month, by name -- less anyone archived since:
+// a pack is sent to a member, and they have left the group. (Their games stay
+// in everyone else's packs, which are history.)
 function playerPackPlayers(month){
   return Object.values(computeMonthlySummaryStats(month)).filter(s => s.games > 0).map(s => s.name)
+    .filter(n => !isArchivedPlayer(n))
     .sort((a, b) => a.localeCompare(b));
 }
 

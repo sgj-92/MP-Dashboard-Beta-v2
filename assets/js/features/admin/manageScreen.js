@@ -83,7 +83,7 @@ function renderManage(){
   </div>`);
 
   html += adminSection('players', 'Player tags',
-    `<div class="section-sub">Toggle who's currently active — inactive players are skipped by every suggestion engine but keep their full history. You can also add someone who hasn't played yet.</div>`
+    `<div class="section-sub">Each player's status in the group. <b>Active</b>: playing now. <b>Temporarily inactive</b>: still a member, not playing at the moment — left out of game suggestions and the current rankings. <b>Archived</b>: no longer plays with the group — hidden from every live list and selector, with all their history kept. Any status can be changed back. You can also add someone who hasn't played yet.</div>`
     + `<div class="section-heading" style="margin-top:0;">Add a new player</div>`
     + `<div class="fg-controls">
     <div class="fg-row">
@@ -356,9 +356,9 @@ function idToIdxGlobalForExport(id){
 }
 
 function exportPlayersCsv(){
-  const headers = ['Name','Tier','Active','Rating','Games','Wins','Losses','Win %','Avg Opponent','Clutch %','Upset Wins','Upset Losses','Recent Form % (last 10)','Recent Form W-L'];
+  const headers = ['Name','Tier','Status','Rating','Games','Wins','Losses','Win %','Avg Opponent','Clutch %','Upset Wins','Upset Losses','Recent Form % (last 10)','Recent Form W-L'];
   const rows = PLAYERS.map(p=>[
-    p.name, p.tier, INACTIVE_PLAYERS.has(p.name) ? 'No' : 'Yes',
+    p.name, p.tier, PlayerStatus.LABEL[p.status] || 'Active',
     Math.round(p.rating*10)/10, p.total, p.wins, p.losses,
     p.total ? Math.round(1000*p.wins/p.total)/10 : 0,
     Math.round(p.avg_match_strength), p.avg_overperf_pct,
@@ -438,11 +438,90 @@ async function commitRename(displayName){
   }
 }
 
+// ---- Player status (playerStatus.js) -------------------------------------------
+// Admin is where a player's standing in the group is set. The actions say what
+// they do -- never "delete": archiving hides someone from the live app and
+// keeps every match, rating and ranking they ever had, and any status can be
+// changed back. Archiving asks first.
+let statusConfirm = null;     // the playerId awaiting an archive yes
+let statusBusy = null;        // the playerId being written
+let statusMessage = null;     // { playerId, text, ok }
+
+function playerStatusControlsHtml(p){
+  const S = PlayerStatus.STATUS;
+  const id = escapeHtml(p.playerId || p.name), name = escapeHtml(p.name);
+  const btn = (to, label, cls) => `<button class="preset-btn ptag-status${cls ? ' ' + cls : ''}" data-player-id="${id}" data-to="${to}">${statusBusy === (p.playerId || p.name) ? 'Saving…' : label}</button>`;
+  let actions;
+  if(statusConfirm === (p.playerId || p.name)){
+    actions = `<div class="ptag-rename-confirm ptag-archive-confirm">
+      <div><b>Archive ${name}?</b></div>
+      <div class="ptag-rename-note">They will be removed from normal player lists and current game selection, but their historical matches, rankings and statistics will be preserved.</div>
+      <div class="cc-meta-row">
+        ${btn(S.ARCHIVED, 'Archive player', 'ptag-archive-go')}
+        <button class="preset-btn ptag-status-cancel" data-player-id="${id}">Cancel</button>
+      </div>
+    </div>`;
+  } else if(p.status === S.ARCHIVED){
+    actions = btn(S.ACTIVE, 'Restore player') + btn(S.TEMPORARILY_INACTIVE, 'Restore as temporarily inactive');
+  } else if(p.status === S.TEMPORARILY_INACTIVE){
+    actions = btn(S.ACTIVE, 'Reactivate') + `<button class="preset-btn ptag-status-ask" data-player-id="${id}">Archive player</button>`;
+  } else {
+    actions = btn(S.TEMPORARILY_INACTIVE, 'Mark temporarily inactive') + `<button class="preset-btn ptag-status-ask" data-player-id="${id}">Archive player</button>`;
+  }
+  const msg = statusMessage && statusMessage.playerId === (p.playerId || p.name)
+    ? `<div class="ptag-rename-note${statusMessage.ok ? '' : ' is-bad'}">${escapeHtml(statusMessage.text)}</div>` : '';
+  return `<div class="ptag-status-row"><span class="fg-label">Status</span><div class="ptag-status-actions">${actions}</div>${msg}</div>`;
+}
+
+function wirePlayerStatusControls(box){
+  box.querySelectorAll('.ptag-status-ask').forEach(b => { b.onclick = () => { statusConfirm = b.dataset.playerId; statusMessage = null; renderPlayerTagsList(); }; });
+  box.querySelectorAll('.ptag-status-cancel').forEach(b => { b.onclick = () => { statusConfirm = null; renderPlayerTagsList(); }; });
+  box.querySelectorAll('.ptag-status').forEach(b => { b.onclick = () => { if(!statusBusy) setPlayerStatus(b.dataset.playerId, b.dataset.to); }; });
+}
+
+// Writes the status onto the player's own record (the v3 players document,
+// keyed by id, the same document a rename writes), then re-reads the record so
+// every screen follows. Nothing else about the player is touched.
+async function setPlayerStatus(playerId, to){
+  const S = PlayerStatus.STATUS;
+  const player = PLAYERS.find(p => (p.playerId || p.name) === playerId);
+  const docs = (V3_STATE && V3_STATE.rawPlayerDocs) || [];
+  const stored = docs.find(d => d.id === playerId);
+  const say = (text, ok) => { statusMessage = { playerId, text, ok }; };
+  if(!player || !stored){ say('That player has no record to update.', false); renderPlayerTagsList(); return; }
+  if(!PlayerStatus.normalise(to)){ say('Unknown status.', false); renderPlayerTagsList(); return; }
+  if(!db){ say('No database connection.', false); renderPlayerTagsList(); return; }
+  const from = player.status;
+  statusBusy = playerId; renderPlayerTagsList();
+  try {
+    await db.collection(RatingStore.COLLECTIONS.players).doc(playerId).set({
+      ...stored, status: to, statusChangedAt: new Date().toISOString(), statusChangedBy: currentUserName || adminRole || 'admin',
+    });
+    statusConfirm = null;
+    await loadV3State();
+    dataChanged();
+    const name = player.name;
+    say(to === S.ARCHIVED ? `${name} is archived. Their history is unchanged; restore them here any time.`
+      : (from === S.ARCHIVED ? `${name} is restored${to === S.ACTIVE ? '' : ' as temporarily inactive'}.`
+      : (to === S.ACTIVE ? `${name} is active again.` : `${name} is marked temporarily inactive.`)), true);
+  } catch(e){
+    say('Could not save: ' + (e && e.message ? e.message : String(e)), false);
+  } finally {
+    statusBusy = null;
+    renderPlayerTagsList();
+  }
+}
+
 function renderPlayerTagsList(){
   const box = document.getElementById('playerTagsList');
   if(!box) return;
-  const rows = [...PLAYERS].sort((a,b)=>a.name.localeCompare(b.name));
-  box.innerHTML = rows.map(p=>{
+  // Everyone, archived included -- Admin is where they are found and restored --
+  // grouped by status so the group as it is reads first.
+  const S = PlayerStatus.STATUS;
+  const groups = PlayerStatus.ALL.map(st => ({ st, rows: PLAYERS.filter(p => p.status === st).sort((a,b)=>a.name.localeCompare(b.name)) }))
+    .filter(g => g.rows.length);
+  box.innerHTML = groups.map(g => `<div class="ptag-group-head" data-status-group="${g.st}">${PlayerStatus.LABEL[g.st]} · ${g.rows.length}</div>`
+    + g.rows.map(p=>{
     const startingTier = STARTING_TIER_MAP[p.name] || '';
     const open = !!openPlayerTags[p.name];
     // What the row says without being opened: what they are now, and where
@@ -457,7 +536,7 @@ function renderPlayerTagsList(){
           <span class="ptag-meta">${summary}</span>
         </span>
         <span class="ptag-right">
-          <span class="ptag-state${p.active ? ' is-active' : ''}">${p.active ? 'Active' : 'Inactive'}</span>
+          <span class="ptag-state${p.status === S.ACTIVE ? ' is-active' : ''} is-${p.status}">${PlayerStatus.LABEL[p.status]}</span>
           <span class="ptag-chev" aria-hidden="true">▾</span>
         </span>
       </button>
@@ -465,12 +544,12 @@ function renderPlayerTagsList(){
         <select class="fg-select ptag-tier" data-name="${p.name}" aria-label="Current tier for ${p.name}">
           ${['S','A','B','C'].map(t=>`<option value="${t}" ${t===p.tier?'selected':''}>Tier ${t}</option>`).join('')}
         </select>
-        <button class="preset-btn ptag-active ${p.active?'active':''}" data-name="${p.name}">${p.active?'Active':'Inactive'}</button>
         <select class="fg-select ptag-starting" data-name="${p.name}" title="Only affects how their rating was seeded at their first match" aria-label="Starting tier for ${p.name}">
           <option value="" ${startingTier===''?'selected':''}>Started: same as now</option>
           ${['S','A','B','C'].map(t=>`<option value="${t}" ${t===startingTier?'selected':''}>Started at Tier ${t}</option>`).join('')}
         </select>
       </div>
+      ${playerStatusControlsHtml(p)}
       <div class="ptag-rename">
         <label class="fg-label" for="ptagRename-${escapeAttrId(p.name)}">Name</label>
         <input class="fg-select ptag-rename-input" id="ptagRename-${escapeAttrId(p.name)}"
@@ -492,7 +571,7 @@ function renderPlayerTagsList(){
           ? `<div class="ptag-rename-note">Previously ${p.previousDisplayNames.map(n=>escapeHtml(n)).join(', ')}.</div>` : ''}
       </div>` : ''}
     </div>
-  `;}).join('');
+  `;}).join('')).join('');
 
   box.querySelectorAll('.ptag-rename-input').forEach(inp=>{
     inp.addEventListener('input', ()=>{ renameDraft[inp.dataset.name] = inp.value; });
@@ -547,15 +626,5 @@ function renderPlayerTagsList(){
       dataChanged({ redraw: renderPlayerTagsList });
     });
   });
-  box.querySelectorAll('.ptag-active').forEach(btn=>{
-    btn.addEventListener('click', async e=>{
-      const name = e.target.dataset.name;
-      const cur = PLAYERS.find(p=>p.name===name);
-      const newActive = !(cur ? cur.active : true);
-      tagOverridesState[name] = {...(tagOverridesState[name]||{}), active: newActive};
-      const ok = await saveTagOverrides(tagOverridesState);
-      if(!ok) return;
-      dataChanged({ redraw: renderPlayerTagsList });
-    });
-  });
+  wirePlayerStatusControls(box);
 }

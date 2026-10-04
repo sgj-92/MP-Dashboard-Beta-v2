@@ -122,8 +122,23 @@
    because "Started: same as now" has nowhere to truncate to that still means
    anything. */
 .ptag-controls .ptag-tier{ flex:1 1 110px; min-width:0; }
-.ptag-controls .ptag-active{ flex:1 1 110px; min-width:0; }
 .ptag-controls .ptag-starting{ flex:1 1 100%; min-width:0; }
+
+/* Status: the group as it is, grouped -- Active, then Temporarily inactive,
+   then Archived, where archived players are found and restored. */
+.ptag-group-head{
+  margin: 14px 2px 2px; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.ptag-group-head:first-child{ margin-top: 2px; }
+.ptag-state.is-temporarilyInactive{ color: var(--text-soft); border-style: dashed; }
+.ptag-state.is-archived{ color: var(--text-dim); background: var(--surface-2); }
+.ptag-status-row{ margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--surface-border); }
+.ptag-status-row .fg-label{ display:block; margin-bottom: 6px; }
+.ptag-status-actions{ display:flex; flex-wrap:wrap; gap:8px; }
+.ptag-status-actions > .preset-btn{ flex: 1 1 140px; min-height: 40px; }
+.ptag-archive-confirm{ flex: 1 1 100%; }
+.ptag-archive-confirm .cc-meta-row{ margin-top: 8px; gap: 8px; }
 
 /* Rename sits inside the player row that is already open, below the tier and
    status controls — a label change, presented as one. */

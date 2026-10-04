@@ -140,6 +140,8 @@ async function submitNewGame(){
   if(new Set([...winners,...losers].map(n=>n.toLowerCase())).size !== winners.length+losers.length){
     msg.textContent = 'The same name appears twice — check your entries.'; return;
   }
+  const archived = archivedAmong([...winners, ...losers]);
+  if(archived.length){ msg.textContent = archivedRefusal(archived); return; }
 
   const sets = [];
   for(const s of addGameSets){

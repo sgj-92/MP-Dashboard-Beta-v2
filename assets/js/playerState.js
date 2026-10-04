@@ -41,7 +41,9 @@
 
   // What each state is called on screen, in one place so three surfaces cannot
   // word it differently.
-  const LABEL = { RANKED: 'Ranked', IDLE: 'Idle', INACTIVE: 'Inactive' };
+  // "Inactive" alone is ambiguous now that a player can be temporarily away
+  // or archived (playerStatus.js), so the not-participating label says which.
+  const LABEL = { RANKED: 'Ranked', IDLE: 'Idle', INACTIVE: 'Temporarily inactive', ARCHIVED: 'Archived' };
 
   const DAY_MS = 86400000;
 
@@ -69,8 +71,14 @@
   // `active` is the explicit club status. It defaults to true: a player nobody
   // has marked inactive is active, and an absent flag must never be read as
   // "not participating".
-  function stateOf({ ratedMatches, name, asOf, active }) {
-    const participation = active === false ? PARTICIPATION.INACTIVE : PARTICIPATION.ACTIVE;
+  //
+  // `status`, when given, is the player's standing in the group
+  // (playerStatus.js). Temporarily inactive and archived are both not
+  // participating; `archived` says which, and so does the label.
+  function stateOf({ ratedMatches, name, asOf, active, status }) {
+    const archived = status === 'archived';
+    const away = archived || status === 'temporarilyInactive';
+    const participation = (active === false || away) ? PARTICIPATION.INACTIVE : PARTICIPATION.ACTIVE;
     const recent = recentCount(ratedMatches, name, asOf);
     const meetsThreshold = recent >= MIN_MATCHES;
 
@@ -88,7 +96,8 @@
       // The one question every surface actually asks: does this player get a
       // rank number right now?
       rankable: ranking === RANKING.RANKED,
-      label: ranking ? LABEL[ranking] : LABEL.INACTIVE,
+      archived,
+      label: ranking ? LABEL[ranking] : (archived ? LABEL.ARCHIVED : LABEL.INACTIVE),
     };
   }
 

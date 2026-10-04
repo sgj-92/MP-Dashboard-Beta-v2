@@ -18,7 +18,8 @@ let playersFiltersOpen = false;
 function renderPlayersTab(){
   const box = document.getElementById('playersView');
 
-  let rows = [...PLAYERS];
+  // The group as it is now: archived players are not in the directory.
+  let rows = livePlayers();
   if(playersTierFilter !== 'All') rows = rows.filter(p => p.tier === playersTierFilter);
   if(playersActiveFilter === 'active') rows = rows.filter(p => p.active);
   else if(playersActiveFilter === 'inactive') rows = rows.filter(p => !p.active);
@@ -31,7 +32,7 @@ function renderPlayersTab(){
   // opening it. Anything other than "everyone" is worth announcing.
   const tierText = playersTierFilter === 'All' ? 'All tiers' : `Tier ${playersTierFilter}`;
   const statusText = playersActiveFilter === 'all' ? 'all players'
-    : (playersActiveFilter === 'active' ? 'active only' : 'inactive only');
+    : (playersActiveFilter === 'active' ? 'active only' : 'temporarily inactive only');
   const filtered = playersTierFilter !== 'All' || playersActiveFilter !== 'all';
 
   // The filter is a line of text you can tap, the same quiet disclosure the
@@ -53,7 +54,7 @@ function renderPlayersTab(){
         <div class="fg-toggle" id="playersActiveToggle">
           <button class="fg-toggle-btn ${playersActiveFilter==='all'?'active':''}" data-active="all">All</button>
           <button class="fg-toggle-btn ${playersActiveFilter==='active'?'active':''}" data-active="active">Active</button>
-          <button class="fg-toggle-btn ${playersActiveFilter==='inactive'?'active':''}" data-active="inactive">Inactive</button>
+          <button class="fg-toggle-btn ${playersActiveFilter==='inactive'?'active':''}" data-active="inactive">Temporarily inactive</button>
         </div>
       </div>
     </div>`;
@@ -90,7 +91,7 @@ function renderPlayersTab(){
     }
     // Active is the normal state and does not need to shout on every row;
     // inactive is the one worth noticing, and the whole row quietens with it.
-    const inactive = p.active ? '' : `<span class="pdir-inactive">Inactive</span>`;
+    const inactive = p.active ? '' : `<span class="pdir-inactive">Temporarily inactive</span>`;
     const tierKey = String(p.tier || '').toLowerCase();
     // A player card, not a record: the same initials avatar Home uses for the
     // people in a suggested game, tinted by the club's own tier colours, so a

@@ -484,8 +484,9 @@ function buildViewerSelector(){
 
   function renderList(filter){
     const listEl = document.getElementById('viewerPlayerList');
-    // Real player data only -- never a second hard-coded list.
-    const names = PLAYERS.map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+    // Real player data only -- never a second hard-coded list -- and only the
+    // people in the group now: an archived player is not offered.
+    const names = livePlayerNames();
     const filtered = filter ? names.filter(n=>n.toLowerCase().includes(filter.toLowerCase())) : names;
     listEl.innerHTML = filtered.map(n=>`<button class="viewer-player-btn" data-name="${n}">${n}</button>`).join('');
     listEl.querySelectorAll('.viewer-player-btn').forEach(btn=>{

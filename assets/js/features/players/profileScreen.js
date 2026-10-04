@@ -136,7 +136,7 @@ function buildRankingNeighborsSection(name){
 
   let html = `<div class="section-heading" style="margin-top:14px;">📊 Neighbours in the rankings</div>`;
   if(!target.active){
-    html += `<div class="section-sub">${name} is inactive — shown against the active player list only.</div>`;
+    html += `<div class="section-sub">${name} is ${target.status === 'archived' ? 'archived' : 'temporarily inactive'} — shown against the players playing now.</div>`;
   }
   html += `<div class="matchup-vs">`;
   if(above){

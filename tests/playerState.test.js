@@ -43,7 +43,7 @@ test('an inactive player has no ranking state, however much they have played', (
   assert.strictEqual(s.participation, 'INACTIVE');
   assert.strictEqual(s.ranking, null, 'Inactive is not a kind of Idle');
   assert.strictEqual(s.rankable, false);
-  assert.strictEqual(s.label, 'Inactive');
+  assert.strictEqual(s.label, 'Temporarily inactive');
   assert.strictEqual(s.recentMatches, 3, 'their record is still counted, just not ranked');
 });
 
@@ -76,6 +76,6 @@ test('statesOf answers for many players at once, honouring each flag', () => {
     activeOf: (n) => n !== 'B',
   });
   assert.strictEqual(out.A.label, 'Ranked');
-  assert.strictEqual(out.B.label, 'Inactive', 'B played enough but has left the club');
+  assert.strictEqual(out.B.label, 'Temporarily inactive', 'B played enough but is away');
   assert.strictEqual(out.C.label, 'Idle');
 });
