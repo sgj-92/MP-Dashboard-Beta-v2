@@ -22,38 +22,34 @@ let potmAsk = null;          // 'confirm' | 'reopen' -- a question waiting for a
 let potmBusy = false;
 let potmMessage = null;      // { text, ok }
 
-const potmSigned = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(Math.round(v * 10) / 10);
+// The figures under a card's reasons -- the same four on every card
+// (PlayerOfMonth.supportLine), so the group can compare cases at a glance.
+function potmMetricsLine(m){ return PlayerOfMonth.supportLine(m); }
 
-// The figures behind a card, in words a member reads without a glossary.
-function potmMetricsLine(m){
-  if(!m) return '';
-  const bits = [`${m.games} match${m.games === 1 ? '' : 'es'}`,
-    `${m.wins}W ${m.draws}D ${m.losses}L (${Math.round(m.winPct)}%)`];
-  if(typeof m.performancePct === 'number') bits.push(`${potmSigned(m.performancePct)}pp vs expectation`);
-  if(typeof m.ratingChangePlay === 'number') bits.push(`${potmSigned(m.ratingChangePlay)} Power Rating from play`);
-  if(m.ratedMatches) bits.push(`beat expectation in ${m.beatExpected} of ${m.ratedMatches}`);
-  if(m.underdogWins) bits.push(`${m.underdogWins} underdog win${m.underdogWins === 1 ? '' : 's'}`);
-  return bits.join(' · ');
-}
-
-function potmCardHtml(card, { remove = false, pick = false, picked = false, compact = false } = {}){
+// A nomination card. The nomination leads: name and tier, then each reason as
+// a label and one sentence about what the player did, then a short row of
+// figures. `admin` adds what only Admin needs -- who added the player, the
+// reasons not shown, and the controls, kept small and last.
+function potmCardHtml(card, { admin = false, remove = false, pick = false, picked = false, compact = false } = {}){
   const name = potmNameOf(card.playerId) || card.name;
-  const stories = (card.stories || []).map(s => `<li class="potm-story">
-      <span class="potm-story-title">${escapeHtml(s.title)}</span>
-      <span class="potm-story-line">${escapeHtml(s.line)}</span>
-      <span class="potm-story-ev">${escapeHtml(s.evidence)}${s.sharedWith && s.sharedWith.length ? ` · level with ${escapeHtml(s.sharedWith.join(', '))}` : ''}</span>
-    </li>`).join('');
-  return `<div class="potm-card${picked ? ' is-picked' : ''}" data-potm-card="${escapeHtml(card.playerId)}">
+  const reasons = (card.stories || []).map(s => `<div class="potm-reason" data-potm-reason="${escapeHtml(s.key)}">
+      <div class="potm-reason-title">${escapeHtml(s.title)}</div>
+      <div class="potm-reason-line">${escapeHtml(s.line)}${s.evidence ? ` <span class="potm-reason-ev">${escapeHtml(s.evidence)}</span>` : ''}</div>
+    </div>`).join('');
+  const support = card.support || potmMetricsLine(card.metrics);
+  const also = admin && card.alsoTitles && card.alsoTitles.length ? `<div class="potm-also">Also: ${escapeHtml(card.alsoTitles.join(' · '))}</div>` : '';
+  return `<div class="potm-card${admin ? ' is-admin' : ''}${picked ? ' is-picked' : ''}" data-potm-card="${escapeHtml(card.playerId)}">
     <div class="potm-card-head">
       <span class="potm-name">${escapeHtml(name)}</span>
       ${card.tier ? `<span class="potm-tier">Tier ${escapeHtml(card.tier)}</span>` : ''}
-      ${card.source === 'admin' ? `<span class="potm-added">Added by Admin</span>` : ''}
+      ${admin && card.source === 'admin' ? `<span class="potm-added">Added by Admin</span>` : ''}
     </div>
-    ${stories ? `<ul class="potm-stories">${stories}</ul>` : `<div class="potm-story-line">Added to the shortlist by Admin.</div>`}
-    ${compact ? '' : `<div class="potm-metrics">${escapeHtml(potmMetricsLine(card.metrics))}</div>`}
+    ${reasons ? `<div class="potm-reasons">${reasons}</div>` : ''}
+    ${also}
+    ${compact || !support ? '' : `<div class="potm-support">${escapeHtml(support)}</div>`}
     ${remove || pick ? `<div class="potm-card-actions">
-      ${remove ? `<button type="button" class="preset-btn potm-remove" data-potm-remove="${escapeHtml(card.playerId)}">Remove</button>` : ''}
-      ${pick ? `<button type="button" class="preset-btn potm-pick${picked ? ' active' : ''}" data-potm-pick="${escapeHtml(card.playerId)}" aria-pressed="${picked}">${picked ? 'Won the vote' : 'Won the vote?'}</button>` : ''}
+      ${pick ? `<button type="button" class="potm-action potm-pick${picked ? ' active' : ''}" data-potm-pick="${escapeHtml(card.playerId)}" aria-pressed="${picked}">${picked ? '✓ Won the vote' : 'Won the vote?'}</button>` : ''}
+      ${remove ? `<button type="button" class="potm-action potm-remove" data-potm-remove="${escapeHtml(card.playerId)}">Remove</button>` : ''}
     </div>` : ''}
   </div>`;
 }
@@ -111,11 +107,11 @@ function buildPotmSectionHtml(){
       <div class="potm-winner-kicker">${escapeHtml(label)} Player of the Month</div>
       <div class="potm-winner-name">${escapeHtml(potmNameOf(w.playerId) || w.name)}</div>
       <div class="potm-winner-citation">${escapeHtml(w.citation)}</div>
-      <div class="potm-metrics">${escapeHtml(potmMetricsLine(w.metrics))}</div>
+      <div class="potm-support">${escapeHtml(potmMetricsLine(w.metrics))}</div>
       <div class="section-sub" style="font-size:10.5px;">Confirmed${record.confirmedBy ? ` by ${escapeHtml(record.confirmedBy)}` : ''}${record.confirmedAt ? ` on ${escapeHtml(String(record.confirmedAt).slice(0,10))}` : ''}. Fixed: later changes to ratings, tiers or these suggestions do not alter it.</div>
     </div>`;
     html += `<div class="section-heading">The shortlist the group voted on</div>`
-      + record.shortlist.map(c => potmCardHtml(c, { compact: true })).join('');
+      + record.shortlist.map(c => potmCardHtml(c, { admin: true, compact: true })).join('');
     if(isOwnerAdmin()){
       html += potmAsk === 'reopen'
         ? `<div class="ptag-archive-confirm" id="potmReopenAsk"><b>Withdraw ${escapeHtml(w.name)} as ${escapeHtml(label)}'s winner?</b>
@@ -127,7 +123,7 @@ function buildPotmSectionHtml(){
     html += `<div class="section-heading">Shortlist for the vote</div>
       <div class="section-sub">Finalised${record.shortlistedBy ? ` by ${escapeHtml(record.shortlistedBy)}` : ''}. Everyone can see it in League › Information. When the group has voted, choose who won.</div>`;
     const pickId = potmPick && potmPick.month === month ? potmPick.playerId : null;
-    html += record.shortlist.map(c => potmCardHtml(c, { pick: complete, picked: c.playerId === pickId })).join('');
+    html += record.shortlist.map(c => potmCardHtml(c, { admin: true, pick: complete, picked: c.playerId === pickId })).join('');
     if(pickId){
       const entry = record.shortlist.find(c => c.playerId === pickId);
       const name = potmNameOf(pickId) || entry.name;
@@ -149,7 +145,10 @@ function buildPotmSectionHtml(){
     if(rec.empty && !draft.entries.length) html += `<div class="section-sub" id="potmEmpty">${escapeHtml(rec.empty)}</div>`;
     else if(!complete) html += `<div class="section-sub">${escapeHtml(label)} isn't over yet — these are so far. The shortlist can be finalised once the month ends.</div>`;
     else html += `<div class="section-sub">Suggested from the month's figures. Remove anyone, or add another qualified player, then finalise the shortlist for the vote.</div>`;
-    html += `<div id="potmCandidates">${draft.entries.map(c => potmCardHtml(c, { remove: true })).join('')}</div>`;
+    if(draft.entries.length > PlayerOfMonth.SHORTLIST_COMFORT){
+      html += `<div class="section-sub potm-trim" id="potmTrim">${draft.entries.length} strong cases this month. A vote works best between ${PlayerOfMonth.SHORTLIST_MIN} and ${PlayerOfMonth.SHORTLIST_COMFORT} — remove any you'd leave out.</div>`;
+    }
+    html += `<div id="potmCandidates">${draft.entries.map(c => potmCardHtml(c, { admin: true, remove: true })).join('')}</div>`;
     const onList = new Set(draft.entries.map(e => e.playerId));
     const addable = potmPlayerMonths(month).filter(p => !p.archived && PlayerOfMonth.qualifies(p.metrics) && !onList.has(p.playerId))
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -287,10 +286,10 @@ function potmPublicHtml(month){
     html += `<div class="potm-winner" id="potmPublicWinner">
       <div class="potm-winner-name"><span class="request-player-link" data-player="${escapeHtml(w.name)}">${escapeHtml(w.name)}</span> 🏆</div>
       <div class="potm-winner-citation">${escapeHtml(w.citation)}</div>
-      <div class="potm-metrics">${escapeHtml(potmMetricsLine(r.winner.metrics))}</div>
+      <div class="potm-support">${escapeHtml(potmMetricsLine(r.winner.metrics))}</div>
     </div>`;
   } else if(list){
-    html += `<div class="section-sub" id="potmPublicShortlist">The shortlist — the strongest cases this month, in no order. The group votes.</div>`
+    html += `<div class="section-sub" id="potmPublicShortlist">${escapeHtml(monthLabel(month).split(' ')[0])}'s nominees, in no particular order. Cast your vote in the group.</div>`
       + list.map(c => potmCardHtml(c)).join('');
   } else {
     html += `<div class="section-sub" id="potmPublicNone">${potmMonthComplete(month) ? 'Not chosen yet. Admin puts a shortlist to the group, and the group votes.' : 'Chosen by the group once the month is over.'}</div>`;

@@ -503,25 +503,40 @@
    and the history list. Cards are listed by name and carry no position: a
    shortlist of cases, not a table. The redesign may restyle all of this. */
 .potm-card, .potm-winner, .potm-history, .potm-confirm-box textarea{ font-family: var(--font-interface); }
+/* A nomination: the player and why they are here lead; figures and any
+   Admin controls follow, smaller. */
 .potm-card{
   background: var(--surface-2); border: 1px solid var(--surface-border);
-  border-radius: var(--radius-md); padding: 12px 14px; margin: 8px 0;
+  border-radius: var(--radius-md); padding: 14px 16px 12px; margin: 10px 0;
 }
 .potm-card.is-picked{ border-color: var(--gold-hairline); background: var(--gold-wash); }
-.potm-card-head{ display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.potm-name{ font-family: var(--font-interface); font-size: 15px; font-weight: 700; color: var(--text); }
+.potm-card-head{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.potm-name{ font-size: 19px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
 .potm-tier, .potm-added{
   font-size: 10.5px; letter-spacing: .04em; color: var(--text-dim);
   border: 1px solid var(--surface-border); border-radius: var(--radius-pill); padding: 1px 8px;
 }
-.potm-stories{ list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
-.potm-story{ display: grid; gap: 2px; }
-.potm-story-title{ font-size: 12px; font-weight: 700; color: var(--gold-soft); letter-spacing: .02em; }
-.potm-story-line{ font-size: 12.5px; color: var(--text); line-height: 1.35; }
-.potm-story-ev{ font-size: 11.5px; color: var(--text-dim); }
-.potm-metrics{ margin-top: 8px; font-size: 11px; color: var(--text-dim); line-height: 1.45; overflow-wrap: anywhere; }
-.potm-card-actions{ display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.potm-card-actions .preset-btn{ flex: 1 1 auto; }
+.potm-added{ border-style: dashed; }
+.potm-reasons{ display: grid; gap: 10px; margin-top: 10px; }
+.potm-reason-title{ font-size: 13px; font-weight: 700; color: var(--gold-soft); letter-spacing: .01em; }
+.potm-reason-line{ font-size: 14px; color: var(--text); line-height: 1.35; margin-top: 1px; }
+.potm-reason-ev{ color: var(--text-dim); font-size: 12px; }
+.potm-also{ margin-top: 8px; font-size: 11px; color: var(--text-dim); }
+.potm-support, .potm-metrics{
+  margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--surface-border-soft);
+  font-size: 11.5px; color: var(--text-dim); line-height: 1.45; overflow-wrap: anywhere;
+}
+.potm-winner .potm-support{ border-top: 0; padding-top: 0; }
+/* Admin controls: quiet text buttons under the nomination. */
+.potm-card-actions{ display: flex; justify-content: flex-end; gap: 14px; margin-top: 8px; }
+.potm-action{
+  background: none; border: 0; padding: 4px 0; cursor: pointer;
+  font-family: var(--font-interface); font-size: 12px; color: var(--text-dim);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.potm-action.potm-pick{ color: var(--gold-soft); }
+.potm-action.active{ color: var(--gold-bright); text-decoration: none; font-weight: 700; }
+.potm-trim{ color: var(--gold-soft); }
 .potm-winner{
   background: var(--gold-wash); border: 1px solid var(--gold-hairline);
   border-radius: var(--radius-md); padding: 14px 16px; margin: 8px 0; text-align: center;

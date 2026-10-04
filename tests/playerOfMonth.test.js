@@ -82,7 +82,7 @@ test('the shortlist is the strongest cases, listed by name -- not a ranking -- a
   ] });
   assert.deepStrictEqual(names(rec), ['Abe', 'Mo', 'Zed'], 'alphabetical, whatever each case is');
   rec.candidates.forEach((c) => assert.ok(!('rank' in c) && !('score' in c), 'no rank and no hidden score'));
-  rec.candidates.forEach((c) => c.stories.forEach((s) => assert.ok(s.line && s.evidence, 'every reason says why, in words and figures')));
+  rec.candidates.forEach((c) => c.stories.forEach((s) => assert.ok(s.title && s.line, 'every reason has a label and a sentence')));
   // A story below its floor is not a case: a best win rate of 50% is not "Strongest Results".
   const flat = POTM.recommend({ month: MONTH, players: [player('A'), player('B'), player('C')] });
   flat.candidates.forEach((c) => assert.ok(!c.stories.some((s) => s.key === 'results' || s.key === 'improver' || s.key === 'overperformer')));
@@ -100,7 +100,7 @@ test('when one player leads almost everything, the next-best on each story makes
   assert.deepStrictEqual(names(rec), ['KC', 'Osh', 'Tom']);
   const tom = rec.candidates.find((c) => c.name === 'Tom').stories[0];
   assert.strictEqual(tom.place, 'next');
-  assert.match(tom.line, /^Next-best average performance against expectation/);
+  assert.strictEqual(tom.line, 'Beat expectations by +13.5pp on average.', 'what he did, not where he came');
 });
 
 // ---------- 10, 11. empty months and ties ----------
@@ -125,7 +125,7 @@ test('players level on a story are both recommended; nothing is invented to sepa
   ['Ann', 'Bea'].forEach((n) => assert.ok(storiesOf(rec, n).includes('overperformer'), `${n} shares the lead`));
   const ann = rec.candidates.find((c) => c.name === 'Ann').stories.find((s) => s.key === 'overperformer');
   assert.deepStrictEqual(ann.sharedWith, ['Bea']);
-  assert.match(ann.line, /^No qualified player/, 'worded so it stays true when level');
+  assert.strictEqual(ann.line, 'Beat expectations by +12.4pp on average.', 'about the player, and true for both');
 });
 
 // ---------- 7, 8, 9. the award record ----------
@@ -148,15 +148,15 @@ test('a confirmed winner is a snapshot: its story, figures and shortlist are kep
   assert.strictEqual(done.winnerId, 'KC');
   assert.strictEqual(done.winner.tier, 'A');
   assert.strictEqual(done.winner.metrics.performancePct, 16.9);
-  assert.match(done.winner.citation, /^September 2026: Overperformer\. .*\+16\.9pp vs expectation; won 5 of 6\.$/);
+  assert.strictEqual(done.winner.citation, 'September 2026 — Overperformer · Biggest Improver. Beat expectations by +16.9pp on average. Gained +19.4 Power Rating through play.');
   assert.strictEqual(done.rulesVersion, POTM.RULES_VERSION);
   const before = JSON.stringify(POTM.history({ [MONTH]: done }));
 
   // The rules change: a story's floor and wording, and its figures.
   const story = POTM.STORY.overperformer;
-  const saved = { floor: story.floor, lead: story.lead };
+  const saved = { floor: story.floor, line: story.line };
   try {
-    story.floor = () => false; story.lead = 'Rewritten.';
+    story.floor = () => false; story.line = () => 'Rewritten.';
     assert.ok(!POTM.recommend({ month: MONTH, players: [player('KC', { performancePct: 16.9 })] }).candidates[0].stories.some((s) => s.key === 'overperformer'));
     assert.strictEqual(JSON.stringify(POTM.history({ [MONTH]: done })), before, 'the award reads exactly as confirmed');
   } finally { Object.assign(story, saved); }
@@ -277,13 +277,13 @@ maybe('Admin reviews the cases, removes one, adds another qualified player, fina
       document.querySelector('[data-acc-toggle="potm"]').click();
       const out = { month: document.getElementById('potmMonth').value };
       out.cards = [...body().querySelectorAll('[data-potm-card]')].map((c) => c.dataset.potmCard);
-      out.reasons = [...body().querySelectorAll('.potm-story-line')].length;
+      out.reasons = [...body().querySelectorAll('.potm-reason-line')].length;
       out.ranked = /#\d|\b1st\b|\b2nd\b|\branked\b(?! by)/i.test(body().innerText.replace('not ranked', ''));
       // 6. Remove one, add another qualified player.
       body().querySelector('[data-potm-remove="Rishi"]').click();
       const add = document.getElementById('potmAdd');
       out.addable = [...add.options].map((o) => o.value).filter(Boolean);
-      add.value = 'Len';
+      add.value = 'Tom';
       document.getElementById('potmAddBtn').click();
       out.afterEdit = [...body().querySelectorAll('[data-potm-card]')].map((c) => c.dataset.potmCard);
       document.getElementById('potmFinalise').click(); await tick();
@@ -304,20 +304,20 @@ maybe('Admin reviews the cases, removes one, adds another qualified player, fina
       return { ...out, shortlisted };
     });
     assert.strictEqual(r.month, '2026-09', 'opens on the last finished month');
-    assert.deepStrictEqual(r.cards, ['KC', 'Rishi', 'Tom']);
+    assert.deepStrictEqual(r.cards, ['KC', 'Len', 'Rishi']);
     assert.ok(r.reasons >= 3, 'each card says why');
     assert.strictEqual(r.ranked, false, 'nothing reads as a ranking');
-    assert.ok(r.addable.includes('Len') && r.addable.includes('Rishi') && !r.addable.includes('KC'), 'qualified players not already on the list');
+    assert.ok(r.addable.includes('Tom') && r.addable.includes('Rishi') && !r.addable.includes('KC'), 'qualified players not already on the list');
     assert.ok(!r.addable.includes('Antz'), 'Antz played 2: not addable');
     assert.deepStrictEqual(r.afterEdit, ['KC', 'Len', 'Tom']);
-    assert.deepStrictEqual(r.shortlisted.shortlist.map((e) => [e.name, e.source]), [['KC', 'recommended'], ['Len', 'admin'], ['Tom', 'recommended']]);
-    assert.deepStrictEqual(r.shortlisted.recommended, ['KC', 'Rishi', 'Tom'], 'what the app suggested is kept beside what Admin chose');
+    assert.deepStrictEqual(r.shortlisted.shortlist.map((e) => [e.name, e.source]), [['KC', 'recommended'], ['Len', 'recommended'], ['Tom', 'admin']]);
+    assert.deepStrictEqual(r.shortlisted.recommended, ['KC', 'Len', 'Rishi'], 'what the app suggested is kept beside what Admin chose');
     assert.deepStrictEqual(r.publicShortlist, ['KC', 'Len', 'Tom']);
     assert.match(r.ask, /Confirm Tom as September 2026 Player of the Month\?/);
     assert.strictEqual(r.notYet, 'shortlisted', 'nothing is confirmed until Admin says yes');
     assert.deepStrictEqual(r.write.at(-1), ['2026-09', 'confirmed', 'Tom']);
     assert.match(r.winnerBox, /September 2026 Player of the Month\s+Tom/i);
-    assert.match(r.winnerBox, /September 2026: Overperformer\. \+13\.5pp vs expectation; won 3 of 6\./, 'a next-best case is not described as second');
+    assert.match(r.winnerBox, /September 2026\. 6 matches · 3 wins · 50% win rate · \+13\.5pp vs expectation\./, 'an Admin-added winner still has their month in the citation');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
@@ -437,6 +437,203 @@ maybe('an unfinished month can be looked at but not finalised', async () => {
     });
     assert.strictEqual(r.disabled, true);
     assert.match(r.text, /September 2026 isn't over yet/);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+// ===================== Nominations: simpler words, the month's competitions =====================
+// (Shaun, 4 Oct, second brief.) Each reason is about the player -- "Beat
+// expectations by +7.2pp on average." -- never a comparison with the dataset;
+// the month's League, Merit and Monthly Race tier winners are nominated from
+// the competitions' own tables; a card shows its strongest three reasons, and
+// several competition wins are told once.
+
+const WORDING = /No qualified player|Nobody played more|Next-best|among qualified|rating model/i;
+
+test('every reason speaks about the player, in one short sentence with its figure', () => {
+  const m = player('Shaun', { games: 20, wins: 13, performancePct: 7.2, ratingChangePlay: 13.3, ratedMatches: 5, beatExpected: 4, underdogWins: 3 }).metrics;
+  const lines = Object.fromEntries(POTM.STORIES.map((s) => [s.key, s.line(m, MONTH)]));
+  assert.deepStrictEqual(lines, {
+    overperformer: 'Beat expectations by +7.2pp on average.',
+    improver: 'Gained +13.3 Power Rating through play.',
+    results: 'Won 13 of 20 matches — 65%.',
+    upsets: '3 wins as the underdog.',
+    consistent: 'Beat expectation in 4 of 5 matches.',
+    active: 'Played 20 matches in September.',
+  });
+  assert.strictEqual(POTM.STORY.upsets.line({ underdogWins: 1 }), '1 win as the underdog.');
+  assert.strictEqual(POTM.supportLine(m), '20 matches · 13 wins · 65% win rate · +7.2pp vs expectation');
+  Object.values(lines).forEach((l) => assert.doesNotMatch(l, WORDING));
+});
+
+test('a League, Merit or Monthly Race tier winner is nominated for it, and a win is a reason, not the award', () => {
+  const field = (wins) => [
+    player('Champ', { games: 5, wins: 2 }, {}),
+    player('Busy', { games: 12 }),
+    player('Sharp', { performancePct: 6, ratingChangePlay: 9, wins: 4, beatExpected: 4 }),
+  ].map((p) => (p.name === 'Champ' ? { ...p, metrics: { ...p.metrics, competitionWins: wins } } : p));
+  const cases = [
+    ['league', 'League Winner', 'Top of Tier B in the September League.'],
+    ['merit', 'Merit Winner', 'Top of Tier B in September Merit.'],
+    ['race', 'Monthly Race Winner', 'Won Tier B in September’s Monthly Race.'],
+  ];
+  cases.forEach(([competition, title, line]) => {
+    const rec = POTM.recommend({ month: MONTH, players: field([{ competition, tier: 'B', sharedWith: [] }]) });
+    const champ = rec.candidates.find((c) => c.name === 'Champ');
+    assert.ok(champ, `${competition}: a tier winner is a candidate on that alone`);
+    assert.deepStrictEqual(champ.stories.map((s) => [s.title, s.line]), [[title, line]]);
+    assert.ok(rec.candidates.length > 1, 'others are still nominated: the group decides');
+  });
+  // Without the win, an ordinary month is no case at all.
+  assert.ok(!POTM.recommend({ month: MONTH, players: field([]) }).candidates.some((c) => c.name === 'Champ'));
+  // Joint winners are both told so.
+  const joint = POTM.recommend({ month: '2026-06', players: [player('Len', { games: 10 }, {})].map((p) => ({ ...p, metrics: { ...p.metrics, competitionWins: [{ competition: 'league', tier: 'A', sharedWith: ['Kaz'] }] } })) });
+  assert.strictEqual(joint.candidates[0].stories[0].line, 'Joint top of Tier A in the June League.');
+});
+
+test('several wins are told once, and a card keeps to its strongest three reasons', () => {
+  const star = player('Rishi', { games: 17, wins: 13, performancePct: 9, ratingChangePlay: 20, beatExpected: 12, underdogWins: 3 });
+  star.metrics.competitionWins = ['race', 'league', 'merit'].map((competition) => ({ competition, tier: 'B', sharedWith: [] }));
+  const rec = POTM.recommend({ month: MONTH, players: [star, player('A'), player('B')] });
+  const card = rec.candidates.find((c) => c.name === 'Rishi');
+  assert.strictEqual(card.stories.length, 3, 'three reasons shown');
+  assert.deepStrictEqual(card.stories.map((s) => s.title), ['Triple Crown', 'Overperformer', 'Biggest Improver']);
+  assert.strictEqual(card.stories[0].line, 'Won the League, Merit and the Monthly Race in Tier B in September.', 'one line, not three');
+  assert.deepStrictEqual(card.alsoTitles, ['Strongest Results', 'Upset Specialist', 'Most Consistent', 'Most Active'], 'the rest by name only');
+  assert.strictEqual(card.title, 'Triple Crown');
+  // Two competitions are a Month Champion; a mover's wins name their tiers.
+  const two = POTM.competitionStory({ competitionWins: [{ competition: 'race', tier: 'A' }, { competition: 'league', tier: 'A' }] }, MONTH);
+  assert.deepStrictEqual([two.title, two.line], ['Month Champion', 'Won the League and the Monthly Race in Tier A in September.']);
+  const moved = POTM.competitionStory({ competitionWins: [{ competition: 'league', tier: 'A' }, { competition: 'race', tier: 'B' }] }, MONTH);
+  assert.strictEqual(moved.line, 'Won the League (Tier A) and the Monthly Race (Tier B) in September.');
+});
+
+test('the same month always gives the same nominations, in name order, with no score anywhere', () => {
+  const field = () => [
+    player('Zed', { performancePct: 9 }, {}), player('Abe', { games: 14 }), player('Mo', { wins: 5, beatExpected: 5 }),
+  ].map((p, i) => (i === 2 ? { ...p, metrics: { ...p.metrics, competitionWins: [{ competition: 'merit', tier: 'C', sharedWith: [] }] } } : p));
+  const a = POTM.recommend({ month: MONTH, players: field() });
+  const b = POTM.recommend({ month: MONTH, players: field().reverse() });
+  assert.deepStrictEqual(a, b, 'deterministic, whatever order players arrive in');
+  assert.deepStrictEqual(a.candidates.map((c) => c.name), ['Abe', 'Mo', 'Zed']);
+  const keys = JSON.stringify(a);
+  assert.doesNotMatch(keys, /"(score|rank|points|weight)"/, 'no hidden score or rank on a nomination');
+});
+
+maybe('the month\'s competition winners come from the competitions\' own tables, for that month', async () => {
+  const app = await openApp();
+  try {
+    const r = await app.run(() => {
+      // The tables as the Board Pack shows them -- each module's own top row.
+      const tops = (month) => {
+        const src = boardPackSources();
+        const first = (data, key) => Object.fromEntries(data.tiers.map((t) => [t.tier, t.rows[0][key]]));
+        return {
+          league: first(src.league(month, { tier: 'all', top: 1 }), 'name'),
+          merit: first(src.merit(month, { tier: 'all', top: 1 }), 'playerId'),
+          race: first(src.race(month, { tier: 'all', top: 1 }), 'playerId'),
+        };
+      };
+      const sept = potmCompetitionWinners('2026-09');
+      const june = potmCompetitionWinners('2026-06');
+      const reasons = (month) => Object.fromEntries(potmRecommendation(month).candidates.map((c) => [c.name, c.stories.map((s) => s.key)]));
+      const lines = ['2026-06', '2026-07', '2026-08', '2026-09'].flatMap((m) => potmRecommendation(m).candidates.flatMap((c) => c.stories.map((s) => s.line)));
+      const shaunJune = potmPlayerMonths('2026-06').find((p) => p.name === 'Shaun').metrics.competitionWins;
+      return { tops: { sept: tops('2026-09'), june: tops('2026-06') }, sept, june, septReasons: reasons('2026-09'), juneReasons: reasons('2026-06'), lines, shaunJune,
+        shaunNow: PLAYERS.find((p) => p.name === 'Shaun').tier,
+        lenJune: potmRecommendation('2026-06').candidates.find((c) => c.name === 'Len').stories[0].line };
+    });
+    // Each winner is the table's own #1 in that tier (or level with it).
+    for (const month of ['sept', 'june']) {
+      for (const c of ['league', 'merit', 'race']) {
+        Object.entries(r.tops[month][c]).forEach(([tier, first]) => assert.ok(r[month][c][tier].includes(first), `${month} ${c} ${tier}: ${first}`));
+      }
+    }
+    // September: Len tops Tier A's League; KC wins A's Merit and Race; Rishi all three in B.
+    assert.deepStrictEqual([r.sept.league.A, r.sept.merit.A, r.sept.race.A, r.sept.league.B, r.sept.merit.B, r.sept.race.B],
+      [['Len'], ['KC'], ['KC'], ['Rishi'], ['Rishi'], ['Rishi']]);
+    assert.deepStrictEqual(r.sept.race.C, [], 'nobody qualified in Tier C\'s Race, so it has no winner');
+    assert.deepStrictEqual(r.septReasons.Len, ['league']);
+    assert.strictEqual(r.septReasons.KC[0], 'champion');
+    assert.deepStrictEqual(r.septReasons.Rishi, ['triple', 'active']);
+    // June is June's: a joint League top on points and goal difference, and
+    // Shaun winning Tier C's Race -- the tier he held then, not today's.
+    assert.deepStrictEqual(r.june.league.A.slice().sort(), ['Kaz', 'Len']);
+    assert.strictEqual(r.lenJune, 'Joint top of Tier A in the June League.');
+    assert.deepStrictEqual(r.june.race.B, ['Max']);
+    assert.ok(r.juneReasons.Max.includes('race') && !(r.juneReasons.Rishi || []).includes('race'));
+    assert.deepStrictEqual(r.shaunJune, [{ competition: 'race', tier: 'C', sharedWith: [] }]);
+    assert.notStrictEqual(r.shaunNow, 'C');
+    r.lines.forEach((l) => assert.doesNotMatch(l, WORDING, l));
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+maybe('Admin\'s card carries the controls quietly; the players\' shortlist is just the nominations', async () => {
+  const app = await openApp();
+  try {
+    const r = await app.run(async () => {
+      const tick = () => new Promise((res) => setTimeout(res, 30));
+      legacyTabBtn('manage').click(); adminOpenSections.potm = true; potmOpenMonth('2026-09'); renderManage();
+      const add = document.getElementById('potmAdd'); add.value = 'Tom'; document.getElementById('potmAddBtn').click();
+      const tomAdmin = document.querySelector('[data-potm-card="Tom"]');
+      const kcAdmin = document.querySelector('[data-potm-card="KC"]');
+      const admin = {
+        added: !!tomAdmin.querySelector('.potm-added'), support: tomAdmin.querySelector('.potm-support').textContent,
+        remove: !!kcAdmin.querySelector('[data-potm-remove]'),
+        removeIsQuiet: parseFloat(getComputedStyle(kcAdmin.querySelector('.potm-remove')).fontSize) < parseFloat(getComputedStyle(kcAdmin.querySelector('.potm-reason-line')).fontSize),
+        nameBig: parseFloat(getComputedStyle(kcAdmin.querySelector('.potm-name')).fontSize),
+        also: (kcAdmin.querySelector('.potm-also') || {}).textContent || '',
+      };
+      document.getElementById('potmFinalise').click(); await tick();
+      legacyTabBtn('summary').click(); summaryMonth = '2026-09'; summaryMode = 'information'; renderSummary();
+      const box = document.getElementById('summaryContent');
+      const cards = [...box.querySelectorAll('[data-potm-card]')];
+      const tom = box.querySelector('[data-potm-card="Tom"]');
+      return { admin, public: {
+        names: cards.map((c) => c.dataset.potmCard),
+        controls: box.querySelectorAll('[data-potm-remove], [data-potm-pick], .potm-also').length,
+        text: cards.map((c) => c.innerText).join('\n'),
+        tomSupport: tom.querySelector('.potm-support').textContent, tomReasons: tom.querySelectorAll('.potm-reason').length,
+        intro: document.getElementById('potmPublicShortlist').textContent,
+        rishi: [...box.querySelectorAll('[data-potm-card="Rishi"] .potm-reason-title')].map((e) => e.textContent),
+      } };
+    });
+    assert.strictEqual(r.admin.added, true, 'Admin can see who was added by hand');
+    assert.strictEqual(r.admin.support, '6 matches · 3 wins · 50% win rate · +13.5pp vs expectation', 'and their month, so the card is not empty');
+    assert.strictEqual(r.admin.remove, true);
+    assert.strictEqual(r.admin.removeIsQuiet, true, 'the control is smaller than the nomination');
+    assert.ok(r.admin.nameBig >= 18, 'the name leads');
+    assert.match(r.admin.also, /^Also: /, 'Admin sees the reasons not shown');
+    assert.deepStrictEqual(r.public.names, ['KC', 'Len', 'Rishi', 'Tom'], 'in name order, no positions');
+    assert.strictEqual(r.public.controls, 0, 'no Admin controls or extras for players');
+    assert.doesNotMatch(r.public.text, /Added by Admin|Remove|qualified|recommend|No qualified|#\d/i);
+    assert.strictEqual(r.public.tomSupport, '6 matches · 3 wins · 50% win rate · +13.5pp vs expectation');
+    assert.strictEqual(r.public.tomReasons, 0);
+    assert.match(r.public.intro, /^September's nominees, in no particular order/);
+    assert.deepStrictEqual(r.public.rishi, ['Triple Crown', 'Most Active']);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+maybe('an award confirmed under the earlier rules reads exactly as it was confirmed', async () => {
+  const OLD = JSON.parse(JSON.stringify(STORED));
+  OLD.rulesVersion = 'potm-1';
+  OLD.shortlist[0].stories = [{ key: 'overperformer', title: 'Overperformer', place: 'lead', line: 'No qualified player beat the rating model’s expectation by more, on average.', evidence: '+16.9pp vs expectation', sharedWith: [] }];
+  const app = await openApp({ collections: { playerOfTheMonth: { '2026-09': OLD } } });
+  try {
+    const r = await app.run(() => {
+      legacyTabBtn('manage').click(); adminOpenSections.potm = true; potmOpenMonth('2026-09'); renderManage();
+      const winner = document.getElementById('potmWinner').innerText;
+      const kc = document.querySelector('[data-potm-card="KC"]').innerText;
+      legacyTabBtn('summary').click(); summaryMonth = '2026-09'; summaryMode = 'information'; renderSummary();
+      return { winner, kc, info: document.getElementById('potmPublicWinner').innerText, history: potmHistory().map((a) => [a.name, a.title, a.citation]) };
+    });
+    assert.match(r.winner, /Jords/);
+    assert.match(r.winner, /Two famous wins as the underdog\./);
+    assert.match(r.kc, /No qualified player beat the rating model’s expectation by more, on average\. \+16\.9pp vs expectation/, 'its shortlist as it was, words and all');
+    assert.deepStrictEqual(r.history, [['Jords', 'Upset Specialist', 'Two famous wins as the underdog.']]);
+    assert.match(r.info, /Jords 🏆/);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });

@@ -14,6 +14,11 @@
 //   beat expectation in X of Y   the stored residual of each of the month's matches
 //   wins as the underdog         a win whose stored expected score was below the
 //                                Match Result Card's underdog line (MatchScorecard.STORY)
+//   competition wins             the top of each tier of the month's League
+//                                (leagueSplitRows + sortLeagueRows), Merit
+//                                (MeritTable.build) and Monthly Race
+//                                (buildMonthlyRace, qualified rows) -- the very
+//                                tables League › League / Merit / Race draw
 //
 // Nothing is recalculated: expectations, residuals and ratings are what the
 // engine recorded at the time.
@@ -66,6 +71,38 @@ function potmMonths(){
 
 const potmRound1 = (v) => (typeof v === 'number' ? Math.round(v * 10) / 10 : null);
 
+// Who won each tier of the month's three competitions: { league|merit|race:
+// { tier: [names] } }. Each table is built and ordered by its own module, as
+// League › By tier shows it; this only reads its top. The tables break a tie
+// last of all by name, which is no way to decide a winner, so players level on
+// every other key the table orders by are joint winners.
+function potmCompetitionWinners(month){
+  const out = { league: {}, merit: {}, race: {} };
+  const tiers = groupedTiers();
+  const top = (rows, keys) => rows.length ? rows.filter(r => keys.every(k => r[k] === rows[0][k])) : [];
+  const league = leagueSplitRows(month).filter(s => s.games > 0);
+  const { table: merit } = MeritTable.build(meritMatches(month), historicalTierOf, { tierForRow: historicalTierOf });
+  const { table: race } = buildMonthlyRace(month);
+  tiers.forEach(tier => {
+    out.league[tier] = top(sortLeagueRows(league.filter(s => s.tier === tier), 'points', true), ['points', 'gd']).map(r => r.name);
+    out.merit[tier] = top(merit.filter(r => r.tier === tier && r.played > 0), ['merit', 'hardWins', 'wins', 'played']).map(r => r.playerId);
+    // The Race is decided among those who qualified in the tier.
+    out.race[tier] = top(race.filter(r => r.tier === tier && r.qualified), ['score', 'wins', 'played']).map(r => r.playerId);
+  });
+  return out;
+}
+
+// One player's wins from those: [{ competition, tier, sharedWith }].
+function potmCompetitionWinsOf(winners, name){
+  const out = [];
+  ['league', 'merit', 'race'].forEach(competition => {
+    Object.entries(winners[competition]).forEach(([tier, names]) => {
+      if(names.includes(name)) out.push({ competition, tier, sharedWith: names.filter(n => n !== name) });
+    });
+  });
+  return out;
+}
+
 // Each player who played in the month, with the month's figures.
 function potmPlayerMonths(month){
   const view = MONTHLY_VIEWS && MONTHLY_VIEWS.byMonth[month];
@@ -76,6 +113,7 @@ function potmPlayerMonths(month){
   const facts = Object.values(V3_MATCH_FACTS || {}).filter(f => f.date && f.date.slice(0,7) === month);
   const STORY = MatchScorecard.STORY;
   const names = [...new Set(Object.keys(league).concat(view.rows.map(r => r.playerId)))];
+  const winners = potmCompetitionWinners(month);
   return names.map(name => {
     const L = league[name] || { games: 0, wins: 0, draws: 0, losses: 0, winpct: 0 };
     const row = view.rows.find(r => r.playerId === name) || null;
@@ -107,6 +145,7 @@ function potmPlayerMonths(month){
         ratingChangeClub: row ? row.reassessmentChange : 0,
         underdogWins: underdog, majorUpsetWins: major, biggestUpset: biggest,
         tier: row ? row.tierAtMonthEnd : null,
+        competitionWins: potmCompetitionWinsOf(winners, name),
       },
     };
   });

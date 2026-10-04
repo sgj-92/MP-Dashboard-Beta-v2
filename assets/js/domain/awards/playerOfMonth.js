@@ -2,26 +2,38 @@
 // Money Padel recommends candidates; the group chooses the winner.
 //
 // This is NOT a leaderboard and there is no Player of the Month score. A month
-// can be won in different ways, so the recommendation looks for the strongest
-// CASE of each kind -- each one a single figure the club already sees, read
-// for the month alone:
+// can be won in different ways, so the recommendation looks for strong CASES
+// of different kinds, each read from the month alone:
 //
-//   Overperformer       highest average performance against expectation
-//   Biggest Improver    most Power Rating gained through play
-//   Strongest Results   best win rate
-//   Most Consistent     beat expectation in the largest share of matches
-//   Upset Specialist    most wins as the underdog
-//   Most Active         most matches
+//   The month's competitions   who won a tier of the League, Merit or the
+//                              Monthly Race -- the competitions' own results,
+//                              handed in, never worked out here
+//   Overperformer              highest average performance against expectation
+//   Biggest Improver           most Power Rating gained through play
+//   Strongest Results          best win rate
+//   Upset Specialist           most wins as the underdog
+//   Most Consistent            beat expectation in the largest share of matches
+//   Most Active                most matches
 //
-// Whoever leads a story is a candidate; players level on it are all
-// candidates (no tie-break is invented to separate them). Each story has a
-// floor below which it is not a case at all (a best win rate of 40% is not
-// "Strongest Results"), and upsets count only in a month that was at or above
-// expectation overall. Match count only ever earns "Most Active": playing
-// more does not add to any other story, so volume cannot win the month on its
-// own. When the leaders overlap so much that fewer than three players are
-// named, the next-best player on each story (in the order above) is added
-// until there are three, and says so. Nobody is cut to keep the list at five.
+// A competition winner is a candidate. So is whoever leads a statistical
+// story; players level on it are all candidates (no tie-break is invented to
+// separate them). Each statistical story has a floor below which it is not a
+// case (a best win rate of 40% is not "Strongest Results"), and upsets count
+// only in a month that was at or above expectation overall. Match count only
+// ever earns "Most Active", so volume cannot win the month on its own. When
+// fewer than three players are named, the next-best player on each statistical
+// story is added until there are three. Nobody is cut to keep the list short:
+// Admin trims it.
+//
+// Winning a competition is a strong reason, never the award: the group still
+// votes.
+//
+// How a card reads. Each reason is a label and one sentence about what the
+// player did ("Beat expectations by +7.2pp on average.") -- never a comparison
+// with everyone else. Two or three competition wins are told once ("Triple
+// Crown: won the League, Merit and the Monthly Race in Tier B") rather than as
+// three near-identical lines. A card shows its strongest three reasons, in
+// the fixed order of REASON_ORDER; anything else is listed by name only.
 //
 // Candidates are listed by name: the shortlist is the strongest cases, not a
 // ranking. A player must have played MIN_MATCHES matches that month to be
@@ -30,7 +42,7 @@
 //
 // The second half of this module is the award record. A recommendation is
 // recalculated whenever it is asked for; a finalised shortlist and a confirmed
-// winner are SNAPSHOTS -- names, tiers, stories and figures as they stood --
+// winner are SNAPSHOTS -- names, tiers, reasons and figures as they stood --
 // so a confirmed award never changes when ratings, tiers, a player's status or
 // these rules do.
 //
@@ -45,9 +57,13 @@
 
   // Bump when the recommendation rules change. Stored with each shortlist, so a
   // past month records which rules suggested its candidates.
-  const RULES_VERSION = 'potm-1';
+  const RULES_VERSION = 'potm-2';
   const MIN_MATCHES = 5;
   const SHORTLIST_MIN = 3;
+  // A vote works best between a handful. More cases than this are all shown,
+  // and Admin is asked to trim; nothing is cut automatically.
+  const SHORTLIST_COMFORT = 5;
+  const REASONS_SHOWN = 3;
 
   const STATE = { SHORTLISTED: 'shortlisted', CONFIRMED: 'confirmed' };
   const SOURCE = { RECOMMENDED: 'recommended', ADMIN: 'admin' };
@@ -55,47 +71,36 @@
   const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
     'August', 'September', 'October', 'November', 'December'];
   const monthLabel = (month) => `${MONTHS[Number(month.slice(5, 7)) - 1]} ${month.slice(0, 4)}`;
+  const monthName = (month) => MONTHS[Number(month.slice(5, 7)) - 1];
 
   const r1 = (v) => Math.round(v * 10) / 10;
   const signed = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(r1(v));
   const pctOf = (n, d) => (d ? r1((100 * n) / d) : 0);
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-  // ---- The stories --------------------------------------------------------
-  // `value` is the one figure the story is about, already on the metrics.
-  // Ties are judged on the figure as people see it (one decimal place), so two
-  // players shown as "+12.4pp" are level, whatever the float noise says.
+  // ---- The statistical stories --------------------------------------------
+  // `value` is the one figure the story is about, already on the metrics; `line`
+  // says what the player did, in one sentence. Ties are judged on the figure
+  // as people see it (one decimal place), so two players shown as "+12.4pp"
+  // are level, whatever the float noise says.
   const STORIES = [
     {
       key: 'overperformer', title: 'Overperformer',
       value: (m) => m.performancePct,
       floor: (v) => v > 0,
-      evidence: (m) => `${signed(m.performancePct)}pp vs expectation`,
-      lead: 'No qualified player beat the rating model’s expectation by more, on average.',
-      next: 'Next-best average performance against expectation among qualified players.',
+      line: (m) => `Beat expectations by ${signed(m.performancePct)}pp on average.`,
     },
     {
       key: 'improver', title: 'Biggest Improver',
       value: (m) => m.ratingChangePlay,
       floor: (v) => v > 0,
-      evidence: (m) => `${signed(m.ratingChangePlay)} Power Rating from play`,
-      lead: 'No qualified player gained more Power Rating through play.',
-      next: 'Next-biggest Power Rating gain through play among qualified players.',
+      line: (m) => `Gained ${signed(m.ratingChangePlay)} Power Rating through play.`,
     },
     {
       key: 'results', title: 'Strongest Results',
       value: (m) => m.winPct,
       floor: (v) => v > 50,
-      evidence: (m) => `Won ${m.wins} of ${m.games} (${Math.round(m.winPct)}%)`,
-      lead: 'No qualified player had a better win rate.',
-      next: 'Next-best win rate among qualified players.',
-    },
-    {
-      key: 'consistent', title: 'Most Consistent',
-      value: (m) => (m.ratedMatches ? pctOf(m.beatExpected, m.ratedMatches) : null),
-      floor: (v) => v > 50,
-      evidence: (m) => `Beat expectation in ${m.beatExpected} of ${m.ratedMatches}`,
-      lead: 'No qualified player beat expectation in a larger share of their matches.',
-      next: 'Next-best share of matches above expectation among qualified players.',
+      line: (m) => `Won ${m.wins} of ${m.games} matches — ${Math.round(m.winPct)}%.`,
     },
     {
       key: 'upsets', title: 'Upset Specialist',
@@ -104,21 +109,70 @@
       // One good evening in a month spent below expectation is not a case:
       // the month as a whole must be at or above expectation.
       gate: (m) => typeof m.performancePct === 'number' && m.performancePct >= 0,
-      evidence: (m) => `${m.underdogWins} ${m.underdogWins === 1 ? 'win' : 'wins'} as the underdog`
-        + (m.biggestUpset ? ` (biggest: expected ${Math.round(m.biggestUpset.expectedPct)}%)` : ''),
-      lead: 'No qualified player won more matches as the underdog.',
-      next: 'Next-most wins as the underdog among qualified players.',
+      // The underdog line is the engine's expected score, not a chance of
+      // winning, so no "from a 37% chance" clause: it would say the wrong thing.
+      line: (m) => `${plural(m.underdogWins, 'win', 'wins')} as the underdog.`,
+    },
+    {
+      key: 'consistent', title: 'Most Consistent',
+      value: (m) => (m.ratedMatches ? pctOf(m.beatExpected, m.ratedMatches) : null),
+      floor: (v) => v > 50,
+      line: (m) => `Beat expectation in ${m.beatExpected} of ${m.ratedMatches} matches.`,
     },
     {
       key: 'active', title: 'Most Active',
       value: (m) => m.games,
       floor: () => true,
-      evidence: (m) => `${m.games} matches`,
-      lead: 'Nobody played more matches.',
-      next: 'Played the next-most matches this month.',
+      line: (m, month) => `Played ${m.games} matches in ${monthName(month)}.`,
     },
   ];
   const STORY = Object.fromEntries(STORIES.map((s) => [s.key, s]));
+
+  // ---- The month's competitions -----------------------------------------------
+  // metrics.competitionWins: [{ competition: 'league'|'merit'|'race', tier,
+  // sharedWith: [names] }] -- the tier winners as the competitions themselves
+  // decided them. Several wins are one reason, told once.
+  const COMPETITIONS = ['league', 'merit', 'race'];
+  const COMPETITION_TITLE = { league: 'League Winner', merit: 'Merit Winner', race: 'Monthly Race Winner' };
+  const COMPETITION_NAME = { league: 'the League', merit: 'Merit', race: 'the Monthly Race' };
+
+  function listed(parts) {
+    return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0];
+  }
+
+  function competitionStory(m, month) {
+    const wins = (m.competitionWins || []).slice()
+      .sort((a, b) => COMPETITIONS.indexOf(a.competition) - COMPETITIONS.indexOf(b.competition));
+    if (!wins.length) return null;
+    const kinds = [...new Set(wins.map((w) => w.competition))];
+    const tiers = [...new Set(wins.map((w) => w.tier))];
+    const shared = [...new Set(wins.flatMap((w) => w.sharedWith || []))];
+    const joint = shared.length ? ' (shared)' : '';
+    const mon = monthName(month);
+    if (wins.length === 1) {
+      const w = wins[0];
+      const top = shared.length ? 'Joint top' : 'Top';
+      const line = {
+        league: `${top} of Tier ${w.tier} in the ${mon} League.`,
+        merit: `${top} of Tier ${w.tier} in ${mon} Merit.`,
+        race: shared.length ? `Joint winner of Tier ${w.tier} in ${mon}’s Monthly Race.` : `Won Tier ${w.tier} in ${mon}’s Monthly Race.`,
+      }[w.competition];
+      return { key: w.competition, title: COMPETITION_TITLE[w.competition], line, competitions: kinds, sharedWith: shared };
+    }
+    // Two or three wins: one line. A mid-month mover's wins can be in
+    // different tiers, and the line names each.
+    const title = kinds.length === 3 ? 'Triple Crown' : 'Month Champion';
+    const names = wins.map((w) => COMPETITION_NAME[w.competition] + (tiers.length > 1 ? ` (Tier ${w.tier})` : ''));
+    const where = tiers.length === 1 ? ` in Tier ${tiers[0]}` : '';
+    return { key: kinds.length === 3 ? 'triple' : 'champion', title,
+      line: `Won ${listed(names)}${where} in ${mon}${joint}.`, competitions: kinds, sharedWith: shared };
+  }
+
+  // The order reasons are told on a card: the competitions' own results
+  // first, then the statistical stories as listed above. Leads before
+  // next-best. Fixed, so the same month always reads the same way.
+  const REASON_ORDER = ['triple', 'champion', 'league', 'merit', 'race'].concat(STORIES.map((s) => s.key));
+  const reasonRank = (r) => REASON_ORDER.indexOf(r.key) + (r.place === 'next' ? REASON_ORDER.length : 0);
 
   const qualifies = (metrics, minMatches = MIN_MATCHES) => (metrics.games || 0) >= minMatches;
 
@@ -134,41 +188,52 @@
     return values.slice(0, 2).map((v) => scored.filter((x) => x.v === v).map((x) => x.p));
   }
 
-  // One player's story card entry.
-  function storyEntry(story, player, place, group) {
+  // One reason on a card.
+  function storyEntry(story, player, place, group, month) {
     return {
       key: story.key,
       title: story.title,
       place,                                    // 'lead' | 'next'
-      line: place === 'lead' ? story.lead : story.next,
-      evidence: story.evidence(player.metrics),
-      // Level with these players on the same figure -- shown, never broken.
+      line: story.line(player.metrics, month),
+      // Level with these players on the same figure -- kept, never broken.
       sharedWith: group.filter((g) => g.playerId !== player.playerId).map((g) => g.name),
     };
   }
 
-  function cardFor(player, stories, month) {
-    const lead = stories[0] || null;
+  // The figures under the reasons: the same four on every card, so the group
+  // can compare cases at a glance. The reasons carry anything more specific.
+  function supportLine(m) {
+    if (!m) return '';
+    const bits = [plural(m.games, 'match', 'matches'), plural(m.wins, 'win', 'wins'), `${Math.round(m.winPct)}% win rate`];
+    if (typeof m.performancePct === 'number') bits.push(`${signed(m.performancePct)}pp vs expectation`);
+    return bits.join(' · ');
+  }
+
+  function cardFor(player, reasons, month) {
+    const ordered = reasons.slice().sort((a, b) => reasonRank(a) - reasonRank(b));
+    const shown = ordered.slice(0, REASONS_SHOWN);
+    const lead = shown[0] || null;
     return {
       playerId: player.playerId,
       name: player.name,
       tier: player.metrics.tier || null,
-      title: lead ? lead.title : 'Admin’s choice',
-      stories,
+      title: lead ? lead.title : '',
+      stories: shown,
+      // Further reasons, by label only: a card stays readable.
+      alsoTitles: ordered.slice(REASONS_SHOWN).map((r) => r.title),
+      support: supportLine(player.metrics),
       metrics: { ...player.metrics },
-      citation: lead ? citationFor(player, lead, month) : '',
+      citation: citationFor(player, shown, month),
     };
   }
 
-  // The award's sentence, from the story and its figures -- the default an
-  // admin can edit before confirming. Lead lines are worded so they stay true
-  // when players are level ("No qualified player ... more").
-  function citationFor(player, story, month) {
-    const m = player.metrics;
-    const won = story.key === 'results' ? '' : `; won ${m.wins} of ${m.games}`;
-    // A next-best story says what it is, not that it came second.
-    const line = story.place === 'next' ? '' : `${story.line} `;
-    return `${monthLabel(month)}: ${story.title}. ${line}${story.evidence}${won}.`;
+  // The award's words -- the default an admin can edit before confirming.
+  // "September 2026 — Triple Crown · Most Active. Won the League, Merit and
+  // the Monthly Race in Tier B in September. Played 17 matches in September."
+  function citationFor(player, reasons, month) {
+    const top = (Array.isArray(reasons) ? reasons : [reasons]).filter(Boolean).slice(0, 2);
+    if (!top.length) return `${monthLabel(month)}. ${supportLine(player.metrics)}.`;
+    return `${monthLabel(month)} — ${top.map((r) => r.title).join(' · ')}. ${top.map((r) => r.line).join(' ')}`;
   }
 
   // The recommendation for a month.
@@ -177,7 +242,7 @@
   //   metrics: { games, wins, draws, losses, winPct, performancePct,
   //              ratedMatches, beatExpected, ratingStart, ratingEnd,
   //              ratingChangePlay, ratingChangeClub, underdogWins,
-  //              majorUpsetWins, biggestUpset, tier }
+  //              majorUpsetWins, biggestUpset, tier, competitionWins }
   function recommend({ month, players, minMatches = MIN_MATCHES }) {
     const all = (players || []).filter((p) => p && p.metrics);
     const qualifiedAll = all.filter((p) => qualifies(p.metrics, minMatches));
@@ -191,15 +256,19 @@
       if (!picks.has(player.playerId)) picks.set(player.playerId, { player, stories: [] });
       picks.get(player.playerId).stories.push(entry);
     };
+    pool.forEach((p) => {
+      const won = competitionStory(p.metrics, month);
+      if (won) add(p, { ...won, place: 'lead' });
+    });
     const groups = STORIES.map((s) => ({ story: s, places: placings(s, pool) }));
     groups.forEach(({ story, places }) => {
-      (places[0] || []).forEach((p) => add(p, storyEntry(story, p, 'lead', places[0])));
+      (places[0] || []).forEach((p) => add(p, storyEntry(story, p, 'lead', places[0], month)));
     });
     // Too few distinct cases: the next-best on each story, new names only.
     for (const { story, places } of groups) {
       if (picks.size >= SHORTLIST_MIN) break;
       (places[1] || []).filter((p) => !picks.has(p.playerId))
-        .forEach((p) => add(p, storyEntry(story, p, 'next', places[1])));
+        .forEach((p) => add(p, storyEntry(story, p, 'next', places[1], month)));
     }
 
     const candidates = [...picks.values()]
@@ -336,8 +405,9 @@
   }
 
   return {
-    RULES_VERSION, MIN_MATCHES, SHORTLIST_MIN, STATE, SOURCE, STORIES, STORY,
-    monthLabel, qualifies, recommend, adminEntry, citationFor,
+    RULES_VERSION, MIN_MATCHES, SHORTLIST_MIN, SHORTLIST_COMFORT, REASONS_SHOWN, STATE, SOURCE,
+    STORIES, STORY, REASON_ORDER,
+    monthLabel, qualifies, recommend, adminEntry, citationFor, supportLine, competitionStory,
     finaliseShortlist, confirmWinner, reopen, isConfirmed,
     history, awardsFor, awardCounts,
   };
