@@ -23,6 +23,8 @@ const T0 = '2026-09-20T10:00:00.000Z';
 const T1 = '2026-09-21T10:00:00.000Z';
 const ADMIN = { isAdmin: true, by: 'Shaun', at: T1 };
 const PLAYER = { isAdmin: false, by: 'Osh', at: T1 };
+// Stages are read at T1. Without a date the module reads the real clock, and
+// these September fixtures pass their 14-day archive window on 4 Oct 2026.
 
 // Erf & Eli vs Osh & Stormz, as the brief tells it: requested by Erf, then
 // everyone in.
@@ -41,36 +43,36 @@ test('4/4 agreed with no court booking is Called Out', () => {
   const r = agreedFour();
   assert.strictEqual(r.status, 'confirmed');
   assert.strictEqual(r.courtBookingMade, false);
-  assert.strictEqual(FF.stage(r), FF.STAGE.CALLED_OUT);
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.CALLED_OUT);
 });
 
 test('a proposed date, time and venue do not make a fixture Upcoming', () => {
   const r = agreedFour({ preferredDate: '2026-09-29', preferredTime: '20:00', location: 'PadelX' });
-  assert.strictEqual(FF.stage(r), FF.STAGE.CALLED_OUT);
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.CALLED_OUT);
   const byAdmin = FF.createAgreed({ players: ['Erf', 'Eli', 'Osh', 'Stormz'], by: 'Shaun', at: T0,
     preferredDate: '2026-09-29', preferredTime: '20:00', location: 'PadelX' });
-  assert.strictEqual(FF.stage(byAdmin), FF.STAGE.CALLED_OUT, 'an admin-added game with every detail is still only Called Out');
+  assert.strictEqual(FF.stage(byAdmin, T1), FF.STAGE.CALLED_OUT, 'an admin-added game with every detail is still only Called Out');
 });
 
 test('4/4 agreed with the court booked is Upcoming', () => {
   // Booked while still a request: agreement then lands it straight in Upcoming.
   const r = FF.createRequest({ players: ['Erf', 'Eli', 'Osh', 'Stormz'], requestedBy: 'Erf', at: T0 });
   assert.deepStrictEqual(FF.setCourtBooking(r, { ...ADMIN, booked: true }), { ok: true, changed: true });
-  assert.strictEqual(FF.stage(r), FF.STAGE.PROPOSED, 'a booking does not stand in for anyone agreeing');
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.PROPOSED, 'a booking does not stand in for anyone agreeing');
   ['Eli', 'Osh', 'Stormz'].forEach((n) => FF.respond(r, n, 'in', T1));
-  assert.strictEqual(FF.stage(r), FF.STAGE.UPCOMING);
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.UPCOMING);
   const byAdmin = FF.createAgreed({ players: ['Erf', 'Eli', 'Osh', 'Stormz'], by: 'Shaun', at: T0, courtBookingMade: true });
-  assert.strictEqual(FF.stage(byAdmin), FF.STAGE.UPCOMING);
+  assert.strictEqual(FF.stage(byAdmin, T1), FF.STAGE.UPCOMING);
 });
 
 test('Court booking made moves a healthy fixture Called Out → Upcoming and back, keeping its details', () => {
   const r = agreedFour({ preferredDate: '2026-09-29', preferredTime: '20:00', location: 'PadelX' });
   const id = r.id;
   FF.setCourtBooking(r, { ...ADMIN, booked: true });
-  assert.strictEqual(FF.stage(r), FF.STAGE.UPCOMING);
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.UPCOMING);
   assert.deepStrictEqual(details(r), { date: '2026-09-29', time: '20:00', venue: 'PadelX' });
   FF.setCourtBooking(r, { ...ADMIN, booked: false });
-  assert.strictEqual(FF.stage(r), FF.STAGE.CALLED_OUT);
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.CALLED_OUT);
   assert.deepStrictEqual(details(r), { date: '2026-09-29', time: '20:00', venue: 'PadelX' }, 'nothing erased on the way back');
   assert.strictEqual(r.id, id);
   assert.deepStrictEqual(r.history.slice(-2).map((h) => [h.by, h.action]), [['Shaun', 'court-booked'], ['Shaun', 'court-not-booked']]);
@@ -80,7 +82,7 @@ test("a participant's \"I can't play\" puts the fixture in Needs attention witho
   const r = agreedFour();
   FF.respond(r, 'Osh', 'cant', T1);
   assert.strictEqual(r.status, 'confirmed');
-  assert.strictEqual(FF.stage(r), FF.STAGE.ATTENTION);
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.ATTENTION);
   assert.deepStrictEqual(FF.attention(r), { backedOut: ['Osh'], waiting: [] });
 });
 
@@ -91,7 +93,7 @@ test('an admin can record that a player backed out; the booking, details and oth
   assert.deepStrictEqual(FF.markBackedOut(r, 'Osh', PLAYER), { ok: false, reason: 'not-admin' });
   assert.strictEqual(JSON.stringify(r), before, 'a player cannot record it for someone');
   assert.deepStrictEqual(FF.markBackedOut(r, 'Osh', ADMIN), { ok: true, changed: true });
-  assert.strictEqual(FF.stage(r), FF.STAGE.ATTENTION);
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.ATTENTION);
   assert.strictEqual(r.courtBookingMade, true, 'the court may still be booked, so the booking stays');
   assert.deepStrictEqual(details(r), { date: '2026-09-29', time: '20:00', venue: 'PadelX' });
   assert.deepStrictEqual(r.confirmations, { Erf: true, Eli: true, Osh: false, Stormz: true });
@@ -143,10 +145,10 @@ test('replacing a backed-out player keeps the fixture, starts the new player una
     assert.deepStrictEqual(r.teams, [['Erf', 'Eli'], ['Tom', 'Stormz']], 'Tom takes Osh\'s seat on Osh\'s side');
     assert.deepStrictEqual(r.confirmations, { Erf: true, Eli: true, Tom: false, Stormz: true }, 'Tom inherits nothing; the others keep theirs');
     assert.deepStrictEqual(FF.attention(r), { backedOut: [], waiting: ['Tom'] });
-    assert.strictEqual(FF.stage(r), FF.STAGE.ATTENTION, 'until Tom answers');
+    assert.strictEqual(FF.stage(r, T1), FF.STAGE.ATTENTION, 'until Tom answers');
     assert.strictEqual(r.courtBookingMade, booked);
     FF.respond(r, 'Tom', 'in', T1);
-    assert.strictEqual(FF.stage(r), booked ? FF.STAGE.UPCOMING : FF.STAGE.CALLED_OUT, 'back by the booking it kept');
+    assert.strictEqual(FF.stage(r, T1), booked ? FF.STAGE.UPCOMING : FF.STAGE.CALLED_OUT, 'back by the booking it kept');
     // Osh agreed -> Osh backed out -> Tom replaced Osh -> Tom confirmed.
     const trail = r.history.filter((h) => h.player === 'Osh' || h.by === 'Osh' || h.by === 'Tom' || h.replacement === 'Tom')
       .map((h) => [h.by, h.action, h.replacement || '']);
@@ -174,7 +176,7 @@ test('a fixture from before bookings were recorded is never treated as booked, w
     confirmations: { Antz: true, Fatch: true, Jams: true, Tom: true }, status: 'confirmed' };
   assert.strictEqual(FF.bookingRecorded(legacy), false);
   assert.strictEqual(FF.isBooked(legacy), false);
-  assert.strictEqual(FF.stage(legacy), FF.STAGE.CALLED_OUT);
+  assert.strictEqual(FF.stage(legacy, T1), FF.STAGE.CALLED_OUT);
   assert.strictEqual(FF.agreedAt(legacy), T0, 'its age runs from when it was made');
   assert.strictEqual(legacy.courtBookingMade, undefined, 'reading it writes nothing into it');
   FF.setCourtBooking(legacy, { ...ADMIN, booked: false });
@@ -193,7 +195,7 @@ test('D3 holds for Called Out and Upcoming alike: a match is a candidate, never 
     assert.strictEqual(FF.reconcile(r, { isAdmin: false, resultId: res.id }).reason, 'not-admin');
     assert.deepStrictEqual(FF.reconcile(r, { isAdmin: true, resultId: res.id, by: 'Shaun', at: T1 }), { ok: true });
     assert.deepStrictEqual([r.status, r.playedMatchId, r.id], ['played', res.id, 'fxE']);
-    assert.strictEqual(FF.stage(r), FF.STAGE.PLAYED);
+    assert.strictEqual(FF.stage(r, T1), FF.STAGE.PLAYED);
   }
 });
 
@@ -540,7 +542,7 @@ test('DQ6: a player in the game can record the court as booked -- attributed to 
   const res = FF.setCourtBooking(r, { ...PLAYER, booked: true });
   assert.deepStrictEqual(res, { ok: true, changed: true });
   assert.strictEqual(r.courtBookingMade, true);
-  assert.strictEqual(FF.stage(r), FF.STAGE.UPCOMING);
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.UPCOMING);
   assert.deepStrictEqual(r.history.at(-1), { at: T1, by: 'Osh', action: 'court-booked', byPlayer: true });
   // Their name as the game stores it, whatever case they typed.
   const r2 = agreedFour();
@@ -553,7 +555,7 @@ test('DQ6: only an admin takes a player\'s booking back', () => {
   FF.setCourtBooking(r, { ...PLAYER, booked: true });
   assert.strictEqual(FF.setCourtBooking(r, { isAdmin: false, by: 'Erf', at: T1, booked: false }).reason, 'not-admin');
   assert.deepStrictEqual(FF.setCourtBooking(r, { ...ADMIN, booked: false }), { ok: true, changed: true });
-  assert.strictEqual(FF.stage(r), FF.STAGE.CALLED_OUT);
+  assert.strictEqual(FF.stage(r, T1), FF.STAGE.CALLED_OUT);
   assert.strictEqual(r.history.at(-1).by, 'Shaun');
 });
 
