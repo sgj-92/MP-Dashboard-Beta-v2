@@ -167,8 +167,7 @@ maybe('a prediction becomes an Upcoming game without naming anyone twice', async
   try {
     const r = await app.run(async () => {
       isUnlocked = true; currentUserName = 'Board';
-      document.querySelector('#tabrow .tab-btn[data-tab="manage"]').click();
-      adminOpenSections.predict = true; renderManage();
+      openPredictMatchup();
       const names = PLAYERS.slice(0, 4).map(p => p.name);
       const set = (id, v) => {
         const el = document.getElementById(id);
@@ -203,7 +202,7 @@ maybe('a prediction becomes an Upcoming game without naming anyone twice', async
     assert.match(r.confirmation, /Added to Called Out/, 'no court booking was ticked, so it is Called Out');
     assert.strictEqual(r.req.courtBookingMade, false);
     // The agreed presentation, not the technical one it replaced.
-    assert.match(r.card, /Expected to win about \d+% of the games/);
+    assert.match(r.card, /Expected games won/i);
     assert.ok(!/expected score|blend|reliability/i.test(r.card),
       `the card has reverted to technical wording: ${r.card}`);
     assert.deepStrictEqual(app.pageErrors, []);

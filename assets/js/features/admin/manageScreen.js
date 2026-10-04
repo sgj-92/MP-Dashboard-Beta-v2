@@ -68,19 +68,6 @@ function renderManage(){
   }
   let html = '';
 
-  html += adminSection('predict', 'Predict a matchup',
-    `<div class="section-sub">Pick up to two names per side and see what the current ratings expect — no game needs to exist yet. Leave a second name blank for singles.</div>`
-    + `<div class="fg-controls">
-    <div class="fg-row"><label class="fg-label">Team A</label>
-      <input id="predA1" list="playerNamesList" class="fg-select" placeholder="Player name" style="margin-bottom:6px;" value="${predDraftName('teamA',0)}" />
-      <input id="predA2" list="playerNamesList" class="fg-select" placeholder="Partner (optional)" value="${predDraftName('teamA',1)}" />
-    </div>
-    <div class="fg-row"><label class="fg-label">Team B</label>
-      <input id="predB1" list="playerNamesList" class="fg-select" placeholder="Player name" style="margin-bottom:6px;" value="${predDraftName('teamB',0)}" />
-      <input id="predB2" list="playerNamesList" class="fg-select" placeholder="Partner (optional)" value="${predDraftName('teamB',1)}" />
-    </div>
-    <div id="predResult"></div>
-  </div>`);
 
   html += adminSection('players', 'Player tags',
     `<div class="section-sub">Each player's status in the group. <b>Active</b>: playing now. <b>Temporarily inactive</b>: still a member, not playing at the moment — left out of game suggestions and the current rankings. <b>Archived</b>: no longer plays with the group — hidden from every live list and selector, with all their history kept. Any status can be changed back. You can also add someone who hasn't played yet.</div>`
@@ -118,6 +105,10 @@ function renderManage(){
   html += adminSection('potm', 'Player of the Month', adminOpenSections.potm ? buildPotmSectionHtml() : '');
   html += adminSection('boardpack', 'Monthly Board Pack', adminOpenSections.boardpack ? buildBoardPackSectionHtml() : '');
   html += adminSection('historical', 'Historical club adjustment', buildHistoricalAdjustmentHtml());
+  // Off the main More list (Shaun, 4 Oct), kept here for Admin.
+  html += adminSection('northsouth', 'North vs South',
+    `<div class="section-sub">The North vs South exhibition. It is no longer on the More menu; open it from here.</div>`
+    + `<div class="fg-row"><button class="preset-btn" id="openNorthSouthBtn" style="width:100%;">Open North vs South</button></div>`);
   html += adminSection('diagnostics', 'Beta diagnostics', buildDiagnosticsSectionHtml());
 
   html += adminSection('lock', 'Admin lock',
@@ -178,39 +169,14 @@ function renderManage(){
 
   const today = new Date().toISOString().slice(0,10);
 
-  function renderPrediction(){
-    const resultBox = document.getElementById('predResult');
-    if(!resultBox) return;
-    const val = (id) => (document.getElementById(id) || {}).value || '';
-    const teamA = [val('predA1').trim(), val('predA2').trim()].filter(Boolean);
-    const teamB = [val('predB1').trim(), val('predB2').trim()].filter(Boolean);
-
-    if(!teamA.length || !teamB.length){ resultBox.innerHTML = ''; predictionDraft = null; return; }
-
-    const pred = predictMatchup(teamA, teamB);
-    if(!pred.ok){
-      predictionDraft = null;
-      resultBox.innerHTML = `<div class="section-sub" style="color:var(--red);">${escapeHtml(pred.reason)}</div>`;
-      return;
-    }
-    // Kept so "Add to Upcoming" carries these four players straight through
-    // rather than asking the admin to name them a second time.
-    predictionDraft = pred;
-    resultBox.innerHTML = matchPredictionHtml(pred) + buildPredictionToUpcomingHtml(pred);
-    wirePredictionToUpcoming(resultBox);
-  }
   // Every wiring below has to tolerate its section being collapsed: the
   // markup for a closed accordion is not in the DOM at all. Before the
   // accordion every one of these elements always existed, so none of them
   // checked.
   const on = (id, fn) => { const el = document.getElementById(id); if(el) fn(el); };
 
-  ['predA1','predA2','predB1','predB2'].forEach(id=>{
-    on(id, (el)=> el.addEventListener('input', renderPrediction));
-  });
-  // The panel may have just been rebuilt around an existing draft -- after
-  // adding the matchup to Upcoming, for instance. Draw what it already holds.
-  if(predictionDraft) renderPrediction();
+  // Predict a Matchup has its own sheet, from the top of More (predictScreen.js).
+  on('openNorthSouthBtn', (btn)=>{ btn.onclick = ()=> openNorthSouth(); });
 
   on('npAdd', (btn)=>{ btn.onclick = async ()=>{
     const name = document.getElementById('npName').value.trim();

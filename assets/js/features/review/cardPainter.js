@@ -11,6 +11,7 @@
 //   sheet(...)  1080 wide, as tall as the module: a Board Pack table, list,
 //               the Kings tiles or a note, from its blocks.
 //   matchResult(...)  1080 x 1350, one played match's Result Card.
+//   matchup(...)  1080 x 1350, a predicted matchup (Predict a Matchup).
 //   nominees(...)  1080 wide, Player of the Month's nominees for the group.
 //
 // Knows nothing about the app. Loads before app.js; declarations only.
@@ -537,6 +538,69 @@
     return cv;
   }
 
+  // ---- A predicted matchup, 1080 x 1350 ----------------------------------
+  // card = MatchupCard.build(...): the two teams, the call, the expected games
+  // of a typical match. Teams lead; the call sits in its own panel; the
+  // expected games are the one big number.
+  function matchup(card, o = {}) {
+    const H = SLIDE_H, M = 80, cx = W / 2, room = W - 2 * M;
+    const cv = canvas(W, H);
+    const ctx = cv.getContext('2d');
+    background(ctx, W, H);
+    brand(ctx, o.brand, '', M, 72, 64, W - M);
+    font(ctx, 32, { weight: 700, spacing: 0.22 });
+    textAt(ctx, 'PREDICTED MATCHUP', cx, 236, { color: C.gold, align: 'center', baseline: 'middle' });
+
+    // The teams: one size for both, as large as the longer allows.
+    let size = 92;
+    const widest = () => Math.max(peopleWidth(ctx, card.teamA, size, true, 400), peopleWidth(ctx, card.teamB, size, true, 400));
+    while (size > 52 && widest() > room) size -= 4;
+    const tone = (side) => (card.call.favoured === side ? C.bright : C.text);
+    people(ctx, card.teamA, cx, 336, size, { serif: true, color: tone('A') });
+    font(ctx, 34, { weight: 700, spacing: 0.3 });
+    textAt(ctx, 'VS', cx, 428, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+    people(ctx, card.teamB, cx, 520, size, { serif: true, color: tone('B') });
+
+    // The call.
+    const py = 600, ph = 184;
+    ctx.fillStyle = 'rgba(212,175,55,0.07)';
+    roundRect(ctx, M, py, room, ph, 36); ctx.fill();
+    ctx.strokeStyle = C.border; ctx.lineWidth = 2; ctx.stroke();
+    if (card.call.names) {
+      font(ctx, 30, { weight: 700, spacing: 0.18 });
+      textAt(ctx, card.call.kicker.toUpperCase(), cx, py + 56, { color: C.gold, align: 'center', baseline: 'middle' });
+      font(ctx, 66, { serif: true });
+      textAt(ctx, fit(ctx, card.call.names, room - 80), cx, py + 126, { color: C.bright, align: 'center', baseline: 'middle' });
+    } else {
+      font(ctx, 72, { serif: true });
+      textAt(ctx, card.call.kicker, cx, py + ph / 2, { color: C.bright, align: 'center', baseline: 'middle' });
+    }
+
+    // Expected games won, big.
+    if (card.games) {
+      let y = py + ph + 72;
+      font(ctx, 30, { weight: 700, spacing: 0.16 });
+      textAt(ctx, 'EXPECTED GAMES WON', cx, y, { color: C.dim, align: 'center', baseline: 'middle' });
+      y += 112;
+      const colW = room / 2 - 40;
+      [[card.games.a, card.teamA, cx - colW / 2 - 40, 'A'], [card.games.b, card.teamB, cx + colW / 2 + 40, 'B']].forEach(([n, team, x, side]) => {
+        font(ctx, 132, { weight: 700 });
+        textAt(ctx, String(n), x, y, { color: tone(side), align: 'center', baseline: 'middle' });
+        font(ctx, 30);
+        textAt(ctx, fit(ctx, team.map((p) => p.name).join(' & '), colW), x, y + 92, { color: C.soft, align: 'center', baseline: 'middle' });
+      });
+      font(ctx, 96, { weight: 700 });
+      textAt(ctx, '–', cx, y - 4, { color: C.dim, align: 'center', baseline: 'middle' });
+      font(ctx, 30);
+      textAt(ctx, card.gamesNote || '', cx, y + 152, { color: C.dim, align: 'center', baseline: 'middle' });
+    }
+
+    hline(ctx, M, W - M, H - 150, C.rule);
+    font(ctx, 28, { spacing: 0.04 });
+    textAt(ctx, card.foot || '', cx, H - 96, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+    return cv;
+  }
+
   // ---- Player of the Month nominees, 1080 wide ---------------------------
   // view = { month: 'September 2026', title, sub, cards: [{ name, tier,
   //   reasons: [{ title, line }], support }] }. At least the deck's 4:5; taller
@@ -660,5 +724,5 @@
     }
   }
 
-  return { W, SLIDE_H, loadImage, slide, sheet, matchResult, nominees, toBlob, toFile, toPdf, share, save };
+  return { W, SLIDE_H, loadImage, slide, sheet, matchResult, matchup, nominees, toBlob, toFile, toPdf, share, save };
 });

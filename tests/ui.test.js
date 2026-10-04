@@ -3900,12 +3900,11 @@ test('the League view shows one explanation, not two', { skip }, async () => {
 // Copy and hierarchy only. The prediction itself still comes from
 // RatingEngine.expectedScore and nothing here changes it.
 
+// Opened the way an admin opens it: the top of More (Shaun, 4 Oct).
 const openPredict = (app) => app.run(() => {
   isUnlocked = true; currentUserName = 'Board'; adminRole = 'owner';
-  const b = document.querySelector('#tabrow .tab-btn[data-tab="manage"]');
-  if (b) b.click();
-  adminOpenSections = { predict: true };
-  renderManage();
+  openMoreSheet();
+  document.querySelector('#shellMoreSheet .shell-more-item[data-special="predict"]').click();
 });
 
 const predictWith = (app, names) => app.run((n) => {
@@ -3962,6 +3961,8 @@ test('the prediction names a winner, in games not chances', { skip }, async () =
       document.getElementById('predA1').dispatchEvent(new Event('input'));
       const box = document.getElementById('predResult');
       const ratingOf = (n) => Math.round(PLAYERS.find((p) => p.name === n).rating);
+      const games = [...box.querySelectorAll('.mu-games-num')].map((e) => Number(e.textContent));
+      const typical = typicalMatchGames();
       // The card averages the real ratings and rounds once at the end;
       // averaging rounded ratings gives a different answer by a point.
       const raw = (n) => PLAYERS.find((p) => p.name === n).rating;
@@ -3972,25 +3973,30 @@ test('the prediction names a winner, in games not chances', { skip }, async () =
         text: box.innerText.replace(/\s+/g, ' ').trim(),
         strong, weak, gap: Math.round(gap),
         ratings: [...strong, ...weak].map(ratingOf),
+        games, typical, share: predictionDraft.shareA,
       };
     });
 
     // 1. the predicted winner, by name
-    assert.match(r.text, new RegExp(`${r.strong[0]} & ${r.strong[1]} should win`),
+    assert.match(r.text, new RegExp(`PROJECTED FAVOURITES ${r.strong[0]} & ${r.strong[1]}`, 'i'),
       `must name the winning team: ${r.text}`);
     // 2. expected share of games, both sides
     const shares = [...r.text.matchAll(/(\d+)%/g)].map((m) => Number(m[1]));
     assert.strictEqual(shares.length, 2, `two percentages, got ${JSON.stringify(shares)}`);
     assert.strictEqual(shares[0] + shares[1], 100, 'the two sides account for all the games');
     assert.ok(shares[0] > 50, 'the favoured side is expected to take more of them');
-    assert.match(r.text, /Expected to win about \d+% of the games, against \d+%/);
+    assert.match(r.text, /\d+% – \d+% of the games/);
+    // …and as expected games won in a typical match, adding up to the match.
+    assert.strictEqual(r.games[0], Math.round(r.share / 100 * r.typical * 10) / 10);
+    assert.strictEqual(Math.round((r.games[0] + r.games[1]) * 10) / 10, r.typical);
+    assert.match(r.text, new RegExp(`In a typical ${r.typical}-game match`));
     // 3. teams and their ratings
     r.ratings.forEach((v) => assert.ok(r.text.includes(String(v)), `rating ${v} must be shown`));
     // 4. the rating-point advantage
-    assert.match(r.text, new RegExp(`Favoured by ${r.gap} rating point`),
+    assert.match(r.text, new RegExp(`favoured by ${r.gap} rating point`, 'i'),
       `must show the rating edge of ${r.gap}: ${r.text}`);
     // …and the footer, small and factual.
-    assert.match(r.text, /Based on current Power Ratings · Prediction only · Nothing is recorded\./);
+    assert.match(r.text, /Based on current Power Ratings · a prediction, not a result/);
 
     // What must NOT be there: engine terminology, and any claim of a chance.
     assert.doesNotMatch(r.text, /Expected performance score/i);
@@ -4029,8 +4035,8 @@ test('a near-even matchup is not sold as a confident call', { skip }, async () =
       return { gap: best.g, text: document.getElementById('predResult').innerText.replace(/\s+/g, ' ').trim() };
     });
     assert.ok(r.gap < 15, `the fixture should offer a close pairing, got ${r.gap}`);
-    assert.doesNotMatch(r.text, /should win/, 'a two-point gap is not a prediction of a win');
-    assert.match(r.text, /shade it|Too close to call/, `expected a hedged verdict: ${r.text}`);
+    assert.doesNotMatch(r.text, /Projected favourites/i, 'a two-point gap is not a prediction of a win');
+    assert.match(r.text, /Slight edge|Too close to call/i, `expected a hedged verdict: ${r.text}`);
     assert.match(r.text, /Based on current Power Ratings/);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }

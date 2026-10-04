@@ -96,7 +96,7 @@ function matchPredictionHtml(pred, opts){
 }
 
 // Turning a prediction into an agreed game. Admin-only by construction: this
-// markup only ever appears inside the Admin screen's Predict a matchup panel.
+// markup only ever appears inside Predict a Matchup (predictScreen.js), Admin only.
 function buildPredictionToUpcomingHtml(pred){
   const names = pred.teamA.concat(pred.teamB);
   // Shown once, by whichever render follows the write, and then gone.
@@ -115,7 +115,7 @@ function buildPredictionToUpcomingHtml(pred){
 
 let predictionUpcomingMessage = '';
 
-function wirePredictionToUpcoming(box){
+function wirePredictionToUpcoming(box, after){
   const btn = box.querySelector('#predUpAdd');
   if(!btn) return;
   btn.onclick = async ()=>{
@@ -153,5 +153,7 @@ function wirePredictionToUpcoming(box){
     // against a rating that has since moved.
     predictionUpcomingMessage = `Added to ${booked ? 'Upcoming' : 'Called Out'}: ${pred.teamA.join(' & ')} v ${pred.teamB.join(' & ')}.`;
     dataChanged();
+    // The Predict a Matchup sheet is not a tab, so it redraws itself.
+    if(after) after();
   };
 }

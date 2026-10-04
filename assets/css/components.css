@@ -560,3 +560,46 @@
 .potm-share-row{ margin: 4px 0 12px; }
 .potm-share-row .preset-btn{ width: 100%; }
 .potm-share-msg{ margin-top: 6px; color: var(--gold-soft); }
+
+/* ===================== MATCHUP CARD (Predict a Matchup) =====================
+   The predicted matchup as a card that is already share-ready: teams, the
+   call, expected games won. Mirrors CardPainter.matchup. */
+.mu-panel{ max-height: 92vh; overflow-y: auto; }
+.mu-form .fg-row{ margin-bottom: 8px; }
+.mu-card{
+  font-family: var(--font-interface); text-align: center;
+  background: linear-gradient(180deg, #1b1712, #100e0b); border: 1px solid var(--gold-hairline);
+  border-radius: var(--radius-lg); padding: 18px 16px 14px; margin: 12px 0 10px;
+}
+.mu-eyebrow{ font-size: 10.5px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+.mu-team{ margin-top: 12px; display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
+.mu-player{ display: inline-flex; align-items: baseline; gap: 5px; }
+.mu-name{ font-family: Georgia, 'Iowan Old Style', serif; font-size: 25px; color: var(--text); }
+.mu-team.is-favoured .mu-name{ color: var(--gold-bright); }
+.mu-tier{ font-size: 10px; font-weight: 700; color: var(--gold-soft); border: 1px solid var(--gold-hairline); border-radius: 6px; padding: 0 5px; align-self: center; }
+.mu-rating{ font-size: 11px; color: var(--text-dim); }
+.mu-amp{ font-size: 14px; color: var(--text-dim); }
+.mu-vs{ margin-top: 8px; font-size: 11px; font-weight: 700; letter-spacing: .3em; color: var(--gold-soft); }
+.mu-call{
+  margin: 14px 0 4px; padding: 10px 12px; border-radius: var(--radius-md);
+  background: var(--gold-wash); border: 1px solid var(--gold-hairline);
+}
+.mu-call-kicker{ font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.mu-card[data-call="level"] .mu-call-kicker{ font-family: Georgia, 'Iowan Old Style', serif; font-size: 22px; letter-spacing: 0; text-transform: none; color: var(--gold-bright); font-weight: 400; }
+.mu-call-names{ font-family: Georgia, 'Iowan Old Style', serif; font-size: 22px; color: var(--gold-bright); margin-top: 2px; }
+.mu-games{ margin-top: 14px; }
+.mu-games-label{ font-size: 10.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text-dim); }
+.mu-games-row{ display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 6px; margin-top: 4px; }
+.mu-games-num{ font-size: 40px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.mu-games-dash{ font-size: 30px; color: var(--text-dim); line-height: 1.4; }
+.mu-games-who{ font-size: 11.5px; color: var(--text-dim); overflow-wrap: anywhere; }
+.mu-games-note{ margin-top: 6px; font-size: 11px; color: var(--text-dim); }
+.mu-detail{ margin-top: 10px; font-size: 11.5px; color: var(--text-dim); }
+.mu-foot{ margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--surface-border-soft); font-size: 10.5px; color: var(--gold-soft); }
+.mu-actions{ display: flex; gap: 8px; }
+.mu-action{
+  flex: 1; border-radius: 12px; border: 1px solid var(--gold-hairline); background: transparent;
+  color: var(--text); font-family: var(--font-interface); font-size: 13.5px; font-weight: 600; padding: 11px 12px; cursor: pointer;
+}
+.mu-action-primary{ background: var(--gold); border-color: var(--gold); color: #17130c; }
+.mu-message{ margin: 6px 0 10px; min-height: 0; font-size: 11.5px; color: var(--gold-soft); text-align: center; }

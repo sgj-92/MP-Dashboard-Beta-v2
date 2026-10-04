@@ -37,12 +37,16 @@ Object.keys(SECTION_SUBNAV).forEach(sec=>{
 
 // More is now genuinely secondary only -- everything with a real home above
 // (Games, Upcoming, Requests, Compare/H2H, Win/Loss) has been moved out.
+// Order (Shaun, 4 Oct): Predict a Matchup first -- Admin only, hidden from
+// everyone else -- then Doughnuts, the guides, Insights, Data & Rankings; My
+// Player and Admin / Manage follow. North vs South is no longer on the list:
+// it lives in Admin / Manage.
 const MORE_ITEMS = [
+  { special: 'predict', label: 'Predict a Matchup', adminOnly: true },
+  { special: 'doughnuts', label: 'Doughnuts' },
   { special: 'ratingguide', label: 'Power Rating Guide' },
-  { special: 'northsouth', label: 'North vs South' },
   { tab: 'callouts', label: 'Insights / Call-Outs' },
   { special: 'about', label: 'About Power Rankings' },
-  { special: 'doughnuts', label: 'Doughnuts' },
   { special: 'datarange', label: 'Data & Rankings' },
 ];
 const MORE_ADMIN_ITEM = { tab: 'manage', label: 'Admin / Manage' };
@@ -180,6 +184,10 @@ function openMoreSheet(){
     const tab = btn.dataset.tab;
     if(tab && tab !== 'manage') btn.style.display = canSeeTab(tab) ? '' : 'none';
   });
+  // Admin-only items exist for an admin and for nobody else.
+  document.querySelectorAll('#shellMoreSheet .shell-more-item[data-admin-only]').forEach(btn=>{
+    btn.style.display = canSeePredictions() ? '' : 'none';
+  });
   document.getElementById('shellMoreSheet').classList.add('show');
 }
 function closeMoreSheet(){
@@ -267,7 +275,7 @@ function buildShellDom(){
   sheet.id = 'shellMoreSheet';
   sheet.innerHTML = `<div class="shell-more-panel">
     <h3>More</h3>
-    ${MORE_ITEMS.map(it => `<button class="shell-more-item" data-tab="${it.tab||''}" data-special="${it.special||''}">${it.label}<span class="chev">›</span></button>`).join('')}
+    ${MORE_ITEMS.map(it => `<button class="shell-more-item${it.adminOnly ? ' admin-only-item' : ''}" data-tab="${it.tab||''}" data-special="${it.special||''}"${it.adminOnly ? ' data-admin-only style="display:none;"' : ''}>${it.label}<span class="chev">›</span></button>`).join('')}
     <button class="shell-more-item admin-item" data-tab="${MORE_ADMIN_ITEM.tab}">${MORE_ADMIN_ITEM.label}<span class="chev">›</span></button>
   </div>`;
   document.body.appendChild(sheet);
@@ -279,9 +287,9 @@ function buildShellDom(){
         openPowerRatingGuide();
         return;
       }
-      if(btn.dataset.special === 'northsouth'){
+      if(btn.dataset.special === 'predict'){
         closeMoreSheet();
-        openNorthSouth();
+        openPredictMatchup();   // refuses anyone who is not an admin
         return;
       }
       if(btn.dataset.special === 'about'){
