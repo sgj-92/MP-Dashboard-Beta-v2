@@ -14,45 +14,46 @@
    now live data, not a banner: greeting, the month's position, and one line of
    standing. Two gradients keep the left legible and blend the photo into the
    page; no frame, it is part of the page. It is sized by its content -- no
-   reserved height -- so Needs you and Next game start inside the first screen. */
+   reserved height -- but given room: the month's story is the opening of the
+   app, so it breathes, and the standing beneath it stays one quiet line. */
 .home-hero{
   position: relative; margin: 0 calc(-1 * var(--space-4)); box-sizing: border-box;
-  padding: var(--space-4) var(--space-4) var(--space-3);
+  padding: var(--space-5) var(--space-4) 20px;
   background:
     linear-gradient(90deg, rgba(10,10,9,0.92) 0%, rgba(10,10,9,0.72) 46%, rgba(10,10,9,0.18) 78%, rgba(10,10,9,0.05) 100%),
     linear-gradient(180deg, rgba(10,10,9,0) 0%, rgba(10,10,9,0.2) 55%, var(--surface-0) 100%),
     url("../../home/home-hero-padel.png") right 40% / cover no-repeat,
     var(--surface-0);
 }
-.home-hello{ display: flex; flex-direction: column; gap: 2px; }
-.home-hello-date{ font-size: 12px; color: var(--text-dim); }
+.home-hello{ display: flex; flex-direction: column; gap: 4px; }
+.home-hello-date{ font-size: 12.5px; color: var(--text-dim); }
 .home-hello-greeting{ font-family: var(--font-display); font-size: 22px; line-height: 1.15; color: var(--text); }
 .home-greeting-name{ color: var(--accent-bright); }
 
 /* This month: the story of the hero, and a door into Rankings › This Month. */
 .home-month{
   position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-  width: 100%; min-height: var(--touch-min); margin-top: var(--space-3); padding: var(--space-2) 28px var(--space-2) 0;
+  width: 100%; min-height: var(--touch-min); margin-top: 20px; padding: var(--space-2) 28px var(--space-1) 0;
   background: none; border: 0; border-radius: var(--radius-sm); color: var(--text); text-align: left;
   font-family: var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .home-month-static{ cursor: default; }
-.home-month-label{ font-size: 12px; color: var(--accent); }
-.home-month-headline{ font-family: var(--font-display); font-size: 40px; line-height: 1.02; color: var(--text); }
+.home-month-label{ font-size: 12.5px; color: var(--accent); margin-bottom: 4px; }
+.home-month-headline{ font-family: var(--font-display); font-size: 44px; line-height: 1; color: var(--text); }
 .home-month-empty .home-month-headline{ font-size: 30px; }
-.home-month-line{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 13.5px; color: var(--text-soft); }
+.home-month-line{ margin-top: 6px; font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 14px; color: var(--text-soft); }
 .home-month-chev{
   position: absolute; right: 6px; top: 50%; width: 9px; height: 9px; margin-top: -5px;
   border-right: 1.5px solid var(--accent); border-top: 1.5px solid var(--accent); transform: rotate(45deg);
 }
 .home-month:active .home-month-headline{ opacity: .75; }
-.home-hero .mm-note{ margin: 2px 0 0; }
+.home-hero .mm-note{ margin: 4px 0 0; font-size: 12px; }
 .home-choose{ margin-top: var(--space-3); }
 
 /* Standing: Power Rating, Tier Rank and form -- one quiet line (DQ31). */
 .home-standing{
   display: flex; flex-direction: column; gap: 4px; width: 100%; min-height: var(--touch-min);
-  margin-top: var(--space-3); padding: var(--space-2) 0 0;
+  margin-top: 18px; padding: var(--space-3) 0 0;
   background: none; border: 0; border-top: 1px solid var(--surface-border); color: var(--text-soft);
   font-family: var(--font-ui); font-size: 13px; text-align: left; cursor: pointer;
 }
@@ -70,22 +71,47 @@
 
 /* ---- Sections -------------------------------------------------------------- */
 .home-section{ margin-top: var(--space-5); }
+/* Below the hero the first section starts closer: one column only (on a
+   monitor the two columns must start level). */
+@media (max-width: 1199px){ .home-block-hero + .home-section{ margin-top: var(--space-3); } }
 .home-section > .mp-section-head{ margin-top: 0; min-height: var(--touch-min); margin-bottom: var(--space-1); }
 .home-head-link{
   margin-left: auto; min-height: var(--touch-min); padding: 0 0 0 var(--space-3);
   background: none; border: 0; color: var(--accent); font-family: var(--font-ui); font-size: 13px; font-weight: 500; cursor: pointer;
 }
 
-/* Play's own rows, on a quiet surface. Needs you is the one lit panel. */
-.home-section .play-list,
+/* Needs you: a disclosure. The whole heading row is the control; the count is
+   the signal; the chevron sits at the far end. Open, it is a short list of
+   two-line summaries, each a door into the game -- no buttons, no boxes. */
+.home-needs-head{ margin: 0; padding-right: 6px; }
+button.home-needs-head::after{ margin-left: auto; }
+.home-needs-head .mp-count-badge{ margin-left: var(--space-1); }
+.home-needs-head:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+.home-needs-list, .home-panel{
+  background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-md); overflow: hidden;
+}
+.home-needs-list{ margin-top: var(--space-1); border-color: var(--accent-hairline); }
+.home-needs-list .mp-list-row{ border-bottom: 0; }
+.home-game-row{
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-3);
+  width: 100%; min-height: 56px; padding: 10px var(--space-4);
+  background: none; border: 0; border-bottom: 1px solid var(--surface-border-soft);
+  color: var(--text); text-align: left; font-family: var(--font-ui); cursor: pointer;
+}
+.home-game-row.has-date{ grid-template-columns: auto minmax(0, 1fr) auto; }
+.home-game-row:last-child{ border-bottom: 0; }
+.home-game-row:active{ background: var(--surface-2); }
+.home-game-row:focus-visible{ outline: 2px solid var(--accent); outline-offset: -2px; }
+.home-game-row-main{ display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.home-game-row-teams{ font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-game-row-meta{ font-size: 12.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-booked{ color: var(--state-booked); }
+
+/* Quiet list rows (Nothing booked yet, waiting on others, the review). */
 .home-section .shell-list{
   background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-md); overflow: hidden;
 }
-.home-block-needs .play-list{ border-color: var(--accent-hairline); }
-.home-section .play-list + .shell-list{ margin-top: var(--space-2); }
-.home-section .play-row:last-child{ border-bottom: 0; }
-.home-section .mp-game-row{ padding-left: var(--space-4); padding-right: var(--space-4); }
-.home-section .play-row-actions{ padding-left: calc(var(--space-4) + 52px + var(--space-3)); padding-right: var(--space-4); }
+.home-panel + .shell-list{ margin-top: var(--space-2); }
 
 /* ---- Last time out: the result is the centre -------------------------------- */
 .home-lastresult{

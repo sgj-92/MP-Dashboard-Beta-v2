@@ -990,7 +990,11 @@ function homeMonth(){
   if(!homeMonthDefault) homeMonthDefault = meaningfulMonthNow();
   return homeMonthDefault.month === 'all' ? homeMonthDefault.current : homeMonthDefault.month;
 }
-function arriveAtHome(){ homeMonthDefault = null; }
+function arriveAtHome(){
+  homeMonthDefault = null;
+  // Needs you starts shut on every arrival: its count is the signal (Phase 3a).
+  if(typeof homeNeedsOpen !== 'undefined') homeNeedsOpen = false;
+}
 
 // The understated line that says why a screen opened on last month: "October
 // is taking shape · 3 of 5 games". Only while the screen is showing its

@@ -7,7 +7,8 @@
 //                   over the club photograph; tap opens Rankings › This Month
 //                   on Home's month. Power Rating, Tier Rank and form are one
 //                   demoted line beneath it.
-//   Needs you       only when something is waiting on the viewer
+//   Needs you       only when something is waiting on the viewer: a count
+//                   that opens to two-line summaries, each opening the game
 //   Next game       the next booked game (Upcoming only)
 //   Last time out   the viewer's latest rated match
 //   Around the club a light rail of Club Pulse cards, and the month's review
@@ -123,18 +124,71 @@ function homeHeroHtml(viewer, snap, month){
 }
 
 // ---- Needs you / Next game ---------------------------------------------------
+//
+// Progressive disclosure (Shaun, 3 Oct): Home says THAT something needs the
+// viewer, and lets them look; the game sheet is where they act. So Needs you
+// is a disclosure -- its count is the signal, shut by default each time Home
+// is arrived at -- and each item is a two-line summary that opens the game,
+// with no answer buttons here.
 
-// Only what is waiting on the viewer, in Play's own rows (the answer buttons
-// act for the viewer, exactly as in My Games). Absent when nothing is.
-const HOME_NEEDS_SHOWN = 2;
+let homeNeedsOpen = false;      // reset on arrival at Home (arriveAtHome)
+const HOME_NEEDS_SHOWN = 3;
+
+// "Wed 7 Oct", from the fixture's own calendar date; "Date TBC" without one.
+function homeGameDateText(req){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(req.preferredDate || ''));
+  if(!m) return 'Date TBC';
+  const dt = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  if(dt.getUTCMonth() !== +m[2] - 1) return 'Date TBC';
+  return `${MP_DOW[dt.getUTCDay()]} ${+m[3]} ${MP_MON[+m[2] - 1]}`;
+}
+
+// One line of context: when, who asked and how long ago, how many are in --
+// or, for an agreed game that needs attention, what it is waiting on.
+function homeNeedMetaText(x, viewerName){
+  const req = x.req;
+  const bits = [homeGameDateText(req)];
+  if(req.preferredTime) bits.push(req.preferredTime);
+  if(req.status === FixtureFlow.STATUS.PENDING){
+    const by = req.requestedBy && viewerName && req.requestedBy.toLowerCase() === viewerName.toLowerCase() ? 'you' : req.requestedBy;
+    if(by) bits.push(`asked by ${by}`);
+    if(req.requestedAt) bits.push(fmtRelative(req.requestedAt));
+    bits.push(`${FixtureFlow.confirmedCount(req)}/${req.players.length} in`);
+  } else if(x.why === 'attention'){
+    const why = fixtureAttentionText(req);
+    if(why) bits.push(why);
+  } else {
+    bits.push('your answer needed');
+  }
+  return bits.filter(Boolean).join(' · ');
+}
+
+function homeGameRowHtml(req, teams, meta, dateBlock){
+  return `<button type="button" class="home-game-row${dateBlock ? ' has-date' : ''}" data-fixture-id="${escapeHtml(req.id)}">
+    ${dateBlock || ''}
+    <span class="home-game-row-main">
+      <span class="home-game-row-teams">${escapeHtml(teams)}</span>
+      <span class="home-game-row-meta">${meta}</span>
+    </span>
+    <span class="mp-list-row-chevron" aria-hidden="true"></span>
+  </button>`;
+}
+
 function homeNeedsYouHtml(g, viewer, now){
   if(!g || !g.needsYou.length) return '';
+  const n = g.needsYou.length;
   const shown = g.needsYou.slice(0, HOME_NEEDS_SHOWN);
-  const more = g.needsYou.length - shown.length;
+  const more = n - shown.length;
+  const list = homeNeedsOpen ? `<div class="home-needs-list" id="homeNeedsList">
+      ${shown.map(x => homeGameRowHtml(x.req, playTeamsText(x.req, viewer.name), escapeHtml(homeNeedMetaText(x, viewer.name)))).join('')}
+      ${more > 0 ? mpListRowHtml({ label: `${more} more in My Games`, data: { home: 'mygames' } }) : ''}
+    </div>` : '';
   return `<section class="home-section home-block home-block-needs" id="homeNeedsYou">
-    ${mpSectionHeadHtml({ title: 'Needs you', count: g.needsYou.length, countLabel: 'waiting on you' })}
-    <div class="play-list">${shown.map(x => playGameRowHtml(x.req, { viewer: viewer.name, now, respond: x.why === 'answer' })).join('')}</div>
-    ${more > 0 ? `<div class="shell-list">${mpListRowHtml({ label: `${more} more in My Games`, data: { home: 'mygames' } })}</div>` : ''}
+    <button type="button" class="mp-section-head home-needs-head" id="homeNeedsToggle" aria-expanded="${homeNeedsOpen}" aria-controls="homeNeedsList"
+      aria-label="Needs you: ${n} ${n === 1 ? 'game is' : 'games are'} waiting on you. ${homeNeedsOpen ? 'Hide' : 'Show'}">
+      <span class="mp-section-head-title">Needs you</span>${mpCountBadgeHtml(n, 'waiting on you')}
+    </button>
+    ${list}
   </section>`;
 }
 
@@ -149,7 +203,8 @@ function homeWhenText(isoDate, now){
   return d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : d > 1 ? `In ${d} days` : '';
 }
 
-// The next booked game (Upcoming only). With none, one quiet line -- and, if
+// The next booked game (Upcoming only): its date as a block when it has one,
+// "Date TBC" in words when it does not. With none, one quiet line -- and, if
 // they have games agreed without a court, it says so.
 function homeNextGameHtml(g, viewer, now){
   if(!g || !g.canAgreed) return '';
@@ -161,9 +216,17 @@ function homeNextGameHtml(g, viewer, now){
     rows.push(mpListRowHtml({ label: 'Nothing booked yet', meta: agreed ? `${agreed} agreed, no court` : 'My Games', data: { home: 'mygames' } }));
   }
   if(waiting) rows.push(mpListRowHtml({ label: `${waiting} of your ${waiting === 1 ? 'requests is' : 'requests are'} waiting on others`, data: { home: 'mygames' } }));
+  let nextRow = '';
+  if(next){
+    const block = next.preferredDate ? mpDateBlockHtml(next.preferredDate) : '';
+    const meta = [block ? '' : 'Date TBC', next.preferredTime, next.location].filter(Boolean).map(escapeHtml).join(' · ');
+    // A date block already says Booked; without one, the words say it.
+    const booked = block ? '' : `<span class="home-booked">Court booked</span>`;
+    nextRow = `<div class="home-panel">${homeGameRowHtml(next, playTeamsText(next, viewer.name), [meta, booked].filter(Boolean).join(' · '), block)}</div>`;
+  }
   return `<section class="home-section home-block home-block-next" id="homeNextGame">
     ${mpSectionHeadHtml({ title: 'Next game', meta: next ? homeWhenText(next.preferredDate, now) : '' })}
-    ${next ? `<div class="play-list">${playGameRowHtml(next, { viewer: viewer.name, now })}</div>` : ''}
+    ${nextRow}
     ${rows.length ? `<div class="shell-list">${rows.join('')}</div>` : ''}
   </section>`;
 }
@@ -323,9 +386,19 @@ function wireHomeDashboard(dash, viewer){
   dash.querySelectorAll('[data-home="mygames"]').forEach(el=>{
     el.onclick = ()=> goToSection('play');
   });
-  // Needs you and Next game are Play's own rows: they open the game sheet, and
-  // the answer buttons act through the same fixture controls as My Games.
-  if(viewer) wirePlayList(dash);
+  // Needs you opens and shuts from its whole heading row.
+  // A keyboard user keeps their place on the redrawn heading; a tap does not
+  // leave a focus ring behind.
+  on('homeNeedsToggle', (e)=>{
+    homeNeedsOpen = !homeNeedsOpen; renderHomeDashboard();
+    const t = document.getElementById('homeNeedsToggle');
+    if(t && e && e.detail === 0) t.focus();
+  });
+  // A summary opens the game itself; the answer is given there, through the
+  // same sheet and fixture controls as My Games.
+  dash.querySelectorAll('.home-game-row').forEach(el=>{
+    el.onclick = ()=> openGameSheet(el.dataset.fixtureId);
+  });
 }
 
 // The hero's month, in Rankings › This Month (DQ31): the League, on Home's

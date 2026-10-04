@@ -34,8 +34,8 @@ function seedFixtures(viewer, opts) {
   const mine = req('hl_mine', [viewer, 'Tom', 'Osh', 'PDM'], viewer, -0.5);
   gameRequestsState = [ask, booked, noCourt, mine];
   if (opts && opts.manyAsks) {
-    // Two more requests waiting on the viewer: Home shows two and points on.
-    ['hl_ask2', 'hl_ask3'].forEach((id, i) => gameRequestsState.push(req(id, ['Kaz', 'Len', viewer, 'Jords'], 'Kaz', -0.2 - i * 0.1)));
+    // Three more requests waiting on the viewer: Home lists three and points on.
+    ['hl_ask2', 'hl_ask3', 'hl_ask4'].forEach((id, i) => gameRequestsState.push(req(id, ['Kaz', 'Len', viewer, 'Jords'], 'Kaz', -0.2 - i * 0.1)));
   }
 }
 
@@ -167,7 +167,7 @@ maybe('no viewer: the club\'s month and "Who are you?", and nothing personal', a
   } finally { await app.close(); }
 });
 
-maybe('Needs you appears only when something waits on the viewer, from My Games\' own list', async () => {
+maybe('Needs you appears only when something waits on the viewer: a count, shut on arrival, from My Games\' own list', async () => {
   const app = await open();
   try {
     const r = await app.run(() => {
@@ -178,42 +178,68 @@ maybe('Needs you appears only when something waits on the viewer, from My Games\
       seedFixtures('Eli');
       renderHomeDashboard();
       const withIt = homeState();
-      const needs = [...document.querySelectorAll('#homeNeedsYou .play-row')].map((e) => e.dataset.fixtureId);
+      const head = document.getElementById('homeNeedsToggle');
+      const shut = { expanded: head.getAttribute('aria-expanded'), rows: document.querySelectorAll('#homeNeedsYou .home-game-row').length, list: !!document.getElementById('homeNeedsList') };
+      const badge = (head.querySelector('.mp-count-badge') || {}).textContent;
+      head.click();
+      const open = { expanded: document.getElementById('homeNeedsToggle').getAttribute('aria-expanded'),
+        ids: [...document.querySelectorAll('#homeNeedsYou .home-game-row')].map((e) => e.dataset.fixtureId),
+        meta: [...document.querySelectorAll('#homeNeedsYou .home-game-row-meta')].map((e) => e.textContent),
+        heights: [...document.querySelectorAll('#homeNeedsYou .home-game-row')].map((e) => Math.round(e.getBoundingClientRect().height)) };
       const vm = myGamesVisible('Eli', new Date().toISOString()).needsYou.map((x) => x.req.id);
-      const badge = (document.querySelector('#homeNeedsYou .mp-count-badge') || {}).textContent;
+      // Leaving Home and coming back shuts it again.
+      goToSection('rankings'); goToSection('home');
+      const again = document.getElementById('homeNeedsToggle').getAttribute('aria-expanded');
+      // No answer buttons and no date boxes on Home: the summary opens the game.
+      const home = document.getElementById('homeDashboard');
+      const plain = { respond: home.querySelectorAll('.fx-respond').length, boxes: home.querySelectorAll('.mp-date-block-proposed').length };
+      document.getElementById('homeNeedsToggle').click();
+      document.querySelector('#homeNeedsYou .home-game-row').click();
+      const sheet = document.getElementById('gameSheet');
+      const inSheet = { open: sheet.classList.contains('show'), respond: !!sheet.querySelector('.fx-respond[data-response="in"]') };
       const playCount = playActionCount('Eli');
-      // Answer it from Home, through the same control as My Games.
-      document.querySelector('#homeNeedsYou .fx-respond[data-response="in"]').click();
-      return { without, withIt, needs, vm, badge, playCount };
+      // The answer is given in the game sheet, through the same controls as My Games.
+      sheet.querySelector('.fx-respond[data-response="in"]').click();
+      return { without, withIt, shut, badge, open, vm, again, plain, inSheet, playCount };
     });
     assert.ok(!r.without.order.includes('home-block-needs'), 'nothing waiting: no block at all');
     assert.doesNotMatch(r.without.text, /Needs you/i, 'and no empty-state card in its place');
     assert.ok(r.withIt.order.includes('home-block-needs'));
-    assert.deepStrictEqual(r.needs, r.vm.slice(0, 2), 'the same items, in My Games\' order');
+    assert.deepStrictEqual(r.shut, { expanded: 'false', rows: 0, list: false }, 'shut by default: the count is the signal');
     assert.strictEqual(r.badge, String(r.vm.length), 'the count is the Play badge\'s count');
     assert.strictEqual(r.playCount, r.vm.length);
+    assert.strictEqual(r.open.expanded, 'true');
+    assert.deepStrictEqual(r.open.ids, r.vm.slice(0, 3), 'the same items, in My Games\' order');
+    assert.match(r.open.meta[0], /^Fri 25 Sep · 19:30 · asked by Rishi · \d+h ago · 1\/4 in$/, `a one-line summary: ${r.open.meta[0]}`);
+    assert.ok(r.open.heights.every((h) => h >= 44 && h <= 72), `compact rows: ${r.open.heights}`);
+    assert.strictEqual(r.again, 'false', 'shut again on the next arrival');
+    assert.deepStrictEqual(r.plain, { respond: 0, boxes: 0 });
+    assert.deepStrictEqual(r.inSheet, { open: true, respond: true }, 'the row opens the game, where the answer is given');
     // After answering, Home no longer asks.
     await app.page.waitForFunction(() => !document.querySelector('#homeNeedsYou'), null, { timeout: 5000 });
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
 
-maybe('Needs you shows two and points to My Games for the rest', async () => {
+maybe('Needs you: a request with no date says "Date TBC" in words; open, it lists three and points to My Games for the rest', async () => {
   const app = await open();
   try {
     const r = await app.run(() => {
       setCurrentViewer('Eli');
       seedFixtures('Eli', { manyAsks: true });
       goToSection('home');
+      document.getElementById('homeNeedsToggle').click();
       const sec = document.getElementById('homeNeedsYou');
-      const out = { rows: sec.querySelectorAll('.play-row').length, more: (sec.querySelector('[data-home="mygames"]') || {}).textContent || '',
+      const out = { rows: sec.querySelectorAll('.home-game-row').length, more: (sec.querySelector('[data-home="mygames"]') || {}).textContent || '',
+        tbc: [...sec.querySelectorAll('.home-game-row-meta')].map((e) => e.textContent).filter((t) => t.startsWith('Date TBC')).length,
         total: myGamesVisible('Eli', new Date().toISOString()).needsYou.length };
       sec.querySelector('[data-home="mygames"]').click();
       out.landed = activeShellScreen;
       return out;
     });
-    assert.strictEqual(r.total, 3);
-    assert.strictEqual(r.rows, 2, 'Home shows enough to act on, not the whole list');
+    assert.strictEqual(r.total, 4);
+    assert.strictEqual(r.rows, 3);
+    assert.ok(r.tbc >= 1, 'no date: "Date TBC" as text, not a box');
     assert.match(r.more, /1 more in My Games/);
     assert.strictEqual(r.landed, 'mygames');
   } finally { await app.close(); }
@@ -251,20 +277,20 @@ maybe('Next game is the next booked game only, with its own date, time and place
       seedFixtures('Eli');
       goToSection('home');
       const sec = document.getElementById('homeNextGame');
-      const out = { rows: [...sec.querySelectorAll('.play-row')].map((e) => e.dataset.fixtureId), text: sec.innerText.replace(/\s+/g, ' ') };
-      sec.querySelector('.play-open').click();
+      const out = { rows: [...sec.querySelectorAll('.home-game-row')].map((e) => e.dataset.fixtureId), text: sec.innerText.replace(/\s+/g, ' ') };
+      sec.querySelector('.home-game-row').click();
       out.sheet = !!document.querySelector('#gameSheet.show');
       document.getElementById('gameSheet').classList.remove('show');
       // Only the agreed game with no court left: nothing booked.
       gameRequestsState = gameRequestsState.filter((x) => x.id === 'hl_nocourt');
       renderHomeDashboard();
       out.none = document.getElementById('homeNextGame').innerText.replace(/\s+/g, ' ');
-      out.noneRows = document.querySelectorAll('#homeNextGame .play-row').length;
+      out.noneRows = document.querySelectorAll('#homeNextGame .home-game-row').length;
       return out;
     });
     assert.deepStrictEqual(r.rows, ['hl_booked'], 'UPCOMING only: not the request, not the game with no court');
     assert.match(r.text, /You & Denis v Max & Tom/);
-    assert.match(r.text, /20:00/); assert.match(r.text, /Rocket Padel/); assert.match(r.text, /Court booked/);
+    assert.match(r.text, /20:00/); assert.match(r.text, /Rocket Padel/); assert.match(r.text, /Booked/);
     assert.match(r.text, /Tomorrow|In \d+ days|Today/);
     assert.match(r.text, /1 of your requests is waiting on others/);
     assert.strictEqual(r.sheet, true, 'the row opens the game');
@@ -339,6 +365,7 @@ maybe('Home holds at phone widths with long names: no sideways scroll, every con
         setCurrentViewer('Ant Slice');
         seedFixtures('Ant Slice');
         goToSection('home');
+        document.getElementById('homeNeedsToggle').click();
         const small = [...document.querySelectorAll('#homeDashboard button')]
           .filter((b) => b.offsetParent !== null && b.getBoundingClientRect().height < 44)
           .map((b) => `${b.className}:${Math.round(b.getBoundingClientRect().height)}`);
