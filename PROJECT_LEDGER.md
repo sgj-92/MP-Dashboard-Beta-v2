@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`69e6640`** (Player of the Month nominees picture, 4 Oct; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **905 / 905 on `main`** (4 Oct, after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`acba496`** (Predict a Matchup: More + Matchup Card, 4 Oct; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **911 / 911 on `main`** (4 Oct, after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,23 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Predict a Matchup: top of More, a share-ready Matchup Card — DONE (`acba496`), 4 Oct.**
+Shaun's brief: he was screenshotting the tool for the group.
+- **Access:** Predict a Matchup is now the first item in More, for Admins
+  only.
+- **The card:** it opens in its own sheet and answers with a Matchup Card:
+  - the teams, with tier badges;
+  - the call: "Projected favourites: …", "Slight edge: …" or "Too close to
+    call";
+  - **expected games won** in the club's typical match.
+- **Sharing:** **Share matchup** sends the card as a picture; **Copy image**
+  puts it on the clipboard, or copies text where pictures can't be copied.
+- **More menu:** Predict (Admin) · Doughnuts · Power Rating Guide ·
+  Insights / Call-Outs · About · Data & Rankings · My Player · Admin /
+  Manage. North vs South has moved to Admin / Manage.
+- **Unchanged:** the prediction itself. Handoff in Section 6; one item in
+  Section 5.
 
 **Player of the Month: one picture of the nominees for WhatsApp — DONE (`69e6640`), 4 Oct.**
 Shaun asked to share a single picture of all the candidates.
@@ -1742,6 +1759,9 @@ Shaun's decisions, including where an agent recommended otherwise.
 | POTM reasons are about the player, not the dataset | Shaun, 4 Oct (second brief). Each reason is a label plus one sentence with its own figure ("Gained +13.3 Power Rating through play."). No "No qualified player…" or ranking language on a card. A card shows the strongest three reasons in a fixed order (competition results, Overperformer, Biggest Improver, Strongest Results, Upset Specialist, Most Consistent, Most Active). Admin alone sees the rest, by name. Every card's figures row is the same four: matches · wins · win rate · pp vs expectation. |
 | Monthly competition tier winners are POTM nominees, never the award | Shaun, 4 Oct. A winner is the top of a tier in that month's League (points, then goal difference), Merit or Monthly Race (qualified players only), read from the same tables League › By tier shows. Ties on everything but the alphabetical last resort are joint winners. Two wins become "Month Champion", three "Triple Crown". The group still votes. |
 | No "from a 37% chance" clause on Upset Specialist | CCode, 4 Oct. The underdog line uses the engine's expected *score*, not a probability of winning, so "chance" would misstate it (see OPEN 2 Oct on Expected/Actual scales). The reason says "3 wins as the underdog." |
+| Predict a Matchup moves to the top of More, Admin only | Shaun, 4 Oct. It supersedes "keep it in Admin / Manage" (21 Sep). It is hidden from non-Admins in More, and `openPredictMatchup()` refuses them by any route. It is no longer in Admin / Manage. The 21 Sep reasoning stands: players must not be able to shop for predictions. |
+| The Matchup Card's games are the existing share applied to a typical match | CCode, 4 Oct, within Shaun's brief. Expected games won = `MatchPrediction`'s share of games (the engine's expected score, as the card has shown it since 21 Sep) × the club's median games in a decided match, to one decimal, with both sides adding up to the match. No new model, and never a win chance. The call is the prediction's own `confidence`: level "Too close to call", shade "Slight edge", clear "Projected favourites". |
+| North vs South off the More menu | Shaun, 4 Oct. It is now an Admin / Manage section ("Open North vs South"), behind the Admin lock. Nothing was deleted. |
 
 ---
 
@@ -2681,6 +2701,22 @@ with Shaun.**
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 4 Oct — Matchup Card: what "expected games" rests on (nothing blocked)
+
+**For Shaun / CGPT. Live in `acba496`.**
+- **The scale.** The share behind "expected games won" is the engine's
+  expected *score* (OPEN 2 Oct: 0.80 × game share + 0.20 × result). Predict
+  a Matchup has called it "share of the games" since 21 Sep, and the card
+  keeps that reading. A strict expected game share would be a new quantity;
+  it would need a methodology decision first.
+- **The match length.** The typical match is the club's median games in a
+  decided match (25 on the current record). Matches run 12–54 games, so the
+  card says "In a typical 25-game match".
+  - The alternative is a fixed length, such as 18 for two sets. Say if you
+    prefer that.
+- **Upcoming's folded prediction** (on an agreed game) still uses the older
+  card text. It could adopt the Matchup Card; not changed here.
 
 ### OPEN 4 Oct — Player of the Month nominations: three small calls (defaults in place)
 
@@ -3794,6 +3830,49 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 4 Oct 2026 (Predict a Matchup: More + Matchup Card)
+
+**`acba496` on `app-features-fixes` = `main`.**
+- **Prediction (unchanged):** `predictMatchup()` (`features/play/
+  fixturesData.js`) → `MatchPrediction.build` (`matchPrediction.js`) →
+  `RatingEngine.expectedScore`.
+- **Card:** `domain/predictions/matchupCard.js` (pure, `MatchupCard`):
+  - `build(pred, {tierOf, typicalGames})` gives the teams, the call,
+    `share`, `games {a, b, total}`, `gap` and the wording;
+  - `expectedGames` and `summaryText` support it.
+- **Screen:** `features/play/predictScreen.js`.
+  - `openPredictMatchup()` is Admin-gated. It opens `#predictModal` with the
+    same `predA1…predB2` inputs.
+  - `matchupCardHtml` mirrors the picture; on screen it adds each player's
+    rating and the share and rating edge.
+  - Share matchup is `CardPainter.share`, with "Tap to share" and save
+    fallbacks. Copy image uses `navigator.clipboard.write(ClipboardItem)`,
+    with the blob passed as a promise so Safari counts the tap; otherwise
+    it copies the card as text.
+  - Add to Upcoming is kept; `wirePredictionToUpcoming(box, after)` now
+    redraws the sheet.
+  - `typicalMatchGames()` is the median of decided matches.
+- **Picture:** `CardPainter.matchup(card)`, 1080 × 1350.
+- **More / Manage:**
+  - `shell.js`: `MORE_ITEMS` reordered; Predict is `adminOnly` and shown by
+    `canSeePredictions()`; North vs South is removed.
+  - `manageScreen.js`: the Predict section is removed; a North vs South
+    section is added.
+- **Unchanged:** Upcoming's prediction fold (`matchPredictionHtml`).
+- **Tests:**
+  - New: `tests/predictMatchup.test.js` (6). It covers the card data, the
+    thresholds, the More order for Admin and player, refusal when locked,
+    North vs South in Manage behind the lock, the on-screen card and
+    picture, and Share, Copy image and the text fallback. 6 of 6 mutations
+    are caught.
+  - Updated: four `ui.test.js` prediction tests and one `playFlow` test now
+    open the tool from More with the new wording. Their invariants stay:
+    the engine's own share, no "chance", and a hedged call when it is
+    close.
+  - **911 / 911.**
+
+Baton → Shaun / CGPT: try it from More; one note in Section 5.
 
 ### CCode — 4 Oct 2026 (Player of the Month nominees picture)
 
@@ -8515,6 +8594,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `acba496` | Predict a Matchup at the top of More (Admin only) with a share-ready Matchup Card: teams, the call, expected games won in a typical match; Share matchup (picture) and Copy image (or text). More reordered; North vs South moved to Admin / Manage. Prediction unchanged. 911/911. |
 | `69e6640` | Player of the Month nominees picture: one 1080-wide PNG of every nominee (players' version of the cards) shared to WhatsApp from Admin or League › Information. 905/905. |
 | `010b43b` | Fixture court-booking tests pinned to their own date (they read the real clock and failed once the 14-day window passed). |
 | `e5f868a` | Player of the Month nominations. Player-centred reasons (label + one sentence), a four-figure support row, League / Merit / Monthly Race tier winners from the competitions' own tables (Month Champion / Triple Crown when combined), at most three reasons per card, quiet Admin controls, a clean players' shortlist, and a trim note above five. 22 tests, 10 mutations caught; 904/904. |
@@ -8623,6 +8703,13 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 4 Oct (latest): Predict a Matchup is the top of More with a share-ready card (`acba496`, 911 / 911).**
+Baton → Shaun / CGPT.
+- **Try it (unlocked):** More → **Predict a Matchup** → four names →
+  **Share matchup** → WhatsApp, or **Copy image** and paste.
+- **Decide (Section 5):** a typical match from the record (25 games now) or
+  a fixed length; whether Upcoming's prediction should use the same card.
 
 **CCode, 4 Oct (latest): one picture of the Player of the Month nominees (`69e6640`, 905 / 905).**
 Baton → Shaun / CGPT. **Try it:** Admin › Player of the Month › September →
