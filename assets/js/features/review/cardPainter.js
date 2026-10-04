@@ -539,9 +539,9 @@
   }
 
   // ---- A predicted matchup, 1080 x 1350 ----------------------------------
-  // card = MatchupCard.build(...): the two teams, the call, the expected games
-  // of a typical match. Teams lead; the call sits in its own panel; the
-  // expected games are the one big number.
+  // card = MatchupCard.build(...): the two teams, the call, the expected share
+  // of games. Teams lead; the call sits in its own panel; the share of games
+  // is the one big number.
   function matchup(card, o = {}) {
     const H = SLIDE_H, M = 80, cx = W / 2, room = W - 2 * M;
     const cv = canvas(W, H);
@@ -576,14 +576,14 @@
       textAt(ctx, card.call.kicker, cx, py + ph / 2, { color: C.bright, align: 'center', baseline: 'middle' });
     }
 
-    // Expected games won, big.
-    if (card.games) {
-      let y = py + ph + 72;
+    // The expected share of games, big.
+    {
+      let y = py + ph + 92;
       font(ctx, 30, { weight: 700, spacing: 0.16 });
-      textAt(ctx, 'EXPECTED GAMES WON', cx, y, { color: C.dim, align: 'center', baseline: 'middle' });
-      y += 112;
+      textAt(ctx, 'EXPECTED SHARE OF GAMES', cx, y, { color: C.dim, align: 'center', baseline: 'middle' });
+      y += 124;
       const colW = room / 2 - 40;
-      [[card.games.a, card.teamA, cx - colW / 2 - 40, 'A'], [card.games.b, card.teamB, cx + colW / 2 + 40, 'B']].forEach(([n, team, x, side]) => {
+      [[`${card.share.a}%`, card.teamA, cx - colW / 2 - 40, 'A'], [`${card.share.b}%`, card.teamB, cx + colW / 2 + 40, 'B']].forEach(([n, team, x, side]) => {
         font(ctx, 132, { weight: 700 });
         textAt(ctx, String(n), x, y, { color: tone(side), align: 'center', baseline: 'middle' });
         font(ctx, 30);
@@ -591,8 +591,6 @@
       });
       font(ctx, 96, { weight: 700 });
       textAt(ctx, '–', cx, y - 4, { color: C.dim, align: 'center', baseline: 'middle' });
-      font(ctx, 30);
-      textAt(ctx, card.gamesNote || '', cx, y + 152, { color: C.dim, align: 'center', baseline: 'middle' });
     }
 
     hline(ctx, M, W - M, H - 150, C.rule);

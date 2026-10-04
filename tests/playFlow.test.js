@@ -202,7 +202,7 @@ maybe('a prediction becomes an Upcoming game without naming anyone twice', async
     assert.match(r.confirmation, /Added to Called Out/, 'no court booking was ticked, so it is Called Out');
     assert.strictEqual(r.req.courtBookingMade, false);
     // The agreed presentation, not the technical one it replaced.
-    assert.match(r.card, /Expected games won/i);
+    assert.match(r.card, /Expected share of games/i);
     assert.ok(!/expected score|blend|reliability/i.test(r.card),
       `the card has reverted to technical wording: ${r.card}`);
     assert.deepStrictEqual(app.pageErrors, []);

@@ -2,7 +2,7 @@
 // Shaun, 4 Oct: Predict a Matchup is one of his most-used tools and he was
 // screenshotting it for the group. It now sits first in More (Admin only),
 // answers with a share-ready Matchup Card -- the teams, the call, expected
-// games won -- and shares or copies that card as a picture. The prediction is
+// share of games -- and shares or copies that card as a picture. The prediction is
 // still MatchPrediction.build, untouched; North vs South leaves More for
 // Admin / Manage.
 
@@ -19,33 +19,33 @@ const predict = (a, b) => MatchPrediction.build(a, b, (n) => ratings[n]);
 
 // ---------- the card, as data ----------
 
-test('the card presents the prediction as it is: the call, and expected games from its own share', () => {
+test('the card presents the prediction as it is: the call, and the expected share of games', () => {
   const pred = predict(['A1', 'A2'], ['B1', 'B2']);
   const before = JSON.stringify(pred);
-  const card = MatchupCard.build(pred, { tierOf: () => 'B', typicalGames: 25 });
+  const card = MatchupCard.build(pred, { tierOf: () => 'B' });
   assert.strictEqual(JSON.stringify(pred), before, 'the prediction is read, never changed');
   assert.strictEqual(pred.shareA, Math.round(Engine.expectedScore(1490, 1395) * 100), 'and it is still the engine\'s own expectation');
   assert.deepStrictEqual(card.teamA.map((p) => [p.name, p.tier]), [['A1', 'B'], ['A2', 'B']]);
   assert.deepStrictEqual(card.call, { kind: 'clear', kicker: 'Projected favourites', favoured: 'A', names: 'A1 & A2', headline: 'Projected favourites: A1 & A2' });
   assert.deepStrictEqual(card.share, { a: pred.shareA, b: pred.shareB });
-  assert.deepStrictEqual(card.games, { a: Math.round(pred.shareA / 100 * 25 * 10) / 10, b: Math.round((25 - Math.round(pred.shareA / 100 * 25 * 10) / 10) * 10) / 10, total: 25 });
-  assert.strictEqual(Math.round((card.games.a + card.games.b) * 10) / 10, 25, 'the two sides add up to the match');
-  assert.strictEqual(card.gamesNote, 'In a typical 25-game match');
+  assert.strictEqual(card.share.a + card.share.b, 100, 'the two sides account for all the games');
+  assert.ok(!('games' in card), 'a % of games, not a number of games (Shaun, 4 Oct)');
   assert.doesNotMatch(JSON.stringify(card), /chance|probab|odds|likel/i, 'a share of games, never a chance of winning');
 });
 
 test('the call follows the prediction\'s own thresholds; a level matchup names nobody', () => {
-  const nearLevel = MatchupCard.build(predict(['C1', 'C2'], ['D1', 'D2']), { typicalGames: 20 });
-  const level = MatchupCard.build(MatchPrediction.build(['D1'], ['D2'], (n) => ratings[n]), { typicalGames: 20 });
+  const nearLevel = MatchupCard.build(predict(['C1', 'C2'], ['D1', 'D2']));
+  const level = MatchupCard.build(MatchPrediction.build(['D1'], ['D2'], (n) => ratings[n]));
   assert.strictEqual(predict(['C1', 'C2'], ['D1', 'D2']).confidence, 'level', 'a 0.2-point gap is level');
   assert.deepStrictEqual([level.call.kicker, level.call.names, level.call.favoured], ['Too close to call', '', null]);
   assert.strictEqual(nearLevel.call.kicker, 'Too close to call');
-  const edge = MatchupCard.build(MatchPrediction.build(['X'], ['Y'], (n) => ({ X: 1410, Y: 1400 })[n]), { typicalGames: 20 });
+  const edge = MatchupCard.build(MatchPrediction.build(['X'], ['Y'], (n) => ({ X: 1410, Y: 1400 })[n]));
   assert.strictEqual(edge.call.headline, 'Slight edge: X');
-  assert.deepStrictEqual(MatchupCard.expectedGames(50, 25), { a: 12.5, b: 12.5, total: 25 });
-  assert.strictEqual(MatchupCard.build(predict(['A1'], ['B1']), {}).games, null, 'no record of matches, no games line');
-  assert.strictEqual(MatchupCard.summaryText(MatchupCard.build(predict(['A1', 'A2'], ['B1', 'B2']), { typicalGames: 25 })).split('\n')[0],
-    '🎾 Predicted matchup: A1 & A2 vs B1 & B2');
+  assert.deepStrictEqual(level.share, { a: 50, b: 50 });
+  const text = MatchupCard.summaryText(MatchupCard.build(predict(['A1', 'A2'], ['B1', 'B2']))).split('\n');
+  const p = predict(['A1', 'A2'], ['B1', 'B2']);
+  assert.deepStrictEqual(text, ['🎾 Predicted matchup: A1 & A2 vs B1 & B2', 'Projected favourites: A1 & A2',
+    `Expected share of games: ${p.shareA}% – ${p.shareB}%`, 'Based on current Power Ratings']);
 });
 
 // ---------- in the app ----------
@@ -129,18 +129,14 @@ maybe('two teams make a share-ready Matchup Card, on screen and as one picture',
       return {
         teams: [...card.querySelectorAll('.mu-team')].map((t) => [...t.querySelectorAll('.mu-name')].map((e) => e.textContent)),
         call: card.querySelector('.mu-call').innerText.replace(/\s+/g, ' ').trim(),
-        games: [...card.querySelectorAll('.mu-games-num')].map((e) => Number(e.textContent)),
-        note: card.querySelector('.mu-games-note').textContent,
-        share: [pred.shareA, pred.shareB], typical: typicalMatchGames(),
-        medianByHand: (() => { const t = getAllApprovedMatches().filter((m) => !m.isDraw).map((m) => m.sets.reduce((s, x) => s + x[0] + x[1], 0)).sort((a, b) => a - b); return t.length % 2 ? t[(t.length - 1) / 2] : Math.round((t[t.length / 2 - 1] + t[t.length / 2]) / 2); })(),
+        shares: [...card.querySelectorAll('.mu-games-num')].map((e) => e.textContent),
+        label: card.querySelector('.mu-games-label').textContent,
+        detail: card.querySelector('.mu-detail').textContent,
+        share: [pred.shareA, pred.shareB], gap: Math.round(pred.gap),
+        engine: Math.round(RatingEngine.expectedScore(
+          (PLAYERS.find((p) => p.name === 'Rishi').rating + PLAYERS.find((p) => p.name === 'Erf').rating) / 2,
+          (PLAYERS.find((p) => p.name === 'KC').rating + PLAYERS.find((p) => p.name === 'Len').rating) / 2) * 100),
         size: [cv.width, cv.height],
-        // The median of decided matches -- not the mean, and never a draw.
-        skewed: (() => {
-          const real = getAllApprovedMatches;
-          const m = (sets, isDraw) => ({ sets, isDraw: !!isDraw });
-          getAllApprovedMatches = () => [m([[6, 0], [6, 0]]), m([[6, 1], [6, 0]]), m([[7, 6], [6, 7], [10, 8]]), m([[6, 6]], true), m([[6, 6], [6, 6], [6, 6], [6, 6]], true)];
-          try { return typicalMatchGames(); } finally { getAllApprovedMatches = real; }
-        })(),
         actions: [...document.querySelectorAll('.mu-actions button')].map((b) => b.textContent),
         upcoming: !!document.getElementById('predUpAdd'),
         width: document.querySelector('#predictModal .shell-more-panel').scrollWidth <= 390,
@@ -149,10 +145,10 @@ maybe('two teams make a share-ready Matchup Card, on screen and as one picture',
     });
     assert.deepStrictEqual(r.teams, [['Rishi', 'Erf'], ['KC', 'Len']]);
     assert.match(r.call, /^PROJECTED FAVOURITES KC & Len$/i);
-    assert.strictEqual(r.typical, r.medianByHand, 'the club\'s median decided match, in games');
-    assert.deepStrictEqual(r.games, [Math.round(r.share[0] / 100 * r.typical * 10) / 10, Math.round((r.typical - Math.round(r.share[0] / 100 * r.typical * 10) / 10) * 10) / 10]);
-    assert.strictEqual(r.note, `In a typical ${r.typical}-game match`);
-    assert.strictEqual(r.skewed, 13, '12, 13 and 44 games: the typical match is 13, not the mean of 23');
+    assert.strictEqual(r.label, 'Expected share of games');
+    assert.deepStrictEqual(r.shares, [`${r.share[0]}%`, `${r.share[1]}%`]);
+    assert.strictEqual(r.share[0], r.engine, 'the engine\'s own expectation, rounded');
+    assert.strictEqual(r.detail, `Favoured by ${r.gap} rating points`);
     assert.deepStrictEqual(r.size, [1080, 1350]);
     assert.deepStrictEqual(r.actions, ['Share matchup', 'Copy image']);
     assert.strictEqual(r.upcoming, true, 'Add to Upcoming is still there');
@@ -209,7 +205,7 @@ maybe('Share matchup hands one picture to the share sheet; Copy image copies it,
     assert.strictEqual(r.calls[0].files[0].type, 'image/png');
     assert.ok(r.calls[0].files[0].size > 20000, 'a real picture');
     assert.strictEqual(r.calls[0].files[0].name, 'money-padel-matchup-Rishi-Erf-vs-KC-Len.png');
-    assert.match(r.calls[0].meta.text, /^🎾 Predicted matchup: Rishi & Erf vs KC & Len\nProjected favourites: KC & Len\nExpected games: /);
+    assert.match(r.calls[0].meta.text, /^🎾 Predicted matchup: Rishi & Erf vs KC & Len\nProjected favourites: KC & Len\nExpected share of games: \d+% – \d+%\n/);
     assert.strictEqual(r.label, 'Tap to share', 'a share sheet that needs a fresh tap gets one');
     assert.deepStrictEqual(r.calls[1].files, r.calls[0].files, 'the tap shares the picture already made');
     assert.strictEqual(r.shared, 'Shared.');

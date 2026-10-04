@@ -5,8 +5,8 @@
 //
 // Pick the sides and the answer is a Matchup Card that is already share-ready:
 // the two teams, the call ("Projected favourites: …" / "Slight edge: …" /
-// "Too close to call"), and the expected games each side takes in a typical
-// match. Share matchup sends the same card as a picture (CardPainter.matchup)
+// "Too close to call"), and the share of the games each side is expected to
+// take. Share matchup sends the same card as a picture (CardPainter.matchup)
 // to the phone's share sheet; Copy image puts it on the clipboard where the
 // browser allows, and copies the card as text where it does not. The screen
 // adds a little more than the picture: each player's rating and the rating
@@ -20,21 +20,9 @@
 
 let predictShare = { key: null, ready: null, message: '' };
 
-// The club's typical match, in games: the median total of every decided
-// approved match. A draw ended early, so it is no guide to a match's length.
-function typicalMatchGames(){
-  const totals = getAllApprovedMatches().filter(m => !m.isDraw)
-    .map(m => (m.sets || []).reduce((s, x) => s + (Number(x[0]) || 0) + (Number(x[1]) || 0), 0))
-    .filter(t => t > 0).sort((a, b) => a - b);
-  if(!totals.length) return null;
-  const mid = Math.floor(totals.length / 2);
-  return totals.length % 2 ? totals[mid] : Math.round((totals[mid - 1] + totals[mid]) / 2);
-}
-
 function matchupCardFor(pred){
   return MatchupCard.build(pred, {
     tierOf: (n) => { const p = PLAYERS.find(x => x.name.toLowerCase() === String(n).toLowerCase()); return p ? p.tier : null; },
-    typicalGames: typicalMatchGames(),
   });
 }
 
@@ -53,16 +41,15 @@ function matchupCardHtml(card, { detail = false } = {}){
       <div class="mu-call-kicker">${escapeHtml(card.call.kicker)}</div>
       ${card.call.names ? `<div class="mu-call-names">${escapeHtml(card.call.names)}</div>` : ''}
     </div>
-    ${card.games ? `<div class="mu-games">
-      <div class="mu-games-label">Expected games won</div>
+    <div class="mu-games">
+      <div class="mu-games-label">Expected share of games</div>
       <div class="mu-games-row">
-        <div class="mu-games-side"><div class="mu-games-num">${card.games.a}</div><div class="mu-games-who">${label(card.teamA)}</div></div>
+        <div class="mu-games-side"><div class="mu-games-num">${card.share.a}%</div><div class="mu-games-who">${label(card.teamA)}</div></div>
         <div class="mu-games-dash">–</div>
-        <div class="mu-games-side"><div class="mu-games-num">${card.games.b}</div><div class="mu-games-who">${label(card.teamB)}</div></div>
+        <div class="mu-games-side"><div class="mu-games-num">${card.share.b}%</div><div class="mu-games-who">${label(card.teamB)}</div></div>
       </div>
-      <div class="mu-games-note">${escapeHtml(card.gamesNote)}</div>
-    </div>` : ''}
-    ${detail ? `<div class="mu-detail">${card.share.a}% – ${card.share.b}% of the games${card.call.kind === 'level' ? ' · level on current ratings' : ` · favoured by ${card.gap} rating point${card.gap === 1 ? '' : 's'}`}</div>` : ''}
+    </div>
+    ${detail ? `<div class="mu-detail">${card.call.kind === 'level' ? 'Level on current ratings' : `Favoured by ${card.gap} rating point${card.gap === 1 ? '' : 's'}`}</div>` : ''}
     <div class="mu-foot">${escapeHtml(card.foot)}</div>
   </div>`;
 }

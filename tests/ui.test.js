@@ -3961,8 +3961,6 @@ test('the prediction names a winner, in games not chances', { skip }, async () =
       document.getElementById('predA1').dispatchEvent(new Event('input'));
       const box = document.getElementById('predResult');
       const ratingOf = (n) => Math.round(PLAYERS.find((p) => p.name === n).rating);
-      const games = [...box.querySelectorAll('.mu-games-num')].map((e) => Number(e.textContent));
-      const typical = typicalMatchGames();
       // The card averages the real ratings and rounds once at the end;
       // averaging rounded ratings gives a different answer by a point.
       const raw = (n) => PLAYERS.find((p) => p.name === n).rating;
@@ -3973,7 +3971,6 @@ test('the prediction names a winner, in games not chances', { skip }, async () =
         text: box.innerText.replace(/\s+/g, ' ').trim(),
         strong, weak, gap: Math.round(gap),
         ratings: [...strong, ...weak].map(ratingOf),
-        games, typical, share: predictionDraft.shareA,
       };
     });
 
@@ -3985,11 +3982,7 @@ test('the prediction names a winner, in games not chances', { skip }, async () =
     assert.strictEqual(shares.length, 2, `two percentages, got ${JSON.stringify(shares)}`);
     assert.strictEqual(shares[0] + shares[1], 100, 'the two sides account for all the games');
     assert.ok(shares[0] > 50, 'the favoured side is expected to take more of them');
-    assert.match(r.text, /\d+% – \d+% of the games/);
-    // …and as expected games won in a typical match, adding up to the match.
-    assert.strictEqual(r.games[0], Math.round(r.share / 100 * r.typical * 10) / 10);
-    assert.strictEqual(Math.round((r.games[0] + r.games[1]) * 10) / 10, r.typical);
-    assert.match(r.text, new RegExp(`In a typical ${r.typical}-game match`));
+    assert.match(r.text, /Expected share of games \d+% .* – \d+% /i);
     // 3. teams and their ratings
     r.ratings.forEach((v) => assert.ok(r.text.includes(String(v)), `rating ${v} must be shown`));
     // 4. the rating-point advantage
