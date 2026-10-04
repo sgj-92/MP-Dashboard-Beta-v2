@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`4cbfeb7`** (player status model + archived players, 4 Oct; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **882 / 882 on `main`** (4 Oct, after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`7dca948`** (Player of the Month, 4 Oct; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **897 / 897 on `main`** (4 Oct, after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,19 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Player of the Month — DONE (`7dca948`), 4 Oct.** Shaun's brief: Money Padel
+recommends candidates; the group chooses the winner. For each finished month
+the app suggests the strongest *cases* among players with 5+ matches —
+Overperformer, Biggest Improver, Strongest Results, Most Consistent, Upset
+Specialist, Most Active — each a single figure the club already sees, ties kept,
+listed by name (never ranked), with no combined score. Admin removes/adds
+qualified players, finalises the shortlist (everyone sees it in League ›
+Information and votes in WhatsApp), then confirms the winner. Shortlists and
+winners are stored as snapshots in the new `playerOfTheMonth` collection and
+never recalculated. The old automatic "Player of the Month" (the points leader)
+is gone from every surface. Handoff in Section 6; decisions in Section 3; open
+items in Section 5.
 
 **Player status model + archived players — DONE (`4cbfeb7`), 4 Oct.** Shaun's brief:
 a player who has left should disappear from the live app without losing a single
@@ -1692,6 +1705,12 @@ Shaun's decisions, including where an agent recommended otherwise.
 | The legacy Inactive flag reads as Archived | Shaun, 4 Oct: Admin's old Active/Inactive tag meant "has left", so a player with no stored status and that flag reads as **Archived** (today: Del). Setting a status in Admin then stores it on the record and supersedes the flag. |
 | Temporarily inactive = "as today" (option A) | Shaun, 4 Oct: left out of game suggestions, matchmaking and the current ranking pool (shown only with "Include temporarily inactive"), but still in "Who are you?", the directory (tagged), every typed name field and their profile. A game with them is allowed. |
 | Archived is hidden live, kept in history, never deleted | Shaun, 4 Oct: one shared helper (`livePlayers()` / `livePlayerNames()` vs `PLAYERS`) decides; screens do not filter on their own. A new game, request or agreed fixture naming an archived player is refused in words ("X is archived. Restore them in Admin › Player tags…"). Admin never says "Delete"; Restore returns the same record. |
+| Player of the Month: the app recommends, the group chooses | Shaun, 4 Oct. No POTM score or formula: the recommendation names the leader (ties kept) of six evidence-backed stories among qualified players, plus the next-best on each when fewer than three players are named. Match count earns only "Most Active". Candidates are listed by name, not ranked. Admin curates and finalises the shortlist; the group votes (WhatsApp for now); Admin confirms the winner. |
+| Player of the Month eligibility = 5 matches in the month | Shaun, 4 Oct: the same 5 as the Monthly Performance podium and the Monthly Race. Upsets count only in a month at or above expectation overall (CCode, so two lucky evenings in a poor month are not a case). |
+| The points leader is no longer "Player of the Month" | Shaun, 4 Oct: League › Information, the WhatsApp summary, the Board Pack, the Share Deck and Home show the confirmed award ("Not chosen yet" / the shortlist until then). Already-published packs are snapshots and keep what they said. |
+| Archived players are not recommended for Player of the Month | Shaun, 4 Oct: a qualified but archived player is named to Admin ("…played enough to qualify but is archived") and can be restored first. Confirmed awards for since-archived players are untouched. |
+| The finalised shortlist is public | Shaun, 4 Oct: players see the shortlist (each candidate's reasons, in no order) in League › Information while the vote runs. |
+| A confirmed award is a snapshot | Winner, name, tier, story, citation, figures, the shortlist and the rules version are stored as they stood. Ratings, tiers, status changes and new recommendation rules never alter it. Only the owner can withdraw a confirmation, to correct a mistake, and the withdrawal is logged. |
 
 ---
 
@@ -2631,6 +2650,28 @@ with Shaun.**
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 4 Oct — Player of the Month: small follow-ups (nothing blocked)
+
+**For Shaun / CGPT. The feature is live (`7dca948`).**
+1. **Story wording and floors** are CCode's defaults (`domain/awards/
+   playerOfMonth.js`, `STORIES`): e.g. Strongest Results needs a win rate
+   above 50%, Most Consistent beats expectation in more than half its
+   matches. Changing them bumps `RULES_VERSION`; confirmed months are
+   unaffected. Possible extra stories later: biggest rank climb, a
+   promotion month.
+2. **No cap at five.** Ties can make six or more candidates; nothing is cut
+   arbitrarily, and Admin removes. Say if a hard cap is wanted.
+3. **Months before June 2026** have no rated data, so the app cannot suggest
+   candidates for them. Recording historical winners for those months would
+   need a small "record a past winner" path. Not built.
+4. **In-app voting** is not built. The record reserves `votes` and keeps
+   shortlist and winner separate, so "voting opens → one vote per
+   recognised player → winner confirmed" can slot in between them.
+5. **Firestore rules:** the beta is open. If rules are tightened,
+   `playerOfTheMonth` needs read for everyone and write for Admin only.
+6. **"Most Player of the Month awards"** is ready as data
+   (`PlayerOfMonth.awardCounts`), but not shown anywhere yet.
 
 ### OPEN 4 Oct — Player status: four small follow-ups (nothing blocked)
 
@@ -3709,6 +3750,51 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 4 Oct 2026 (Player of the Month)
+
+**`7dca948` on `app-features-fixes` = `main`.**
+- **Rules:** `assets/js/domain/awards/playerOfMonth.js` (pure, UMD
+  `PlayerOfMonth`).
+  - `recommend({month, players})`: eligibility (`MIN_MATCHES` 5), six
+    stories each with a floor (upsets also need the month at or above
+    expectation), leaders with ties kept, next-best fill to three
+    (`SHORTLIST_MIN`), alphabetical cards, an empty-state reason, and
+    archived qualifiers named.
+  - The award record: `finaliseShortlist`, `confirmWinner`, `reopen`.
+  - Queries: `history`, `awardsFor`, `awardCounts`.
+- **Inputs:** `features/awards/potmData.js`. It reads canonical sources only;
+  nothing is recalculated.
+  - The League's month gives games and W-D-L.
+  - The `MonthlyViews` row gives performance, the rating at the month's
+    start and end, play-only change (club decisions taken out), and the tier
+    at the month's close.
+  - `V3_MATCH_FACTS` gives "beat expectation in X of Y", and underdog wins on
+    the Match Result Card's line (`MatchScorecard.STORY`).
+  - Storage is the `playerOfTheMonth` collection, one structured document per
+    month, read at start-up within the same round trip.
+  - Helpers: `potmAwardsFor(name)`, `potmHistory()`, `potmWinnerOf(month)`,
+    `potmHeadline(month)`.
+- **Screens:** `features/awards/potmScreen.js`.
+  - **Admin › Player of the Month** opens on the latest finished month. It
+    shows the cards with their reasons and figures, Remove, "Add a qualified
+    player", and "Finalise shortlist for the vote" (finished months only).
+    Then "Won the vote?", an editable citation, and "Confirm winner" (asks
+    first). The owner can "Correct a mistake…". History is at the foot.
+  - **League › Information** shows the winner and citation, or the shortlist
+    in no order, or "Not chosen yet", plus Past winners.
+  - **Profile:** "👑 Player of the Month ×N · Sep 2026".
+  - The WhatsApp summary, Board Pack, Share Deck and Home read the confirmed
+    award.
+- **Tests:** `tests/playerOfMonth.test.js` (15) covers all eleven brief
+  cases: eligibility at 5, activity, authoritative figures, play-only rating
+  change, month isolation, add/remove, persistence, rule changes, archive,
+  empty months and ties. It also checks that nothing reads as a ranking, the
+  public shortlist, an unfinished month and the old points leader's removal.
+  10 of 10 meaningful mutations are caught. **897 / 897.**
+
+Baton → Shaun / CGPT: try it on a finished month (Admin › Player of the
+Month); Section 5 has six small follow-ups.
 
 ### CCode — 4 Oct 2026 (player status model + archived players)
 
@@ -8316,6 +8402,8 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `7dca948` | Player of the Month. The app recommends the month's strongest cases (six evidence-backed stories among 5+ match players, ties kept, listed by name, no score); Admin curates and finalises the shortlist, which everyone can see; the group votes; Admin confirms. Snapshots in `playerOfTheMonth`; history, profile awards, and the old points-leader label replaced everywhere. 15 tests, 10 mutations caught; 897/897. |
+| `4cbfeb7` | Player status model: Active / Temporarily inactive / Archived on the v3 record; archived hidden from every live list, history untouched; Admin controls. 882/882. |
 | `c6acfd9` | Match Result Card + Match Analysis. The celebratory card opens first: winners as heroes with their tier on the day, a big score, one deterministic story, Expected / Performance / pp, and the winners' gains. The full breakdown is one tap behind it. Share result paints the card as a picture for WhatsApp. One view model, no new data path; 874/874. |
 | `19662b1` | Completed-match scorecard: one card per rated match, opened from Play › Games and from the approval confirmation. It shows players with their tier on the day, score, winner, Expected / Actual / pp per team, and each player's movement. Every figure is read back from the engine's recorded events; there is no new persistence and no recomputation. 9 tests, 10 mutations caught; 870/870. |
 | `269327c` | Desktop-friendly dashboard. Left rail (brand, sections, "Viewing as"), centred capped column, ranges 768 / 1200 / 1600; Home grid, Rankings toolbar + Kings beside podium, Find a Game beside results, Games card grid, Players master-detail, Board Pack and Player Pack editor beside live preview, dialogs and drawers, Escape and focus; `/preview` desktop presets. The phone is unchanged (snapshot at 390/360). All new tests fail on `8854107` but the overflow invariant; 9 mutations caught; 861/861. |
@@ -8419,6 +8507,18 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 4 Oct (latest): Player of the Month is live (`7dca948`, 897 / 897).**
+Baton → Shaun / CGPT.
+- **Try it:** Admin / Manage › Player of the Month › September 2026 →
+  review the cases, remove or add, **Finalise shortlist for the vote**, then
+  **Won the vote?** → **Confirm winner**. Players see the shortlist and then
+  the winner in League › Information; the winner's profile shows the award.
+- **Decide (Section 5, nothing blocked):** story wording/floors, a cap at
+  five, past months before June, in-app voting later.
+
+**CCode, 4 Oct: player statuses and archived players are live (`4cbfeb7`, 882 / 882).**
+Baton → Shaun / CGPT. Four small follow-ups in Section 5.
 
 **CCode, 3 Oct (latest): the Match Result Card is live (`c6acfd9`, 874 / 874).**
 Baton → Shaun / CGPT.
