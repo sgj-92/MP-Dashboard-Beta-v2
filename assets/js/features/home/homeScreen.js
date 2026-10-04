@@ -3,10 +3,11 @@
 // it answers: how am I doing this month? does anything need me? when am I
 // playing next? what happened last time? what's going on around the club?
 //
-//   hero            this month's League position, named by tier and month,
-//                   over the club photograph; tap opens Rankings › This Month
-//                   on Home's month. Power Rating, Tier Rank and form are one
-//                   demoted line beneath it.
+//   hero            the club photograph: greeting, and this month's League
+//                   story -- "Your September / League / 9th in Tier B" -- tap
+//                   opens Rankings › This Month on Home's month
+//   Power           Power Rating, Power position in tier, recent form: one
+//                   quiet section under the hero, opening the profile
 //   Needs you       only when something is waiting on the viewer: a count
 //                   that opens to two-line summaries, each opening the game
 //   Next game       the next booked game (Upcoming only)
@@ -34,11 +35,18 @@ function buildHomeDashboard(){
 const homeOrdinal = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'));
 const homeSigned = (v) => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v);
 
-// ---- Hero: this month -------------------------------------------------------
+// ---- Hero: the League story ---------------------------------------------------
+//
+// The hero is the photograph and one job (Shaun, 4 Oct): welcome the player
+// and tell their monthly League story. It names the system before the
+// position -- "Your September / League / 9th in Tier B" -- so the position is
+// never read against a different ranking. Power is not in the hero: it has
+// its own quiet section beneath (homePowerHtml). The Meaningful Month line,
+// the monthly Power movement and the gap to the next tier stay in Rankings
+// and the profile; Home gives the headline.
 
-// The month's story, as one tappable block. A position only when the viewer
-// has a row in that month's League; otherwise it says, in words, why not --
-// never a dash or a "0th".
+// A position only when the viewer has a row in that month's League;
+// otherwise it says, in words, why not -- never a dash or a "0th".
 function homeMonthBlockHtml(viewer, month, story){
   const mName = month ? MeaningfulMonth.monthLabel(month).split(' ')[0] : 'month';
   const sp = story.spell;
@@ -64,35 +72,12 @@ function homeMonthBlockHtml(viewer, month, story){
       ? `Your first game puts you on the Tier ${escapeHtml(viewer.tier)} table`
       : `Your next game counts towards ${MeaningfulMonth.monthLabel(current).split(' ')[0]}`;
   }
-  const note = meaningfulMonthNoteHtml(homeMonthDefault, month, 'homeMonth', false);
-  return `<button type="button" class="home-month${sp ? '' : ' home-month-empty'}" id="homeMonthBtn" aria-label="${escapeHtml(`${headline.replace(/<[^>]+>/g, '')}, ${line}. Open This Month in Rankings`)}">
-    <span class="home-month-label">Your ${escapeHtml(mName)}</span>
+  return `<div class="home-month-context">Your ${escapeHtml(mName)}</div>
+  <button type="button" class="home-month${sp ? '' : ' home-month-empty'}" id="homeMonthBtn" aria-label="${escapeHtml(`League, ${mName}: ${headline.replace(/<[^>]+>/g, '')}. ${line}. Open This Month in Rankings`)}">
+    <span class="home-month-label">League</span>
     <span class="home-month-headline">${headline}</span>
     <span class="home-month-line">${escapeHtml(line)}</span>
     <span class="home-month-chev" aria-hidden="true"></span>
-  </button>${note}`;
-}
-
-// Power Rating, Tier Rank and form: one demoted line (DQ31), with the gap to
-// the tier above beneath it (DQ1). The Power movement says its period (DQ2).
-function homeStandingHtml(viewer, snap, month, story){
-  const mName = month ? MeaningfulMonth.monthLabel(month).split(' ')[0] : '';
-  const rank = snap.eligible
-    ? `<span class="home-standing-item">#${snap.tierRank || '–'}${snap.tierRankOf ? ` of ${snap.tierRankOf}` : ''} in Tier ${escapeHtml(viewer.tier)}</span>`
-    : `<span class="home-standing-item">Tier ${escapeHtml(viewer.tier)} · <span class="${snap.state && snap.state.participation === 'INACTIVE' ? 'inactive-tag' : 'idle-tag'}">${snap.state ? escapeHtml(snap.state.label) : 'Idle'}</span></span>`;
-  const move = story.power !== null && story.power !== 0
-    ? ` <span class="home-standing-move ${story.power > 0 ? 'is-up' : 'is-down'}">${homeSigned(story.power)} in ${escapeHtml(mName)}</span>` : '';
-  const dots = snap.recentForm
-    ? `<span class="home-form-dots" aria-hidden="true">${computeRecentFormSequence(viewer.name, 10).map(r => `<span class="form-dot ${MatchOutcome.classFor(r)}" title="${r || ''}"></span>`).join('')}</span><span class="home-form-record">${snap.recentForm.wins}W – ${snap.recentForm.losses}L</span>`
-    : `<span class="home-form-record">No recent games</span>`;
-  const gap = computePromotionGap(viewer.name);
-  return `<button type="button" class="home-standing" id="homeViewProfileBtn" aria-label="Your profile">
-    <span class="home-standing-row">
-      <span class="home-standing-item"><span class="home-standing-label">Power</span> <b class="home-standing-num">${Math.round(viewer.rating)}</b>${move}</span>
-      ${rank}
-      <span class="home-standing-item home-standing-form">${dots}</span>
-    </span>
-    ${gap && gap.gap > 0 ? `<span class="home-standing-gap">${gap.gap} pts below the lowest-rated Tier ${escapeHtml(gap.tierAbove)} player</span>` : ''}
   </button>`;
 }
 
@@ -100,26 +85,48 @@ function homeHeroHtml(viewer, snap, month){
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : (hour < 18 ? 'Good afternoon' : 'Good evening');
-  const dateLabel = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  const dateLabel = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   if(!viewer){
     // No viewer: the club's month, and the way to say who you are (DQ5, DQ31).
     const mName = month ? monthLabel(month) : 'This month';
     const games = month ? MeaningfulMonth.countInMonth(getAllApprovedMatches(), month) : 0;
     return `<section class="home-hero home-block home-block-hero">
       <div class="home-hello"><span class="home-hello-date">${escapeHtml(dateLabel)}</span><span class="home-hello-greeting">${greeting}</span></div>
+      <div class="home-month-context">${escapeHtml(mName)} at Money Padel</div>
       <div class="home-month home-month-static">
-        <span class="home-month-label">${escapeHtml(mName)} at Money Padel</span>
         <span class="home-month-headline">${games} ${games === 1 ? 'game' : 'games'} played</span>
         <span class="home-month-line">Select a player to personalise Home.</span>
       </div>
       <button type="button" class="mp-btn-primary mp-btn-touch mp-btn-accent home-choose" id="homeChooseBtn">Who are you?</button>
     </section>`;
   }
-  const story = homeMonthStory(viewer.name, month);
   return `<section class="home-hero home-block home-block-hero">
     <div class="home-hello"><span class="home-hello-date">${escapeHtml(dateLabel)}</span><span class="home-hello-greeting">${greeting}, <span class="home-greeting-name">${escapeHtml(viewer.name)}</span></span></div>
-    ${homeMonthBlockHtml(viewer, month, story)}
-    ${homeStandingHtml(viewer, snap, month, story)}
+    ${homeMonthBlockHtml(viewer, month, homeMonthStory(viewer.name, month))}
+  </section>`;
+}
+
+// ---- Power: the longer view ----------------------------------------------------
+//
+// The first piece of ordinary Home content, under the photograph: Power
+// Rating, the viewer's Power position within their current tier (the one
+// Tier Rank, D5 -- never called "Overall", which it is not), and recent form.
+// Named first, so its position cannot be mistaken for the League's. Quiet and
+// compact; it opens the profile, where the analysis is.
+function homePowerHtml(viewer, snap){
+  const position = snap.eligible
+    ? `#${snap.tierRank || '–'}${snap.tierRankOf ? ` of ${snap.tierRankOf}` : ''} in Tier ${escapeHtml(viewer.tier)}`
+    : `Tier ${escapeHtml(viewer.tier)} · <span class="${snap.state && snap.state.participation === 'INACTIVE' ? 'inactive-tag' : 'idle-tag'}">${snap.state ? escapeHtml(snap.state.label) : 'Idle'}</span>`;
+  const form = snap.recentForm
+    ? `<span class="home-form-dots" aria-hidden="true">${computeRecentFormSequence(viewer.name, 10).map(r => `<span class="form-dot ${MatchOutcome.classFor(r)}" title="${r || ''}"></span>`).join('')}</span><span class="home-form-record">${snap.recentForm.wins}W–${snap.recentForm.losses}L</span>`
+    : `<span class="home-form-record">No recent games</span>`;
+  return `<section class="home-block home-block-power">
+    <button type="button" class="home-power" id="homeViewProfileBtn" aria-label="Power Rating ${Math.round(viewer.rating)}. Open your profile">
+      <span class="home-power-label">Power Rating</span>
+      <span class="home-power-main"><b class="home-power-num">${Math.round(viewer.rating)}</b><span class="home-power-pos">${position}</span></span>
+      <span class="home-power-form"><span class="home-power-sublabel">Recent form</span>${form}</span>
+      <span class="mp-list-row-chevron home-power-chev" aria-hidden="true"></span>
+    </button>
   </section>`;
 }
 
@@ -355,6 +362,7 @@ function renderHomeDashboard(){
 
   dash.innerHTML = `
     ${homeHeroHtml(viewer, snap, month)}
+    ${homePowerHtml(viewer, snap)}
     ${homeNeedsYouHtml(g, viewer, now)}
     ${homeNextGameHtml(g, viewer, now)}
     <section class="home-section home-block home-block-last">

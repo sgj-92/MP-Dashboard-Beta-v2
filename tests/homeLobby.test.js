@@ -47,7 +47,10 @@ function homeState() {
     tops: { hero: top('.home-block-hero'), needs: top('.home-block-needs'), next: top('.home-block-next'), last: top('.home-block-last'), club: top('.home-block-club') },
     headline: (dash.querySelector('.home-month-headline') || {}).textContent || '',
     line: (dash.querySelector('.home-month-line') || {}).textContent || '',
-    label: (dash.querySelector('.home-month-label') || {}).textContent || '',
+    label: (dash.querySelector('.home-month-context') || {}).textContent || '',
+    system: (dash.querySelector('.home-month-label') || {}).textContent || '',
+    hero: (dash.querySelector('.home-hero') || {}).innerText || '',
+    power: (dash.querySelector('.home-power') || {}).innerText || '',
     text: dash.innerText,
     html: dash.innerHTML,
   };
@@ -56,17 +59,19 @@ function homeState() {
 maybe('Home is in the IA\'s order: hero, Needs you, Next game, Last time out, Around the club', async () => {
   const app = await open({ viewport: { width: 390, height: 844 } });
   try {
-    const r = await app.run(() => {
+    const r = await app.run(async () => {
       setCurrentViewer('Eli');
       seedFixtures('Eli');
       goToSection('home');
+      // Measured with the real type, not the fallback serif.
+      await document.fonts.ready;
       return homeState();
     });
-    assert.deepStrictEqual(r.order, ['home-block-hero', 'home-block-needs', 'home-block-next', 'home-block-last', 'home-block-club']);
+    assert.deepStrictEqual(r.order, ['home-block-hero', 'home-block-power', 'home-block-needs', 'home-block-next', 'home-block-last', 'home-block-club']);
     const t = r.tops;
     assert.ok(t.hero < t.needs && t.needs < t.next && t.next < t.last && t.last < t.club, JSON.stringify(t));
-    // First viewport (390 x 844): the month's story, Needs you and Next game
-    // all begin on the first screen.
+    // First viewport (390 x 844): the League story, Power, Needs you and Next
+    // game all begin on the first screen.
     assert.ok(t.next < 844 - 100, `Next game starts on the first screen: ${t.next}`);
     // Match Ideas has left Home (DQ32); the monthly recap block is absorbed.
     assert.doesNotMatch(r.html, /homeIdeas|home-matchup|Match ideas/i);
@@ -93,7 +98,7 @@ maybe('the hero names the viewer\'s League position in their tier, exactly as th
         const spell = spells.slice().sort((a, b) => String(a.lastDate).localeCompare(String(b.lastDate))).pop() || null;
         const split = leagueSplitRows(month).filter((x) => x.games > 0 && spell && x.tier === spell.tier);
         const order = sortLeagueRows(split, 'points', true).map((x) => x.name);
-        out.push({ name, month, headline: s.headline, line: s.line, label: s.label, spell, leaguePos: order.indexOf(name) + 1 });
+        out.push({ name, month, headline: s.headline, line: s.line, label: s.label, system: s.system, spell, leaguePos: order.indexOf(name) + 1 });
       });
       return out;
     });
@@ -102,6 +107,7 @@ maybe('the hero names the viewer\'s League position in their tier, exactly as th
     let ranked = 0;
     r.forEach((p) => {
       assert.strictEqual(p.label, `Your ${monthName(p.month)}`, `${p.name}: the month is named`);
+      assert.strictEqual(p.system, 'League', `${p.name}: the ranking system is named before the position`);
       if (!p.spell) { assert.match(p.headline, /^No games/, `${p.name}: no rank without a game`); return; }
       ranked++;
       assert.strictEqual(p.spell.position, p.leaguePos, `${p.name}: the League's own order`);
@@ -110,6 +116,41 @@ maybe('the hero names the viewer\'s League position in their tier, exactly as th
       assert.ok(p.line.includes(`${p.spell.wins}W`) && p.line.includes(`${p.spell.losses}L`), `${p.name}: the record is the table's`);
     });
     assert.ok(ranked >= 3, 'most of these players have a September row');
+  } finally { await app.close(); }
+});
+
+maybe('the hero is the League story only; Power is its own section, named, with its position in tier -- and Home leaves the analysis to Rankings', async () => {
+  const app = await open();
+  try {
+    const r = await app.run(() => {
+      setCurrentViewer('Max');
+      goToSection('home');
+      const s = homeState();
+      const snap = getViewerSnapshot('Max');
+      const p = PLAYERS.find((x) => x.name === 'Max');
+      const gap = computePromotionGap('Max');
+      document.getElementById('homeViewProfileBtn').click();
+      return { ...s, snap: { rating: Math.round(p.rating), tierRank: snap.tierRank, of: snap.tierRankOf, tier: p.tier, eligible: snap.eligible },
+        gap, profile: document.getElementById('overlay').classList.contains('show'),
+        powerInHero: !!document.querySelector('.home-hero .home-power, .home-hero #homeViewProfileBtn') };
+    });
+    // The hero: greeting, month, the system's name, the position, the record -- nothing else.
+    assert.doesNotMatch(r.hero, /Power|Recent form|#\d+ of/i, 'no Power standing in the hero');
+    assert.strictEqual(r.powerInHero, false);
+    // Power: named first, then the rating and the position within the tier.
+    assert.ok(r.snap.eligible);
+    const lines = r.power.split('\n').map((x) => x.trim()).filter(Boolean);
+    assert.match(lines[0], /^power rating$/i);
+    assert.ok(r.power.includes(String(r.snap.rating)), r.power);
+    assert.ok(r.power.includes(`#${r.snap.tierRank} of ${r.snap.of} in Tier ${r.snap.tier}`), r.power);
+    assert.doesNotMatch(r.text, /Overall/i, 'the tier position is never called Overall');
+    assert.match(r.power, /Recent form/);
+    // The analysis stays in Rankings and the profile.
+    assert.doesNotMatch(r.text, /is taking shape|of 5 games/i, 'no Meaningful Month line on Home');
+    assert.doesNotMatch(r.power + r.hero, /in (January|February|March|April|May|June|July|August|September|October|November|December)\b/, 'no monthly Power movement');
+    assert.doesNotMatch(r.text, /lowest-rated|pts below/i, 'no gap to the next tier');
+    assert.ok(r.gap, 'the gap itself still exists for Rankings and the profile');
+    assert.strictEqual(r.profile, true, 'Power opens the profile');
   } finally { await app.close(); }
 });
 
@@ -311,7 +352,7 @@ maybe('Needs you and Next game follow Requests and Upcoming visibility (D4)', as
       goToSection('home');
       return homeState().order;
     });
-    assert.deepStrictEqual(r, ['home-block-hero', 'home-block-last', 'home-block-club']);
+    assert.deepStrictEqual(r, ['home-block-hero', 'home-block-power', 'home-block-last', 'home-block-club']);
   } finally { await app.close(); }
 });
 

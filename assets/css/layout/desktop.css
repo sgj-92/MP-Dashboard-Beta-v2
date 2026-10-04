@@ -190,15 +190,24 @@
   html[data-section="home"] #homeDashboard{
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* hero, Power, then the two columns: Last time out spans two rows, and
+       any extra height goes to the second (flexible) one, so Needs you never
+       stretches into a gap above Next game. */
+    grid-template-rows: auto auto auto 1fr auto;
     column-gap: 28px; align-items: start; padding: 0 0 var(--space-6);
   }
   .home-block{ min-width: 0; }
-  .home-block-hero, .home-block-club{ grid-column: 1 / -1; }
+  .home-block-hero, .home-block-power, .home-block-club{ grid-column: 1 / -1; }
   .home-block-needs, .home-block-next{ grid-column: 1; }
-  .home-block-last{ grid-column: 2; grid-row: 2 / span 2; }
+  .home-block-last{ grid-column: 2; grid-row: 3 / span 2; }
   .home-hero{ margin: 0; padding: var(--space-5) var(--space-5) var(--space-4); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
-  .home-hero .home-month, .home-hero .home-standing{ max-width: 560px; }
-  .home-month-headline{ font-size: 48px; }
+  .home-hero .home-month{ max-width: 560px; }
+  .home-month-headline{ font-size: 52px; }
+  .home-power{ grid-template-columns: auto auto minmax(0, 1fr) auto; column-gap: 28px; }
+  .home-power-label{ grid-column: 1; grid-row: 1; }
+  .home-power-main{ grid-column: 2; grid-row: 1; }
+  .home-power-form{ grid-column: 3; grid-row: 1; justify-self: end; }
+  .home-power-chev{ grid-column: 4; grid-row: 1; }
   .home-club-rail{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; margin: 0; padding: 0; }
   .home-club-item{ max-width: none; }
   .home-pulse-card:hover, .home-month:hover .home-month-headline, .lr-view:hover, .home-head-link:hover{ color: var(--accent-bright); }

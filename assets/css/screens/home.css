@@ -10,64 +10,78 @@
 #homeDashboard{ padding: 0 var(--space-4) var(--space-6); font-family: var(--font-ui); }
 
 /* ---- Hero ------------------------------------------------------------------
-   The club photograph stays (dark-left, warm-right by design), but the hero is
-   now live data, not a banner: greeting, the month's position, and one line of
-   standing. Two gradients keep the left legible and blend the photo into the
-   page; no frame, it is part of the page. It is sized by its content -- no
-   reserved height -- but given room: the month's story is the opening of the
-   app, so it breathes, and the standing beneath it stays one quiet line. */
+   The photograph and one story (Shaun, 4 Oct): greeting, then the month's
+   League position, named "Your September / League" before the position. Fewer
+   things, more room: the greeting sits at the top of the photograph and the
+   League story settles towards its foot, so the picture shows between them.
+   Two gradients keep the left legible and blend the photo into the page; no
+   frame, it is part of the page. Not the old marketing banner: it is sized to
+   its story, with a floor rather than a reserved slab. */
 .home-hero{
   position: relative; margin: 0 calc(-1 * var(--space-4)); box-sizing: border-box;
-  padding: var(--space-5) var(--space-4) 20px;
+  display: flex; flex-direction: column; min-height: 336px;
+  padding: 28px var(--space-4) var(--space-5);
   background:
-    linear-gradient(90deg, rgba(10,10,9,0.92) 0%, rgba(10,10,9,0.72) 46%, rgba(10,10,9,0.18) 78%, rgba(10,10,9,0.05) 100%),
-    linear-gradient(180deg, rgba(10,10,9,0) 0%, rgba(10,10,9,0.2) 55%, var(--surface-0) 100%),
+    linear-gradient(90deg, rgba(10,10,9,0.9) 0%, rgba(10,10,9,0.66) 44%, rgba(10,10,9,0.12) 76%, rgba(10,10,9,0) 100%),
+    linear-gradient(180deg, rgba(10,10,9,0) 0%, rgba(10,10,9,0.12) 55%, var(--surface-0) 100%),
     url("../../home/home-hero-padel.png") right 40% / cover no-repeat,
     var(--surface-0);
 }
-.home-hello{ display: flex; flex-direction: column; gap: 4px; }
-.home-hello-date{ font-size: 12.5px; color: var(--text-dim); }
-.home-hello-greeting{ font-family: var(--font-display); font-size: 22px; line-height: 1.15; color: var(--text); }
+.home-hello{ display: flex; flex-direction: column; gap: 6px; }
+.home-hello-date{ font-size: 13px; color: var(--text-dim); }
+.home-hello-greeting{ font-family: var(--font-display); font-size: 26px; line-height: 1.1; color: var(--text); }
 .home-greeting-name{ color: var(--accent-bright); }
 
-/* This month: the story of the hero, and a door into Rankings › This Month. */
+/* The month, then the system, then the position, then the evidence. A
+   ranking system is always named the same way on Home -- small capitals, as
+   "League" here and "Power Rating" below -- so two positions never sit side
+   by side unexplained. */
+.home-month-context{
+  margin-top: auto; padding-top: 36px;
+  font-size: 14px; font-weight: 500; color: var(--text-soft);
+}
 .home-month{
-  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-  width: 100%; min-height: var(--touch-min); margin-top: 20px; padding: var(--space-2) 28px var(--space-1) 0;
+  position: relative; display: flex; flex-direction: column; align-items: flex-start;
+  width: 100%; min-height: var(--touch-min); margin-top: var(--space-3); padding: 0 28px 0 0;
   background: none; border: 0; border-radius: var(--radius-sm); color: var(--text); text-align: left;
   font-family: var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .home-month-static{ cursor: default; }
-.home-month-label{ font-size: 12.5px; color: var(--accent); margin-bottom: 4px; }
-.home-month-headline{ font-family: var(--font-display); font-size: 44px; line-height: 1; color: var(--text); }
-.home-month-empty .home-month-headline{ font-size: 30px; }
-.home-month-line{ margin-top: 6px; font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 14px; color: var(--text-soft); }
+.home-month-label{ font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+.home-month-headline{ font-family: var(--font-display); font-size: 46px; line-height: 1.02; color: var(--text); }
+.home-month-empty .home-month-headline{ font-size: 32px; }
+.home-month-line{ margin-top: var(--space-2); font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 14px; color: var(--text-soft); }
 .home-month-chev{
   position: absolute; right: 6px; top: 50%; width: 9px; height: 9px; margin-top: -5px;
   border-right: 1.5px solid var(--accent); border-top: 1.5px solid var(--accent); transform: rotate(45deg);
 }
 .home-month:active .home-month-headline{ opacity: .75; }
-.home-hero .mm-note{ margin: 4px 0 0; font-size: 12px; }
-.home-choose{ margin-top: var(--space-3); }
+.home-choose{ margin-top: var(--space-4); align-self: flex-start; }
 
-/* Standing: Power Rating, Tier Rank and form -- one quiet line (DQ31). */
-.home-standing{
-  display: flex; flex-direction: column; gap: 4px; width: 100%; min-height: var(--touch-min);
-  margin-top: 18px; padding: var(--space-3) 0 0;
-  background: none; border: 0; border-top: 1px solid var(--surface-border); color: var(--text-soft);
-  font-family: var(--font-ui); font-size: 13px; text-align: left; cursor: pointer;
+/* ---- Power: the longer view, under the photograph -----------------------------
+   Named first ("Power Rating"), then the rating and the Power position within
+   the tier, then recent form. One quiet panel, not a dashboard card. */
+.home-block-power{ margin-top: var(--space-3); }
+.home-power{
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-3); row-gap: 6px; align-items: center;
+  width: 100%; min-height: var(--touch-min); padding: 14px var(--space-4);
+  background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-md);
+  color: var(--text); text-align: left; font-family: var(--font-ui); cursor: pointer;
 }
-.home-standing-row{ display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
-.home-standing-item{ display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.home-standing-label{ color: var(--text-dim); }
-.home-standing-num{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text); }
-.home-standing-move{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 12.5px; }
-.is-up{ color: var(--move-up); }
-.is-down{ color: var(--move-down); }
+.home-power:active{ background: var(--surface-2); }
+.home-power-label{ grid-column: 1; font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-dim); }
+.home-power-main{ grid-column: 1; display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; }
+.home-power-num{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 24px; font-weight: 600; line-height: 1.1; color: var(--text); }
+.home-power-pos{ font-size: 14px; color: var(--text-soft); }
+.home-power-form{ grid-column: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.home-power-sublabel{ font-size: 12.5px; color: var(--text-dim); }
+.home-power-chev{ grid-column: 2; grid-row: 1 / span 3; }
 .home-form-dots{ display: inline-flex; gap: 3px; }
 .home-form-dots .form-dot{ width: 7px; height: 7px; }
 .home-form-record{ font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--text-dim); }
-.home-standing-gap{ font-size: 12px; color: var(--text-dim); }
+.home-power:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+.is-up{ color: var(--move-up); }
+.is-down{ color: var(--move-down); }
 
 /* ---- Sections -------------------------------------------------------------- */
 .home-section{ margin-top: var(--space-5); }
@@ -166,5 +180,5 @@ button.home-needs-head::after{ margin-left: auto; }
 .home-club-review{ margin-top: var(--space-2); }
 
 /* Focus is always visible on Home's own controls. */
-.home-month:focus-visible, .home-standing:focus-visible, .home-pulse-card:focus-visible,
+.home-month:focus-visible, .home-pulse-card:focus-visible,
 .lr-view:focus-visible, .home-head-link:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
