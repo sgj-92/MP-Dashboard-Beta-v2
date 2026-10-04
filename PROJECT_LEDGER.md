@@ -152,6 +152,25 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Home redesign review — APPROVED DIRECTION (Shaun / CGPT, 4 Oct). Baton → CCode on `ux/player-reset-v2`.**
+- **Claude Design remains the visual/design-intent source.** The redesign must not become a new independent CGPT reskin. The authority for this work is: current Ledger / reconciled IA → canonical app rules/data → Claude Design visual intent. The current photographic redesign is a working implementation to refine, not discard.
+- **Home is the reference-quality screen** before this visual language is propagated elsewhere. Review its branch/Vercel screenshots first; do not automatically spread revised components to Rankings, Play, Players or Me.
+- **Approved Home hierarchy remains the reconciled 30 Sep IA:** compact live-data hero → conditional **Needs You** → **Next Game** → **Last Time Out** → light **Around the Club**.
+- **Hero:** preserve the strong premium padel photography/dark-champagne identity but reduce its vertical footprint and make it useful. Its primary story is the viewer's **This Month** position, explicitly naming tier and month, with compact canonical record/points/movement where available. Tap opens Rankings → This Month. Race stays out while it is a trial. Meaningful Month / no-games states must be honest rather than inventing a rank.
+- **Power Rating / Tier Rank / form:** remain on Home as compact secondary standing information; the current large `Your Game` treatment is to be substantially simplified/demoted. No new calculation or threshold logic.
+- **Needs You:** restore immediately below the hero and render only when action is genuinely required. It follows the established DQ29 definition (For Me requests + viewer-involved Needs Attention fixtures) and disappears completely at zero.
+- **Next Game:** restore as a first-class Home item using canonical upcoming-fixture data. Do not invent missing time/venue data.
+- **Match Ideas leaves Home.** Preserve the feature/logic for its already-approved destination, Play → Arrange a Game; do not use it as a Home fallback.
+- **Last Time Out:** keep, but make the result/teams/score the visual centre; date/tier are secondary. Preserve canonical result/rating movement. Structure may later accommodate the separate shareable Match Result Card, but this Home task does not reimplement that feature.
+- **Club Pulse becomes lighter Around the Club.** Keep only 2–3 useful derivable insights (e.g. #1 Ranked, In Form, Promotion Watch) and prevent them competing with the player's own state. A mobile horizontal rail is acceptable within the Claude Design language. No invented insight calculations; no emoji as final product iconography.
+- **Large monthly recap is removed/absorbed.** The separate `SEPTEMBER/OCTOBER AT MONEY PADEL` dashboard block should not duplicate the monthly story already led by the hero; useful club facts may live lightly in Around the Club or the deeper monthly destination.
+- **First-viewport test:** at ~390px, expose as much as reasonably possible of monthly story → Needs You → Next Game without shrinking typography/touch targets below the established design-system standard.
+- **Visual standard:** continue champagne `#D5B76E`, Instrument Serif + Inter, dark premium surfaces, restrained borders, clear hierarchy and app-like interaction. Target = **premium sports app**, not a luxury marketing page and not an analytics dashboard.
+- **Functional boundary:** presentation only. Do not change rating/tier, League/Merit/Race, monthly methodology, request/fixture rules, permissions or Firestore schema. Consume canonical view-model/functions; if a fact is missing, report it rather than re-derive it in Home.
+- **Responsive/QA:** preserve the existing mobile/tablet/desktop strategy; mobile is Home's design authority. Verify 375/390, tablet and desktop, long names, Needs You present/absent, next-game present/absent, monthly-data/empty-month states, hero route, and that Match Ideas is absent from Home.
+- **PWA redesign identity (same conversation):** keep branch name `ux/player-reset-v2`; distinguish its installed preview from production using **full name `MP.B — Redesign`**, **short name `MP.B R`**, browser title `MP.B — Redesign`, and a clearly differentiated redesign icon across manifest/Apple touch/favicon surfaces. Production/main identity must not be changed by that branch-specific implementation.
+
+
 **Match Result Card + Match Analysis — DONE (`c6acfd9`), 3 Oct.** Shaun's brief:
 the scorecard read like an analytics panel.
 - **Two layers, one view model.**
