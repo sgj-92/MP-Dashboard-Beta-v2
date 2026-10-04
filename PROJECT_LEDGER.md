@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`e5f868a`** (Player of the Month nominations refined, 4 Oct; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **904 / 904 on `main`** (4 Oct, after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`69e6640`** (Player of the Month nominees picture, 4 Oct; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **905 / 905 on `main`** (4 Oct, after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,19 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Player of the Month: one picture of the nominees for WhatsApp — DONE (`69e6640`), 4 Oct.**
+Shaun asked to share a single picture of all the candidates.
+- **Button:** "📷 Share nominees picture" appears in Admin › Player of the
+  Month, both on the list being drawn up and on the finalised shortlist.
+  It also appears under the players' shortlist in League › Information.
+- **Picture:** `CardPainter.nominees` paints it 1080 px wide, at least 4:5
+  and taller when needed: brand and month, "September nominees", every
+  nominee's card (players' version), and "Money Padel recommends · the
+  group chooses".
+- **Sharing:** it goes to the phone's share sheet like the Match Result Card
+  ("Tap to share" when a fresh tap is needed; saved where sharing isn't
+  available). Handoff in Section 6.
 
 **Player of the Month nominations refined — DONE (`e5f868a`), 4 Oct.** Shaun's
 second brief: the cards read like algorithm output.
@@ -3781,6 +3794,30 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 4 Oct 2026 (Player of the Month nominees picture)
+
+**`69e6640` on `app-features-fixes` = `main`.**
+- **`features/review/cardPainter.js`:** `nominees(view, {brand})`. It
+  measures, then draws, so the canvas is exactly as tall as the
+  nominations; nothing is ever cut.
+- **`features/awards/potmScreen.js`:**
+  - `potmNomineesView(month, cards)` builds the players' cards (no Admin
+    extras).
+  - `potmShareCards(month)` uses the finalised shortlist, else Admin's
+    current list.
+  - `potmShareHtml` / `sharePotmNominees` / `wirePotmShare` reuse
+    `CardPainter.share` and the Match Result Card's "Tap to share" handling.
+  - `leagueScreen.js` wires the button on League › Information.
+- **Tests:** one new test in `tests/playerOfMonth.test.js` (23). It checks:
+  - the view: every nominee in name order, the players' version only, and
+    an Admin-added nominee's figures;
+  - a 1080-wide PNG at least 4:5, with its file name and caption;
+  - "Tap to share" re-sharing the same picture, and players sharing the
+    finalised shortlist;
+  - no button for a month without a list.
+
+  **905 / 905.** Also `010b43b`: four fixture tests read the real clock and turned red on 4 Oct as their September fixtures aged past the 14-day archive window; they now read their stages at the tests' own date (no code change).
 
 ### CCode — 4 Oct 2026 (Player of the Month nominations refined)
 
@@ -8478,6 +8515,8 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `69e6640` | Player of the Month nominees picture: one 1080-wide PNG of every nominee (players' version of the cards) shared to WhatsApp from Admin or League › Information. 905/905. |
+| `010b43b` | Fixture court-booking tests pinned to their own date (they read the real clock and failed once the 14-day window passed). |
 | `e5f868a` | Player of the Month nominations. Player-centred reasons (label + one sentence), a four-figure support row, League / Merit / Monthly Race tier winners from the competitions' own tables (Month Champion / Triple Crown when combined), at most three reasons per card, quiet Admin controls, a clean players' shortlist, and a trim note above five. 22 tests, 10 mutations caught; 904/904. |
 | `7dca948` | Player of the Month. The app recommends the month's strongest cases (six evidence-backed stories among 5+ match players, ties kept, listed by name, no score); Admin curates and finalises the shortlist, which everyone can see; the group votes; Admin confirms. Snapshots in `playerOfTheMonth`; history, profile awards, and the old points-leader label replaced everywhere. 15 tests, 10 mutations caught; 897/897. |
 | `4cbfeb7` | Player status model: Active / Temporarily inactive / Archived on the v3 record; archived hidden from every live list, history untouched; Admin controls. 882/882. |
@@ -8584,6 +8623,10 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 4 Oct (latest): one picture of the Player of the Month nominees (`69e6640`, 905 / 905).**
+Baton → Shaun / CGPT. **Try it:** Admin › Player of the Month › September →
+Finalise → **📷 Share nominees picture** → WhatsApp.
 
 **CCode, 4 Oct (latest): Player of the Month nominations refined (`e5f868a`, 904 / 904).**
 Baton → Shaun / CGPT.
