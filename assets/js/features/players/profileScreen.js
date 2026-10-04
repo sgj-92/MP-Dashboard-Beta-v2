@@ -683,6 +683,7 @@ function renderPremiumProfile(name, matchFilter){
       <div class="pp-hero-rating">${Math.round(p.rating)}</div>
       <div class="pp-hero-rating-label">Power Rating</div>
       <div class="pp-hero-sub">${snap.tierRank ? `#${snap.tierRank} in Tier ${escapeHtml(p.tier)}` : 'Unranked'} · ${snap.overallRank ? `#${snap.overallRank} Overall` : 'Not currently ranked'} · ${p.wins}-${p.losses} · ${p.winpct}% Win Rate</div>
+      ${potmAwardsLineHtml(name)}
       ${buildProfileFactsHtml(p)}
     </div>
   `;

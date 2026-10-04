@@ -118,7 +118,7 @@ function boardPackBlocks(){ return {
       bpSub('Highest win %'), ...bpGroups(d.highestWinPct, g => `${g.value}% wins`),
       bpSub('Most doughnuts received'), ...(d.mostDoughnuts.length ? bpLines([{ rank: 1, name: bpNames(d.mostDoughnuts), value: `x${d.doughnutMax}` }]) : [bpEmpty('Nobody got doughnut’d this month.')]),
       bpSub('Hardest games played (avg opponent strength)'), ...bpGroups(d.hardestGames, g => `${g.value}`),
-      bpSub('Player of the Month'), ...(d.playerOfMonth ? bpLines([{ rank: '👑', name: bpNames(d.playerOfMonth.names), value: '' }]) : [bpEmpty('Not enough data.')]),
+      bpSub('Player of the Month'), ...(d.playerOfMonth.state === 'confirmed' ? bpLines([{ rank: '👑', name: bpNames(d.playerOfMonth.names), value: '' }]) : [bpEmpty(d.playerOfMonth.text + '.')]),
     ];
   },
 

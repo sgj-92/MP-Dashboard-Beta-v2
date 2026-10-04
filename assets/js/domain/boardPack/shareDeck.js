@@ -114,7 +114,9 @@
     information: (d) => {
       const rows = [];
       const s = (g) => d.stats[g.names[0]];
-      if (d.playerOfMonth) rows.push({ label: 'Player of the Month', name: names(d.playerOfMonth.names), value: `${d.playerOfMonth.value} pts`, sub: record(s(d.playerOfMonth)) });
+      // Only once the group has chosen: the award, not the points leader.
+      const potm = d.playerOfMonth && d.playerOfMonth.state === 'confirmed' ? d.playerOfMonth : null;
+      if (potm) rows.push({ label: 'Player of the Month', name: names(potm.names), value: '👑', sub: (potm.winner && potm.winner.title) || '' });
       if (d.mostGames[0]) rows.push({ label: 'Most games', name: names(d.mostGames[0].names), value: String(d.mostGames[0].value) });
       if (d.highestWinPct[0]) rows.push({ label: 'Highest win %', name: names(d.highestWinPct[0].names), value: `${d.highestWinPct[0].value}%` });
       if (d.hardestGames[0]) rows.push({ label: 'Hardest games', name: names(d.hardestGames[0].names), value: String(d.hardestGames[0].value) });
@@ -122,7 +124,7 @@
       if (!rows.length) return null;
       return {
         eyebrow: 'Monthly awards', title: 'The month’s honours', groups: [{ rows }],
-        summary: d.playerOfMonth ? [`Player of the Month: ${names(d.playerOfMonth.names)}`] : [],
+        summary: potm ? [`Player of the Month: ${names(potm.names)}`] : [],
       };
     },
 

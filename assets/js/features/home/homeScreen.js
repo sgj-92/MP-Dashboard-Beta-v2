@@ -133,7 +133,10 @@ function renderHomeDashboard(){
   const mostActive = monthStatsArr.length ? topNTied(monthStatsArr, 'games', 1, true)[0] : null;
   const eligibleMonth = monthStatsArr.filter(s=>s.games>=3);
   const highestWinPct = eligibleMonth.length ? topNTied(eligibleMonth, 'winpct', 1, true)[0] : null;
-  const mostWins = monthStatsArr.filter(s=>s.games>0).length ? topNTied(monthStatsArr.filter(s=>s.games>0), 'points', 1, true)[0] : null;
+  // The award as the group chose it: this month's once confirmed, else the
+  // most recent one, named with its month. Never the points leader.
+  const potm = (currentMonth && potmWinnerOf(currentMonth)) || potmHistory()[0] || null;
+  const potmSub = potm ? (potm.month === currentMonth ? 'Player of the Month' : `Player of the Month · ${potm.label.split(' ')[0]}`) : 'Player of the Month · voted monthly';
 
   const promoGap = computePromotionGap(viewer.name);
   let insight;
@@ -250,7 +253,7 @@ function renderHomeDashboard(){
       <div class="home-monthly-stat"><div class="home-monthly-num">${gamesThisMonth}</div><div class="section-sub">Games played</div></div>
       <div class="home-monthly-stat"><div class="home-monthly-num" style="font-size:16px;">${mostActive ? mostActive.names[0] : '–'}</div><div class="section-sub">Most active${mostActive ? ` · ${mostActive.value} games` : ''}</div></div>
       <div class="home-monthly-stat"><div class="home-monthly-num" style="font-size:16px;">${highestWinPct ? highestWinPct.names[0] : '–'}</div><div class="section-sub">Highest win rate${highestWinPct ? ` · ${highestWinPct.value}%` : ''}</div></div>
-      <div class="home-monthly-stat"><div class="home-monthly-num" style="font-size:16px;">${mostWins ? mostWins.names[0] : '–'}</div><div class="section-sub">Player of the Month</div></div>
+      <div class="home-monthly-stat"><div class="home-monthly-num" style="font-size:16px;">${potm ? escapeHtml(potm.name) : '–'}</div><div class="section-sub">${potmSub}</div></div>
     </div>
     </div>
   `;

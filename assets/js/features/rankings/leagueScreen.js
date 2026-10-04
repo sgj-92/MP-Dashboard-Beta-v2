@@ -736,12 +736,9 @@ function renderSummaryInformation(){
 
   html += renderGroupList('💪 Hardest games played (avg opponent strength)', hardestGames, g=>`${g.value}`);
 
-  html += `<div class="section-heading">👑 Player of the Month</div>`;
-  if(playerOfMonth){
-    html += `<div class="matchup-vs" style="text-align:center; padding:16px; font-size:16px;">${nameLinks(playerOfMonth.names)} 🏆</div>`;
-  } else {
-    html += `<div class="section-sub">Not enough data.</div>`;
-  }
+  // Chosen by the group from Admin's shortlist (features/awards), never
+  // worked out from this review's figures.
+  html += potmPublicHtml(summaryMonth);
 
   html += `<div class="section-sub" style="padding:8px 2px;">Assumptions: points are 3/win, 1/draw. "Hardest games" is avg opponent strength ÷ 300. Win%/loss% include draws in the denominator. Rankings for win%/loss%/hardest require at least ${minGamesForRanked} games played.</div>`;
 
@@ -828,6 +825,6 @@ function buildWhatsAppSummaryText(month, stats, groups){
   groups.hardestGames.forEach(g=> lines.push(`${g.rank}. ${g.names.join(' / ')} ${g.value}`));
   lines.push('');
   lines.push('Player of the month….');
-  lines.push(groups.playerOfMonth ? `${groups.playerOfMonth.names.join(' / ')} 🏆🏆🏆` : 'Not enough data');
+  lines.push(groups.playerOfMonth.state === 'confirmed' ? `${groups.playerOfMonth.text} 🏆🏆🏆` : groups.playerOfMonth.text);
   return lines.join('\n');
 }

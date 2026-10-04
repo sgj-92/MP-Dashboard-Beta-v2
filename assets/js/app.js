@@ -1477,7 +1477,7 @@ document.querySelectorAll('#tabrow .tab-btn').forEach(b=>{
       h2h: 'Opponent record only counts matches where the two were on opposite teams; teammate record only counts matches where they played together.',
       wishlist: 'Anyone can propose a game. Each of the four named players confirms it themselves from their own player profile — once all four are in, it moves to the Upcoming tab automatically.',
       upcoming: 'A game arrives here either by all four players confirming a request, or by an admin agreeing it directly — from Requests, or straight off a prediction. Date, time and venue can stay TBC until they are known. Once it has been played, "Add result" carries the same players into the Games form so nobody types them twice, and submitting the result clears it from here: there is one record of the game, in Games, not two.',
-      summary: 'Points: 3 for a win, 1 for a draw. "Hardest games" is average opponent strength that month, scaled down by 300 for a friendlier number. "Doughnuts" are sets lost 0-6 or similar. Player of the Month is whoever tops the points table.',
+      summary: 'Points: 3 for a win, 1 for a draw. "Hardest games" is average opponent strength that month, scaled down by 300 for a friendlier number. "Doughnuts" are sets lost 0-6 or similar. Player of the Month is chosen by the group from Admin\'s shortlist of the month\'s strongest cases.',
       players: '',
     };
     document.getElementById('explainer').innerHTML = EXPLAINER_BY_TAB[activeTab] || '';
@@ -2187,7 +2187,7 @@ async function init(){
   // the application has no rating without it and will not invent one -- and it
   // is, because nothing below runs until every one of these has landed.
   const [ , stored, myName, ownerHash, boardHash, unlocked,
-          visibility, requests, areas, challenges, northSouth ] =
+          visibility, requests, areas, challenges, northSouth, potmRecords ] =
     await PerfTrace.timeAsync('load the record', Promise.all([
       loadV3State(),
       loadStoredData(),
@@ -2200,6 +2200,7 @@ async function init(){
       loadDevAreas(),
       loadChallenges(),
       loadNorthSouthResults(),
+      loadPotmRecords(),
     ]));
   extraMatchesState = stored.extraMatches;
   tagOverridesState = stored.tagOverrides;
@@ -2214,6 +2215,7 @@ async function init(){
   devAreasState = areas;
   challengesState = challenges;
   northSouthResultsState = northSouth;
+  potmRecordsState = potmRecords;
   PerfTrace.mark('record ready');
   // Power Rankings opens on the most recently completed month rather than
   // All Time. getAvailableMonths() only needs the raw match state loaded
