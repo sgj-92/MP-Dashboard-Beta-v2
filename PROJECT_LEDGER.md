@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`c6acfd9`** (Match Result Card + Match Analysis, 3 Oct; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **874 / 874 on `main`** (3 Oct, after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`4cbfeb7`** (player status model + archived players, 4 Oct; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **882 / 882 on `main`** (4 Oct, after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,19 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Player status model + archived players — DONE (`4cbfeb7`), 4 Oct.** Shaun's brief:
+a player who has left should disappear from the live app without losing a single
+historical fact. Three admin-set statuses on the player's own v3 record —
+**Active**, **Temporarily inactive**, **Archived** — kept separate from every
+monthly or 30-day rule (Idle, League/Merit/Race qualification, Monthly
+Performance), which never change a status. Archived players leave "Who are
+you?", the directory, Compare, Find Game, every name field and the current
+Power Rankings; their matches, scorecards, profiles, past months, Rating
+Journey, packs and replay are untouched. Admin › Player tags groups players by
+status with Mark temporarily inactive / Reactivate / Archive player (confirmed)
+/ Restore player. Handoff in Section 6; decisions in Section 3; four small
+follow-ups in Section 5.
 
 **Home redesign review — APPROVED DIRECTION (Shaun / CGPT, 4 Oct). Baton → CCode on `ux/player-reset-v2`.**
 - **Claude Design remains the visual/design-intent source.** The redesign must not become a new independent CGPT reskin. The authority for this work is: current Ledger / reconciled IA → canonical app rules/data → Claude Design visual intent. The current photographic redesign is a working implementation to refine, not discard.
@@ -1675,6 +1688,10 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Players Directory visual refresh | Shaun, 20 Sep 2026. Bring Directory in line with the newer premium/private-club Money Padel UI. Preserve Directory/Compare, tier/status filters, A–Z/Power Rating sort, player navigation and active/inactive meaning. Reduce the feeling of a large settings/filter form followed by a plain database list. **DONE `43401f8`.** |
 | Tom/Fatch must not reference Jords comparator | Shaun reconfirmed 20 Sep 2026 after seeing stale information. Both historical B anchors are 1400 baseline with 20% reliability. CCode must audit both displayed explanation and stored/replayed state rather than assuming this is cosmetic. **Audited `838ca66`: the record was already correct; the stale source was a document.** |
 | The Ledger is restored in full, not kept compact | Shaun, 20 Sep 2026, after the 3320 → 122 line rewrite. The institutional record — Decisions Log, Handoffs, Open Questions, Recently Completed — is the point of the Ledger and is to be preserved, not summarised away. `LEDGER_ARCHIVE_2026-09-20.md` stays unchanged as the recovery snapshot. |
+| Player status is a fact about the person, not a period | Shaun, 4 Oct: three statuses — `active`, `temporarilyInactive`, `archived` — set only by an admin, stored as `status` on the player's v3 record (id-keyed, so a rename cannot lose it; replay-forward carries it). No monthly minimum, qualification rule or the 30-day Idle rule may change it or hide a player. A missing status means Active; no migration. |
+| The legacy Inactive flag reads as Archived | Shaun, 4 Oct: Admin's old Active/Inactive tag meant "has left", so a player with no stored status and that flag reads as **Archived** (today: Del). Setting a status in Admin then stores it on the record and supersedes the flag. |
+| Temporarily inactive = "as today" (option A) | Shaun, 4 Oct: left out of game suggestions, matchmaking and the current ranking pool (shown only with "Include temporarily inactive"), but still in "Who are you?", the directory (tagged), every typed name field and their profile. A game with them is allowed. |
+| Archived is hidden live, kept in history, never deleted | Shaun, 4 Oct: one shared helper (`livePlayers()` / `livePlayerNames()` vs `PLAYERS`) decides; screens do not filter on their own. A new game, request or agreed fixture naming an archived player is refused in words ("X is archived. Restore them in Admin › Player tags…"). Admin never says "Delete"; Restore returns the same record. |
 
 ---
 
@@ -2614,6 +2631,26 @@ with Shaun.**
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 4 Oct — Player status: four small follow-ups (nothing blocked)
+
+**For Shaun / CGPT. The status model is live (`4cbfeb7`).**
+1. **A newly added player cannot be given a status until their first game.**
+   Admin's "Add a new player" writes a tag, not a v3 record, and the status
+   lives on the record; until then they are Active and Admin says "That
+   player has no record to update." Fine for a new member; say if a
+   pre-game archive is ever needed.
+2. **Past months on Power Rankings filter by today's state.** Choosing a
+   past month hides Idle / temporarily inactive players by their state *now*,
+   while the podium for that month does not. This predates the status work
+   and archived players are deliberately *kept* in past months. Worth one
+   decision when Rankings is redesigned.
+3. **Board Pack "Players active"** counts players who played that month. It
+   is not the status. Suggest renaming to "Players who played" so the two
+   meanings of "active" don't meet; not changed without a call.
+4. **Redesign branch:** Arrange a Game on `ux/player-reset-v2` reads
+   `allPlayerNames()`, which is now live-only on `main`; it follows
+   automatically at the branch's next merge of `main`.
 
 ### OPEN 3 Oct — Match Result Card: three small product calls (defaults in place)
 
@@ -3672,6 +3709,50 @@ ideas only, or any matchup card) before it is scheduled.
 ---
 
 ## 6. HANDOFFS
+
+### CCode — 4 Oct 2026 (player status model + archived players)
+
+**`4cbfeb7` on `app-features-fixes` = `main`.**
+- **Model:** `assets/js/playerStatus.js` (pure, UMD): `STATUS`, `LABEL`,
+  `statusOf({stored, legacyActive})`, `isLive` (not archived), `isPlaying`
+  (active only).
+  - Stored as `status` (+ `statusChangedAt`, `statusChangedBy`) on the v3
+    player document. `replayForward.js` adds these to `PLAYER_LABEL_FIELDS`,
+    so a replay carries them and `verifyNoOp` stays identical.
+  - `app.js` sets `p.status` from the record, falling back to the legacy
+    tag (`false` → archived), and keeps `p.active = isPlaying(status)`, so
+    every existing `p.active` / `INACTIVE_PLAYERS` reader behaves as before
+    for temporarily inactive players.
+  - `PlayerState` gains `status`: temporarily inactive and archived are both
+    participation INACTIVE (never a kind of Idle); labels "Temporarily
+    inactive" and "Archived".
+- **One live rule:** `livePlayers()` / `livePlayerNames()`;
+  `allPlayerNames()` now returns the live list. Applied to "Who are you?",
+  the saved viewer (cleared if archived), directory, Compare, Find Game (its
+  list now rebuilds on every visit), Build a Match, Home's promotion gap,
+  Admin review candidates, Player Packs, and the current Power Rankings.
+  New games, requests and agreed fixtures refuse an archived name in words.
+- **History untouched:** `PLAYERS` still holds everyone, so matches, Games,
+  scorecards, profiles, past months, League/Merit/Race, Rating Journey and
+  tier history read as before. No match data, rating input or methodology
+  changed.
+- **Admin › Player tags:** grouped by status with a pill; per player
+  "Mark temporarily inactive" / "Reactivate" / "Archive player" (confirm
+  with Shaun's wording) / "Restore player" / "Restore as temporarily
+  inactive". The old Active/Inactive toggle is gone. CSV export carries the
+  status. Wording "Inactive" alone is replaced by "Temporarily inactive".
+- **Tests:** `tests/playerStatus.test.js` (8): defaults and legacy fallback;
+  Idle vs temporarily inactive vs archived; status survives replay with
+  identical ratings and journey; source guard on the live lists; in the
+  browser — archive via Admin (confirm copy, no "delete"), gone from seven
+  live surfaces, history identical (rating, match facts, League row,
+  journey, records), old result/scorecard/profile still show him, request
+  refused, restore without a duplicate; saved viewer cleared; temporarily
+  inactive behaviour; monthly non-qualification hides nobody. Four older
+  tests updated (labels, and a temporarily inactive fixture player, since
+  Del now reads as archived). **882 / 882.**
+
+Baton → Shaun / CGPT: Section 5 (four small follow-ups, nothing blocked).
 
 ### CCode — 3 Oct 2026 (Match Result Card + Match Analysis)
 
