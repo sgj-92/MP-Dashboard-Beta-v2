@@ -63,7 +63,7 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`a3e515b`** (Matchup Card shows the % of games, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Last verified implementation commit | **`71dc4f1`** (draws on the Match Result Card, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
 | Tests | **911 / 911 on `main`** (4 Oct, after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
@@ -151,6 +151,17 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Match Result Card: draws no longer look like wins — DONE (`71dc4f1`), 5 Oct.** Shaun
+sent a draw (Eli & Len v Osh & Rishi). One pair was in the winners' large
+gold type and the other was in small type, "with Osh & Rishi".
+- **Both pairs alike:** on a draw both pairs are now in the same type, size
+  and colour (not gold), with "vs" between them. This applies on screen and
+  in the shared picture.
+- **No rating row on a draw.** It showed one side's gains only; everyone's
+  movement stays in the analysis.
+- **Unchanged:** wins. The picture's score now also shrinks to fit the
+  margins.
 
 **Matchup Card shows the % of games — DONE (`a3e515b`), 4 Oct.** Shaun: the share of
 games is fine instead of a number of games.
@@ -8606,6 +8617,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `71dc4f1` | Match Result Card: a draw shows both pairs in the same type, size and colour with "vs" between, on screen and in the picture; no winners' rating row on a draw. 911/911. |
 | `a3e515b` | Matchup Card's big figure is the expected share of games (Shaun: % rather than a number of games); typical-match conversion removed. 911/911. |
 | `acba496` | Predict a Matchup at the top of More (Admin only) with a share-ready Matchup Card: teams, the call, expected games won in a typical match; Share matchup (picture) and Copy image (or text). More reordered; North vs South moved to Admin / Manage. Prediction unchanged. 911/911. |
 | `69e6640` | Player of the Month nominees picture: one 1080-wide PNG of every nominee (players' version of the cards) shared to WhatsApp from Admin or League › Information. 905/905. |
@@ -8716,6 +8728,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 5 Oct (latest): draws on the Match Result Card no longer look like wins (`71dc4f1`, 911 / 911).** Baton → Shaun / CGPT.
 
 **CCode, 4 Oct (latest): the Matchup Card shows the expected % of games (`a3e515b`, 911 / 911).**
 Baton → Shaun / CGPT. One open idea: Upcoming's prediction could use the same card.
