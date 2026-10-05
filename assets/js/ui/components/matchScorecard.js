@@ -54,8 +54,9 @@ const mrcTier = (t) => `<span class="mrc-tier">${t ? escapeHtml(t) : '—'}</spa
 // ---- The Match Result Card -------------------------------------------------
 function matchResultCardHtml(card){
   if(!card) return `<div class="msc-empty">That match is not in the record.</div>`;
-  const heroes = card.heroes.map(p => `<span class="mrc-hero"><span class="mrc-hero-name">${escapeHtml(p.name)}</span>${mrcTier(p.tier)}</span>`)
+  const side = (players) => players.map(p => `<span class="mrc-hero"><span class="mrc-hero-name">${escapeHtml(p.name)}</span>${mrcTier(p.tier)}</span>`)
     .join('<span class="mrc-amp">&amp;</span>');
+  const heroes = side(card.heroes);
   const opponents = card.opponents.map(p => `<span class="mrc-opp">${escapeHtml(p.name)} ${mrcTier(p.tier)}</span>`).join(' &amp; ');
   const sets = card.sets.map(s => `<span class="mrc-set">${s[0]}–${s[1]}</span>`).join('');
   const st = card.stats;
@@ -76,10 +77,18 @@ function matchResultCardHtml(card){
       <img src="assets/brand/mp-mark.svg" alt="" class="mrc-mark"><span class="mrc-brand">Money Padel</span>
     </div>
     <div class="mrc-when">${escapeHtml(matchResultContext(card))}</div>
-    <div class="mrc-heroes">${heroes}</div>
+    ${card.isDraw
+      // Nobody won: both pairs alike -- same type, size and colour -- one
+      // above the other, so neither reads as the winner.
+      ? `<div class="mrc-heroes mrc-side">${heroes}</div>
+    <div class="mrc-vs">vs</div>
+    <div class="mrc-heroes mrc-side">${side(card.opponents)}</div>
+    <div class="mrc-kicker">${escapeHtml(card.kicker)}</div>
+    <div class="mrc-score">${sets}</div>`
+      : `<div class="mrc-heroes">${heroes}</div>
     <div class="mrc-kicker">${escapeHtml(card.kicker)}</div>
     <div class="mrc-score">${sets}</div>
-    <div class="mrc-against">${escapeHtml(card.against)} ${opponents}</div>
+    <div class="mrc-against">${escapeHtml(card.against)} ${opponents}</div>`}
     <div class="mrc-story">
       <div class="mrc-story-title">${escapeHtml(card.story.title)}</div>
       <div class="mrc-story-line">${escapeHtml(card.story.line)}</div>

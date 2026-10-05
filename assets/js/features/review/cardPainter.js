@@ -447,37 +447,61 @@
     font(ctx, 32, { spacing: 0.06 });
     textAt(ctx, fit(ctx, o.when || '', W - 2 * M), cx, 206, { color: C.goldSoft, align: 'center', baseline: 'middle' });
 
-    // The heroes: as large as one line allows, else one per line.
-    let y = 340;
-    let size = 96;
-    while (size > 68 && peopleWidth(ctx, card.heroes, size, true, 400) > W - 2 * M) size -= 4;
-    if (peopleWidth(ctx, card.heroes, size, true, 400) <= W - 2 * M) {
-      people(ctx, card.heroes, cx, y, size, { serif: true, color: C.bright });
-    } else {
-      size = 84; y = 300;
-      card.heroes.forEach((p, i) => people(ctx, [p], cx, y + i * 104, size, { serif: true, color: C.bright }));
-      y += 104;
-    }
-    y += 104;
-    font(ctx, 40, { weight: 700, spacing: 0.2 });
-    textAt(ctx, card.kicker.toUpperCase(), cx, y, { color: C.gold, align: 'center', baseline: 'middle' });
-
     // The score, big.
-    y += 150;
-    font(ctx, 150, { weight: 700 });
-    const sets = card.sets.map((s) => `${s[0]}–${s[1]}`);
-    const gap = 80;
-    const widths = sets.map((t) => ctx.measureText(t).width);
-    let x = cx - (widths.reduce((a, b) => a + b, 0) + gap * (sets.length - 1)) / 2;
-    sets.forEach((t, i) => { textAt(ctx, t, x, y, { color: C.text, baseline: 'middle' }); x += widths[i] + gap; });
+    const score = (sy) => {
+      const sets = card.sets.map((s) => `${s[0]}–${s[1]}`);
+      // As large as the margins allow: three sets at full size run to the edge.
+      let size = 150, gap = 80, widths;
+      const measure = () => { font(ctx, size, { weight: 700 }); widths = sets.map((t) => ctx.measureText(t).width); return widths.reduce((a, b) => a + b, 0) + gap * (sets.length - 1); };
+      while (size > 90 && measure() > W - 2 * M) { size -= 6; gap = Math.round(size * 0.53); }
+      measure();
+      let x = cx - (widths.reduce((a, b) => a + b, 0) + gap * (sets.length - 1)) / 2;
+      sets.forEach((t, i) => { textAt(ctx, t, x, sy, { color: C.text, baseline: 'middle' }); x += widths[i] + gap; });
+    };
+    const kicker = (ky) => {
+      font(ctx, 40, { weight: 700, spacing: 0.2 });
+      textAt(ctx, card.kicker.toUpperCase(), cx, ky, { color: C.gold, align: 'center', baseline: 'middle' });
+    };
 
-    y += 130;
-    font(ctx, 38);
-    const lead = `${card.against} `;
-    const leadW = ctx.measureText(lead).width;
-    const oppW = peopleWidth(ctx, card.opponents, 38, false, 400);
-    textAt(ctx, lead, cx - (leadW + oppW) / 2, y, { color: C.dim, baseline: 'middle' });
-    people(ctx, card.opponents, cx + leadW / 2, y, 38, { color: C.soft });
+    let y;
+    if (card.isDraw) {
+      // Nobody won: both pairs in the same type, size and colour, one above
+      // the other, so neither reads as the winner.
+      let size = 84;
+      const widest = () => Math.max(peopleWidth(ctx, card.heroes, size, true, 400), peopleWidth(ctx, card.opponents, size, true, 400));
+      while (size > 52 && widest() > W - 2 * M) size -= 4;
+      people(ctx, card.heroes, cx, 316, size, { serif: true, color: C.text });
+      font(ctx, 30, { weight: 700, spacing: 0.3 });
+      textAt(ctx, 'VS', cx, 400, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+      people(ctx, card.opponents, cx, 484, size, { serif: true, color: C.text });
+      kicker(580);
+      score(706);
+      y = 724;
+    } else {
+      // The heroes: as large as one line allows, else one per line.
+      y = 340;
+      let size = 96;
+      while (size > 68 && peopleWidth(ctx, card.heroes, size, true, 400) > W - 2 * M) size -= 4;
+      if (peopleWidth(ctx, card.heroes, size, true, 400) <= W - 2 * M) {
+        people(ctx, card.heroes, cx, y, size, { serif: true, color: C.bright });
+      } else {
+        size = 84; y = 300;
+        card.heroes.forEach((p, i) => people(ctx, [p], cx, y + i * 104, size, { serif: true, color: C.bright }));
+        y += 104;
+      }
+      y += 104;
+      kicker(y);
+      y += 150;
+      score(y);
+
+      y += 130;
+      font(ctx, 38);
+      const lead = `${card.against} `;
+      const leadW = ctx.measureText(lead).width;
+      const oppW = peopleWidth(ctx, card.opponents, 38, false, 400);
+      textAt(ctx, lead, cx - (leadW + oppW) / 2, y, { color: C.dim, baseline: 'middle' });
+      people(ctx, card.opponents, cx + leadW / 2, y, 38, { color: C.soft });
+    }
 
     // The story, in its own panel.
     y += 62;
