@@ -326,6 +326,77 @@ for (const table of ['merit', 'league']) {
   });
 }
 
+// Shaun, 6 Oct: the Monthly Race's P, W, D and L open the matches behind them
+// too, told the Race's way (stakes and points earned); and the League reads
+// P W D L like every other table.
+maybe('D6: every Monthly Race P/W/D/L cell opens exactly the matches it counts, with their Race points', async () => {
+  const app = await open();
+  try {
+    const r = await app.run(() => {
+      document.querySelector('#tabrow .tab-btn[data-tab="summary"]').click();
+      const verb = { wins: 'Won', draws: 'Drew', losses: 'Lost' };
+      const problems = [];
+      let opened = 0, zeroButtons = 0;
+      ['2026-09', '2026-08'].forEach((month) => {
+        summaryMode = 'race'; summaryMonth = month; raceTierOpen = { S: true, A: true, B: true, C: true }; raceDrill = null;
+        renderSummary();
+        const { table } = buildMonthlyRace(month);
+        document.querySelectorAll('#summaryContent tbody tr:not(.merit-drill) td').forEach((td) => {
+          if (td.textContent.trim() === '0' && td.querySelector('button')) zeroButtons++;
+        });
+        const cells = [...document.querySelectorAll('#summaryContent .merit-count[data-kind]')]
+          .map((b) => ({ player: b.dataset.player, tier: b.dataset.tier, kind: b.dataset.kind, n: Number(b.textContent) }));
+        cells.forEach((c) => {
+          const btn = [...document.querySelectorAll('#summaryContent .merit-count[data-kind]')].find((b) => b.dataset.player === c.player && b.dataset.tier === c.tier && b.dataset.kind === c.kind);
+          btn.click(); opened++;
+          const where = `${month} Tier ${c.tier}: ${c.player} ${c.kind}=${c.n}`;
+          const drills = document.querySelectorAll('#summaryContent tr.merit-drill');
+          const rows = drills[0] ? [...drills[0].querySelectorAll('.merit-drill-row')] : [];
+          const head = drills[0] ? drills[0].querySelector('.merit-drill-head').textContent : '';
+          if (drills.length !== 1) problems.push(`${where}: ${drills.length} details open`);
+          if (rows.length !== c.n) problems.push(`${where}: lists ${rows.length}`);
+          const label = { played: 'Played', wins: 'Wins', draws: 'Draws', losses: 'Losses' }[c.kind];
+          if (!head.includes(c.player) || !head.includes(label) || !head.includes(monthLabel(month)) || !head.includes(`Tier ${c.tier}`)) problems.push(`${where}: heading "${head}"`);
+          const raceRow = table.find((x) => x.playerId === c.player && x.tier === c.tier);
+          let points = 0;
+          rows.forEach((row) => {
+            const date = row.querySelector('.merit-drill-date').textContent;
+            const said = row.querySelector('.merit-drill-teams b').textContent;
+            if (date.slice(0, 7) !== month) problems.push(`${where}: ${date} is outside the month`);
+            if (historicalTierOf(c.player, date) !== c.tier) problems.push(`${where}: ${date} was played in another tier`);
+            if (verb[c.kind] && said !== verb[c.kind]) problems.push(`${where}: a "${said}" listed`);
+            if (!row.querySelector('.race-pts')) problems.push(`${where}: no Race points on ${date}`);
+            points += Number(row.querySelector('.race-pts').textContent.replace('−', '-'));
+          });
+          // The Played list is the score's own matches: its points add up to the score.
+          if (c.kind === 'played' && Math.abs(points - raceRow.score) > 0.06 * rows.length) problems.push(`${where}: points ${points} ≠ score ${raceRow.score}`);
+          btn.click();
+          if (document.querySelectorAll('#summaryContent tr.merit-drill').length) problems.push(`${where}: did not close`);
+        });
+      });
+      // The score still opens its own list, and one thing is open at a time.
+      summaryMonth = '2026-09'; raceDrill = null; renderSummary();
+      document.querySelector('#summaryContent .race-score').click();
+      const scoreOpen = document.querySelectorAll('#summaryContent tr.merit-drill').length;
+      document.querySelector('#summaryContent .merit-count[data-kind="wins"]').click();
+      const afterCount = document.querySelectorAll('#summaryContent tr.merit-drill').length;
+      // League: P W D L, like every other table.
+      summaryMode = 'league'; leagueGrouped = true; leagueLastTen = false; leagueTierOpen = { S: true, A: true, B: true, C: true }; renderSummary();
+      const leagueHead = [...document.querySelector('#summaryContent thead tr').children].map((th) => th.textContent.replace(/[▾▴]/g, '').trim()).slice(2, 6);
+      const firstRow = document.querySelector('#summaryContent tbody tr');
+      const kindsInRow = [...firstRow.querySelectorAll('.merit-count[data-kind]')].map((b) => b.dataset.kind);
+      return { opened, problems, zeroButtons, scoreOpen, afterCount, leagueHead, kindsInRow };
+    });
+    assert.ok(r.opened > 20, `exercised ${r.opened} cells`);
+    assert.deepStrictEqual(r.problems, []);
+    assert.strictEqual(r.zeroButtons, 0, 'a zero is never a button');
+    assert.deepStrictEqual([r.scoreOpen, r.afterCount], [1, 1], 'one detail open at a time');
+    assert.deepStrictEqual(r.leagueHead, ['P', 'W', 'D', 'L']);
+    assert.deepStrictEqual(r.kindsInRow.filter((k) => k !== 'played'), ['wins', 'draws', 'losses'].filter((k) => r.kindsInRow.includes(k)), 'the cells in the same order as the heading');
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
 maybe('D6: a mid-month mover\'s two tier rows each open only their own games, and together make the All together row', async () => {
   const app = await open();
   try {

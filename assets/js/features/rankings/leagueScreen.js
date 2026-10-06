@@ -134,8 +134,8 @@ const LEAGUE_COLUMNS = [
   { key: 'name', label: 'Player', align: 'left' },
   { key: 'games', label: 'P', align: 'center' },
   { key: 'wins', label: 'W', align: 'center' },
-  { key: 'losses', label: 'L', align: 'center' },
   { key: 'draws', label: 'D', align: 'center' },
+  { key: 'losses', label: 'L', align: 'center' },
   { key: 'gd', label: 'GD', align: 'center' },
   { key: 'points', label: 'Pts', align: 'right' },
   { key: 'avg_opp', label: 'Avg Opp', align: 'center' },
@@ -159,7 +159,8 @@ function buildLeagueTableHtml(rows, showTierColumn){
   // context, not part of the points calculation, so they come last, and
   // avg_opp gets the separator marking where "the table" ends and
   // "context" begins -- see .league-context-col in app.css.
-  ['games','wins','losses','draws','gd','points','avg_opp','recent_form'].forEach(key=>{
+  // P W D L, the order every table in the app uses (Merit, the Race, the Board Pack).
+  ['games','wins','draws','losses','gd','points','avg_opp','recent_form'].forEach(key=>{
     const col = LEAGUE_COLUMNS.find(c=>c.key===key);
     const arrow = leagueSortKey===key ? (leagueSortDesc?' ▾':' ▴') : '';
     const contextClass = key==='avg_opp' ? ' league-context-col' : '';
@@ -178,8 +179,8 @@ function buildLeagueTableHtml(rows, showTierColumn){
       ${showTierColumn ? `<td style="padding:7px 4px; text-align:center;"><span class="badge ${r.tier}" style="display:inline-flex; width:20px; height:20px; font-size:10px;">${r.tier}</span></td>` : ''}
       <td style="padding:7px 4px; text-align:center;">${tableCountCell(leagueDrill, r.name, r.segmentTier, 'played', r.games, { plain: true })}</td>
       <td style="padding:7px 4px; text-align:center; color:var(--green);">${tableCountCell(leagueDrill, r.name, r.segmentTier, 'wins', r.wins, { plain: true, colour: 'var(--green)' })}</td>
-      <td style="padding:7px 4px; text-align:center; color:var(--red);">${tableCountCell(leagueDrill, r.name, r.segmentTier, 'losses', r.losses, { plain: true, colour: 'var(--red)' })}</td>
       <td style="padding:7px 4px; text-align:center; color:var(--text-dim);">${tableCountCell(leagueDrill, r.name, r.segmentTier, 'draws', r.draws, { plain: true, colour: 'var(--text-dim)' })}</td>
+      <td style="padding:7px 4px; text-align:center; color:var(--red);">${tableCountCell(leagueDrill, r.name, r.segmentTier, 'losses', r.losses, { plain: true, colour: 'var(--red)' })}</td>
       <td style="padding:7px 4px; text-align:center;">${r.gd>=0?'+':''}${r.gd}</td>
       <td style="padding:7px 8px 7px 4px; text-align:right; font-weight:700; color:var(--gold-bright);">${r.points}</td>
       <td class="league-context-col" style="padding:7px 4px; text-align:center;">${r.avg_opp}</td>
@@ -209,7 +210,7 @@ function buildLastTenTableHtml(rows){
   const sorted = sortLastTenRows(rows);
   const cols = [
     { key: 'games', label: 'P' }, { key: 'wins', label: 'W' },
-    { key: 'losses', label: 'L' }, { key: 'draws', label: 'D' },
+    { key: 'draws', label: 'D' }, { key: 'losses', label: 'L' },
     { key: 'gd', label: 'GD' }, { key: 'points', label: 'Pts' },
   ];
   let html = `<div class="callout-card" style="padding:0; overflow-x:auto;">
@@ -236,8 +237,8 @@ function buildLastTenTableHtml(rows){
       <td style="padding:7px 4px;"><span class="request-player-link" data-player="${escapeHtml(r.name)}" style="text-decoration:underline; cursor:pointer; font-weight:700;">${escapeHtml(r.name)}</span></td>
       <td style="padding:7px 4px; text-align:center;">${r.games}${shortMark}</td>
       <td style="padding:7px 4px; text-align:center; color:var(--green);">${r.wins}</td>
-      <td style="padding:7px 4px; text-align:center; color:var(--red);">${r.losses}</td>
       <td style="padding:7px 4px; text-align:center; color:var(--text-dim);">${r.draws}</td>
+      <td style="padding:7px 4px; text-align:center; color:var(--red);">${r.losses}</td>
       <td style="padding:7px 4px; text-align:center;">${r.gd>=0?'+':''}${r.gd}</td>
       <td style="padding:7px 4px; text-align:right; font-weight:700; color:var(--gold-bright);">${r.points}</td>
       <td class="league-context-col" style="padding:7px 8px 7px 4px; text-align:center;">${lastTenRunHtml(r.run)}</td>
@@ -556,7 +557,9 @@ let raceTierOpen = {};
 
 let raceExplainerOpen = false;
 
-let raceDrill = null; // `${player}\u0000${tier}` -- one open at a time
+// What is open in the Race, one at a time: a score (`${player}\u0000${tier}`)
+// or a P / W / D / L count (tableDrillKey).
+let raceDrill = null;
 
 function racePoints(v){
   if(v > 0) return '+' + v.toFixed(1);
@@ -605,10 +608,10 @@ function buildRaceTableHtml(rows, ranked){
     html += `<tr style="border-top:1px solid var(--line);">
       <td style="padding:7px 2px 7px 7px; color:var(--text-dim);">${ranked ? i+1 : '–'}</td>
       <td style="padding:7px 2px;"><span class="request-player-link" data-player="${escapeHtml(r.playerId)}" style="text-decoration:underline; cursor:pointer; font-weight:700;">${escapeHtml(r.playerId)}</span></td>
-      <td style="padding:7px 2px; text-align:center;">${r.played}</td>
-      <td style="padding:7px 2px; text-align:center; color:var(--green);">${r.wins}</td>
-      <td style="padding:7px 2px; text-align:center; color:var(--text-dim);">${r.draws}</td>
-      <td style="padding:7px 2px; text-align:center; color:var(--red);">${r.losses}</td>
+      <td style="padding:7px 2px; text-align:center;">${tableCountCell(raceDrill, r.playerId, r.tier, 'played', r.played, { plain: true })}</td>
+      <td style="padding:7px 2px; text-align:center; color:var(--green);">${tableCountCell(raceDrill, r.playerId, r.tier, 'wins', r.wins, { plain: true, colour: 'var(--green)' })}</td>
+      <td style="padding:7px 2px; text-align:center; color:var(--text-dim);">${tableCountCell(raceDrill, r.playerId, r.tier, 'draws', r.draws, { plain: true, colour: 'var(--text-dim)' })}</td>
+      <td style="padding:7px 2px; text-align:center; color:var(--red);">${tableCountCell(raceDrill, r.playerId, r.tier, 'losses', r.losses, { plain: true, colour: 'var(--red)' })}</td>
       <td style="padding:7px 7px 7px 3px; text-align:right;"><button type="button" class="merit-count race-score${open ? ' is-open' : ''}${r.score < 0 ? ' is-neg' : ''}"
         data-player="${escapeHtml(r.playerId)}" data-tier="${escapeHtml(r.tier)}" aria-expanded="${open}">${racePoints(r.score)}</button></td>
     </tr>`;
@@ -620,6 +623,15 @@ function buildRaceTableHtml(rows, ranked){
           <div class="race-drill-total">Total ${racePoints(r.score)}</div>
         </div>
       </td></tr>`;
+    }
+    // P / W / D / L open the matches behind the count, as in League and Merit,
+    // each told the Race's way -- with its stakes and the points it earned.
+    const kind = Object.keys(TABLE_COUNT_KINDS).find(k => raceDrill === tableDrillKey(r.playerId, r.tier, k));
+    if(kind){
+      const games = TABLE_COUNT_KINDS[kind].of(r.matches);
+      html += tableDrillRowHtml(7,
+        `${escapeHtml(r.playerId)} · ${TABLE_COUNT_KINDS[kind].label} · ${escapeHtml(tableDrillContext(r.tier))} · ${games.length} match${games.length === 1 ? '' : 'es'}`,
+        games, (d) => raceDrillRowHtml(d, r.tier));
     }
   });
   html += `</tbody></table></div>`;
@@ -641,7 +653,7 @@ function renderMonthlyRace(){
   html += `<div class="section-heading" style="margin-top:6px;">🏁 ${label} Monthly Race</div>`;
   html += `<div class="section-sub" style="margin:2px 0 0;">Best Month: harder wins earn more, harder losses cost less.</div>`;
   html += leagueInlineFold('raceExplainerToggle', 'How the race works', raceExplainerOpen,
-    `<div class="section-sub" style="margin:0;">Everyone in a tier starts the month on 0. Every match has stakes, set by how hard it was for an ordinary player of your tier with your actual partner against your actual opponents, judged by their Power Ratings going in. Harder wins earn more and harder losses cost less; an even match is +10 for a win and −10 for a loss. The highest score among players with at least ${MonthlyRace.MIN_MATCHES} matches in the tier had the best month. If you change tier during the month, each tier is its own race and starts from 0. Tap a score to see every match behind it.</div>`);
+    `<div class="section-sub" style="margin:0;">Everyone in a tier starts the month on 0. Every match has stakes, set by how hard it was for an ordinary player of your tier with your actual partner against your actual opponents, judged by their Power Ratings going in. Harder wins earn more and harder losses cost less; an even match is +10 for a win and −10 for a loss. The highest score among players with at least ${MonthlyRace.MIN_MATCHES} matches in the tier had the best month. If you change tier during the month, each tier is its own race and starts from 0. Tap a score to see every match behind it, or P, W, D or L to see those matches.</div>`);
 
   let anyShown = false;
   const rowsByTier = {};
@@ -678,6 +690,8 @@ function renderMonthlyRace(){
       renderMonthlyRace();
     };
   });
+  // P / W / D / L counts; the Race score keeps its own drill (below).
+  wireTableCounts(content, ()=> raceDrill, (k)=>{ raceDrill = k; }, renderMonthlyRace);
   content.querySelectorAll('.race-score').forEach(btn=>{
     btn.onclick = ()=>{
       const key = `${btn.dataset.player}\u0000${btn.dataset.tier}`;

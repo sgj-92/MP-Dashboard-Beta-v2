@@ -3720,7 +3720,7 @@ test('Last 10 is each player\'s own ten games, not the selected month', { skip }
 
       const read = () => [...document.querySelectorAll('#summaryContent tbody tr')].map((tr) => {
         const td = [...tr.children].map((x) => x.innerText.trim());
-        return { name: td[1], P: parseInt(td[2], 10), W: +td[3], L: +td[4], D: +td[5], GD: parseInt(td[6], 10), Pts: +td[7] };
+        return { name: td[1], P: parseInt(td[2], 10), W: +td[3], D: +td[4], L: +td[5], GD: parseInt(td[6], 10), Pts: +td[7] };   // P W D L
       });
 
       document.getElementById('leagueLastTenBtn').click();
@@ -3739,7 +3739,7 @@ test('Last 10 is each player\'s own ten games, not the selected month', { skip }
       };
     }, {}, await openLeague(app, { month: '2026-08' }));
 
-    assert.deepStrictEqual(r.columns, ['#', 'Player', 'P', 'W', 'L', 'D', 'GD', 'Pts', 'Last 5']);
+    assert.deepStrictEqual(r.columns, ['#', 'Player', 'P', 'W', 'D', 'L', 'GD', 'Pts', 'Last 5']);
     assert.match(r.heading, /Last 10/);
     assert.doesNotMatch(r.heading, /August|June/, 'a per-player window is not a month');
     assert.deepStrictEqual(r.inJune, r.inAugust, 'changing the month must not change Last 10');
