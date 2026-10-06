@@ -292,6 +292,12 @@ async function commitApproval(){
   renderGamesTab();
   try {
     await ReplayForward.commit(RatingStore.firestoreCompatBackend(db), a.planned);
+    // Who submitted it goes with the game: the rating record has no place for
+    // it, and the submission is about to go (matchAttribution.js).
+    const submission = extraMatchesState.find(x => x.id === a.submissionId);
+    matchAttributionState = { ...matchAttributionState,
+      [a.matchId]: MatchAttribution.entryFor(submission, { matchId: a.matchId, approvedBy: a.approvedBy, approvedAt: new Date().toISOString() }) };
+    await saveMatchAttribution(matchAttributionState);
     // Only once it is safely in the record: the submission has served its
     // purpose and must not linger as a second copy of the same game.
     extraMatchesState = extraMatchesState.filter(x => x.id !== a.submissionId);

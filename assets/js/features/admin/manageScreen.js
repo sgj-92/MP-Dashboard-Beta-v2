@@ -312,7 +312,7 @@ function exportMatchesCsv(){
       enriched ? Math.round(enriched.performance_residual*1000)/10 : '',
       m.verified === false ? 'No (pre-June, single-sourced)' : 'Yes',
       m._status || 'approved',
-      m.submittedBy || (m.id.startsWith('base_') ? 'Historical record' : ''),
+      m.id.startsWith('base_') ? 'Historical record' : matchAttributionLine(m).replace(/^Submitted by /, ''),
     ];
   });
   downloadCsv(`money_padel_matches_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);

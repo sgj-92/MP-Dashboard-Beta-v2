@@ -171,6 +171,12 @@ function closeGameEditor(id, fn){
   return out;
 }
 
+// "Submitted by Tom", "Historical record", "Approved by Shaun"... for a rated game.
+function matchAttributionLine(m){
+  if(m.submittedBy) return `Submitted by ${m.submittedBy}`;
+  return MatchAttribution.describe(m.id, { stored: matchAttributionState, journey: V3_JOURNEY }).text;
+}
+
 function gameEditFormHtml(id){
   return `<div class="game-edit-inline" id="editFormAnchor" data-editing="${escapeHtml(id)}">${buildEditFormHtml(id)}</div>`;
 }
@@ -357,7 +363,7 @@ Player C &amp; Player D"></textarea>
     }
     const isBase = m.id.startsWith('base_');
     const edit = matchEditsState[m.id];
-    let metaLine = isBase ? 'Historical record' : `Submitted by ${m.submittedBy || 'unknown'}`;
+    let metaLine = isBase ? 'Historical record' : escapeHtml(matchAttributionLine(m));
     if(edit) metaLine += ` · edited by ${edit.editedBy} (${fmtRelative(edit.editedAt)})`;
     const unverifiedTag = m.verified === false ? `<span class="strength-pill" style="color:#e8a5a1; border-color:var(--red); margin-left:6px;">Pre-June · single-sourced</span>` : '';
     const isExpanded = expandedGameId === m.id;

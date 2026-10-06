@@ -183,13 +183,14 @@ async function savePublishedReview(doc){
 // only ever bought four round trips where one would do. See init() for the
 // same argument applied to the whole of start-up.
 async function loadStoredData(){
-  const [extraMatches, tagOverrides, matchEdits, deletedIds] = await Promise.all([
+  const [extraMatches, tagOverrides, matchEdits, deletedIds, matchAttribution] = await Promise.all([
     fsGetJson(STORAGE_KEY_MATCHES, [], 'matches'),
     fsGetJson(STORAGE_KEY_TAGS, {}, 'tags'),
     fsGetJson(STORAGE_KEY_EDITS, {}, 'edits'),
     fsGetJson(STORAGE_KEY_DELETED, [], 'deleted ids'),
+    fsGetJson(MatchAttribution.STORAGE_KEY, {}, 'match attribution'),
   ]);
-  return {extraMatches, tagOverrides, matchEdits, deletedIds};
+  return {extraMatches, tagOverrides, matchEdits, deletedIds, matchAttribution};
 }
 
 async function loadMyName(){
@@ -250,6 +251,15 @@ async function saveExtraMatches(extraMatches){
     await fsSet(STORAGE_KEY_MATCHES, JSON.stringify(extraMatches));
     return true;
   } catch(e){ lastStorageError = (e && e.message) ? e.message : String(e); console.error('save matches failed', e); return false; }
+}
+
+// Who submitted each rated game, kept beside the rating record rather than in
+// it (domain/matches/matchAttribution.js). matchId -> entry.
+async function saveMatchAttribution(map){
+  try {
+    await fsSet(MatchAttribution.STORAGE_KEY, JSON.stringify(map));
+    return true;
+  } catch(e){ lastStorageError = (e && e.message) ? e.message : String(e); console.error('save match attribution failed', e); return false; }
 }
 
 async function saveTagOverrides(tagOverrides){
