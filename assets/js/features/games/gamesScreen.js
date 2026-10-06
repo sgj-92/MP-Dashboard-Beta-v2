@@ -91,6 +91,90 @@ function gamesRecordHtml(rec, typeOptions){
   </div>`;
 }
 
+// ---- Editing a game in place -------------------------------------------------
+// The edit form opens inside the game's own card, straight under the game, and
+// every redraw while editing (open, cancel, save, confirm a correction) keeps
+// that card where it was on screen. It used to be appended after the whole
+// list and scrolled to, so editing a game took the reader to the bottom of the
+// tab and left them there.
+
+function gameCardEl(id){
+  if(!id) return null;
+  return [...document.querySelectorAll('#gamesView [data-game-card]')].find(el => el.dataset.gameCard === id) || null;
+}
+
+// Runs `fn` (which redraws) and puts the game's card back at the same height
+// in the viewport. If the card is no longer listed -- a filter now hides it --
+// the page keeps its scroll offset instead. Works with a promise too.
+function withGameAnchor(id, fn){
+  const card = gameCardEl(id);
+  const before = card ? card.getBoundingClientRect().top : null;
+  const y = window.scrollY;
+  const settle = () => {
+    const now = gameCardEl(id);
+    if(now && before !== null) window.scrollBy(0, now.getBoundingClientRect().top - before);
+    else window.scrollTo(0, y);
+  };
+  const out = fn();
+  if(out && typeof out.then === 'function') return out.then(v => { settle(); return v; }, e => { settle(); throw e; });
+  settle();
+  return out;
+}
+
+// The form must be usable without scrolling. Only when the card sat so low that
+// the form starts in the bottom of the screen is the card brought up -- to the
+// top, under the header (scroll-margin-top), so the game stays the anchor.
+function bringEditFormIntoReach(id){
+  const form = document.getElementById('editFormAnchor');
+  const card = gameCardEl(id);
+  if(!form || !card) return;
+  if(form.getBoundingClientRect().top > window.innerHeight * 0.6) card.scrollIntoView({ block: 'start' });
+}
+
+// Where the reader was when they opened the editor: the game's height on
+// screen and the page offset. Closing it -- Cancel, Save, or a confirmed
+// correction -- puts them back there, however far down the form they
+// scrolled to reach its buttons.
+let gameEditReturn = null;
+
+function openGameEditor(id){
+  const card = gameCardEl(id);
+  gameEditReturn = { id, top: card ? card.getBoundingClientRect().top : null, y: window.scrollY };
+  withGameAnchor(id, ()=>{ editingMatchId = id; armedDeleteId = null; renderGamesTab(); });
+  bringEditFormIntoReach(id);
+}
+
+// Closes the editor through `fn` and returns the reader to where they started.
+// With no recorded start (the editor was opened from a profile), the game is
+// simply kept where it is.
+function closeGameEditor(id, fn){
+  const back = gameEditReturn && gameEditReturn.id === id ? gameEditReturn : null;
+  if(!back) return withGameAnchor(id, fn);
+  const was = gameCardEl(id);
+  const nowTop = was ? was.getBoundingClientRect().top : null;
+  const settle = () => {
+    if(editingMatchId === id){
+      // Still open -- a refusal, or a correction waiting to be confirmed: the
+      // game stays exactly where it is.
+      const card = gameCardEl(id);
+      if(card && nowTop !== null) window.scrollBy(0, card.getBoundingClientRect().top - nowTop);
+      return;
+    }
+    gameEditReturn = null;
+    const card = gameCardEl(id);
+    if(card && back.top !== null) window.scrollBy(0, card.getBoundingClientRect().top - back.top);
+    else window.scrollTo(0, back.y);
+  };
+  const out = fn();
+  if(out && typeof out.then === 'function') return out.then(v => { settle(); return v; }, e => { settle(); throw e; });
+  settle();
+  return out;
+}
+
+function gameEditFormHtml(id){
+  return `<div class="game-edit-inline" id="editFormAnchor" data-editing="${escapeHtml(id)}">${buildEditFormHtml(id)}</div>`;
+}
+
 function renderGamesTab(){
   const box = document.getElementById('gamesView');
   const pending = extraMatchesState.filter(m=>m.status==='pending' && !deletedIdsState.includes(m.id));
@@ -237,7 +321,7 @@ Player C &amp; Player D"></textarea>
           ? 'background:rgba(90,156,90,0.12); border-color:rgba(90,156,90,0.4);'
           : 'background:rgba(181,69,63,0.12); border-color:rgba(181,69,63,0.4);';
       }
-      html += `<div class="callout-card" style="${pendingCardStyle}">
+      html += `<div class="callout-card" data-game-card="${escapeHtml(m.id)}" style="${pendingCardStyle}">
         <div class="cc-title">${titleText}</div>
         <div class="cc-detail">${m.date} · ${m.sets.map(s=>s.join('-')).join(', ')} · submitted by ${m.submittedBy} (${fmtRelative(m.submittedAt)})</div>
         ${isUnlocked ? `<div class="difficulty-row" style="margin-top:8px;">
@@ -245,6 +329,7 @@ Player C &amp; Player D"></textarea>
           <button class="preset-btn" data-reject="${m.id}" style="flex:1; color:#e8a5a1; border-color:var(--red);">Reject</button>
           <button class="preset-btn" data-edit="${m.id}" style="flex:1;">Edit</button>
         </div>` : `<div class="section-sub" style="margin-top:6px;">🔒 Unlock above to approve, reject, or edit</div>`}
+        ${isUnlocked && editingMatchId === m.id ? gameEditFormHtml(m.id) : ''}
         ${approvalPlan && approvalPlan.submissionId === m.id ? buildApprovalConfirmHtml() : ''}
       </div>`;
     });
@@ -257,7 +342,7 @@ Player C &amp; Player D"></textarea>
     : (groupLabel
       ? `📋 Games with ${escapeHtml(groupLabel)} (${display.length})`
       : `📋 All games (${display.length})`);
-  html += `<div class="section-heading">${gamesHeading}</div>`;
+  html += `<div class="section-heading">${gamesHeading}</div><!--games-list-->`;
   // Counted by the view-model from `display` itself -- the list drawn below --
   // never re-queried.
   html += gamesRecordHtml(gamesVm.record, gamesTypeOptions);
@@ -323,13 +408,14 @@ Player C &amp; Player D"></textarea>
     const hasStagedFix = !!(matchFixPlan && matchFixPlan.change
       && (matchFixPlan.change.matchId === m.id
         || (matchFixPlan.change.match && matchFixPlan.change.match.id === m.id)));
-    const isManaging = isUnlocked && (managingGameId === m.id || hasStagedFix);
+    const isEditing = isUnlocked && editingMatchId === m.id;
+    const isManaging = isUnlocked && (managingGameId === m.id || hasStagedFix || isEditing);
 
     // Manage sits on the submission line, not beside the matchup. On a narrow
     // iPhone a button in the title row squeezed four names into a column and
     // wrapped them; the submission line is short, already muted, and has room
     // to spare on the right.
-    html += `<div class="callout-card" style="${cardStyle}">
+    html += `<div class="callout-card" data-game-card="${escapeHtml(m.id)}" style="${cardStyle}">
       <div class="game-card-head">
         <div class="game-card-clickable" data-gameid="${m.id}" style="cursor:pointer; min-width:0; flex:1;">
           <div class="cc-title">${titleText}</div>
@@ -343,18 +429,21 @@ Player C &amp; Player D"></textarea>
         </div>
       </div>
       ${isManaging ? `<div class="game-manage-body">
-        <div class="difficulty-row match-action-row">
+        ${isEditing ? gameEditFormHtml(m.id) : `<div class="difficulty-row match-action-row">
           <button class="preset-btn match-action" data-edit="${m.id}" style="flex:1;">Correct match<span class="match-action-sub">Change the score or the players</span></button>
           <button class="preset-btn match-action match-action-destructive" data-delete="${m.id}" style="flex:1;">Remove and replay<span class="match-action-sub">Delete this match from the record</span></button>
         </div>
-        <div class="section-sub" style="margin-top:4px; font-size:10.5px;">${MATCH_CORRECTION_NOTE}</div>
+        <div class="section-sub" style="margin-top:4px; font-size:10.5px;">${MATCH_CORRECTION_NOTE}</div>`}
         ${hasStagedFix ? buildMatchFixConfirmHtml() : ''}
       </div>` : ''}
     </div>`;
   });
 
-  if(isUnlocked && editingMatchId){
-    html += `<div id="editFormAnchor"></div>` + buildEditFormHtml(editingMatchId);
+  // A game being edited that the current filters do not list still gets its
+  // form, at the head of the list rather than out of reach.
+  if(isUnlocked && editingMatchId && !html.includes(`data-editing="${escapeHtml(editingMatchId)}"`) && findMatchById(editingMatchId)){
+    const form = `<div class="callout-card" data-game-card="${escapeHtml(editingMatchId)}">${gameEditFormHtml(editingMatchId)}</div>`;
+    html = html.includes('<!--games-list-->') ? html.replace('<!--games-list-->', form) : html + form;
   }
 
   box.innerHTML = html;
@@ -374,13 +463,6 @@ Player C &amp; Player D"></textarea>
       renderGamesTab();
     };
   });
-
-  if(isUnlocked && editingMatchId){
-    const anchor = document.getElementById('editFormAnchor');
-    if(anchor){
-      try { anchor.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e){ /* non-critical */ }
-    }
-  }
 
   document.getElementById('gamesFiltersToggle').onclick = ()=>{
     gamesFiltersOpen = !gamesFiltersOpen;
@@ -588,7 +670,7 @@ Player C &amp; Player D"></textarea>
     btn.onclick = ()=> rejectMatch(btn.dataset.reject);
   });
   box.querySelectorAll('[data-edit]').forEach(btn=>{
-    btn.onclick = ()=>{ editingMatchId = btn.dataset.edit; armedDeleteId = null; renderGamesTab(); };
+    btn.onclick = ()=> openGameEditor(btn.dataset.edit);
   });
   // One card's actions open at a time. Tapping Manage again closes it, and a
   // staged correction is cancelled rather than left hanging invisibly behind a
@@ -596,6 +678,11 @@ Player C &amp; Player D"></textarea>
   box.querySelectorAll('[data-manage]').forEach(btn=>{
     btn.onclick = ()=>{
       const id = btn.dataset.manage;
+      // Close on a game being edited closes the editor too, as Cancel would.
+      if(editingMatchId === id){
+        closeGameEditor(id, ()=>{ managingGameId = null; editingMatchId = null; matchFixReset(); renderGamesTab(); });
+        return;
+      }
       if(managingGameId === id){ managingGameId = null; matchFixReset(); }
       else { managingGameId = id; matchFixPlan = null; matchFixMessage = ''; }
       renderGamesTab();

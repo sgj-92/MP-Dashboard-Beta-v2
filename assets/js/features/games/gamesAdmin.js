@@ -187,11 +187,18 @@ function buildMatchFixConfirmHtml(){
   </div>`;
 }
 
+// The game a staged correction is about, so its card can stay put.
+function matchFixGameId(){
+  const c = matchFixPlan && matchFixPlan.change;
+  return c ? (c.matchId || (c.match && c.match.id) || null) : null;
+}
+
 function wireMatchFix(){
   const c = document.getElementById('matchFixCommitBtn');
-  if(c) c.onclick = commitMatchCorrection;
+  // Confirming closes the editor: back to where it was opened.
+  if(c) c.onclick = ()=>{ const id = matchFixGameId(); return closeGameEditor(id, commitMatchCorrection); };
   const x = document.getElementById('matchFixCancelBtn');
-  if(x) x.onclick = ()=>{ matchFixReset(); renderGamesTab(); };
+  if(x) x.onclick = ()=>{ const id = matchFixGameId(); withGameAnchor(id, ()=>{ matchFixReset(); renderGamesTab(); }); };
 }
 
 // Approving a game means RATING it: it joins the v3 record, the four players'
@@ -479,9 +486,13 @@ function wireEditForm(id){
     };
   });
 
-  document.getElementById('edCancel').onclick = ()=>{ editingMatchId = null; renderGamesTab(); };
+  // Cancel returns the reader to where they opened the editor (gamesScreen.js).
+  document.getElementById('edCancel').onclick = ()=> closeGameEditor(id, ()=>{ editingMatchId = null; renderGamesTab(); });
 
-  document.getElementById('edSubmit').onclick = async ()=>{
+  // Save: a pending submission is saved and closed, and the reader returns to
+  // where they started; a rated game stages its correction in the same card,
+  // which stays put while the reader confirms (wireMatchFix).
+  document.getElementById('edSubmit').onclick = ()=> closeGameEditor(id, async ()=>{
     const name = requireName();
     if(!name) return;
     const msg = document.getElementById('edMessage');
@@ -527,5 +538,5 @@ function wireEditForm(id){
     }
     editingMatchId = null;
     dataChanged();
-  };
+  });
 }

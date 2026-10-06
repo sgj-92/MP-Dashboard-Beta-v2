@@ -85,3 +85,9 @@
   font-variant-numeric: tabular-nums;
 }
 .gp-record-empty .gp-record-line{ color: var(--text-dim); }
+
+/* Editing a game happens inside its own card (gamesScreen.js). Brought into
+   view under the header, never behind it. */
+#gamesView [data-game-card]{ scroll-margin-top: 120px; }
+.game-edit-inline{ margin-top: 10px; padding-top: 4px; border-top: 1px solid var(--surface-border-soft); }
+.game-edit-inline .section-heading{ margin-top: 6px; }

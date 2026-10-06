@@ -1918,6 +1918,10 @@ function navigateToGamesTabForEdit(matchId){
   armedDeleteId = null;
   const gamesTabBtn = document.querySelector('#tabrow .tab-btn[data-tab="games"]');
   if(gamesTabBtn) gamesTabBtn.click();
+  // Arriving from elsewhere: the game being edited is the place to land, with
+  // its form open in its own card.
+  const card = gameCardEl(matchId);
+  if(card) card.scrollIntoView({ block: 'start' });
 }
 
 let linkedRequestId = null;
