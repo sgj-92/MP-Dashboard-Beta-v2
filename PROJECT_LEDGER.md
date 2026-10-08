@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`bde692b`** (rated games say who submitted them again, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **927 / 927 on `main`** (6 Oct, after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`06370f5`** (four/five-set scores fit the Match Result Card, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **929 / 929 on `main`** (8 Oct, after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,13 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Match Result Card: four and five sets fit on one line — DONE (`06370f5`), 8 Oct.** Shaun's screenshot.
+- Each set was a wrapping flex item sized for three sets, so on a phone a
+  four-set score broke every set across two lines. Sets now never break; four
+  sets show at 34px and five at 25px (three or fewer unchanged at 44px). The
+  shared picture already fitted its score to the width.
+- Test at 360 and 390px for four and five sets (fails on the old CSS).
 
 **Rated games say who submitted them again — DONE (`bde692b`), 6 Oct.** Shaun's bug report: "every game shows Submitted by unknown".
 - Cause: since the Games log has read the v3 record (`e8d21f4`, 17 Sep) no
@@ -8663,6 +8670,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `06370f5` | Match Result Card: four/five-set scores stay on one line, each set whole (were splitting "6–" over "4" on phones). 929/929. |
 | `bde692b` | Rated games say who submitted them again (were all "Submitted by unknown" since the v3 move): submitter kept at approval in `moneypadel_match_attribution`, seeded games from the 16 Sep export, later approvals show the approver. 927/927. |
 | `21f79c1` | Edit Game opens inside the game's card and keeps the reader's place: Cancel / Save / Close / confirmed correction return to where the editor was opened (was: form appended after the list and scrolled to, leaving the reader at the bottom). 920/920. |
 | `750e31b` | League and Last 10 read P W D L like every other table; the Monthly Race's P/W/D/L open the matches behind them (shared drill-down, Race wording and points). 912/912. |
@@ -8777,6 +8785,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 8 Oct (latest): four/five-set scores fit the Match Result Card (`06370f5`, 929 / 929).** Baton → Shaun / CGPT.
 
 **CCode, 6 Oct (latest): rated games say who submitted them again (`bde692b`, 927 / 927).** Baton → Shaun / CGPT.
 
