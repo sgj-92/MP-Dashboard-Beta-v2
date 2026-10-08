@@ -469,7 +469,13 @@
 .mrc-vs{ font-size: 11px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; color: var(--gold-soft); }
 .mrc-draw .mrc-vs + .mrc-heroes{ margin-top: 4px; }
 .mrc-kicker{ margin-top: 6px; font-size: 12px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
-.mrc-score{ display: flex; justify-content: center; gap: 18px; margin-top: 10px; font-size: 44px; font-weight: 700; color: var(--text); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+.mrc-score{ display: flex; flex-wrap: wrap; justify-content: center; row-gap: 4px; gap: 18px; margin-top: 10px; font-size: 44px; font-weight: 700; color: var(--text); letter-spacing: .01em; font-variant-numeric: tabular-nums; }
+/* A set is one unit and never breaks across lines; four or five sets step down
+   in size so they still fit on one line on a phone (the picture already fits
+   its score to the width -- CardPainter). */
+.mrc-set{ white-space: nowrap; }
+.mrc-score[data-sets="4"]{ font-size: 34px; gap: 14px; }
+.mrc-score[data-sets="5"]{ font-size: 25px; gap: 9px; }
 .mrc-against{ margin-top: 4px; font-size: 13px; color: var(--text-dim); }
 .mrc-opp{ color: var(--text); opacity: .85; white-space: nowrap; }
 .mrc-against .mrc-tier{ font-size: 9.5px; padding: 1px 3px; }

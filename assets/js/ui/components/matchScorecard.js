@@ -84,10 +84,10 @@ function matchResultCardHtml(card){
     <div class="mrc-vs">vs</div>
     <div class="mrc-heroes mrc-side">${side(card.opponents)}</div>
     <div class="mrc-kicker">${escapeHtml(card.kicker)}</div>
-    <div class="mrc-score">${sets}</div>`
+    <div class="mrc-score" data-sets="${card.sets.length}">${sets}</div>`
       : `<div class="mrc-heroes">${heroes}</div>
     <div class="mrc-kicker">${escapeHtml(card.kicker)}</div>
-    <div class="mrc-score">${sets}</div>
+    <div class="mrc-score" data-sets="${card.sets.length}">${sets}</div>
     <div class="mrc-against">${escapeHtml(card.against)} ${opponents}</div>`}
     <div class="mrc-story">
       <div class="mrc-story-title">${escapeHtml(card.story.title)}</div>

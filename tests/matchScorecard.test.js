@@ -434,3 +434,32 @@ test('in the app, a player with no rating event falls back to the dated tier his
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
+
+// Four and five sets used to break each set across two lines ("6–" over "4")
+// on a phone: each set was a flex item that was allowed to wrap, at a size
+// meant for three. A set is one unit, and the row fits the card.
+for (const width of [360, 390]) {
+  test(`a four- or five-set score stays on one line, each set whole, at ${width}px`, { skip }, async () => {
+    const app = await H.open({ viewport: { width, height: 844 } });
+    try {
+      for (const sets of [[[4, 6], [6, 4], [6, 2], [6, 3]], [[4, 6], [6, 4], [6, 7], [7, 6], [10, 8]]]) {
+        const r = await app.run((sets) => {
+          const m = getAllApprovedMatches().find((x) => !x.isDraw);
+          m.sets = sets;
+          openMatchScorecard(m.id, 'result');
+          const card = document.querySelector('#matchScorecardModal .mrc').getBoundingClientRect();
+          const els = [...document.querySelectorAll('#matchScorecardModal .mrc-set')];
+          const lh = parseFloat(getComputedStyle(els[0]).fontSize) * 1.6;
+          return { n: els.length, tops: els.map((e) => Math.round(e.getBoundingClientRect().top)),
+            tall: els.filter((e) => e.getBoundingClientRect().height > lh).length,
+            out: els.filter((e) => e.getBoundingClientRect().left < card.left || e.getBoundingClientRect().right > card.right).length };
+        }, sets);
+        assert.strictEqual(r.n, sets.length);
+        assert.strictEqual(r.tall, 0, `${sets.length} sets: a set broke across lines`);
+        assert.strictEqual(new Set(r.tops).size, 1, `${sets.length} sets: the score did not fit on one line`);
+        assert.strictEqual(r.out, 0, `${sets.length} sets: a set ran outside the card`);
+      }
+      assert.deepStrictEqual(app.pageErrors, []);
+    } finally { await app.close(); }
+  });
+}
