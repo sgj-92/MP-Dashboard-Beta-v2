@@ -70,5 +70,29 @@
     return lines.join('\n');
   }
 
-  return { CALL, build, summaryText };
+  // Several predictions on one card (up to five, PredictionBatch.MAX): each
+  // match as its own card already says it -- the same teams, tiers, call and
+  // share of games -- numbered in order. Built from MatchupCard.build's cards,
+  // so nothing is worked out twice.
+  function buildMany(cards) {
+    const list = (cards || []).filter(Boolean).slice(0, 5);
+    if (!list.length) return null;
+    return {
+      title: list.length === 1 ? 'Match prediction' : 'Match predictions',
+      matches: list.map((c, i) => ({ n: i + 1, teamA: c.teamA, teamB: c.teamB, share: c.share, call: c.call })),
+      foot: 'Based on current Power Ratings · predictions, not results',
+    };
+  }
+
+  function summaryTextMany(view) {
+    if (!view) return '';
+    const lines = [`🎾 ${view.title}`];
+    view.matches.forEach((m) => {
+      lines.push('', `${m.n}. ${names(m.teamA)} vs ${names(m.teamB)}`, `${m.share.a}% – ${m.share.b}%${m.call.names ? ` · ${m.call.headline}` : ` · ${m.call.kicker}`}`);
+    });
+    lines.push('', 'Expected share of games · based on current Power Ratings');
+    return lines.join('\n');
+  }
+
+  return { CALL, build, summaryText, buildMany, summaryTextMany };
 });

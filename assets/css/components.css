@@ -613,3 +613,56 @@
 }
 .mu-action-primary{ background: var(--gold); border-color: var(--gold); color: #17130c; }
 .mu-message{ margin: 6px 0 10px; min-height: 0; font-size: 11.5px; color: var(--gold-soft); text-align: center; }
+
+/* Predict a Matchup: four players, then the card; up to five in a batch. */
+.pred-slot{ margin-bottom: 4px; }
+.pred-slot.is-invalid{ border-color: var(--red); }
+.pred-slot-note{ font-size: 11.5px; color: #e8a5a1; min-height: 0; margin-bottom: 4px; }
+.pred-slot-note:empty{ display: none; }
+.pred-prompt{ margin: 10px 0 4px; padding: 14px 12px; border: 1px dashed var(--gold-hairline); border-radius: var(--radius-md); text-align: center; font-size: 13px; color: var(--text-dim); }
+.pred-prompt.is-problem{ border-style: solid; border-color: var(--red); color: #e8a5a1; }
+.pred-editor{ margin-bottom: 10px; }
+.pred-editor-head{ display: flex; justify-content: space-between; align-items: center; margin: 4px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+.pred-fold{ display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid var(--gold-hairline); border-radius: var(--radius-md); background: var(--bg1); }
+.pred-fold-n{ flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--gold-hairline); color: var(--gold-soft); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.pred-fold-body{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pred-fold-teams{ font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
+.pred-fold-teams .mu-name{ font-size: 15px; }
+.pred-fold-teams .mu-amp{ margin: 0 5px; }
+.pred-fold-teams .mu-player{ gap: 4px; }
+.pred-fold-todo{ color: var(--text-dim); font-style: italic; }
+.pred-fold-pct{ font-size: 13px; font-weight: 700; color: var(--gold-bright); }
+.pred-fold-actions{ flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; }
+.pred-fold-actions .preset-btn{ padding: 5px 10px; font-size: 12px; }
+.pred-preview .pred-fold{ margin: 10px 0 8px; }
+.pred-done{ width: 100%; }
+.pred-add{ width: 100%; margin: 4px 0 6px; padding: 11px 12px; border-color: var(--gold-hairline); color: var(--gold-bright); font-weight: 600; }
+.pred-max{ margin: 4px 0 8px; font-size: 11.5px; color: var(--text-dim); text-align: center; }
+
+/* Several predictions on one condensed card (CardPainter.matchups on screen). */
+.mu-multi{ text-align: left; padding: 16px 14px 12px; }
+.mu-multi .mu-eyebrow, .mu-multi-sub{ text-align: center; }
+.mu-multi-sub{ margin-top: 4px; }
+.mu-row{ display: flex; gap: 10px; align-items: center; margin-top: 10px; padding: 10px 12px; border-radius: var(--radius-md); background: rgba(241,233,216,0.04); border: 1px solid var(--surface-border-soft); }
+.mu-row-n{ flex: 0 0 auto; width: 18px; font-size: 18px; font-weight: 700; color: var(--gold-soft); text-align: center; }
+.mu-row-body{ flex: 1; min-width: 0; }
+.mu-row-side{ display: flex; align-items: center; gap: 8px; }
+.mu-row-team{ flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
+.mu-row-team .mu-name{ font-size: 17px; }
+.mu-row-pct{ flex: 0 0 auto; font-size: 20px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.mu-row-side.is-favoured .mu-name, .mu-row-side.is-favoured .mu-row-pct{ color: var(--gold-bright); }
+.mu-row-vs{ font-size: 9.5px; font-weight: 700; letter-spacing: .24em; color: var(--text-dim); margin: 3px 0; text-transform: uppercase; }
+.mu-multi .mu-foot{ text-align: center; }
+
+/* Editable controls on phones and touch screens: never below 16px.
+   iOS Safari zooms in on any focused field whose text is under 16px and does
+   not zoom back out when the keyboard closes, which is how the app came to be
+   left zoomed after typing a name. Every control here was 12.5-14px. Zoom stays
+   available to the reader (the viewport tag sets no maximum-scale); this only
+   removes the reason Safari had to zoom. !important because screens size some
+   controls down (and a few inline) for desktop density. */
+@media (pointer: coarse), (max-width: 600px){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]):not([type=reset]):not([type=color]):not([type=file]):not([type=image]),
+  select,
+  textarea{ font-size: 16px !important; }
+}

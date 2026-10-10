@@ -12,6 +12,7 @@
 //               the Kings tiles or a note, from its blocks.
 //   matchResult(...)  1080 x 1350, one played match's Result Card.
 //   matchup(...)  1080 x 1350, a predicted matchup (Predict a Matchup).
+//   matchups(...) 1080 wide, up to five predicted matchups on one card.
 //   nominees(...)  1080 wide, Player of the Month's nominees for the group.
 //
 // Knows nothing about the app. Loads before app.js; declarations only.
@@ -623,6 +624,53 @@
     return cv;
   }
 
+  // ---- Several predicted matchups on one card, 1080 wide -----------------
+  // view = MatchupCard.buildMany(...): up to five matches, each its own panel,
+  // numbered; each side on its own line with its tiers and its expected share
+  // of games, the favoured side brighter (as on the single card). At least
+  // square; taller when there are more matches, never cut.
+  function matchups(view, o = {}) {
+    const M = 72, room = W - 2 * M, pad = 40, RH = 208, GAP = 20, TOP = 292;
+    const list = (view && view.matches) || [];
+    const H = Math.max(W, TOP + list.length * RH + Math.max(0, list.length - 1) * GAP + 170);
+    const cv = canvas(W, H);
+    const ctx = cv.getContext('2d');
+    background(ctx, W, H);
+    brand(ctx, o.brand, '', M, 72, 64, W - M);
+    font(ctx, 32, { weight: 700, spacing: 0.22 });
+    textAt(ctx, String(view.title || 'Match predictions').toUpperCase(), W / 2, 206, { color: C.gold, align: 'center', baseline: 'middle' });
+    font(ctx, 26, { spacing: 0.12 });
+    textAt(ctx, 'EXPECTED SHARE OF GAMES', W / 2, 250, { color: C.dim, align: 'center', baseline: 'middle' });
+
+    const numW = 76, shareW = 170;
+    const nameX = M + pad + numW, nameW = room - 2 * pad - numW - shareW;
+    // One name size for every line on the card, as large as the longest allows.
+    let size = 50;
+    const widest = () => Math.max(...list.flatMap((m) => [peopleWidth(ctx, m.teamA, size, true, 400), peopleWidth(ctx, m.teamB, size, true, 400)]));
+    while (size > 34 && widest() > nameW) size -= 2;
+    list.forEach((m, i) => {
+      const top = TOP + i * (RH + GAP);
+      ctx.fillStyle = C.surface2; roundRect(ctx, M, top, room, RH, 30); ctx.fill();
+      ctx.strokeStyle = C.hair; ctx.lineWidth = 3; ctx.stroke();
+      font(ctx, 44, { weight: 700 });
+      textAt(ctx, String(m.n), M + pad + 18, top + RH / 2, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+      const fav = m.call && m.call.favoured;
+      const tone = (side) => (fav === side ? C.bright : C.text);
+      [['A', m.teamA, m.share.a, top + 54], ['B', m.teamB, m.share.b, top + RH - 54]].forEach(([side, team, pct, y]) => {
+        people(ctx, team, nameX + peopleWidth(ctx, team, size, true, 400) / 2, y, size, { serif: true, color: tone(side) });
+        font(ctx, 60, { weight: 700 });
+        textAt(ctx, `${pct}%`, W - M - pad, y, { color: tone(side), align: 'right', baseline: 'middle' });
+      });
+      font(ctx, 22, { weight: 700, spacing: 0.2 });
+      textAt(ctx, 'VS', nameX, top + RH / 2 + 1, { color: C.dim, baseline: 'middle' });
+    });
+
+    hline(ctx, M, W - M, H - 130, C.rule);
+    font(ctx, 28, { spacing: 0.04 });
+    textAt(ctx, view.foot || '', W / 2, H - 78, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+    return cv;
+  }
+
   // ---- Player of the Month nominees, 1080 wide ---------------------------
   // view = { month: 'September 2026', title, sub, cards: [{ name, tier,
   //   reasons: [{ title, line }], support }] }. At least the deck's 4:5; taller
@@ -746,5 +794,5 @@
     }
   }
 
-  return { W, SLIDE_H, loadImage, slide, sheet, matchResult, matchup, nominees, toBlob, toFile, toPdf, share, save };
+  return { W, SLIDE_H, loadImage, slide, sheet, matchResult, matchup, matchups, nominees, toBlob, toFile, toPdf, share, save };
 });
