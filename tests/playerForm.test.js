@@ -179,3 +179,34 @@ maybe('Home\'s form dots are the same ten games, draws in their own colour', asy
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
+
+// Shaun, 15 Oct: "align everything to include draws". The rankings' W/L and
+// Win %, the monthly stats, partnerships and the players export count every
+// rated game -- and say the same as the profile, the League and the record.
+maybe('everywhere: one record per player -- rankings, profile, months and partnerships agree, draws included', async () => {
+  const app = await H.open();
+  try {
+    const r = await app.run(() => {
+      const bad = [];
+      PLAYERS.forEach((p) => {
+        const rec = playerRecordOf(p.name);
+        if (rec.wins !== p.wins || rec.draws !== p.draws || rec.losses !== p.losses || rec.played !== p.total || rec.winpct !== p.winpct) bad.push(`player ${p.name}`);
+        if (p.lifetimeMatches !== undefined && p.total !== p.lifetimeMatches) bad.push(`games ${p.name}: ${p.total} vs ${p.lifetimeMatches}`);
+      });
+      [...new Set(getAllApprovedMatches().map((m) => m.date.slice(0, 7)))].forEach((mo) => {
+        const a = computeMonthlyStats(mo); const b = computeMonthlySummaryStats(mo);
+        Object.keys(b).filter((n) => b[n].games).forEach((n) => {
+          const x = a[n] || {};
+          if (x.total !== b[n].games || x.draws !== b[n].draws || x.winpct !== b[n].winpct) bad.push(`month ${mo} ${n}`);
+        });
+      });
+      PARTNERSHIPS.forEach((pr) => { if (pr.wins + pr.draws + pr.losses !== pr.games) bad.push(`pair ${pr.pair}`); });
+      const drawer = PLAYERS.find((p) => p.draws >= 2);
+      return { bad, pairDraws: PARTNERSHIPS.some((pr) => pr.draws > 0), drawer: [drawer.wins, drawer.draws, drawer.losses, drawer.total] };
+    });
+    assert.deepStrictEqual(r.bad, []);
+    assert.strictEqual(r.drawer[0] + r.drawer[1] + r.drawer[2], r.drawer[3]);
+    assert.ok(r.pairDraws, 'partnership records hold their draws');
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});

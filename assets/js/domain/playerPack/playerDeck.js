@@ -45,7 +45,7 @@
       if (!d.rows.length) return null;
       const rows = d.rows.slice(0, 3).map((t) => ({ name: t.name, value: record(t), sub: `${plural(t.played, 'match', 'matches')} together` }));
       return { eyebrow: 'Partners', title: 'Who you played with', groups: [{ rows }],
-        foot: d.strongest ? `Best chemistry: ${d.strongest.partner} (${signed(d.strongest.chemistry)}%, ${plural(d.strongest.decided, 'decided game')})` : '',
+        foot: d.strongest ? `Best chemistry: ${d.strongest.partner} (${signed(d.strongest.chemistry)}%, ${plural(d.strongest.decided, 'game')})` : '',
         summary: [`Most played partner: ${d.rows[0].name} (${record(d.rows[0])})`] };
     },
     rivals: (d) => {

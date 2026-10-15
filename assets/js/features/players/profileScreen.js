@@ -71,7 +71,7 @@ function buildProfileText(p){
   const bp = BEST_PARTNER[p.name];
   if(bp){
     const smallSample = bp.games < 3 ? ' (small sample)' : '';
-    parts.push(`Best chemistry so far has been with <b>${bp.partner}</b> — ${bp.wins}-${bp.losses} together (${bp.winpct}%), ${bp.avg_overperf>=0?'+':''}${bp.avg_overperf}% ahead of what the matchups alone predicted${smallSample}.`);
+    parts.push(`Best chemistry so far has been with <b>${bp.partner}</b> — ${PlayerForm.recordShort(bp)} together (${bp.winpct}%), ${bp.avg_overperf>=0?'+':''}${bp.avg_overperf}% ahead of what the matchups alone predicted${smallSample}.`);
   }
 
   return parts.join(' ');
@@ -365,7 +365,7 @@ function buildRecentFormSection(name){
     ? `<div class="section-sub" style="color:#e8a5a1; margin-top:4px;">⚠️ Last played ${fmtDaysAgo(form.daysSinceLastGame)} — this record is from before then, not a sign of current form.</div>`
     : '';
   return `<div class="section-heading" style="margin-top:14px;">📊 Recent form (last ${form.games} games)</div>
-    <div class="matchup-vs" style="${isStale?'opacity:0.7;':''}"><span class="${cls}" style="font-weight:700; font-size:15px;">${sign}${pct}%</span> <span style="color:var(--green); font-weight:700;">${form.wins}W</span>-<span style="color:var(--red); font-weight:700;">${form.losses}L</span> <span style="color:var(--text-dim); font-size:11.5px;">average overperformance vs. expectation — ${note}. This is separate from the overall rating above and moves faster, since it's a short window.</span></div>${staleWarning}`;
+    <div class="matchup-vs" style="${isStale?'opacity:0.7;':''}"><span class="${cls}" style="font-weight:700; font-size:15px;">${sign}${pct}%</span> <span style="color:var(--green); font-weight:700;">${form.wins}W</span>-${form.draws ? `<span style="color:var(--draw); font-weight:700;">${form.draws}D</span>-` : ''}<span style="color:var(--red); font-weight:700;">${form.losses}L</span> <span style="color:var(--text-dim); font-size:11.5px;">average overperformance vs. expectation — ${note}. This is separate from the overall rating above and moves faster, since it's a short window.</span></div>${staleWarning}`;
 }
 
 function buildDevAreasSection(name){
@@ -659,7 +659,7 @@ function buildProfileFactsHtml(p){
   return `<div class="pp-hero-facts">
     ${cell('Tier', `<div class="pp-fact-value">${p.tier}</div>`)}
     ${cell('Reliability', relValue)}
-    ${cell('Games', `<div class="pp-fact-value">${p.lifetimeMatches != null ? p.lifetimeMatches : (p.wins + p.losses)}</div>`)}
+    ${cell('Games', `<div class="pp-fact-value">${p.lifetimeMatches != null ? p.lifetimeMatches : p.total}</div>`)}
     ${joined ? cell('Joined', `<div class="pp-fact-value pp-fact-value-small">${joined}</div>`) : ''}
   </div>`;
 }

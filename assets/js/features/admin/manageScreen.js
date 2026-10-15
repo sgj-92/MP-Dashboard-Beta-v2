@@ -324,10 +324,10 @@ function idToIdxGlobalForExport(id){
 }
 
 function exportPlayersCsv(){
-  const headers = ['Name','Tier','Status','Rating','Games','Wins','Losses','Win %','Avg Opponent','Clutch %','Upset Wins','Upset Losses','Recent Form % (last 10)','Recent Form W-D-L'];
+  const headers = ['Name','Tier','Status','Rating','Games','Wins','Draws','Losses','Win %','Avg Opponent','Clutch %','Upset Wins','Upset Losses','Recent Form % (last 10)','Recent Form W-D-L'];
   const rows = PLAYERS.map(p=>[
     p.name, p.tier, PlayerStatus.LABEL[p.status] || 'Active',
-    Math.round(p.rating*10)/10, p.total, p.wins, p.losses,
+    Math.round(p.rating*10)/10, p.total, p.wins, p.draws, p.losses,
     p.total ? Math.round(1000*p.wins/p.total)/10 : 0,
     Math.round(p.avg_match_strength), p.avg_overperf_pct,
     p.upset_wins, p.upset_losses,

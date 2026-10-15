@@ -76,9 +76,9 @@ function playerMonthlyPack(name, month){
     rankStart: mv.startRankOverall, rankEnd: mv.endRankOverall, rankChange: mv.rankChangeOverall,
   } : null;
 
-  // The chemistry the Insights screen ranks by, over this month's decided
-  // games, for this player's pairs (2+ decided games together).
-  const chemistry = buildPartnerships(MATCHES.filter(m => m.date.slice(0,7) === month), TIER_MAP)
+  // The chemistry the Insights screen ranks by, over this month's games --
+  // draws included -- for this player's pairs (2+ games together).
+  const chemistry = buildPartnerships(matchesIncludingDraws().filter(m => m.date.slice(0,7) === month), TIER_MAP)
     .filter(p => p.pair.includes(name))
     .map(p => ({ partner: p.pair.find(x => x !== name), chemistry: p.avg_overperf, decided: p.games }));
 

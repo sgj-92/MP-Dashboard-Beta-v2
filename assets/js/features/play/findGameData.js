@@ -121,7 +121,7 @@ function buildCompleteMatchWithPartner(player, partner, oppCandidate){
   const balanceDesc = veryEven ? 'Almost perfectly balanced'
     : (pct > 50 ? `A slight edge to ${player.name}'s side` : 'A slight edge to the opponents');
   const partnerClause = partnership
-    ? `a partnership with real chemistry (${partnership.wins}-${partnership.losses} together, ${partnership.avg_overperf>=0?'+':''}${partnership.avg_overperf}% overperformance)`
+    ? `a partnership with real chemistry (${PlayerForm.recordShort(partnership)} together, ${partnership.avg_overperf>=0?'+':''}${partnership.avg_overperf}% overperformance)`
     : 'a fresh partnership combination';
   const whyLine = `${veryEven ? 'Very even ratings' : balanceDesc} with ${partnerClause}.`;
   // The same reason without the favourite call, for players (canSeePredictions).

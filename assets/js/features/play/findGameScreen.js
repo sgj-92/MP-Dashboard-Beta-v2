@@ -139,7 +139,7 @@ function renderMatchTeams(m){
 function renderBestMatchCard(m, label){
   const tierNote = m.tiers[0]===m.tiers[1] ? `Tier ${m.tiers[0]}` : `Tier ${m.tiers[0]} &amp; Tier ${m.tiers[1]}`;
   const partnershipLine = m.partnership
-    ? `${m.player.name} &amp; ${m.partner.name}: ${m.partnership.games} games together, ${m.partnership.wins}-${m.partnership.losses} (${m.partnership.winpct}%)`
+    ? `${m.player.name} &amp; ${m.partner.name}: ${m.partnership.games} games together, ${PlayerForm.recordShort(m.partnership)} (${m.partnership.winpct}%)`
     : `${m.player.name} and ${m.partner.name} haven't built up a partnership record together yet.`;
   return `<div class="pm-best mp-card-prestige">
     <div class="pm-best-label">${label || 'Best Match'}</div>

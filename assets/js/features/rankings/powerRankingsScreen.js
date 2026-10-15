@@ -267,7 +267,7 @@ function render(){
         </div>
         <div class="wl">
           <div class="pct">${p.winpct}%</div>
-          <div class="rec"><span class="w">${p.wins}W</span> · <span class="l">${p.losses}L</span></div>
+          <div class="rec"><span class="w">${p.wins}W</span>${p.draws ? ` · <span class="d">${p.draws}D</span>` : ''} · <span class="l">${p.losses}L</span></div>
         </div>
       `;
     } else {
@@ -291,7 +291,7 @@ function render(){
       const monthRatingHtml = (inMonthView && !hasMonthGames)
         ? `<div class="rating-sub" style="font-size:10px; color:var(--text-dim);">no games this month</div>`
         : '';
-      const wlHtml = inMonthView ? ` · <span style="color:var(--green);">${p.wins}W</span>-<span style="color:var(--red);">${p.losses}L</span>` : '';
+      const wlHtml = inMonthView ? ` · <span style="color:var(--green);">${p.wins}W</span>-${p.draws ? `<span style="color:var(--draw);">${p.draws}D</span>-` : ''}<span style="color:var(--red);">${p.losses}L</span>` : '';
 
       // Progressive disclosure: the row's one secondary "meta" line shows whichever stat the
       // current sort is actually about -- everything else stays reachable by tapping into the

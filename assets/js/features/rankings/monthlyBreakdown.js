@@ -17,7 +17,7 @@ function buildMonthlyReconciliationText(ctx){
   const extras = [];
   if(j.tierChangeCount) extras.push(`${j.tierChangeCount} tier change${j.tierChangeCount===1?'':'s'} (which move no points)`);
   if(j.reassessmentCount) extras.push(`${j.reassessmentCount} club reassessment${j.reassessmentCount===1?'':'s'}`);
-  return `${ctx.name} carried <b style="color:var(--text);">${Math.round(j.startRating)}</b> into ${monthLabel(ctx.month)} — not a tier baseline, but wherever their continuous rating had already reached. Across ${j.matchCount} rated match${j.matchCount===1?'':'es'} (${ctx.player.wins}-${ctx.player.losses})${extras.length ? ` and ${extras.join(' and ')}` : ''} it moved ${movedLabel} to <b style="color:var(--gold-bright);">${Math.round(ctx.rating)}</b>. Every step below is the move the engine recorded at the time; nothing is re-solved for the month.`;
+  return `${ctx.name} carried <b style="color:var(--text);">${Math.round(j.startRating)}</b> into ${monthLabel(ctx.month)} — not a tier baseline, but wherever their continuous rating had already reached. Across ${j.matchCount} rated match${j.matchCount===1?'':'es'} (${PlayerForm.recordShort(ctx.player)})${extras.length ? ` and ${extras.join(' and ')}` : ''} it moved ${movedLabel} to <b style="color:var(--gold-bright);">${Math.round(ctx.rating)}</b>. Every step below is the move the engine recorded at the time; nothing is re-solved for the month.`;
 }
 
 function buildMonthlyRatingHeaderHtml(ctx){
@@ -147,7 +147,7 @@ function buildMonthlyRatingCompareHtml(nameA, nameB, month){
     ? `Both figures are month-end points on one continuous rating, not a score solved for ${monthLabel(month)}.`
     : `${ctxA.name} carried ${openA} into ${monthLabel(month)} and ${ctxB.name} carried ${openB}. Neither is reset at the start of a month, so the gap below is that head start plus what each of them did with it.`;
 
-  const statLine = (ctx) => `<b style="color:var(--text);">${ctx.name}</b>: ${ctx.player.wins}-${ctx.player.losses}, avg opponent ${Math.round(ctx.player.avg_match_strength)}, ${ctx.player.avg_overperf_pct>=0?'+':''}${ctx.player.avg_overperf_pct}% vs. expectation`;
+  const statLine = (ctx) => `<b style="color:var(--text);">${ctx.name}</b>: ${PlayerForm.recordShort(ctx.player)}, avg opponent ${Math.round(ctx.player.avg_match_strength)}, ${ctx.player.avg_overperf_pct>=0?'+':''}${ctx.player.avg_overperf_pct}% vs. expectation`;
 
   const explainer = margin < 10
     ? `A margin this small usually comes down to a handful of close games — check each player's full match list for the detail.`
