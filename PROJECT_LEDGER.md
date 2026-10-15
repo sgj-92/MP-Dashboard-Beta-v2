@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`3259cdc`** (Predict a Matchup: four players, up to five matches, one shared card; no iPhone input zoom, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **938 / 938 on `main`** (10 Oct, after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`9809d88`** (player form counts draws: profile/Home/Win Rate reconcile with Recent Results, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **947 / 947 on `main`** (15 Oct, after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,43 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Player form counts draws: profile, Home and Win Rate reconcile with Recent Results — DONE (`9809d88`), 15 Oct.** Shaun's brief (Jams).
+- **Root cause.** The profile's form strip, its "3–7 · Last 10", Home's
+  form dots/record and the hero's W-L / Win Rate were built from `MATCHES`,
+  the rating's decided-only set. Recent Results reads
+  `matchesIncludingDraws()`. Draws were not misclassified; they were
+  **dropped**, and an older decided game slid into the ten. On live data (15
+  Oct) Jams showed `W W L W L L L L L L · 3–7` (his whole decided history
+  back to July) and `3-7 · 30% Win Rate`. His real last ten are
+  `L D L D L L L D L W` = 1W 3D 6L, and his record is 3W 3D 7L = **23.1%**.
+- **Shared logic.** New pure `domain/matches/playerForm.js` (`PlayerForm`)
+  works over every rated game, draws included. `MatchOutcome` decides each
+  result. Order: newest first, same-date games by the record's sequence; Recent
+  Results now uses the same order. Win rate = wins / games played (the
+  League's and Games log's definition). `computeRecentForm` and
+  `computeRecentFormSequence` delegate to it. This is the source any future
+  form consumer (Rating Review flags) should read.
+- **Surfaces.** Profile strip, "1W · 3D · 6L · Last 10", hero
+  "3W · 3D · 7L · 23.1% Win Rate"; Home dots, record and the trending line;
+  recent-form W-D-L in Power Rankings, League and the admin export. Draws get
+  a `--draw` colour (neutral warm grey) in the profile letters, Home dots and
+  the League's Last 10 run. The strip still reads oldest→newest with the
+  latest game on the right.
+- **Knock-on.** The recent-form "vs expectation" average (trend arrows) now
+  covers the same ten games, draws included.
+- **Verified on the live record (read-only snapshot, not committed).** All 34
+  players reconcile: strip = Recent Results' first ten, record line adds up,
+  hero record sums to games listed, Win Rate = wins/played. The 14 players
+  without draws are unchanged (letters, counts, Win Rate, average); the 20
+  with draws were all affected.
+- `tests/playerForm.test.js`: 9 tests (Jams's stored sequence as a pure case;
+  profile, Home and fewer-than-ten in the app); the app ones fail on the old
+  code.
+- Also `4ec05f9`: five `ui.test.js` tests checked "recent" against the real
+  clock and broke as the calendar passed the fixture (games end 16 Sep). They
+  failed identically on unchanged code and now run at `FIXTURE_NOW` (21 Sep).
+- Open: Power Rankings' W% still excludes draws (Open Questions, 15 Oct).
 
 **Predict a Matchup: four players, up to five matches, one shared card; iPhone input zoom fixed — DONE (`3259cdc`), 10 Oct.** Shaun's brief.
 - **Four players or nothing.** `domain/predictions/predictionBatch.js` (pure):
@@ -2806,6 +2843,18 @@ with Shaun.**
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 15 Oct — Power Rankings "Win %" and the admin player export still leave draws out
+
+**For Shaun / CGPT (CCode recommends: yes, align them).** `PLAYERS[].wins/losses/total/winpct`
+(built from MATCHES, the rating's decided-only set) still feed the Power
+Rankings W% column and its sort, the profile's "Best chemistry" partner
+record, and the admin player CSV (Wins, Losses, Win %). There, Win % =
+wins / (wins + losses). The profile, Home, the League, the Games log and
+Player Packs use wins / games played, draws included (`9809d88`). Aligning means
+counting draws in the rankings' W% (and `total`). That also touches the
+min-games display filter, which reads `total`. This was left untouched
+because it is a visible change on a ranking screen; say if it should follow.
 
 ### RESOLVED 4 Oct — Matchup Card: the % of games, not a number of games
 
@@ -8703,6 +8752,8 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `9809d88` | Player form counts draws: one `PlayerForm` module feeds the profile form/record/Win Rate, Home and recent-form W-D-L; draws no longer dropped (Jams: 3–7 → 1W·3D·6L; 30% → 23.1%); draw colour. 947/947. |
+| `4ec05f9` | UI suite's clock-dependent tests pinned to the fixture era (were failing on unchanged code from mid-Oct). |
 | `3259cdc` | Predict a Matchup: no card until four valid, distinct players; up to five predictions (add/edit/remove) shared as one condensed card (same predictions); editable controls 16px on phones so iOS no longer zooms on focus. 938/938. |
 | `06370f5` | Match Result Card: four/five-set scores stay on one line, each set whole (were splitting "6–" over "4" on phones). 929/929. |
 | `bde692b` | Rated games say who submitted them again (were all "Submitted by unknown" since the v3 move): submitter kept at approval in `moneypadel_match_attribution`, seeded games from the 16 Sep export, later approvals show the approver. 927/927. |
@@ -8819,6 +8870,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 15 Oct (latest): player form counts draws everywhere it is shown (`9809d88`, 947 / 947).** Baton → Shaun / CGPT. One decision: should Power Rankings' W% count draws too (Open Questions, 15 Oct)? Rating Review flags should read `PlayerForm`.
 
 **CCode, 10 Oct (latest): Predict a Matchup batches + iPhone input zoom (`3259cdc`, 938 / 938).** Baton → Shaun / CGPT. For Shaun: singles predictions are gone from this tool (four players required), and Add to Upcoming works on a single prediction only. Say if either should change.
 
