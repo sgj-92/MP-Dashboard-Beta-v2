@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`9809d88`** (player form counts draws: profile/Home/Win Rate reconcile with Recent Results, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **947 / 947 on `main`** (15 Oct, after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`777b7c0`** (every record counts draws: rankings, monthly stats, partnerships, H2H, exports, 15 Oct; player form counts draws `9809d88`, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **948 / 948 on `main`** (15 Oct, after every record counts draws; 947 after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,25 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Every record counts draws — DONE (`777b7c0`), 15 Oct.** Shaun: "align everything to include draws".
+- `buildPlayers`, `computeMonthlyStats`, `buildPartnerships` and `buildH2H` now
+  read `matchesIncludingDraws()`; `isDraw` is its own outcome (never a win, loss
+  or upset; its residual counts toward vs-expectation like any game).
+- `PLAYERS[].total` = W + D + L = lifetime games; `winpct` = W / total. This
+  feeds the Power Rankings W/L list, its Win % column and sort, the **min-games
+  display filter** (now counts draws), risk confidence, avg opponent and
+  vs-expectation.
+- Monthly stats equal the League's monthly table for every player and month.
+- Partnerships: draws counted (2+ games incl. draws qualifies); the Board Pack's
+  separate draw tally was removed; Player Pack chemistry says "games".
+- Displays: W/L list `5W · 2D · 1L`; month view, partnership records,
+  best-chemistry line, recent-form card, monthly breakdown use `12W-1D-10L`; the
+  admin players CSV has a Draws column.
+- Verified on the live record: all 34 players' rankings record equals the
+  profile and lifetime games, every month equals the League, and every
+  partnership adds up. One new test; the Board Pack draw-injection test now
+  injects into `DRAW_MATCHES` too.
 
 **Player form counts draws: profile, Home and Win Rate reconcile with Recent Results — DONE (`9809d88`), 15 Oct.** Shaun's brief (Jams).
 - **Root cause.** The profile's form strip, its "3–7 · Last 10", Home's
@@ -2844,7 +2863,11 @@ with Shaun.**
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
-### OPEN 15 Oct — Power Rankings "Win %" and the admin player export still leave draws out
+### RESOLVED 15 Oct — every record counts draws (`777b7c0`)
+
+**Shaun, 15 Oct: "Yes, align everything to include draws."** Done in `777b7c0`: PLAYERS, monthly stats, partnerships, H2H and every W/L display and export now count draws (total = W + D + L = games played; win % = W / total).
+
+#### As raised
 
 **For Shaun / CGPT (CCode recommends: yes, align them).** `PLAYERS[].wins/losses/total/winpct`
 (built from MATCHES, the rating's decided-only set) still feed the Power
@@ -8752,6 +8775,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `777b7c0` | Every record counts draws (Shaun's call): rankings W/L & Win %, monthly stats, partnerships, H2H, exports. 948/948. |
 | `9809d88` | Player form counts draws: one `PlayerForm` module feeds the profile form/record/Win Rate, Home and recent-form W-D-L; draws no longer dropped (Jams: 3–7 → 1W·3D·6L; 30% → 23.1%); draw colour. 947/947. |
 | `4ec05f9` | UI suite's clock-dependent tests pinned to the fixture era (were failing on unchanged code from mid-Oct). |
 | `3259cdc` | Predict a Matchup: no card until four valid, distinct players; up to five predictions (add/edit/remove) shared as one condensed card (same predictions); editable controls 16px on phones so iOS no longer zooms on focus. 938/938. |
@@ -8870,6 +8894,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 15 Oct (latest): every record counts draws, per Shaun (`777b7c0`, 948 / 948).** Baton → Shaun / CGPT. Nothing open on draws.
 
 **CCode, 15 Oct (latest): player form counts draws everywhere it is shown (`9809d88`, 947 / 947).** Baton → Shaun / CGPT. One decision: should Power Rankings' W% count draws too (Open Questions, 15 Oct)? Rating Review flags should read `PlayerForm`.
 
