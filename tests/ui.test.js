@@ -18,8 +18,13 @@ const GameType = require('../assets/js/gameType.js');
 const skip = H.available() ? false : 'Playwright is not available in this environment';
 
 // One browser for the read-only checks; the ones that write get their own.
+// The fixture's games end on 16 Sep. Anything here that asks what is "recent"
+// (rankings, participation, the current month) is pinned inside that era, so
+// the suite does not start failing as the real calendar walks away from it.
+const FIXTURE_NOW = '2026-09-21T10:00:00.000Z';
+
 let shared = null;
-test.before(async () => { if (!skip) shared = await H.open(); });
+test.before(async () => { if (!skip) shared = await H.open({ now: FIXTURE_NOW }); });
 test.after(async () => { if (shared) await shared.close(); });
 
 test('the app loads, renders, and throws nothing', { skip }, async () => {
@@ -2517,7 +2522,7 @@ test('the expanded Games card stays compact', { skip }, async () => {
 // total >= 10, which is the rankings list's default min-games DISPLAY filter,
 // not an eligibility rule.
 test('a player with recent matches gets a rank, whatever their lifetime total', { skip }, async () => {
-  const app = await H.open();
+  const app = await H.open({ now: FIXTURE_NOW });
   try {
     const r = await app.run(() => {
       const name = 'Ant Slice';
@@ -2621,7 +2626,7 @@ test('an active player below the threshold reads Idle, not Inactive', { skip }, 
 // Shaun's correction: the toggles widen the RANKING POOL. An idle player whose
 // rating belongs 5th appears 5th, not in a section underneath.
 test('including idle or inactive merges them into the ranked list and renumbers it', { skip }, async () => {
-  const app = await H.open();
+  const app = await H.open({ now: FIXTURE_NOW });
   try {
     const r = await app.run(() => {
       const snap = () => {
@@ -2858,7 +2863,7 @@ test('the expanded Games card stays compact', { skip }, async () => {
 // total >= 10, which is the rankings list's default min-games DISPLAY filter,
 // not an eligibility rule.
 test('a player with recent matches gets a rank, whatever their lifetime total', { skip }, async () => {
-  const app = await H.open();
+  const app = await H.open({ now: FIXTURE_NOW });
   try {
     const r = await app.run(() => {
       const name = 'Ant Slice';
@@ -4351,7 +4356,7 @@ test('renaming is admin-only', { skip }, async () => {
 // decisions supplied in the unhelpful order Firestore happened to return.
 
 test('a mid-month reassessment never shows the new tier beside the old rating', { skip }, async () => {
-  const app = await H.open();
+  const app = await H.open({ now: FIXTURE_NOW });
   try {
     const r = await app.run(() => {
       const subject = [...PLAYERS].sort((a, b) => b.lifetimeMatches - a.lifetimeMatches)[0].name;
