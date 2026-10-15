@@ -324,7 +324,7 @@ function idToIdxGlobalForExport(id){
 }
 
 function exportPlayersCsv(){
-  const headers = ['Name','Tier','Status','Rating','Games','Wins','Losses','Win %','Avg Opponent','Clutch %','Upset Wins','Upset Losses','Recent Form % (last 10)','Recent Form W-L'];
+  const headers = ['Name','Tier','Status','Rating','Games','Wins','Losses','Win %','Avg Opponent','Clutch %','Upset Wins','Upset Losses','Recent Form % (last 10)','Recent Form W-D-L'];
   const rows = PLAYERS.map(p=>[
     p.name, p.tier, PlayerStatus.LABEL[p.status] || 'Active',
     Math.round(p.rating*10)/10, p.total, p.wins, p.losses,
@@ -332,7 +332,7 @@ function exportPlayersCsv(){
     Math.round(p.avg_match_strength), p.avg_overperf_pct,
     p.upset_wins, p.upset_losses,
     p.recent_form !== null && p.recent_form !== undefined ? p.recent_form : '',
-    (p.recent_form_wins !== undefined) ? `${p.recent_form_wins}-${p.recent_form_losses}` : '',
+    (p.recent_form_wins !== undefined) ? PlayerForm.recordShort({ wins: p.recent_form_wins, draws: p.recent_form_draws, losses: p.recent_form_losses }) : '',
   ]);
   downloadCsv(`money_padel_players_${new Date().toISOString().slice(0,10)}.csv`, headers, rows);
 }

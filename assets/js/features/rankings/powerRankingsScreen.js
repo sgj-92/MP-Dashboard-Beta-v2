@@ -310,11 +310,11 @@ function render(){
       let formLine = '';
       if(p.recent_form !== null && p.recent_form !== undefined){
         if(p.recent_form_stale){
-          formLine = `<div class="rating-sub" style="font-size:10px; color:var(--text-dim); opacity:0.6;">Form ${p.recent_form_wins}W-${p.recent_form_losses}L <span title="stale -- last played ${fmtDaysAgo(p.recent_form_days_ago)}">·</span></div>`;
+          formLine = `<div class="rating-sub" style="font-size:10px; color:var(--text-dim); opacity:0.6;">Form ${PlayerForm.recordShort({ wins: p.recent_form_wins, draws: p.recent_form_draws, losses: p.recent_form_losses })} <span title="stale -- last played ${fmtDaysAgo(p.recent_form_days_ago)}">·</span></div>`;
         } else {
           const trend = p.recent_form > 3 ? '↑' : (p.recent_form < -3 ? '↓' : '→');
           const trendClass = p.recent_form > 3 ? 'perf-pos' : (p.recent_form < -3 ? 'perf-neg' : '');
-          formLine = `<div class="rating-sub" style="font-size:10px;">Form ${p.recent_form_wins}W-${p.recent_form_losses}L <span class="${trendClass}">${trend}</span></div>`;
+          formLine = `<div class="rating-sub" style="font-size:10px;">Form ${PlayerForm.recordShort({ wins: p.recent_form_wins, draws: p.recent_form_draws, losses: p.recent_form_losses })} <span class="${trendClass}">${trend}</span></div>`;
         }
       }
 

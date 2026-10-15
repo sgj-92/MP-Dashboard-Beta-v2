@@ -266,7 +266,7 @@
 .form-dot.l{ background: var(--red); border-color: var(--red); }
 /* Neither, and borrowing neither colour. Matches the draw treatment used by
    the profile's form letters and the League table's Last 10 column. */
-.form-dot.d{ background: var(--line); border-color: var(--line); }
+.form-dot.d{ background: var(--draw); border-color: var(--draw); }
 
 /* Reusable primary CTA -- champagne/gold fill, dark text, restrained depth.
    For the flagship actions (View Matchup, Find a Game), not every button. */

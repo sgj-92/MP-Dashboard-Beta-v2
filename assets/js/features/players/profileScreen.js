@@ -470,8 +470,8 @@ function openSheet(name, matchFilter){
   document.getElementById('sheetSub').innerHTML = `Tier ${p.tier} · Money Padel &nbsp; <span class="risk-badge ${riskInfo.cls}">${riskInfo.text}</span>`;
   document.getElementById('sheetStats').innerHTML = `
     <div><b>${Math.round(p.rating)}</b>Power rating</div>
-    <div><b>${p.winpct}%</b>Win rate</div>
-    <div><b>${p.wins}-${p.losses}</b>Record</div>
+    <div><b>${playerRecordOf(name).winpct}%</b>Win rate</div>
+    <div><b>${PlayerForm.recordText(playerRecordOf(name))}</b>Record</div>
     <div><b>${p.upset_wins}-${p.upset_losses}</b>Upset W-L</div>
   `;
   const journeyResult = playerJourney(name);
@@ -489,8 +489,9 @@ function openSheet(name, matchFilter){
   // A player's own match log is a record of what they played, so it holds the
   // drawn games too. (The rated set, MATCHES, deliberately does not -- see
   // recomputeAll. Nothing below this line feeds a rating or a ranking.)
-  let ms = matchesIncludingDraws().filter(m => m.winners.includes(name) || m.losers.includes(name));
-  ms.sort((a,b)=> a.date < b.date ? 1 : -1);
+  // In PlayerForm's order -- the order the form strip above is taken in -- so
+  // the first ten listed here are exactly the ten games in the strip.
+  let ms = PlayerForm.gamesOf(matchesIncludingDraws(), name);
 
   // Scoped only by the profile's OWN month. This line used to read "if a month
   // is selected elsewhere in the app, keep this profile scoped to it too" --
@@ -676,24 +677,26 @@ function renderPremiumProfile(name, matchFilter){
   if(wrap) wrap.remove(); // fully rebuilt each open/refresh, except the reparented live nodes below
 
   // ---- Hero ----
+  // Every game, draws included; win rate = wins / games played.
+  const rec = playerRecordOf(name);
   const heroHtml = `
     <div class="pp-hero">
       <div class="pp-hero-name">${name}</div>
       <div class="pp-hero-status">TIER ${p.tier} · ${riskInfo.text.toUpperCase()}</div>
       <div class="pp-hero-rating">${Math.round(p.rating)}</div>
       <div class="pp-hero-rating-label">Power Rating</div>
-      <div class="pp-hero-sub">${snap.tierRank ? `#${snap.tierRank} in Tier ${escapeHtml(p.tier)}` : 'Unranked'} · ${snap.overallRank ? `#${snap.overallRank} Overall` : 'Not currently ranked'} · ${p.wins}-${p.losses} · ${p.winpct}% Win Rate</div>
+      <div class="pp-hero-sub">${snap.tierRank ? `#${snap.tierRank} in Tier ${escapeHtml(p.tier)}` : 'Unranked'} · ${snap.overallRank ? `#${snap.overallRank} Overall` : 'Not currently ranked'} · ${PlayerForm.recordText(rec)} · ${rec.winpct}% Win Rate</div>
       ${potmAwardsLineHtml(name)}
       ${buildProfileFactsHtml(p)}
     </div>
   `;
 
   // ---- Recent form (real chronological sequence, same source as Home) ----
-  const seq = computeRecentFormSequence(name, 10);
+  const seq = snap.recentForm ? snap.recentForm.run : [];
   const formHtml = snap.recentForm ? `
     <div class="pp-section">
       <div class="pp-form-seq">${seq.map(letter=>`<span class="pp-form-letter ${MatchOutcome.classFor(letter)}">${letter}</span>`).join('')}</div>
-      <div class="pp-form-record">${snap.recentForm.wins}–${snap.recentForm.losses} · Last ${snap.recentForm.games}</div>
+      <div class="pp-form-record">${PlayerForm.recordText(snap.recentForm)} · Last ${snap.recentForm.games}</div>
       <div class="pp-form-clutch section-sub">${p.avg_overperf_pct>=0?'+':''}${p.avg_overperf_pct}% vs expectation</div>
     </div>
   ` : '';

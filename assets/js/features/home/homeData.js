@@ -97,9 +97,6 @@ function computeMatchToMake(viewerName){
 // time -- which is exactly what happened to Home's dots. Callers must go
 // through MatchOutcome.classFor(), never a conditional of their own.
 function computeRecentFormSequence(name, windowSize){
-  windowSize = windowSize || 10;
-  const own = MATCHES.filter(m => m.winners.includes(name) || m.losers.includes(name))
-    .sort((a,b)=> a.date < b.date ? 1 : -1) // newest first
-    .slice(0, windowSize);
-  return own.reverse().map(m => MatchOutcome.letterFor(m, name));
+  const r = PlayerForm.recent(matchesIncludingDraws(), name, windowSize || PlayerForm.WINDOW);
+  return r ? r.run : [];   // oldest -> newest; the latest game is on the right
 }

@@ -170,8 +170,8 @@ function buildLeagueTableHtml(rows, showTierColumn){
   sorted.forEach((r,i)=>{
     const formHtml = (r.recent_form !== null && r.recent_form !== undefined)
       ? (r.recent_form_stale
-          ? `<span style="color:var(--text-dim); opacity:0.7;" title="stale">${r.recent_form>=0?'+':''}${r.recent_form}% (${r.recent_form_wins}W-${r.recent_form_losses}L) ⏸</span>`
-          : `<span style="color:${r.recent_form>3?'var(--green)':(r.recent_form<-3?'var(--red)':'var(--text-dim)')};">${r.recent_form>=0?'+':''}${r.recent_form}%</span> <span style="color:var(--text-dim); font-size:10px;">(${r.recent_form_wins}W-${r.recent_form_losses}L)</span>`)
+          ? `<span style="color:var(--text-dim); opacity:0.7;" title="stale">${r.recent_form>=0?'+':''}${r.recent_form}% (${PlayerForm.recordShort({ wins: r.recent_form_wins, draws: r.recent_form_draws, losses: r.recent_form_losses })}) ⏸</span>`
+          : `<span style="color:${r.recent_form>3?'var(--green)':(r.recent_form<-3?'var(--red)':'var(--text-dim)')};">${r.recent_form>=0?'+':''}${r.recent_form}%</span> <span style="color:var(--text-dim); font-size:10px;">(${PlayerForm.recordShort({ wins: r.recent_form_wins, draws: r.recent_form_draws, losses: r.recent_form_losses })})</span>`)
       : `<span style="color:var(--text-dim);">–</span>`;
     html += `<tr style="border-top:1px solid var(--line);">
       <td style="padding:7px 4px 7px 8px; color:var(--text-dim);">${i+1}</td>
@@ -200,7 +200,7 @@ function buildLeagueTableHtml(rows, showTierColumn){
 // Home tested it for truth, and the profile lower-cased it. Three answers to
 // one question is how they came to disagree.
 function lastTenRunHtml(run){
-  const colour = { w: 'var(--green)', l: 'var(--red)', d: 'var(--text-dim)', '': 'var(--text-dim)' };
+  const colour = { w: 'var(--green)', l: 'var(--red)', d: 'var(--draw)', '': 'var(--text-dim)' };
   return run.slice(0, 5).map(r =>
     `<span style="display:inline-block; width:13px; text-align:center; color:${colour[MatchOutcome.classFor(r)]}; font-weight:700;">${r}</span>`
   ).join('');
@@ -291,6 +291,7 @@ function renderSummaryLeagueTable(){
       recent_form: form ? form.avgPct : null,
       recent_form_wins: form ? form.wins : 0,
       recent_form_losses: form ? form.losses : 0,
+      recent_form_draws: form ? form.draws : 0,
       recent_form_stale: form ? form.daysSinceLastGame > RECENT_FORM_STALE_DAYS : false,
     };
   };

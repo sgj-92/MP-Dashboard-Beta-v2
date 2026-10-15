@@ -868,6 +868,7 @@ function recomputeAllNow(){
     p.recent_form_games = form ? form.games : 0;
     p.recent_form_wins = form ? form.wins : 0;
     p.recent_form_losses = form ? form.losses : 0;
+    p.recent_form_draws = form ? form.draws : 0;
     p.recent_form_days_ago = form ? form.daysSinceLastGame : null;
     p.recent_form_stale = form ? form.daysSinceLastGame > RECENT_FORM_STALE_DAYS : false;
   });
@@ -1738,23 +1739,20 @@ const RISK_LABELS = {
   stable: {text: "Stable", cls: "risk-stable"},
 };
 
+// A player's latest rated games -- draws included -- as PlayerForm reads them
+// (domain/matches/playerForm.js). It used to read MATCHES, which leaves draws
+// out, so a draw was skipped and an older game slid into the ten in its
+// place: Jams's form said 3–7 while his Recent Results showed three draws.
 function computeRecentForm(name, windowSize){
-  windowSize = windowSize || 10;
-  const own = MATCHES.filter(m => m.winners.includes(name) || m.losers.includes(name))
-    .sort((a,b)=> a.date < b.date ? 1 : -1) // newest first
-    .slice(0, windowSize);
-  if(own.length === 0) return null;
-  const vals = own.map(m=>{
-    const won = m.winners.includes(name);
-    return won ? m.performance_residual : -m.performance_residual;
-  });
-  const avg = vals.reduce((s,x)=>s+x,0) / vals.length;
-  const wins = own.filter(m=>m.winners.includes(name)).length;
-  const losses = own.length - wins;
-  const lastGameDate = own[0].date; // own is sorted newest-first
-  const daysSinceLastGame = Math.floor((new Date() - new Date(lastGameDate)) / 86400000);
-  return { avgPct: Math.round(avg*1000)/10, games: own.length, wins, losses, lastGameDate, daysSinceLastGame };
+  const r = PlayerForm.recent(matchesIncludingDraws(), name, windowSize || PlayerForm.WINDOW);
+  if(!r) return null;
+  const daysSinceLastGame = Math.floor((new Date() - new Date(r.lastGameDate)) / 86400000);
+  return { avgPct: r.avgPct, games: r.played, wins: r.wins, draws: r.draws, losses: r.losses,
+    run: r.run, lastGameDate: r.lastGameDate, daysSinceLastGame };
 }
+
+// A player's whole record and win rate (wins / games played, draws included).
+function playerRecordOf(name){ return PlayerForm.record(matchesIncludingDraws(), name); }
 
 // A player who hasn't played in a while shouldn't read as "trending" just because their last
 // batch of games happened to go well -- this is the cutoff for treating Recent Form as stale.

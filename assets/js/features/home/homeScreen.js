@@ -143,7 +143,7 @@ function renderHomeDashboard(){
   if(promoGap && promoGap.gap > 0){
     insight = `You're just ${promoGap.gap} points off Tier ${promoGap.tierAbove}. Keep pushing.`;
   } else if(snap.recentForm && !viewer.recent_form_stale && snap.recentForm.avgPct > 3){
-    insight = `You're trending up — ${snap.recentForm.wins}W-${snap.recentForm.losses}L in your last ${snap.recentForm.games}.`;
+    insight = `You're trending up — ${PlayerForm.recordText(snap.recentForm)} in your last ${snap.recentForm.games}.`;
   } else if(snap.bestPartner){
     insight = `You and ${snap.bestPartner.partner} have won ${snap.bestPartner.winpct}% together — a partnership worth repeating.`;
   } else {
@@ -188,7 +188,7 @@ function renderHomeDashboard(){
           <div class="home-form-dots">${snap.recentForm ? computeRecentFormSequence(viewer.name, 10).map(result=>
             `<span class="form-dot ${MatchOutcome.classFor(result)}" title="${result || ''}"></span>`
           ).join('') : '—'}</div>
-          <div class="home-form-record">${snap.recentForm ? `${snap.recentForm.wins}W – ${snap.recentForm.losses}L` : 'Not enough recent games'}</div>
+          <div class="home-form-record">${snap.recentForm ? PlayerForm.recordText(snap.recentForm) : 'Not enough recent games'}</div>
         </div>
       </div>
       <div class="home-insight">${insight}</div>
