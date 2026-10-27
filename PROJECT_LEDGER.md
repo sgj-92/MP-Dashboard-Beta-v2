@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`a7a6761`** (correcting a game's date moves it, 27 Oct; Add a game result reader `c6f0b79`, 27 Oct; new players join the record with their first game `2a7cbe9`, 27 Oct; every record counts draws `777b7c0`, 15 Oct; player form counts draws `9809d88`, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **959 / 959 on `main`** (27 Oct, after date moves; 958 after the result reader; 951 after new-player entry; 948 after every record counts draws; 947 after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`79eddad`** ("New build available · Refresh" notice, 27 Oct; correcting a game's date moves it `a7a6761`, 27 Oct; Add a game result reader `c6f0b79`, 27 Oct; new players join the record with their first game `2a7cbe9`, 27 Oct; every record counts draws `777b7c0`, 15 Oct; player form counts draws `9809d88`, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **962 / 962 on `main`** (27 Oct, after the new-build notice; 959 after date moves; 958 after the result reader; 951 after new-player entry; 948 after every record counts draws; 947 after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,15 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**"New build available · Refresh" — DONE (`79eddad`), 27 Oct.** Shaun: same as the Ledger app.
+- `features/updateNotice.js` re-reads the deployed `assets/js/buildInfo.js`
+  (no-store, cache-busted) and compares it with `window.MP_BUILD`
+  (`BuildStamp.deployedSha` / `isNewer`). It checks 5s after start, on return to
+  the foreground, and every 10 min while visible. A pill above the tab bar has
+  Refresh (reload) and ✕ (dismiss this build only). Never shown on a
+  local/unstamped build; read failures are ignored.
+- `tests/updateNotice.test.js` (3).
 
 **Correcting a game's date moves it — DONE (`a7a6761`), 27 Oct.** Shaun: "I should just be able to change the date and the system figures it out."
 - Was refused, because a match id carries its date. New `ReplayForward` change
@@ -8830,6 +8839,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `79eddad` | "New build available · Refresh" pill when a newer deploy exists (build stamp re-read and compared). 962/962. |
 | `a7a6761` | Changing a rated game's date moves it (new id, one replay, attribution and Upcoming links follow) instead of refusing. 959/959. |
 | `c6f0b79` | Add a game reads results however they're written (ResultParse): result words, vs, lines, 🏆, set majority, winners-first scores, names, dates; read-out of how it decided. 958/958. |
 | `2a7cbe9` | New players enter the rating record with their first approved game (tier from Admin, PROVISIONAL, first-game date); clear message when no tier is set. 951/951. |
@@ -8952,6 +8962,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 27 Oct (latest): new-build notice (`79eddad`, 962 / 962).** Baton → Shaun. The notice first appears on the deploy after this one, since a device must already be running this build to check.
 
 **CCode, 27 Oct (latest): a game's date can be corrected in place (`a7a6761`, 959 / 959).** Baton → Shaun: the Rishi & Topsy v Tom & Fatch date can now be changed to 26 Oct from Edit game.
 
