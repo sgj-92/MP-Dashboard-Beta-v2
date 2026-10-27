@@ -179,7 +179,9 @@ maybe('with no game in Home\'s month the hero says so in words, never a rank', a
   const app = await open();
   try {
     const r = await app.run(() => {
-      const name = PLAYERS.map((p) => p.name).find((n) => !leagueStandingOf(n, homeMonth()).length);
+      // A current player: an archived one cannot be chosen as the viewer
+      // (player status model, 6 Oct).
+      const name = PLAYERS.filter((p) => p.status !== 'archived').map((p) => p.name).find((n) => !leagueStandingOf(n, homeMonth()).length);
       setCurrentViewer(name);
       goToSection('home');
       return { name, ...homeState() };

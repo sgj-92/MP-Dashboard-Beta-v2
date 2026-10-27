@@ -18,8 +18,13 @@ const GameType = require('../assets/js/gameType.js');
 const skip = H.available() ? false : 'Playwright is not available in this environment';
 
 // One browser for the read-only checks; the ones that write get their own.
+// The fixture's games end on 16 Sep. Anything here that asks what is "recent"
+// (rankings, participation, the current month) is pinned inside that era, so
+// the suite does not start failing as the real calendar walks away from it.
+const FIXTURE_NOW = '2026-09-21T10:00:00.000Z';
+
 let shared = null;
-test.before(async () => { if (!skip) shared = await H.open(); });
+test.before(async () => { if (!skip) shared = await H.open({ now: FIXTURE_NOW }); });
 test.after(async () => { if (shared) await shared.close(); });
 
 test('the app loads, renders, and throws nothing', { skip }, async () => {
@@ -886,7 +891,7 @@ test('Player tags reads as a record list and expands in place', { skip }, async 
       out.controls = {
         tier: !!open.querySelector('.ptag-tier'),
         starting: !!open.querySelector('.ptag-starting'),
-        active: !!open.querySelector('.ptag-active'),
+        status: !!open.querySelector('.ptag-status-actions'),
       };
       // Nothing may clip at phone width.
       out.clipped = [...open.querySelectorAll('.ptag-controls select')]
@@ -906,7 +911,7 @@ test('Player tags reads as a record list and expands in place', { skip }, async 
       `admin typography, not the public player-name serif: got ${r.fontFamily}`);
     assert.match(r.fontFamily, /sans-serif|Helvetica|Arial/i);
     assert.strictEqual(r.openOne, 1, 'tapping opens exactly one row, in place');
-    assert.deepStrictEqual(r.controls, { tier: true, starting: true, active: true });
+    assert.deepStrictEqual(r.controls, { tier: true, starting: true, status: true });
     assert.strictEqual(r.clipped, 0, 'no control may be cut off at phone width');
     assert.strictEqual(r.closedAgain, 0);
     assert.deepStrictEqual(app.pageErrors, []);
@@ -1296,14 +1301,15 @@ test('Active does not shout on every row; Inactive still does', { skip }, async 
   const app = await H.open();
   try {
     const r = await app.run(() => {
+      const away = PLAYERS.find((p) => p.name === 'Max'); away.status = 'temporarilyInactive'; away.active = false;   // the fixture's only flagged player is archived, so mark one away
       goToSection('players');
       renderPlayersTab();
       const view = document.getElementById('playersView');
       const rows = [...view.querySelectorAll('.pdir-row')];
       return {
         rows: rows.length,
-        activePlayers: PLAYERS.filter((p) => p.active).length,
-        inactivePlayers: PLAYERS.filter((p) => !p.active).length,
+        activePlayers: livePlayers().filter((p) => p.active).length,
+        inactivePlayers: livePlayers().filter((p) => !p.active).length,
         badges: view.querySelectorAll('.pdir-inactive').length,
         saysActive: /\bACTIVE\b/i.test(view.innerText.replace(/Inactive/gi, '')),
         // Identity leads, in the public serif; the rest is interface.
@@ -1423,11 +1429,8 @@ test('a player whose name contains quotes is still safe to render and tap', { sk
   } finally { await app.close(); }
 });
 
-test('a correction that changes the date is refused rather than mis-filed', { skip }, async () => {
-  const msg = await shared.run(() => matchFixDateChangeRefusal('2026-06-02', '2026-06-09'));
-  assert.match(msg, /identifier is built from its date/);
-  assert.match(msg, /Nothing was changed/);
-});
+// A correction that changes the date is no longer refused: the game moves to
+// the new date under a new identifier (tests/matchRedate.test.js).
 
 test('diagnostics notices a document tampered with behind the app', { skip }, async () => {
   const app = await H.open();
@@ -2516,7 +2519,7 @@ test('the expanded Games card stays compact', { skip }, async () => {
 // total >= 10, which is the rankings list's default min-games DISPLAY filter,
 // not an eligibility rule.
 test('a player with recent matches gets a rank, whatever their lifetime total', { skip }, async () => {
-  const app = await H.open();
+  const app = await H.open({ now: FIXTURE_NOW });
   try {
     const r = await app.run(() => {
       const name = 'Ant Slice';
@@ -2620,7 +2623,7 @@ test('an active player below the threshold reads Idle, not Inactive', { skip }, 
 // Shaun's correction: the toggles widen the RANKING POOL. An idle player whose
 // rating belongs 5th appears 5th, not in a section underneath.
 test('including idle or inactive merges them into the ranked list and renumbers it', { skip }, async () => {
-  const app = await H.open();
+  const app = await H.open({ now: FIXTURE_NOW });
   try {
     const r = await app.run(() => {
       const snap = () => {
@@ -2633,6 +2636,7 @@ test('including idle or inactive merges them into the ranked list and renumbers 
           note: (document.getElementById('eligibilityDivider') || {}).textContent || null,
         };
       };
+      const away = PLAYERS.find((p) => p.name === 'Max'); away.status = 'temporarilyInactive'; away.active = false;   // the fixture's only flagged player is archived, so mark one away
       activeTab = 'power'; selectedMonth = 'all'; activeTier = 'All'; minGames = 0; query = '';
       activeSortP = 'rating';
       const out = {};
@@ -2674,7 +2678,7 @@ test('including idle or inactive merges them into the ranked list and renumbers 
     assert.ok(r.withInactive.inactive > 0);
     assert.strictEqual(r.withInactive.idle, 0, 'the two toggles are independent');
     assert.strictEqual(r.withInactive.order.length, r.official.order.length + r.withInactive.inactive);
-    assert.match(r.withInactive.note, /Including inactive players/);
+    assert.match(r.withInactive.note, /Including temporarily inactive players/);
 
     // Both: one ordered list containing all three states.
     assert.strictEqual(r.withBoth.order.length,
@@ -2682,7 +2686,7 @@ test('including idle or inactive merges them into the ranked list and renumbers 
     assert.ok(r.withBoth.idle > 0 && r.withBoth.inactive > 0);
     const sortedBoth = [...r.withBoth.order].sort((a, b) => r.ratings[b] - r.ratings[a]);
     assert.deepStrictEqual(r.withBoth.order, sortedBoth);
-    assert.match(r.withBoth.note, /Including idle and inactive players/);
+    assert.match(r.withBoth.note, /Including idle and temporarily inactive players/);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
@@ -2856,7 +2860,7 @@ test('the expanded Games card stays compact', { skip }, async () => {
 // total >= 10, which is the rankings list's default min-games DISPLAY filter,
 // not an eligibility rule.
 test('a player with recent matches gets a rank, whatever their lifetime total', { skip }, async () => {
-  const app = await H.open();
+  const app = await H.open({ now: FIXTURE_NOW });
   try {
     const r = await app.run(() => {
       const name = 'Ant Slice';
@@ -3694,7 +3698,7 @@ test('Last 10 is each player\'s own ten games, not the selected month', { skip }
 
       const read = () => [...document.querySelectorAll('#summaryContent tbody tr')].map((tr) => {
         const td = [...tr.children].map((x) => x.innerText.trim());
-        return { name: td[1], P: parseInt(td[2], 10), W: +td[3], L: +td[4], D: +td[5], GD: parseInt(td[6], 10), Pts: +td[7] };
+        return { name: td[1], P: parseInt(td[2], 10), W: +td[3], D: +td[4], L: +td[5], GD: parseInt(td[6], 10), Pts: +td[7] };   // P W D L
       });
 
       document.getElementById('leagueLastTenBtn').click();
@@ -3713,7 +3717,7 @@ test('Last 10 is each player\'s own ten games, not the selected month', { skip }
       };
     }, {}, await openLeague(app, { month: '2026-08' }));
 
-    assert.deepStrictEqual(r.columns, ['#', 'Player', 'P', 'W', 'L', 'D', 'GD', 'Pts', 'Last 5']);
+    assert.deepStrictEqual(r.columns, ['#', 'Player', 'P', 'W', 'D', 'L', 'GD', 'Pts', 'Last 5']);
     assert.match(r.heading, /Last 10/);
     assert.doesNotMatch(r.heading, /August|June/, 'a per-player window is not a month');
     assert.deepStrictEqual(r.inJune, r.inAugust, 'changing the month must not change Last 10');
@@ -3874,12 +3878,12 @@ test('the League view shows one explanation, not two', { skip }, async () => {
 // Copy and hierarchy only. The prediction itself still comes from
 // RatingEngine.expectedScore and nothing here changes it.
 
+// Opened the way an admin opens it: the top of Me's Admin group (More's
+// successor in the redesign; Shaun, 4 Oct).
 const openPredict = (app) => app.run(() => {
   isUnlocked = true; currentUserName = 'Board'; adminRole = 'owner';
-  const b = document.querySelector('#tabrow .tab-btn[data-tab="manage"]');
-  if (b) b.click();
-  adminOpenSections = { predict: true };
-  renderManage();
+  goToSection('me');
+  document.querySelector('#meView [data-me="predict"]').click();
 });
 
 const predictWith = (app, names) => app.run((n) => {
@@ -3950,21 +3954,21 @@ test('the prediction names a winner, in games not chances', { skip }, async () =
     });
 
     // 1. the predicted winner, by name
-    assert.match(r.text, new RegExp(`${r.strong[0]} & ${r.strong[1]} should win`),
+    assert.match(r.text, new RegExp(`PROJECTED FAVOURITES ${r.strong[0]} & ${r.strong[1]}`, 'i'),
       `must name the winning team: ${r.text}`);
     // 2. expected share of games, both sides
     const shares = [...r.text.matchAll(/(\d+)%/g)].map((m) => Number(m[1]));
     assert.strictEqual(shares.length, 2, `two percentages, got ${JSON.stringify(shares)}`);
     assert.strictEqual(shares[0] + shares[1], 100, 'the two sides account for all the games');
     assert.ok(shares[0] > 50, 'the favoured side is expected to take more of them');
-    assert.match(r.text, /Expected to win about \d+% of the games, against \d+%/);
+    assert.match(r.text, /Expected share of games \d+% .* – \d+% /i);
     // 3. teams and their ratings
     r.ratings.forEach((v) => assert.ok(r.text.includes(String(v)), `rating ${v} must be shown`));
     // 4. the rating-point advantage
-    assert.match(r.text, new RegExp(`Favoured by ${r.gap} rating point`),
+    assert.match(r.text, new RegExp(`favoured by ${r.gap} rating point`, 'i'),
       `must show the rating edge of ${r.gap}: ${r.text}`);
     // …and the footer, small and factual.
-    assert.match(r.text, /Based on current Power Ratings · Prediction only · Nothing is recorded\./);
+    assert.match(r.text, /Based on current Power Ratings · a prediction, not a result/);
 
     // What must NOT be there: engine terminology, and any claim of a chance.
     assert.doesNotMatch(r.text, /Expected performance score/i);
@@ -4003,8 +4007,8 @@ test('a near-even matchup is not sold as a confident call', { skip }, async () =
       return { gap: best.g, text: document.getElementById('predResult').innerText.replace(/\s+/g, ' ').trim() };
     });
     assert.ok(r.gap < 15, `the fixture should offer a close pairing, got ${r.gap}`);
-    assert.doesNotMatch(r.text, /should win/, 'a two-point gap is not a prediction of a win');
-    assert.match(r.text, /shade it|Too close to call/, `expected a hedged verdict: ${r.text}`);
+    assert.doesNotMatch(r.text, /Projected favourites/i, 'a two-point gap is not a prediction of a win');
+    assert.match(r.text, /Slight edge|Too close to call/i, `expected a hedged verdict: ${r.text}`);
     assert.match(r.text, /Based on current Power Ratings/);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
@@ -4326,7 +4330,7 @@ test('renaming is admin-only', { skip }, async () => {
 // decisions supplied in the unhelpful order Firestore happened to return.
 
 test('a mid-month reassessment never shows the new tier beside the old rating', { skip }, async () => {
-  const app = await H.open();
+  const app = await H.open({ now: FIXTURE_NOW });
   try {
     const r = await app.run(() => {
       const subject = [...PLAYERS].sort((a, b) => b.lifetimeMatches - a.lifetimeMatches)[0].name;

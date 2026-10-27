@@ -65,10 +65,20 @@ function shellSheetClosed(id){
   const i = shellSheetStack.lastIndexOf(id);
   if(i < 0) return;
   shellSheetStack.splice(i, 1);
+  if(shellHistoryRestoring) return;
+  // Its entry may not be written yet -- queued behind a back() of ours that
+  // has not landed. Then there is nothing to take off: drop it from the queue.
+  const queued = shellHistoryQueue.map(s => s.mpSheet).lastIndexOf(id);
+  if(queued >= 0){ shellHistoryQueue.splice(queued, 1); return; }
+  // While a back() of ours is in flight, history.state still shows the entry
+  // that back() is removing. Going back again on it stepped past the app's
+  // own entries and out of the page (two sheets closed in one moment did it).
+  // At worst an entry is left for the next Back to pass over harmlessly.
+  if(shellHistoryPendingBack) return;
   // Closed by its own control: take its entry back off, so the next Back
   // does something rather than nothing. Pushes made meanwhile (a row in the
   // sheet opening something else) wait for that to land.
-  if(!shellHistoryRestoring && history.state && history.state.mpSheet === id){
+  if(history.state && history.state.mpSheet === id){
     shellHistoryPendingBack++;
     history.back();
   }

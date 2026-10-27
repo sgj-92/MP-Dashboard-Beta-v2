@@ -99,6 +99,9 @@
         name: shown,
         playerId: d.id,
         previousDisplayNames: d.previousDisplayNames || [],
+        // The player's standing in the group (playerStatus.js), as stored; null
+        // when the record has none, which reads as the legacy flag or active.
+        status: d.status || null,
         rating: d.rating,
         reliability: Engine.reliability(d.effectiveEvidence),
         reliabilityBand: reliabilityBand(Engine.reliability(d.effectiveEvidence)),
@@ -206,6 +209,7 @@
     // record can find it without going back through the alias map.
     player.playerId = v3.playerId || player.name;
     player.previousDisplayNames = v3.previousDisplayNames || [];
+    player.storedStatus = v3.status || null;
 
     // The export's only join key is the name as it was when the snapshot was
     // frozen -- which is the player's id, not whatever they are called now.

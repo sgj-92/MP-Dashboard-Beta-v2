@@ -66,7 +66,7 @@ function applyRankingEligibility(){
     note.className = 'eligibility-divider';
     const parts = [];
     if(includeIdle) parts.push('idle');
-    if(includeInactive) parts.push('inactive');
+    if(includeInactive) parts.push('temporarily inactive');
     note.textContent = `Including ${parts.join(' and ')} players — positions here are for this view, not official ranks`;
     list.insertBefore(note, list.firstChild);
   }

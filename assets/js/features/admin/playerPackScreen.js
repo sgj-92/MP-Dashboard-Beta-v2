@@ -110,7 +110,7 @@ function playerPackBlocks(){ return {
   partners: (d) => (d.rows.length
     ? [bpTable(['#', 'Partner', 'P', 'W', 'D', 'L', 'Games', 'Chem.'], d.rows.map((t, i) => [i + 1, t.name, t.played, t.wins, t.draws, t.losses, `${t.gf}–${t.ga}`, t.chemistry === undefined ? '–' : `${bpSigned(t.chemistry)}%`]))]
     : [bpEmpty('No partners this month.')])
-    .concat([bpFoot(d.strongest ? `Strongest partnership by chemistry: ${d.strongest.partner} (${bpSigned(d.strongest.chemistry)}%, ${d.strongest.decided} decided games). Chemistry is the Insights measure, over 2+ decided games together.` : 'Chemistry is the Insights measure and needs 2+ decided games together.')]),
+    .concat([bpFoot(d.strongest ? `Strongest partnership by chemistry: ${d.strongest.partner} (${bpSigned(d.strongest.chemistry)}%, ${d.strongest.decided} games). Chemistry is the Insights measure, over 2+ games together.` : 'Chemistry is the Insights measure and needs 2+ games together.')]),
   rivals: (d) => {
     const named = [['Most played', d.mostPlayed], ['Best record', d.best], ['Toughest record', d.toughest], ['Closest', d.closest]]
       .filter(([, t]) => t).map(([label, t]) => ({ rank: '•', name: `${label}: ${t.name}`, value: `${ppRec(t)} · ${ppMatches(t.played)}` }));

@@ -11,6 +11,9 @@
 //   sheet(...)  1080 wide, as tall as the module: a Board Pack table, list,
 //               the Kings tiles or a note, from its blocks.
 //   matchResult(...)  1080 x 1350, one played match's Result Card.
+//   matchup(...)  1080 x 1350, a predicted matchup (Predict a Matchup).
+//   matchups(...) 1080 wide, up to five predicted matchups on one card.
+//   nominees(...)  1080 wide, Player of the Month's nominees for the group.
 //
 // Knows nothing about the app. Loads before app.js; declarations only.
 
@@ -445,37 +448,61 @@
     font(ctx, 32, { spacing: 0.06 });
     textAt(ctx, fit(ctx, o.when || '', W - 2 * M), cx, 206, { color: C.goldSoft, align: 'center', baseline: 'middle' });
 
-    // The heroes: as large as one line allows, else one per line.
-    let y = 340;
-    let size = 96;
-    while (size > 68 && peopleWidth(ctx, card.heroes, size, true, 400) > W - 2 * M) size -= 4;
-    if (peopleWidth(ctx, card.heroes, size, true, 400) <= W - 2 * M) {
-      people(ctx, card.heroes, cx, y, size, { serif: true, color: C.bright });
-    } else {
-      size = 84; y = 300;
-      card.heroes.forEach((p, i) => people(ctx, [p], cx, y + i * 104, size, { serif: true, color: C.bright }));
-      y += 104;
-    }
-    y += 104;
-    font(ctx, 40, { weight: 700, spacing: 0.2 });
-    textAt(ctx, card.kicker.toUpperCase(), cx, y, { color: C.gold, align: 'center', baseline: 'middle' });
-
     // The score, big.
-    y += 150;
-    font(ctx, 150, { weight: 700 });
-    const sets = card.sets.map((s) => `${s[0]}–${s[1]}`);
-    const gap = 80;
-    const widths = sets.map((t) => ctx.measureText(t).width);
-    let x = cx - (widths.reduce((a, b) => a + b, 0) + gap * (sets.length - 1)) / 2;
-    sets.forEach((t, i) => { textAt(ctx, t, x, y, { color: C.text, baseline: 'middle' }); x += widths[i] + gap; });
+    const score = (sy) => {
+      const sets = card.sets.map((s) => `${s[0]}–${s[1]}`);
+      // As large as the margins allow: three sets at full size run to the edge.
+      let size = 150, gap = 80, widths;
+      const measure = () => { font(ctx, size, { weight: 700 }); widths = sets.map((t) => ctx.measureText(t).width); return widths.reduce((a, b) => a + b, 0) + gap * (sets.length - 1); };
+      while (size > 90 && measure() > W - 2 * M) { size -= 6; gap = Math.round(size * 0.53); }
+      measure();
+      let x = cx - (widths.reduce((a, b) => a + b, 0) + gap * (sets.length - 1)) / 2;
+      sets.forEach((t, i) => { textAt(ctx, t, x, sy, { color: C.text, baseline: 'middle' }); x += widths[i] + gap; });
+    };
+    const kicker = (ky) => {
+      font(ctx, 40, { weight: 700, spacing: 0.2 });
+      textAt(ctx, card.kicker.toUpperCase(), cx, ky, { color: C.gold, align: 'center', baseline: 'middle' });
+    };
 
-    y += 130;
-    font(ctx, 38);
-    const lead = `${card.against} `;
-    const leadW = ctx.measureText(lead).width;
-    const oppW = peopleWidth(ctx, card.opponents, 38, false, 400);
-    textAt(ctx, lead, cx - (leadW + oppW) / 2, y, { color: C.dim, baseline: 'middle' });
-    people(ctx, card.opponents, cx + leadW / 2, y, 38, { color: C.soft });
+    let y;
+    if (card.isDraw) {
+      // Nobody won: both pairs in the same type, size and colour, one above
+      // the other, so neither reads as the winner.
+      let size = 84;
+      const widest = () => Math.max(peopleWidth(ctx, card.heroes, size, true, 400), peopleWidth(ctx, card.opponents, size, true, 400));
+      while (size > 52 && widest() > W - 2 * M) size -= 4;
+      people(ctx, card.heroes, cx, 316, size, { serif: true, color: C.text });
+      font(ctx, 30, { weight: 700, spacing: 0.3 });
+      textAt(ctx, 'VS', cx, 400, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+      people(ctx, card.opponents, cx, 484, size, { serif: true, color: C.text });
+      kicker(580);
+      score(706);
+      y = 724;
+    } else {
+      // The heroes: as large as one line allows, else one per line.
+      y = 340;
+      let size = 96;
+      while (size > 68 && peopleWidth(ctx, card.heroes, size, true, 400) > W - 2 * M) size -= 4;
+      if (peopleWidth(ctx, card.heroes, size, true, 400) <= W - 2 * M) {
+        people(ctx, card.heroes, cx, y, size, { serif: true, color: C.bright });
+      } else {
+        size = 84; y = 300;
+        card.heroes.forEach((p, i) => people(ctx, [p], cx, y + i * 104, size, { serif: true, color: C.bright }));
+        y += 104;
+      }
+      y += 104;
+      kicker(y);
+      y += 150;
+      score(y);
+
+      y += 130;
+      font(ctx, 38);
+      const lead = `${card.against} `;
+      const leadW = ctx.measureText(lead).width;
+      const oppW = peopleWidth(ctx, card.opponents, 38, false, 400);
+      textAt(ctx, lead, cx - (leadW + oppW) / 2, y, { color: C.dim, baseline: 'middle' });
+      people(ctx, card.opponents, cx + leadW / 2, y, 38, { color: C.soft });
+    }
 
     // The story, in its own panel.
     y += 62;
@@ -536,6 +563,184 @@
     return cv;
   }
 
+  // ---- A predicted matchup, 1080 x 1350 ----------------------------------
+  // card = MatchupCard.build(...): the two teams, the call, the expected share
+  // of games. Teams lead; the call sits in its own panel; the share of games
+  // is the one big number.
+  function matchup(card, o = {}) {
+    const H = SLIDE_H, M = 80, cx = W / 2, room = W - 2 * M;
+    const cv = canvas(W, H);
+    const ctx = cv.getContext('2d');
+    background(ctx, W, H);
+    brand(ctx, o.brand, '', M, 72, 64, W - M);
+    font(ctx, 32, { weight: 700, spacing: 0.22 });
+    textAt(ctx, 'PREDICTED MATCHUP', cx, 236, { color: C.gold, align: 'center', baseline: 'middle' });
+
+    // The teams: one size for both, as large as the longer allows.
+    let size = 92;
+    const widest = () => Math.max(peopleWidth(ctx, card.teamA, size, true, 400), peopleWidth(ctx, card.teamB, size, true, 400));
+    while (size > 52 && widest() > room) size -= 4;
+    const tone = (side) => (card.call.favoured === side ? C.bright : C.text);
+    people(ctx, card.teamA, cx, 336, size, { serif: true, color: tone('A') });
+    font(ctx, 34, { weight: 700, spacing: 0.3 });
+    textAt(ctx, 'VS', cx, 428, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+    people(ctx, card.teamB, cx, 520, size, { serif: true, color: tone('B') });
+
+    // The call.
+    const py = 600, ph = 184;
+    ctx.fillStyle = 'rgba(212,175,55,0.07)';
+    roundRect(ctx, M, py, room, ph, 36); ctx.fill();
+    ctx.strokeStyle = C.border; ctx.lineWidth = 2; ctx.stroke();
+    if (card.call.names) {
+      font(ctx, 30, { weight: 700, spacing: 0.18 });
+      textAt(ctx, card.call.kicker.toUpperCase(), cx, py + 56, { color: C.gold, align: 'center', baseline: 'middle' });
+      font(ctx, 66, { serif: true });
+      textAt(ctx, fit(ctx, card.call.names, room - 80), cx, py + 126, { color: C.bright, align: 'center', baseline: 'middle' });
+    } else {
+      font(ctx, 72, { serif: true });
+      textAt(ctx, card.call.kicker, cx, py + ph / 2, { color: C.bright, align: 'center', baseline: 'middle' });
+    }
+
+    // The expected share of games, big.
+    {
+      let y = py + ph + 92;
+      font(ctx, 30, { weight: 700, spacing: 0.16 });
+      textAt(ctx, 'EXPECTED SHARE OF GAMES', cx, y, { color: C.dim, align: 'center', baseline: 'middle' });
+      y += 124;
+      const colW = room / 2 - 40;
+      [[`${card.share.a}%`, card.teamA, cx - colW / 2 - 40, 'A'], [`${card.share.b}%`, card.teamB, cx + colW / 2 + 40, 'B']].forEach(([n, team, x, side]) => {
+        font(ctx, 132, { weight: 700 });
+        textAt(ctx, String(n), x, y, { color: tone(side), align: 'center', baseline: 'middle' });
+        font(ctx, 30);
+        textAt(ctx, fit(ctx, team.map((p) => p.name).join(' & '), colW), x, y + 92, { color: C.soft, align: 'center', baseline: 'middle' });
+      });
+      font(ctx, 96, { weight: 700 });
+      textAt(ctx, '–', cx, y - 4, { color: C.dim, align: 'center', baseline: 'middle' });
+    }
+
+    hline(ctx, M, W - M, H - 150, C.rule);
+    font(ctx, 28, { spacing: 0.04 });
+    textAt(ctx, card.foot || '', cx, H - 96, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+    return cv;
+  }
+
+  // ---- Several predicted matchups on one card, 1080 wide -----------------
+  // view = MatchupCard.buildMany(...): up to five matches, each its own panel,
+  // numbered; each side on its own line with its tiers and its expected share
+  // of games, the favoured side brighter (as on the single card). At least
+  // square; taller when there are more matches, never cut.
+  function matchups(view, o = {}) {
+    const M = 72, room = W - 2 * M, pad = 40, RH = 208, GAP = 20, TOP = 292;
+    const list = (view && view.matches) || [];
+    const H = Math.max(W, TOP + list.length * RH + Math.max(0, list.length - 1) * GAP + 170);
+    const cv = canvas(W, H);
+    const ctx = cv.getContext('2d');
+    background(ctx, W, H);
+    brand(ctx, o.brand, '', M, 72, 64, W - M);
+    font(ctx, 32, { weight: 700, spacing: 0.22 });
+    textAt(ctx, String(view.title || 'Match predictions').toUpperCase(), W / 2, 206, { color: C.gold, align: 'center', baseline: 'middle' });
+    font(ctx, 26, { spacing: 0.12 });
+    textAt(ctx, 'EXPECTED SHARE OF GAMES', W / 2, 250, { color: C.dim, align: 'center', baseline: 'middle' });
+
+    const numW = 76, shareW = 170;
+    const nameX = M + pad + numW, nameW = room - 2 * pad - numW - shareW;
+    // One name size for every line on the card, as large as the longest allows.
+    let size = 50;
+    const widest = () => Math.max(...list.flatMap((m) => [peopleWidth(ctx, m.teamA, size, true, 400), peopleWidth(ctx, m.teamB, size, true, 400)]));
+    while (size > 34 && widest() > nameW) size -= 2;
+    list.forEach((m, i) => {
+      const top = TOP + i * (RH + GAP);
+      ctx.fillStyle = C.surface2; roundRect(ctx, M, top, room, RH, 30); ctx.fill();
+      ctx.strokeStyle = C.hair; ctx.lineWidth = 3; ctx.stroke();
+      font(ctx, 44, { weight: 700 });
+      textAt(ctx, String(m.n), M + pad + 18, top + RH / 2, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+      const fav = m.call && m.call.favoured;
+      const tone = (side) => (fav === side ? C.bright : C.text);
+      [['A', m.teamA, m.share.a, top + 54], ['B', m.teamB, m.share.b, top + RH - 54]].forEach(([side, team, pct, y]) => {
+        people(ctx, team, nameX + peopleWidth(ctx, team, size, true, 400) / 2, y, size, { serif: true, color: tone(side) });
+        font(ctx, 60, { weight: 700 });
+        textAt(ctx, `${pct}%`, W - M - pad, y, { color: tone(side), align: 'right', baseline: 'middle' });
+      });
+      font(ctx, 22, { weight: 700, spacing: 0.2 });
+      textAt(ctx, 'VS', nameX, top + RH / 2 + 1, { color: C.dim, baseline: 'middle' });
+    });
+
+    hline(ctx, M, W - M, H - 130, C.rule);
+    font(ctx, 28, { spacing: 0.04 });
+    textAt(ctx, view.foot || '', W / 2, H - 78, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+    return cv;
+  }
+
+  // ---- Player of the Month nominees, 1080 wide ---------------------------
+  // view = { month: 'September 2026', title, sub, cards: [{ name, tier,
+  //   reasons: [{ title, line }], support }] }. At least the deck's 4:5; taller
+  // when the nominations need it, so nothing is ever cut.
+  function nominees(view, o = {}) {
+    const M = 72, inner = W - 2 * M, pad = 44, cardW = inner, textW = cardW - 2 * pad;
+    const NAME = 66, R_T = 32, R_L = 38, SUP = 28, GAP = 30;
+    // One pass measures, the second draws; both run the same steps.
+    const paint = (ctx, draw) => {
+      const put = (t, x, y, opts) => { if (draw) textAt(ctx, t, x, y, opts); };
+      let y = 72;
+      if (draw) brand(ctx, o.brand, view.month || '', M, y, 64, W - M);
+      y += 64 + 70;
+      font(ctx, 32, { weight: 700, spacing: 0.2 });
+      put('PLAYER OF THE MONTH', W / 2, y, { color: C.gold, align: 'center', baseline: 'middle' });
+      y += 78;
+      font(ctx, 92, { serif: true });
+      wrap(ctx, view.title || 'Nominees', inner).forEach((line) => { put(line, W / 2, y, { color: C.bright, align: 'center', baseline: 'middle' }); y += 100; });
+      if (view.sub) {
+        font(ctx, 32);
+        wrap(ctx, view.sub, inner).forEach((line) => { put(line, W / 2, y, { color: C.soft, align: 'center', baseline: 'middle' }); y += 42; });
+      }
+      y += 34;
+      (view.cards || []).forEach((card) => {
+        const top = y;
+        let cy = top + pad + NAME * 0.5;
+        // Measure the card's body first, so its panel is drawn beneath it.
+        const body = [];
+        (card.reasons || []).forEach((r) => {
+          font(ctx, R_T, { weight: 700, spacing: 0.02 }); body.push({ t: fit(ctx, r.title, textW), size: R_T, weight: 700, color: C.gold, h: R_T * 1.5 });
+          font(ctx, R_L); wrap(ctx, r.line, textW).forEach((l) => body.push({ t: l, size: R_L, color: C.text, h: R_L * 1.3 }));
+          body.push({ gap: 16 });
+        });
+        if (card.support) {
+          body.push({ rule: true, h: 30 });
+          font(ctx, SUP); wrap(ctx, card.support, textW).forEach((l) => body.push({ t: l, size: SUP, color: C.dim, h: SUP * 1.4 }));
+        }
+        const bodyH = body.reduce((a, b) => a + (b.h || b.gap || 0), 0);
+        const h = pad + NAME * 1.2 + 18 + bodyH + pad - (card.support ? 0 : 16);
+        if (draw) {
+          ctx.fillStyle = C.surface2; roundRect(ctx, M, top, cardW, h, 36); ctx.fill();
+          ctx.strokeStyle = C.hair; ctx.lineWidth = 3; ctx.stroke();
+          font(ctx, NAME, { serif: true });
+          const name = fit(ctx, card.name, textW - 140);
+          textAt(ctx, name, M + pad, cy, { color: C.text, baseline: 'middle' });
+          if (card.tier) tierBadge(ctx, card.tier, M + pad + ctx.measureText(name).width + 22, cy, 46);
+        }
+        cy += NAME * 0.7 + 18;
+        body.forEach((b) => {
+          if (b.gap) { cy += b.gap; return; }
+          if (b.rule) { if (draw) hline(ctx, M + pad, M + cardW - pad, cy + 6, C.hair); cy += b.h; return; }
+          font(ctx, b.size, { weight: b.weight || 400, spacing: b.weight ? 0.02 : 0 });
+          put(b.t, M + pad, cy + b.size * 0.8, { color: b.color });
+          cy += b.h;
+        });
+        y = top + h + GAP;
+      });
+      y += 10;
+      font(ctx, 28, { spacing: 0.06 });
+      put(view.foot || '', W / 2, y + 20, { color: C.goldSoft, align: 'center', baseline: 'middle' });
+      return y + 20 + 72;
+    };
+    const height = Math.max(SLIDE_H, Math.ceil(paint(canvas(W, 10).getContext('2d'), false)));
+    const cv = canvas(W, height);
+    const ctx = cv.getContext('2d');
+    background(ctx, W, height);
+    paint(ctx, true);
+    return cv;
+  }
+
   function toBlob(cv) {
     return new Promise((resolve) => cv.toBlob((b) => resolve(b), 'image/png'));
   }
@@ -589,5 +794,5 @@
     }
   }
 
-  return { W, SLIDE_H, loadImage, slide, sheet, matchResult, toBlob, toFile, toPdf, share, save };
+  return { W, SLIDE_H, loadImage, slide, sheet, matchResult, matchup, matchups, nominees, toBlob, toFile, toPdf, share, save };
 });

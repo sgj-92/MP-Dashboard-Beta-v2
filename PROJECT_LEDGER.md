@@ -59,12 +59,12 @@ rating chokepoint now reads v3 persisted state.
 
 | | |
 |---|---|
-| Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
-| Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
+| Repository | **`sgj-92/money-padel`** (renamed by Shaun 27 Oct from `MP-Dashboard-Beta-v2`, itself renamed 29 Sep from `MP-Dashboard-NewRatings`; GitHub redirects the old URLs. The older repos `MP-Dashboard` and `MP-DashboardBeta` are **archived**, read-only.) |
+| Hosting (27 Oct) | **Vercel is the primary host. Live app: <https://moneypadel.sgj.luxe>** (Shaun's domain, on Production, 27 Oct); <https://mp-dashboard-new-ratings.vercel.app> still serves the same build (desktop review at `/preview`). Vercel project `mp-dashboard-beta-v2` (Shaun may rename it; the domains above are unaffected). `main` is production. **Since 27 Oct (Shaun's storage clean-up) Vercel skips Preview deployments ("Ignored Build Step")**; production still builds on every push to `main`. The last `app-features-fixes` preview is `b2eb028`, so its branch link is frozen there. Use the production link. Previews only matter for held work (the `redesign` branch); re-enable for that branch if it needs review. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
-| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`c6acfd9`** (Match Result Card + Match Analysis, 3 Oct; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **874 / 874 on `main`** (3 Oct, after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Working branches (27 Oct) | **Three branches.** **`main`** — production (Vercel). **`app-features-fixes`** — features, fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`redesign`** — the app redesign (renamed by Shaun 27 Oct from `ux/player-reset-v2`; `8b9588d`, 4 Oct), **held**: never merged to or deployed from `main` until Shaun releases it; 42 commits behind `main`, and merging `main` into it conflicts in ~20 files. `app-redesign` (superseded 30 Sep) and `claude/upload-commit-main-yfgpx0` were deleted 27 Oct. *(Older entries below use the old names.)* |
+| Last verified implementation commit | **`79eddad`** ("New build available · Refresh" notice, 27 Oct; correcting a game's date moves it `a7a6761`, 27 Oct; Add a game result reader `c6f0b79`, 27 Oct; new players join the record with their first game `2a7cbe9`, 27 Oct; every record counts draws `777b7c0`, 15 Oct; player form counts draws `9809d88`, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **962 / 962 on `main`** (27 Oct, after the new-build notice; 959 after date moves; 958 after the result reader; 951 after new-player entry; 948 after every record counts draws; 947 after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,321 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**"New build available · Refresh" — DONE (`79eddad`), 27 Oct.** Shaun: same as the Ledger app.
+- `features/updateNotice.js` re-reads the deployed `assets/js/buildInfo.js`
+  (no-store, cache-busted) and compares it with `window.MP_BUILD`
+  (`BuildStamp.deployedSha` / `isNewer`). It checks 5s after start, on return to
+  the foreground, and every 10 min while visible. A pill above the tab bar has
+  Refresh (reload) and ✕ (dismiss this build only). Never shown on a
+  local/unstamped build; read failures are ignored.
+- `tests/updateNotice.test.js` (3).
+
+**Correcting a game's date moves it — DONE (`a7a6761`), 27 Oct.** Shaun: "I should just be able to change the date and the system figures it out."
+- Was refused, because a match id carries its date. New `ReplayForward` change
+  `redate` (`matchId` = old id, `match` = the game under the next free id on
+  the new date) removes and re-adds in **one** plan and replay; ratings from
+  the earlier of the two dates are re-derived.
+- Edit game stages it like any correction ("Confirm new date … It becomes X (was
+  Y)"). On commit, `matchAttributionState` and Upcoming references
+  (`playedMatchId`, `notResults`) move to the new id; history lines are left as
+  written.
+- Live check (read-only): `2026-10-27-1` → `2026-10-26-2`, 5 writes / 5
+  deletes, no rating moves, record replays to itself.
+- `tests/matchRedate.test.js` (2); the old refusal test was removed (Shaun's
+  decision supersedes it).
+
+**Add a game reads results however they're written — DONE (`c6f0b79`), 27 Oct.** Shaun: "smart enough to detect the winners, losers and results… not always in the exact format".
+- New pure `domain/matches/resultParse.js` (`ResultParse`) replaces the one-layout
+  `parseQuickEntryText` reader. Sides come from result words (beat / def / lost
+  to / beaten by / drew with), "vs" or a team per line; partners from & / + ,
+  "and" or recognised names. Winner comes from the words, 🏆 / "won" / "(W)",
+  or more sets won; level sets with no winner read as not finished. Scores
+  written winners-first are turned round; "6/4" is accepted when no other style
+  is used. Names use `FixtureParse.resolveName`: a unique prefix is used and
+  said, an ambiguous one must be picked. Dates come from a WhatsApp timestamp,
+  26/10, 26 Oct, today/yesterday or a weekday.
+- It refuses rather than guesses: one team, no scores, a duplicate player, or
+  several results in one paste ("add them one at a time").
+- The form shows a read-out (one-line result + problems / warnings / how it
+  decided); a paste is read immediately; nothing is submitted automatically.
+- Fixed in passing: an Admin-added player who hasn't played was offered the
+  new-player tier picker again (default B would overwrite their tier).
+- `tests/resultParse.test.js` (7).
+- Possible next step, if wanted: several results in one paste (a review list,
+  like "Add multiple games").
+
+**New players join the rating record with their first approved game — DONE (`2a7cbe9`), 27 Oct.** Shaun: added Topsy (Tier C) in Admin, then approving her first game failed with "never been initialised".
+- **Root cause.** Admin › Player tags › "Add a new player" only wrote a tier tag
+  (`moneypadel_player_tags`), a pre-v3 mechanism. The engine rates no one
+  without a `PLAYER_INITIALISED` journey event, and nothing in the app wrote
+  one. All 34 players entered through `seed-beta`; Topsy is the first new
+  player since the v3 record began.
+- **Fix.** `ReplayForward` changes may carry `initialisations`. Approval and
+  corrections (`planIncludingNewPlayers`, gamesAdmin.js) bring an unknown
+  player in, in the same commit: tier from Admin's tag, effective on the first
+  game's date (the seed's convention), **PROVISIONAL / `UNKNOWN_NEW_PLAYER`**
+  (the record's precedent, Shaun in July). The rating is the tier baseline
+  either way; PROVISIONAL keeps the one-off starting-tier correction open in
+  Club Decisions. Signed by the approver. Without a tag, the message tells the
+  admin to add the player in Admin first.
+- Checked on a read-only copy of the live record: Topsy's pending game plans
+  as 10 documents, nothing else moves, and the record replays to itself after.
+- `tests/newPlayer.test.js` (3). Also `73ec46d`: Edit Game position checks
+  allow ±1px (subpixel layout drift, failing by 1px on unchanged code).
+- **For CGPT/CChat:** a starting tier is the admin's tag tier; no starting
+  rating other than the tier baseline is offered (methodology unchanged).
+
+**Every record counts draws — DONE (`777b7c0`), 15 Oct.** Shaun: "align everything to include draws".
+- `buildPlayers`, `computeMonthlyStats`, `buildPartnerships` and `buildH2H` now
+  read `matchesIncludingDraws()`; `isDraw` is its own outcome (never a win, loss
+  or upset; its residual counts toward vs-expectation like any game).
+- `PLAYERS[].total` = W + D + L = lifetime games; `winpct` = W / total. This
+  feeds the Power Rankings W/L list, its Win % column and sort, the **min-games
+  display filter** (now counts draws), risk confidence, avg opponent and
+  vs-expectation.
+- Monthly stats equal the League's monthly table for every player and month.
+- Partnerships: draws counted (2+ games incl. draws qualifies); the Board Pack's
+  separate draw tally was removed; Player Pack chemistry says "games".
+- Displays: W/L list `5W · 2D · 1L`; month view, partnership records,
+  best-chemistry line, recent-form card, monthly breakdown use `12W-1D-10L`; the
+  admin players CSV has a Draws column.
+- Verified on the live record: all 34 players' rankings record equals the
+  profile and lifetime games, every month equals the League, and every
+  partnership adds up. One new test; the Board Pack draw-injection test now
+  injects into `DRAW_MATCHES` too.
+
+**Player form counts draws: profile, Home and Win Rate reconcile with Recent Results — DONE (`9809d88`), 15 Oct.** Shaun's brief (Jams).
+- **Root cause.** The profile's form strip, its "3–7 · Last 10", Home's
+  form dots/record and the hero's W-L / Win Rate were built from `MATCHES`,
+  the rating's decided-only set. Recent Results reads
+  `matchesIncludingDraws()`. Draws were not misclassified; they were
+  **dropped**, and an older decided game slid into the ten. On live data (15
+  Oct) Jams showed `W W L W L L L L L L · 3–7` (his whole decided history
+  back to July) and `3-7 · 30% Win Rate`. His real last ten are
+  `L D L D L L L D L W` = 1W 3D 6L, and his record is 3W 3D 7L = **23.1%**.
+- **Shared logic.** New pure `domain/matches/playerForm.js` (`PlayerForm`)
+  works over every rated game, draws included. `MatchOutcome` decides each
+  result. Order: newest first, same-date games by the record's sequence; Recent
+  Results now uses the same order. Win rate = wins / games played (the
+  League's and Games log's definition). `computeRecentForm` and
+  `computeRecentFormSequence` delegate to it. This is the source any future
+  form consumer (Rating Review flags) should read.
+- **Surfaces.** Profile strip, "1W · 3D · 6L · Last 10", hero
+  "3W · 3D · 7L · 23.1% Win Rate"; Home dots, record and the trending line;
+  recent-form W-D-L in Power Rankings, League and the admin export. Draws get
+  a `--draw` colour (neutral warm grey) in the profile letters, Home dots and
+  the League's Last 10 run. The strip still reads oldest→newest with the
+  latest game on the right.
+- **Knock-on.** The recent-form "vs expectation" average (trend arrows) now
+  covers the same ten games, draws included.
+- **Verified on the live record (read-only snapshot, not committed).** All 34
+  players reconcile: strip = Recent Results' first ten, record line adds up,
+  hero record sums to games listed, Win Rate = wins/played. The 14 players
+  without draws are unchanged (letters, counts, Win Rate, average); the 20
+  with draws were all affected.
+- `tests/playerForm.test.js`: 9 tests (Jams's stored sequence as a pure case;
+  profile, Home and fewer-than-ten in the app); the app ones fail on the old
+  code.
+- Also `4ec05f9`: five `ui.test.js` tests checked "recent" against the real
+  clock and broke as the calendar passed the fixture (games end 16 Sep). They
+  failed identically on unchanged code and now run at `FIXTURE_NOW` (21 Sep).
+- Open: Power Rankings' W% still excludes draws (Open Questions, 15 Oct).
+
+**Predict a Matchup: four players, up to five matches, one shared card; iPhone input zoom fixed — DONE (`3259cdc`), 10 Oct.** Shaun's brief.
+- **Four players or nothing.** `domain/predictions/predictionBatch.js` (pure):
+  a match is predicted only when all four slots hold a club player, no player
+  twice (case-insensitive, either side). Before that: "Select 4 players to
+  generate a prediction", with no card and no percentages. A repeated player
+  is flagged in its slot, and chosen names are left out of the suggestions.
+  **Change of behaviour:** a singles (1 v 1) prediction is no longer possible
+  here; the brief asks for four.
+- **Up to five.** "+ Add another prediction" appears once every match is
+  complete. Finished matches fold to numbered lines with Edit and Remove;
+  removal renumbers. At five, the button gives way to a note.
+- **One condensed card.** `MatchupCard.buildMany` numbers the same per-match
+  cards (teams, tiers, expected share, favoured side) on screen and as one
+  picture (`CardPainter.matchups`, 1080 wide, 1582 tall for five). Share and
+  Copy send them together. One prediction is unchanged (Matchup Card,
+  Share/Copy, Add to Upcoming). **Add to Upcoming is offered only with a
+  single prediction**; a batch is for sharing.
+- Every prediction is still `predictMatchup()` → `MatchPrediction.build`;
+  nothing new is calculated.
+- Fixed in passing: the sheet's name suggestions came from a datalist that
+  only existed once Games or Upcoming had been drawn. The sheet now has its
+  own list.
+- **iPhone zoom: root cause.** Every editable control in the app rendered at
+  12.5–14px (`.fg-select` 14px, plus screen overrides at 12–13px). iOS Safari
+  zooms in on a focused field under 16px and does not zoom back out. Fix: one
+  shared rule at the end of `assets/css/components.css` sets
+  inputs/selects/textareas to 16px under `(pointer: coarse), (max-width: 600px)`.
+  Desktop density is unchanged. The viewport tag already allowed zoom and is
+  untouched (a test now guards against `maximum-scale` / `user-scalable`).
+  Checked at 360px: no horizontal overflow on any tab or any open Admin
+  section.
+- `tests/predictBatch.test.js`: 9 tests; the app tests fail on the old code.
+
+**Match Result Card: four and five sets fit on one line — DONE (`06370f5`), 8 Oct.** Shaun's screenshot.
+- Each set was a wrapping flex item sized for three sets, so on a phone a
+  four-set score broke every set across two lines. Sets now never break; four
+  sets show at 34px and five at 25px (three or fewer unchanged at 44px). The
+  shared picture already fitted its score to the width.
+- Test at 360 and 390px for four and five sets (fails on the old CSS).
+
+**Rated games say who submitted them again — DONE (`bde692b`), 6 Oct.** Shaun's bug report: "every game shows Submitted by unknown".
+- Cause: since the Games log has read the v3 record (`e8d21f4`, 17 Sep) no
+  rated game has carried a submitter. v3 match documents have no such field,
+  and approving a submission deleted the only copy of the name. The existing
+  comment claiming `submittedBy` "goes on being written" was true only of the
+  submission itself.
+- `domain/matches/matchAttribution.js` answers who added a game, in order:
+  1. the new club document `moneypadel_match_attribution` (matchId →
+     submittedBy / submittedAt / approvedBy / approvedAt), written at approval;
+  2. the 16 Sep export's own "Submitted By" column, for the 150 seeded games;
+  3. the Rating Journey: "Approved by …" for games approved 17 Sep–6 Oct
+     (those submitters are not recoverable), or "Added from the old app" for
+     the 7 imported games;
+  4. otherwise "Submitter not recorded".
+  The rating record is untouched. The admin match CSV uses the same answer.
+- On the live snapshot: 113 Historical record, 33 Submitted by Shaun, 1 by
+  Tom, 8 Approved by Shaun, 7 Added from the old app, 1 not recorded (blank in
+  the export too).
+- `tests/matchAttribution.test.js`: 7 tests; the UI ones fail on the old code.
+
+**Edit Game keeps your place on the Games tab — DONE (`21f79c1`), 6 Oct.** Shaun's bug report.
+- Root cause: the edit form was appended after the whole games list and
+  scrolled to (`scrollIntoView`, smooth), so Edit took the reader to the bottom
+  of the tab. Save and Cancel then redrew the list without the form, and the
+  page kept its old offset, clamped to the new bottom. No input focus was
+  involved.
+- The form now opens inside the game's own card (pending and rated alike).
+  Opening keeps the card where it is on screen, and only brings it up under
+  the header if the form would start in the lower 40% of the screen.
+- Cancel, Save, the card's Close, and a confirmed correction all return to where
+  the editor was opened, even after scrolling down to the buttons. A refused
+  save or a staged correction keeps the game where it is. Editing from a
+  profile lands on the game with its form open.
+- If a filter hides the game being edited, its form opens at the head of the list.
+- `tests/gamesEdit.test.js`: 8 tests at 390 × 844; all fail on the old code.
+
+**League P W D L; Monthly Race counts open their matches — DONE (`750e31b`), 6 Oct.** Shaun's requests.
+- The League table (By tier and All together) and Last 10 now read P W D L,
+  the order Merit, the Race and the Board Pack already use.
+- In the Monthly Race, P, W, D and L open the matches behind the count, as in
+  League and Merit. Each match is told the Race's way: its stakes and the
+  points it earned.
+- The score keeps its own list; one detail is open at a time.
+- No figure changes. Covered by a new D6 test in `tests/auditFixes.test.js`.
+  912/912.
+
+**Match Result Card: draws no longer look like wins — DONE (`71dc4f1`), 5 Oct.** Shaun
+sent a draw (Eli & Len v Osh & Rishi). One pair was in the winners' large
+gold type and the other was in small type, "with Osh & Rishi".
+- **Both pairs alike:** on a draw both pairs are now in the same type, size
+  and colour (not gold), with "vs" between them. This applies on screen and
+  in the shared picture.
+- **No rating row on a draw.** It showed one side's gains only; everyone's
+  movement stays in the analysis.
+- **Unchanged:** wins. The picture's score now also shrinks to fit the
+  margins.
+
+**Matchup Card shows the % of games — DONE (`a3e515b`), 4 Oct.** Shaun: the share of
+games is fine instead of a number of games.
+- The card's big figure now reads "Expected share of games: 34% – 66%", on
+  screen and in the shared picture. The share text says the same.
+- On screen the detail line is now just the rating edge.
+- The typical-match conversion (`typicalMatchGames`, `expectedGames`) is
+  removed.
+
+**Predict a Matchup: top of More, a share-ready Matchup Card — DONE (`acba496`), 4 Oct.**
+Shaun's brief: he was screenshotting the tool for the group.
+- **Access:** Predict a Matchup is now the first item in More, for Admins
+  only.
+- **The card:** it opens in its own sheet and answers with a Matchup Card:
+  - the teams, with tier badges;
+  - the call: "Projected favourites: …", "Slight edge: …" or "Too close to
+    call";
+  - **expected games won** in the club's typical match.
+- **Sharing:** **Share matchup** sends the card as a picture; **Copy image**
+  puts it on the clipboard, or copies text where pictures can't be copied.
+- **More menu:** Predict (Admin) · Doughnuts · Power Rating Guide ·
+  Insights / Call-Outs · About · Data & Rankings · My Player · Admin /
+  Manage. North vs South has moved to Admin / Manage.
+- **Unchanged:** the prediction itself. Handoff in Section 6; one item in
+  Section 5.
+
+**Player of the Month: one picture of the nominees for WhatsApp — DONE (`69e6640`), 4 Oct.**
+Shaun asked to share a single picture of all the candidates.
+- **Button:** "📷 Share nominees picture" appears in Admin › Player of the
+  Month, both on the list being drawn up and on the finalised shortlist.
+  It also appears under the players' shortlist in League › Information.
+- **Picture:** `CardPainter.nominees` paints it 1080 px wide, at least 4:5
+  and taller when needed: brand and month, "September nominees", every
+  nominee's card (players' version), and "Money Padel recommends · the
+  group chooses".
+- **Sharing:** it goes to the phone's share sheet like the Match Result Card
+  ("Tap to share" when a fresh tap is needed; saved where sharing isn't
+  available). Handoff in Section 6.
+
+**Player of the Month nominations refined — DONE (`e5f868a`), 4 Oct.** Shaun's
+second brief: the cards read like algorithm output.
+- **Wording:** each reason is now one sentence about what the player did,
+  e.g. "Beat expectations by +7.2pp on average." or "Won 13 of 20 matches —
+  65%.". Below the reasons is one row of four figures.
+- **Competitions:** the month's tier winners of the League, Merit and Monthly
+  Race are now nominated. They come from those competitions' own tables.
+  Two wins are told once as "Month Champion", three as "Triple Crown".
+- **Readability:** a card shows at most three reasons.
+- **Admin vs players:** Admin's card keeps its controls small. The players'
+  shortlist shows the nominations only.
+- **Unchanged:** confirmed awards. Handoff in Section 6.
+
+**Player of the Month — DONE (`7dca948`), 4 Oct.** Shaun's brief: Money Padel
+recommends candidates; the group chooses the winner. For each finished month
+the app suggests the strongest *cases* among players with 5+ matches —
+Overperformer, Biggest Improver, Strongest Results, Most Consistent, Upset
+Specialist, Most Active — each a single figure the club already sees, ties kept,
+listed by name (never ranked), with no combined score. Admin removes/adds
+qualified players, finalises the shortlist (everyone sees it in League ›
+Information and votes in WhatsApp), then confirms the winner. Shortlists and
+winners are stored as snapshots in the new `playerOfTheMonth` collection and
+never recalculated. The old automatic "Player of the Month" (the points leader)
+is gone from every surface. Handoff in Section 6; decisions in Section 3; open
+items in Section 5.
+
+**CGPT reconciliation — 4 Oct.** Reviewed Shaun's Player of the Month product brief against the delivered implementation. The intended product principle is confirmed as: **Money Padel recommends candidates; the group chooses the winner.** Recommendations are evidence-backed cases rather than an automatic POTM ranking; match volume is only one reason to nominate someone and must not dominate by itself; Admin curates the shortlist; the group vote decides; and the confirmed award/history remains a permanent snapshot with its supporting story. This adds no new implementation request beyond `7dca948`; it records CGPT/product alignment after reading the current Ledger.
+
+**Player status model + archived players — DONE (`4cbfeb7`), 4 Oct.** Shaun's brief:
+a player who has left should disappear from the live app without losing a single
+historical fact. Three admin-set statuses on the player's own v3 record —
+**Active**, **Temporarily inactive**, **Archived** — kept separate from every
+monthly or 30-day rule (Idle, League/Merit/Race qualification, Monthly
+Performance), which never change a status. Archived players leave "Who are
+you?", the directory, Compare, Find Game, every name field and the current
+Power Rankings; their matches, scorecards, profiles, past months, Rating
+Journey, packs and replay are untouched. Admin › Player tags groups players by
+status with Mark temporarily inactive / Reactivate / Archive player (confirmed)
+/ Restore player. Handoff in Section 6; decisions in Section 3; four small
+follow-ups in Section 5.
+
+**Home redesign review — APPROVED DIRECTION (Shaun / CGPT, 4 Oct). Baton → CCode on `ux/player-reset-v2`.**
+- **Claude Design remains the visual/design-intent source.** The redesign must not become a new independent CGPT reskin. The authority for this work is: current Ledger / reconciled IA → canonical app rules/data → Claude Design visual intent. The current photographic redesign is a working implementation to refine, not discard.
+- **Home is the reference-quality screen** before this visual language is propagated elsewhere. Review its branch/Vercel screenshots first; do not automatically spread revised components to Rankings, Play, Players or Me.
+- **Approved Home hierarchy remains the reconciled 30 Sep IA:** compact live-data hero → conditional **Needs You** → **Next Game** → **Last Time Out** → light **Around the Club**.
+- **Hero:** preserve the strong premium padel photography/dark-champagne identity but reduce its vertical footprint and make it useful. Its primary story is the viewer's **This Month** position, explicitly naming tier and month, with compact canonical record/points/movement where available. Tap opens Rankings → This Month. Race stays out while it is a trial. Meaningful Month / no-games states must be honest rather than inventing a rank.
+- **Power Rating / Tier Rank / form:** remain on Home as compact secondary standing information; the current large `Your Game` treatment is to be substantially simplified/demoted. No new calculation or threshold logic.
+- **Needs You:** restore immediately below the hero and render only when action is genuinely required. It follows the established DQ29 definition (For Me requests + viewer-involved Needs Attention fixtures) and disappears completely at zero.
+- **Next Game:** restore as a first-class Home item using canonical upcoming-fixture data. Do not invent missing time/venue data.
+- **Match Ideas leaves Home.** Preserve the feature/logic for its already-approved destination, Play → Arrange a Game; do not use it as a Home fallback.
+- **Last Time Out:** keep, but make the result/teams/score the visual centre; date/tier are secondary. Preserve canonical result/rating movement. Structure may later accommodate the separate shareable Match Result Card, but this Home task does not reimplement that feature.
+- **Club Pulse becomes lighter Around the Club.** Keep only 2–3 useful derivable insights (e.g. #1 Ranked, In Form, Promotion Watch) and prevent them competing with the player's own state. A mobile horizontal rail is acceptable within the Claude Design language. No invented insight calculations; no emoji as final product iconography.
+- **Large monthly recap is removed/absorbed.** The separate `SEPTEMBER/OCTOBER AT MONEY PADEL` dashboard block should not duplicate the monthly story already led by the hero; useful club facts may live lightly in Around the Club or the deeper monthly destination.
+- **First-viewport test:** at ~390px, expose as much as reasonably possible of monthly story → Needs You → Next Game without shrinking typography/touch targets below the established design-system standard.
+- **Visual standard:** continue champagne `#D5B76E`, Instrument Serif + Inter, dark premium surfaces, restrained borders, clear hierarchy and app-like interaction. Target = **premium sports app**, not a luxury marketing page and not an analytics dashboard.
+- **Functional boundary:** presentation only. Do not change rating/tier, League/Merit/Race, monthly methodology, request/fixture rules, permissions or Firestore schema. Consume canonical view-model/functions; if a fact is missing, report it rather than re-derive it in Home.
+- **Responsive/QA:** preserve the existing mobile/tablet/desktop strategy; mobile is Home's design authority. Verify 375/390, tablet and desktop, long names, Needs You present/absent, next-game present/absent, monthly-data/empty-month states, hero route, and that Match Ideas is absent from Home.
+- **PWA redesign identity (same conversation):** keep branch name `ux/player-reset-v2`; distinguish its installed preview from production using **full name `MP.B — Redesign`**, **short name `MP.B R`**, browser title `MP.B — Redesign`, and a clearly differentiated redesign icon across manifest/Apple touch/favicon surfaces. Production/main identity must not be changed by that branch-specific implementation.
+
 
 **Match Result Card + Match Analysis — DONE (`c6acfd9`), 3 Oct.** Shaun's brief:
 the scorecard read like an analytics panel.
@@ -1638,7 +1953,6 @@ Shaun's decisions, including where an agent recommended otherwise.
 | DQ6–DQ9 as recommended | Shaun, 30 Sep 2026, before Phase 2. **DQ6:** a player in the game may record that the court is booked. It is attributed to them, only on an agreed game they are still in and that is not archived, and only an Admin can undo it. The Admin review of unrecorded bookings stays. **DQ7:** replacing a player stays Admin-only. **DQ8:** players get no "Change plan"; date, time and venue stay Admin edits. **DQ9:** a plain request may carry an optional time and venue, as a suggestion, never a booking. Implemented in `fixtureFlow.js` on `main` (`7d70cc0`). |
 | Accept all: the new Play lists, DQ1 as recommended, and the Phase 3a (Home) go-ahead | Shaun, 30 Sep 2026 ("Accept all"). **Play lists accepted:** "Upcoming, as before" and "Requests, as before" are to be retired from Club on `ux/player-reset-v2`. **DQ1:** no promotion bar and no threshold line; keep the one-line gap, worded "N pts below the lowest-rated Tier A player". **Phase 3a (Home) approved.** Shaun's same message said the Board Pack must not touch the redesign branch, so both are queued behind it (NEXT). |
 | Admin Monthly Board Pack: a stored choice, figures drawn live | Shaun's brief, 30 Sep 2026; implementation choices CCode's. **DONE `9e4a5e6`.** A per-month document `moneypadel_board_pack_YYYY-MM` holds only the admin's choice: modules (id, on/off, options) and commentary in one ordered list, who saved it and when, plus a fingerprint of the month's record. It is read when an admin opens that month, never at start-up. Figures are never stored. Whether a finalised pack should freeze its figures is Shaun's call (Section 5). |
-| Phase 3a Home: the clubhouse lobby on `ux/player-reset-v2` | Shaun's Home brief, 3 Oct 2026 (it supersedes any earlier CGPT Home v2 brief that conflicts); the layout and copy CCode's, within the IA and DQ31. **DONE `659e32c`, on `ux/player-reset-v2` only.** The order is the IA's: hero → Needs you → Next game → Last time out → Around the club. **Hero:** the club photograph stays, with a compact, live-data hero that leads with the viewer's League position for Home's month, named by tier and month. Tapping it opens Rankings › This Month (League) on Home's month without recording a month choice. **Position source:** `leagueStandingOf(name, month)` in `monthlyTablesData.js`, the League's own rows and standing order. It now also serves the Player Pack, replacing its private copy (same figures). A mid-month mover is placed by their current spell (DQ24). With no game that month, the hero says so in words. Power Rating, Tier Rank (of N), form and the DQ1 gap line form one demoted line; the Power movement names its month (DQ2). **Needs you / Next game:** `myGamesVisible()` in `playScreens.js` (My Games' list with D4 visibility), so the Play badge, My Games and Home are one list. Needs you shows Play's own rows and answer buttons, two at most, then "N more in My Games", and is absent when empty. Next game is Upcoming only. **Last time out:** the same recorded facts; the result is now the centre. **Around the club:** Club Pulse as a swipeable rail (2–3 items, DQ30), plus the month's review link. **Removed from Home:** Match ideas (now in Arrange a Game, DQ32), the monthly recap block, the tagline and the Your Game card. |
 | Match Result Card first, Match Analysis behind it; deterministic match stories | Shaun's brief, 3 Oct 2026; story thresholds and wording CCode's, within the brief. **DONE `c6acfd9`.** `MatchScorecard.resultCard(vm)` derives the card from the scorecard view model and copies its fields, so **no second data path**. The same model feeds the sheet (`matchResultCardHtml`), the picture (`CardPainter.matchResult`) and the analysis (`matchAnalysisHtml`). **Heroes:** the winners; on a draw (nobody won), the side that beat expectation, under "All square". **Story:** the first rule that applies, on recorded figures (`MatchScorecard.STORY`): expected < 35% → *Major upset*; < 50% → *Beat the odds*; ≥ 75% of games → *Dominant display*; ≥ +20pp as favourites → *Statement win*; ≤ 55% of games → *Too close to call*; ≥ 0pp → *Expected win, delivered*; else *Job done*; a draw → *Honours even*. On the 30 Sep record: delivered 59, beat the odds 39, dominant 19, too close 15, job done 14, major upset 12, statement 9, draws 9. A winner always banks the 20% result component (median winner +16pp), which is why *Statement* needs +20. **Winners' gains** are shown only when every winner gained. A favourite can win and still fall short of expectation, so their rating drops; 20 of 167 live wins are like that. Those cards show no reward row rather than a minus or half a row; the analysis shows every movement. A winner's shortfall appears on the card as a neutral figure, not red. |
 | Completed-match scorecard: one card per rated match, read back from the engine's record, no new persistence | Shaun's brief, 2 Oct 2026; the architecture CCode's. **DONE `19662b1`.** View model `assets/js/domain/matches/matchScorecard.js` (pure; builds the card from the app match + `MatchFacts` + a dated tier resolver); sheet `assets/js/ui/components/matchScorecard.js` with one delegated `[data-scorecard]` listener. **Sources of truth, unchanged:** Expected = the side's `preMatchExpectedScore`; Actual = `actualScore`, the engine's performance score (0.80 × game share + 0.20 × result: win 1, draw ½, loss 0); difference = `actualScore − preMatchExpectedScore` (the stored `performanceResidual`, which K multiplies); movement = each player's `ratingDelta`; tier = the event's `tierAtEvent`, falling back to `historicalTierOf` (the dated tier history) only when there is no event. Game share is shown as labelled context, never as "Actual". The card prints pp as printed Actual − printed Expected (1 dp), so it always adds up on screen. It is within 0.1pp of the stored residual (live max 0.097). **Unrated match:** the card says so; no figure is estimated. **Teams:** team 1 is the stored first side (the winners; a draw keeps its stored orientation). Within a pair the stronger tier comes first, as on every match card. **No new persistence:** every field was already stored per match and per player. |
 | Desktop: one responsive app; the bottom navigation becomes a left rail; CSS places existing elements | Shaun's brief, 1 Oct 2026; the shell and layout choices CCode's. **DONE `269327c`.** Layout ranges mobile < 768 / tablet 768–1199 / desktop 1200+ / wide 1600+, in `assets/css/layout/desktop.css` and `assets/js/ui/desktopShell.js`. **No second app, no desktop routes, no duplicated renderers.** The rail is `.shell-bottom-nav` restyled, so routes, highlight and gating are the phone's. Admin stays inside More, not a primary rail item. From 768px the body is a CSS grid with a centred, capped content area and a midline: existing elements (podium / Kings, directory / profile, editor / preview) are placed side by side by CSS alone. The only markup added is `display: contents` wrappers on Home and around the pack editor and preview (no box on a phone), plus the rail's brand and viewer, which are built only once a desktop-sized window is seen. **The phone is proven unchanged:** the behaviour snapshot at 390 and 360 is identical, element for element, apart from those wrappers. The fifth item stays **More** on this branch; **Me** is the redesign's (Section 5). |
@@ -1657,6 +1971,22 @@ Shaun's decisions, including where an agent recommended otherwise.
 | Players Directory visual refresh | Shaun, 20 Sep 2026. Bring Directory in line with the newer premium/private-club Money Padel UI. Preserve Directory/Compare, tier/status filters, A–Z/Power Rating sort, player navigation and active/inactive meaning. Reduce the feeling of a large settings/filter form followed by a plain database list. **DONE `43401f8`.** |
 | Tom/Fatch must not reference Jords comparator | Shaun reconfirmed 20 Sep 2026 after seeing stale information. Both historical B anchors are 1400 baseline with 20% reliability. CCode must audit both displayed explanation and stored/replayed state rather than assuming this is cosmetic. **Audited `838ca66`: the record was already correct; the stale source was a document.** |
 | The Ledger is restored in full, not kept compact | Shaun, 20 Sep 2026, after the 3320 → 122 line rewrite. The institutional record — Decisions Log, Handoffs, Open Questions, Recently Completed — is the point of the Ledger and is to be preserved, not summarised away. `LEDGER_ARCHIVE_2026-09-20.md` stays unchanged as the recovery snapshot. |
+| Player status is a fact about the person, not a period | Shaun, 4 Oct: three statuses — `active`, `temporarilyInactive`, `archived` — set only by an admin, stored as `status` on the player's v3 record (id-keyed, so a rename cannot lose it; replay-forward carries it). No monthly minimum, qualification rule or the 30-day Idle rule may change it or hide a player. A missing status means Active; no migration. |
+| The legacy Inactive flag reads as Archived | Shaun, 4 Oct: Admin's old Active/Inactive tag meant "has left", so a player with no stored status and that flag reads as **Archived** (today: Del). Setting a status in Admin then stores it on the record and supersedes the flag. |
+| Temporarily inactive = "as today" (option A) | Shaun, 4 Oct: left out of game suggestions, matchmaking and the current ranking pool (shown only with "Include temporarily inactive"), but still in "Who are you?", the directory (tagged), every typed name field and their profile. A game with them is allowed. |
+| Archived is hidden live, kept in history, never deleted | Shaun, 4 Oct: one shared helper (`livePlayers()` / `livePlayerNames()` vs `PLAYERS`) decides; screens do not filter on their own. A new game, request or agreed fixture naming an archived player is refused in words ("X is archived. Restore them in Admin › Player tags…"). Admin never says "Delete"; Restore returns the same record. |
+| Player of the Month: the app recommends, the group chooses | Shaun, 4 Oct. No POTM score or formula: the recommendation names the leader (ties kept) of six evidence-backed stories among qualified players, plus the next-best on each when fewer than three players are named. Match count earns only "Most Active". Candidates are listed by name, not ranked. Admin curates and finalises the shortlist; the group votes (WhatsApp for now); Admin confirms the winner. |
+| Player of the Month eligibility = 5 matches in the month | Shaun, 4 Oct: the same 5 as the Monthly Performance podium and the Monthly Race. Upsets count only in a month at or above expectation overall (CCode, so two lucky evenings in a poor month are not a case). |
+| The points leader is no longer "Player of the Month" | Shaun, 4 Oct: League › Information, the WhatsApp summary, the Board Pack, the Share Deck and Home show the confirmed award ("Not chosen yet" / the shortlist until then). Already-published packs are snapshots and keep what they said. |
+| Archived players are not recommended for Player of the Month | Shaun, 4 Oct: a qualified but archived player is named to Admin ("…played enough to qualify but is archived") and can be restored first. Confirmed awards for since-archived players are untouched. |
+| The finalised shortlist is public | Shaun, 4 Oct: players see the shortlist (each candidate's reasons, in no order) in League › Information while the vote runs. |
+| A confirmed award is a snapshot | Winner, name, tier, story, citation, figures, the shortlist and the rules version are stored as they stood. Ratings, tiers, status changes and new recommendation rules never alter it. Only the owner can withdraw a confirmation, to correct a mistake, and the withdrawal is logged. |
+| POTM reasons are about the player, not the dataset | Shaun, 4 Oct (second brief). Each reason is a label plus one sentence with its own figure ("Gained +13.3 Power Rating through play."). No "No qualified player…" or ranking language on a card. A card shows the strongest three reasons in a fixed order (competition results, Overperformer, Biggest Improver, Strongest Results, Upset Specialist, Most Consistent, Most Active). Admin alone sees the rest, by name. Every card's figures row is the same four: matches · wins · win rate · pp vs expectation. |
+| Monthly competition tier winners are POTM nominees, never the award | Shaun, 4 Oct. A winner is the top of a tier in that month's League (points, then goal difference), Merit or Monthly Race (qualified players only), read from the same tables League › By tier shows. Ties on everything but the alphabetical last resort are joint winners. Two wins become "Month Champion", three "Triple Crown". The group still votes. |
+| No "from a 37% chance" clause on Upset Specialist | CCode, 4 Oct. The underdog line uses the engine's expected *score*, not a probability of winning, so "chance" would misstate it (see OPEN 2 Oct on Expected/Actual scales). The reason says "3 wins as the underdog." |
+| Predict a Matchup moves to the top of More, Admin only | Shaun, 4 Oct. It supersedes "keep it in Admin / Manage" (21 Sep). It is hidden from non-Admins in More, and `openPredictMatchup()` refuses them by any route. It is no longer in Admin / Manage. The 21 Sep reasoning stands: players must not be able to shop for predictions. |
+| The Matchup Card shows the expected share of games | Shaun, 4 Oct: the % of games rather than a number of games (superseding CCode's first version, which converted it to games in a typical 25-game match). The big figure is `MatchPrediction`'s share of games (the engine's expected score, as the tool has shown it since 21 Sep), whole percentages adding to 100. Never a win chance. The call is the prediction's own `confidence`: level "Too close to call", shade "Slight edge", clear "Projected favourites". |
+| North vs South off the More menu | Shaun, 4 Oct. It is now an Admin / Manage section ("Open North vs South"), behind the Admin lock. Nothing was deleted. |
 
 ---
 
@@ -2597,38 +2927,117 @@ with Shaun.**
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
-### OPEN 3 Oct — Phase 3a Home: review it, and four small calls
+### OPEN 27 Oct — Vercel previews are off; keep them for the redesign branch?
 
-**For Shaun / CGPT. Home is built on `ux/player-reset-v2` (`659e32c`); nothing
-is merged to `main`.**
-- **Review it:** the branch's Vercel preview. Home at 390px, and a laptop.
-- **This Ledger entry is on the redesign branch only.** The brief said to
-  leave `main` and `app-features-fixes` untouched, so it reaches `main`
-  only when the branch is merged, or if Shaun asks CCode to copy it
-  across.
-- **The branch now carries `main`** (`64621f7`): the desktop layout, the
-  packs and the Match Result Card, as the Ledger queued. The desktop
-  layout keys on Me as the fifth item on this branch.
-- **Calls, with defaults in place:**
-  1. **"Why it moved" (map 1b / 4.2a) is not built.** Last time out's
-     "View match" keeps today's route (the profile, or Games for a
-     draw). The card carries its match id, so it can open the Match
-     Result Card from `main` instead (one line). Which should it open?
-  2. **No movement in League position.** Nothing records last week's
-     position, so the hero shows the month's **Power Rating** movement
-     instead, labelled with the month (DQ2). A position movement needs
-     a snapshot first, which is a data decision.
-  3. **The hero shows League only.** Merit is not in the hero, and the
-     Race stays out while it is a trial (DQ31). The prototype's
-     three-figure "Your September" strip is folded into one story.
-  4. **Queued but not in this brief:** retiring "Upcoming, as before"
-     and "Requests, as before" from Club. It is still to do.
-- **Prototype differences, deliberate:**
-  - no court number (not recorded, DQ10);
-  - no promotion bar (DQ1);
-  - the photograph kept as the hero's background (map 4.2);
-  - section labels in the primitives' small caps;
-  - no emoji (💡 left with Match ideas).
+**For Shaun (CCode recommends: skip previews for everything except `redesign`).**
+*Corrected 27 Oct:* the redesign branch is **`ux/player-reset-v2`** (`8b9588d`, 4 Oct,
+last preview built 4 Oct), not `app-redesign` (superseded 30 Sep). It is 42
+commits behind `main` (every functional fix since 4 Oct), and a merge of `main`
+into it conflicts in ~20 files. Shaun wants it on his domain as well (a subdomain
+assigned to that Git branch in Vercel, which needs its previews re-enabled).
+*27 Oct:* Shaun renamed it **`redesign`**; use that name in Vercel (Ignored Build
+Step and the branch domain). Production domain: assign to **Production**, not a branch.
+Shaun's Vercel storage clean-up set an Ignored Build Step, and since then every
+Preview deployment is cancelled; Production is unaffected (verified from
+GitHub's deployment records: `d298c25`, `432fa1f`, `e6efbee` all deployed to
+Production). In the normal workflow previews only duplicated production
+(`app-features-fixes` = `main`), so nothing is lost there. A preview is only
+needed to review held work before it is released: the redesign branch. If
+wanted, the Ignored Build Step command
+`if [ "$VERCEL_ENV" = "production" ] || [ "$VERCEL_GIT_COMMIT_REF" = "redesign" ]; then exit 1; else exit 0; fi`
+builds production and the redesign branch only. CCode can also put it in
+`vercel.json` (`ignoreCommand`) so it is versioned.
+
+### RESOLVED 15 Oct — every record counts draws (`777b7c0`)
+
+**Shaun, 15 Oct: "Yes, align everything to include draws."** Done in `777b7c0`: PLAYERS, monthly stats, partnerships, H2H and every W/L display and export now count draws (total = W + D + L = games played; win % = W / total).
+
+#### As raised
+
+**For Shaun / CGPT (CCode recommends: yes, align them).** `PLAYERS[].wins/losses/total/winpct`
+(built from MATCHES, the rating's decided-only set) still feed the Power
+Rankings W% column and its sort, the profile's "Best chemistry" partner
+record, and the admin player CSV (Wins, Losses, Win %). There, Win % =
+wins / (wins + losses). The profile, Home, the League, the Games log and
+Player Packs use wins / games played, draws included (`9809d88`). Aligning means
+counting draws in the rankings' W% (and `total`). That also touches the
+min-games display filter, which reads `total`. This was left untouched
+because it is a visible change on a ranking screen; say if it should follow.
+
+### RESOLVED 4 Oct — Matchup Card: the % of games, not a number of games
+
+**Shaun, 4 Oct: "Showing the % of games rather than number of games expected to win is fine."** The card's big figure is now the expected share of games (e.g. 34% – 66%), the figure Predict a Matchup has always shown; the typical-match conversion and its "In a typical 25-game match" line are gone (`a3e515b`). The note on the scale still applies. Kept below as it was raised:
+
+#### As raised
+
+**For Shaun / CGPT. Live in `acba496`.**
+- **The scale.** The share behind "expected games won" is the engine's
+  expected *score* (OPEN 2 Oct: 0.80 × game share + 0.20 × result). Predict
+  a Matchup has called it "share of the games" since 21 Sep, and the card
+  keeps that reading. A strict expected game share would be a new quantity;
+  it would need a methodology decision first.
+- **The match length.** The typical match is the club's median games in a
+  decided match (25 on the current record). Matches run 12–54 games, so the
+  card says "In a typical 25-game match".
+  - The alternative is a fixed length, such as 18 for two sets. Say if you
+    prefer that.
+- **Upcoming's folded prediction** (on an agreed game) still uses the older
+  card text. It could adopt the Matchup Card; not changed here.
+
+### OPEN 4 Oct — Player of the Month nominations: three small calls (defaults in place)
+
+**For Shaun / CGPT. Nothing is blocked; live in `e5f868a`.**
+1. **More than five nominations.** With tier winners included, a month
+   typically has 3–7 nominations on the seeded data (June 6, July 7,
+   August 6, September 3). Nothing is cut automatically. Above five, Admin
+   sees "7 strong cases this month. A vote works best between 3 and 5 —
+   remove any you'd leave out." Say if a hard rule is wanted instead.
+2. **The titles** "Month Champion" (two competitions) and "Triple Crown"
+   (all three) are CCode's defaults, along with the six statistical titles.
+3. **Joint winners** read "Joint top of Tier A in the June League."; a
+   combined story with a shared win ends "(shared)".
+
+### OPEN 4 Oct — Player of the Month: small follow-ups (nothing blocked)
+
+**For Shaun / CGPT. The feature is live (`7dca948`).**
+1. **Story wording and floors** are CCode's defaults (`domain/awards/
+   playerOfMonth.js`, `STORIES`): e.g. Strongest Results needs a win rate
+   above 50%, Most Consistent beats expectation in more than half its
+   matches. Changing them bumps `RULES_VERSION`; confirmed months are
+   unaffected. Possible extra stories later: biggest rank climb, a
+   promotion month.
+2. **No cap at five.** Ties can make six or more candidates; nothing is cut
+   arbitrarily, and Admin removes. Say if a hard cap is wanted.
+3. **Months before June 2026** have no rated data, so the app cannot suggest
+   candidates for them. Recording historical winners for those months would
+   need a small "record a past winner" path. Not built.
+4. **In-app voting** is not built. The record reserves `votes` and keeps
+   shortlist and winner separate, so "voting opens → one vote per
+   recognised player → winner confirmed" can slot in between them.
+5. **Firestore rules:** the beta is open. If rules are tightened,
+   `playerOfTheMonth` needs read for everyone and write for Admin only.
+6. **"Most Player of the Month awards"** is ready as data
+   (`PlayerOfMonth.awardCounts`), but not shown anywhere yet.
+
+### OPEN 4 Oct — Player status: four small follow-ups (nothing blocked)
+
+**For Shaun / CGPT. The status model is live (`4cbfeb7`).**
+1. **A newly added player cannot be given a status until their first game.**
+   Admin's "Add a new player" writes a tag, not a v3 record, and the status
+   lives on the record; until then they are Active and Admin says "That
+   player has no record to update." Fine for a new member; say if a
+   pre-game archive is ever needed.
+2. **Past months on Power Rankings filter by today's state.** Choosing a
+   past month hides Idle / temporarily inactive players by their state *now*,
+   while the podium for that month does not. This predates the status work
+   and archived players are deliberately *kept* in past months. Worth one
+   decision when Rankings is redesigned.
+3. **Board Pack "Players active"** counts players who played that month. It
+   is not the status. Suggest renaming to "Players who played" so the two
+   meanings of "active" don't meet; not changed without a call.
+4. **Redesign branch:** Arrange a Game on `ux/player-reset-v2` reads
+   `allPlayerNames()`, which is now live-only on `main`; it follows
+   automatically at the branch's next merge of `main`.
 
 ### OPEN 3 Oct — Match Result Card: three small product calls (defaults in place)
 
@@ -3688,40 +4097,206 @@ ideas only, or any matchup card) before it is scheduled.
 
 ## 6. HANDOFFS
 
-### CCode — 3 Oct 2026 (Phase 3a: Home, on `ux/player-reset-v2`)
+### CCode — 4 Oct 2026 (Predict a Matchup: More + Matchup Card)
 
-**`659e32c` on `ux/player-reset-v2`; `main` and `app-features-fixes`
-untouched.**
-- **First:** `main` was merged into the branch (`64621f7`).
-  - Conflicts resolved in `index.html`, `shell.js` (the redesign's
-    section control now calls `syncDesktopShell()`), `components.css`
-    (main's rules, then the Phase 0 block) and `desktop.css` /
-    `desktop.test.js` (Me is the fifth item).
-- **Home** (`features/home/homeScreen.js`, `screens/home.css`, the Home
-  part of `layout/desktop.css`): see Section 3 for what each section
-  reads.
-- **New shared helpers:**
-  - `leagueStandingOf` (the Player Pack now uses it);
-  - `myGamesVisible` (My Games uses it);
-  - `homeMonthStory`.
-- **No rating, tier, League, Merit, Race, request or fixture rule
-  changed.**
+**`acba496` on `app-features-fixes` = `main`.**
+- **Prediction (unchanged):** `predictMatchup()` (`features/play/
+  fixturesData.js`) → `MatchPrediction.build` (`matchPrediction.js`) →
+  `RatingEngine.expectedScore`.
+- **Card:** `domain/predictions/matchupCard.js` (pure, `MatchupCard`):
+  - `build(pred, {tierOf, typicalGames})` gives the teams, the call,
+    `share`, `games {a, b, total}`, `gap` and the wording;
+  - `expectedGames` and `summaryText` support it.
+- **Screen:** `features/play/predictScreen.js`.
+  - `openPredictMatchup()` is Admin-gated. It opens `#predictModal` with the
+    same `predA1…predB2` inputs.
+  - `matchupCardHtml` mirrors the picture; on screen it adds each player's
+    rating and the share and rating edge.
+  - Share matchup is `CardPainter.share`, with "Tap to share" and save
+    fallbacks. Copy image uses `navigator.clipboard.write(ClipboardItem)`,
+    with the blob passed as a promise so Safari counts the tap; otherwise
+    it copies the card as text.
+  - Add to Upcoming is kept; `wirePredictionToUpcoming(box, after)` now
+    redraws the sheet.
+  - `typicalMatchGames()` is the median of decided matches.
+- **Picture:** `CardPainter.matchup(card)`, 1080 × 1350.
+- **More / Manage:**
+  - `shell.js`: `MORE_ITEMS` reordered; Predict is `adminOnly` and shown by
+    `canSeePredictions()`; North vs South is removed.
+  - `manageScreen.js`: the Predict section is removed; a North vs South
+    section is added.
+- **Unchanged:** Upcoming's prediction fold (`matchPredictionHtml`).
 - **Tests:**
-  - `tests/homeLobby.test.js` (12): the IA order and the first
-    viewport; the hero against the League's own order; the tier on the
-    day; the empty month; no viewer; Needs you present / absent / two
-    shown / answered from Home; Next game Upcoming only and its empty
-    state; D4 visibility; the rail; 360 / 375 / 390 with long names
-    and 44px targets.
-  - The superseded Home tests now cover the new Home, and the redesign
-    guards list Home.
-  - 13 mutations, 12 caught; the survivor is a font-size tweak.
-  - **922 / 922** on the branch.
-- **Verified by screenshot** on the 30 Sep live snapshot (read-only):
-  375, 390 and 360 (long names), tablet 1024, and desktop 1440 / 1920.
+  - New: `tests/predictMatchup.test.js` (6). It covers the card data, the
+    thresholds, the More order for Admin and player, refusal when locked,
+    North vs South in Manage behind the lock, the on-screen card and
+    picture, and Share, Copy image and the text fallback. 6 of 6 mutations
+    are caught.
+  - Updated: four `ui.test.js` prediction tests and one `playFlow` test now
+    open the tool from More with the new wording. Their invariants stay:
+    the engine's own share, no "chance", and a hedged call when it is
+    close.
+  - **911 / 911.**
 
-Baton → Shaun / CGPT: review Home on the preview; Section 5 has four
-calls.
+Baton → Shaun / CGPT: try it from More; one note in Section 5.
+
+### CCode — 4 Oct 2026 (Player of the Month nominees picture)
+
+**`69e6640` on `app-features-fixes` = `main`.**
+- **`features/review/cardPainter.js`:** `nominees(view, {brand})`. It
+  measures, then draws, so the canvas is exactly as tall as the
+  nominations; nothing is ever cut.
+- **`features/awards/potmScreen.js`:**
+  - `potmNomineesView(month, cards)` builds the players' cards (no Admin
+    extras).
+  - `potmShareCards(month)` uses the finalised shortlist, else Admin's
+    current list.
+  - `potmShareHtml` / `sharePotmNominees` / `wirePotmShare` reuse
+    `CardPainter.share` and the Match Result Card's "Tap to share" handling.
+  - `leagueScreen.js` wires the button on League › Information.
+- **Tests:** one new test in `tests/playerOfMonth.test.js` (23). It checks:
+  - the view: every nominee in name order, the players' version only, and
+    an Admin-added nominee's figures;
+  - a 1080-wide PNG at least 4:5, with its file name and caption;
+  - "Tap to share" re-sharing the same picture, and players sharing the
+    finalised shortlist;
+  - no button for a month without a list.
+
+  **905 / 905.** Also `010b43b`: four fixture tests read the real clock and turned red on 4 Oct as their September fixtures aged past the 14-day archive window; they now read their stages at the tests' own date (no code change).
+
+### CCode — 4 Oct 2026 (Player of the Month nominations refined)
+
+**`e5f868a` on `app-features-fixes` = `main`.** This builds on `7dca948`.
+- **Competition winners.** `potmCompetitionWinners(month)` in
+  `features/awards/potmData.js` reads the top of each tier from the tables
+  the League screen and the Board Pack already build. It adds no
+  calculation:
+  - League: `leagueSplitRows` + `sortLeagueRows(…, 'points', true)`.
+  - Merit: `MeritTable.build` with `historicalTierOf`.
+  - Race: `buildMonthlyRace`, qualified rows only.
+
+  Ties on every key bar the name are joint winners. Tiers follow
+  `groupedTiers()`. Each player's `metrics.competitionWins` is
+  `[{competition, tier, sharedWith}]`.
+- **Domain** (`domain/awards/playerOfMonth.js`, `RULES_VERSION` `potm-2`):
+  - `competitionStory` tells one, two ("Month Champion") or three ("Triple
+    Crown") wins in one line.
+  - The statistical stories now carry a player-centred `line(m, month)`.
+  - `cardFor` orders reasons by `REASON_ORDER`, shows 3 and lists the rest
+    in `alsoTitles`.
+  - `supportLine` gives the four figures; `citationFor` builds the default
+    award wording from the top two reasons.
+  - `SHORTLIST_COMFORT` (5) only triggers Admin's trim note.
+- **Screen** (`features/awards/potmScreen.js`): `potmCardHtml(card,
+  {admin})`.
+  - Every card leads with a large name and a tier badge, then label +
+    sentence per reason, then the figures row.
+  - Admin only: "Added by Admin", "Also: …", and the controls as quiet text
+    buttons.
+  - Players see "September's nominees, in no particular order".
+  - Old snapshots render as stored, `evidence` included.
+- **Unchanged:** the League, Merit and Race modules, persistence, and
+  confirmed awards.
+- **Tests:** `tests/playerOfMonth.test.js`, 22 (was 15):
+  - the wording, each competition, a combined story with a three-reason
+    cap, determinism with no score;
+  - the winners against the Board Pack's own tables for September and June
+    (Shaun's June Race win in Tier C, Kaz/Len joint);
+  - the Admin card against the player-facing card, and an award confirmed
+    under `potm-1` still reading as confirmed.
+
+  10 of 10 mutations caught. **904 / 904.**
+
+Baton → Shaun / CGPT: Section 5 (three small calls).
+
+### CCode — 4 Oct 2026 (Player of the Month)
+
+**`7dca948` on `app-features-fixes` = `main`.**
+- **Rules:** `assets/js/domain/awards/playerOfMonth.js` (pure, UMD
+  `PlayerOfMonth`).
+  - `recommend({month, players})`: eligibility (`MIN_MATCHES` 5), six
+    stories each with a floor (upsets also need the month at or above
+    expectation), leaders with ties kept, next-best fill to three
+    (`SHORTLIST_MIN`), alphabetical cards, an empty-state reason, and
+    archived qualifiers named.
+  - The award record: `finaliseShortlist`, `confirmWinner`, `reopen`.
+  - Queries: `history`, `awardsFor`, `awardCounts`.
+- **Inputs:** `features/awards/potmData.js`. It reads canonical sources only;
+  nothing is recalculated.
+  - The League's month gives games and W-D-L.
+  - The `MonthlyViews` row gives performance, the rating at the month's
+    start and end, play-only change (club decisions taken out), and the tier
+    at the month's close.
+  - `V3_MATCH_FACTS` gives "beat expectation in X of Y", and underdog wins on
+    the Match Result Card's line (`MatchScorecard.STORY`).
+  - Storage is the `playerOfTheMonth` collection, one structured document per
+    month, read at start-up within the same round trip.
+  - Helpers: `potmAwardsFor(name)`, `potmHistory()`, `potmWinnerOf(month)`,
+    `potmHeadline(month)`.
+- **Screens:** `features/awards/potmScreen.js`.
+  - **Admin › Player of the Month** opens on the latest finished month. It
+    shows the cards with their reasons and figures, Remove, "Add a qualified
+    player", and "Finalise shortlist for the vote" (finished months only).
+    Then "Won the vote?", an editable citation, and "Confirm winner" (asks
+    first). The owner can "Correct a mistake…". History is at the foot.
+  - **League › Information** shows the winner and citation, or the shortlist
+    in no order, or "Not chosen yet", plus Past winners.
+  - **Profile:** "👑 Player of the Month ×N · Sep 2026".
+  - The WhatsApp summary, Board Pack, Share Deck and Home read the confirmed
+    award.
+- **Tests:** `tests/playerOfMonth.test.js` (15) covers all eleven brief
+  cases: eligibility at 5, activity, authoritative figures, play-only rating
+  change, month isolation, add/remove, persistence, rule changes, archive,
+  empty months and ties. It also checks that nothing reads as a ranking, the
+  public shortlist, an unfinished month and the old points leader's removal.
+  10 of 10 meaningful mutations are caught. **897 / 897.**
+
+Baton → Shaun / CGPT: try it on a finished month (Admin › Player of the
+Month); Section 5 has six small follow-ups.
+
+### CCode — 4 Oct 2026 (player status model + archived players)
+
+**`4cbfeb7` on `app-features-fixes` = `main`.**
+- **Model:** `assets/js/playerStatus.js` (pure, UMD): `STATUS`, `LABEL`,
+  `statusOf({stored, legacyActive})`, `isLive` (not archived), `isPlaying`
+  (active only).
+  - Stored as `status` (+ `statusChangedAt`, `statusChangedBy`) on the v3
+    player document. `replayForward.js` adds these to `PLAYER_LABEL_FIELDS`,
+    so a replay carries them and `verifyNoOp` stays identical.
+  - `app.js` sets `p.status` from the record, falling back to the legacy
+    tag (`false` → archived), and keeps `p.active = isPlaying(status)`, so
+    every existing `p.active` / `INACTIVE_PLAYERS` reader behaves as before
+    for temporarily inactive players.
+  - `PlayerState` gains `status`: temporarily inactive and archived are both
+    participation INACTIVE (never a kind of Idle); labels "Temporarily
+    inactive" and "Archived".
+- **One live rule:** `livePlayers()` / `livePlayerNames()`;
+  `allPlayerNames()` now returns the live list. Applied to "Who are you?",
+  the saved viewer (cleared if archived), directory, Compare, Find Game (its
+  list now rebuilds on every visit), Build a Match, Home's promotion gap,
+  Admin review candidates, Player Packs, and the current Power Rankings.
+  New games, requests and agreed fixtures refuse an archived name in words.
+- **History untouched:** `PLAYERS` still holds everyone, so matches, Games,
+  scorecards, profiles, past months, League/Merit/Race, Rating Journey and
+  tier history read as before. No match data, rating input or methodology
+  changed.
+- **Admin › Player tags:** grouped by status with a pill; per player
+  "Mark temporarily inactive" / "Reactivate" / "Archive player" (confirm
+  with Shaun's wording) / "Restore player" / "Restore as temporarily
+  inactive". The old Active/Inactive toggle is gone. CSV export carries the
+  status. Wording "Inactive" alone is replaced by "Temporarily inactive".
+- **Tests:** `tests/playerStatus.test.js` (8): defaults and legacy fallback;
+  Idle vs temporarily inactive vs archived; status survives replay with
+  identical ratings and journey; source guard on the live lists; in the
+  browser — archive via Admin (confirm copy, no "delete"), gone from seven
+  live surfaces, history identical (rating, match facts, League row,
+  journey, records), old result/scorecard/profile still show him, request
+  refused, restore without a duplicate; saved viewer cleared; temporarily
+  inactive behaviour; monthly non-qualification hides nobody. Four older
+  tests updated (labels, and a temporarily inactive fixture player, since
+  Del now reads as archived). **882 / 882.**
+
+Baton → Shaun / CGPT: Section 5 (four small follow-ups, nothing blocked).
 
 ### CCode — 3 Oct 2026 (Match Result Card + Match Analysis)
 
@@ -8285,7 +8860,26 @@ specification text.*
 
 | Commit | Work |
 |---|---|
-| `659e32c` | **`ux/player-reset-v2`:** Phase 3a, Home as the clubhouse lobby. A live This Month hero (League position by tier and month; tap opens This Month) over the club photograph, then Needs you (only when needed), Next game (Upcoming only), Last time out with the result at the centre, and a light Around the club rail. Match ideas and the monthly recap left Home. `main` merged into the branch first (`64621f7`). 922/922. |
+| `79eddad` | "New build available · Refresh" pill when a newer deploy exists (build stamp re-read and compared). 962/962. |
+| `a7a6761` | Changing a rated game's date moves it (new id, one replay, attribution and Upcoming links follow) instead of refusing. 959/959. |
+| `c6f0b79` | Add a game reads results however they're written (ResultParse): result words, vs, lines, 🏆, set majority, winners-first scores, names, dates; read-out of how it decided. 958/958. |
+| `2a7cbe9` | New players enter the rating record with their first approved game (tier from Admin, PROVISIONAL, first-game date); clear message when no tier is set. 951/951. |
+| `777b7c0` | Every record counts draws (Shaun's call): rankings W/L & Win %, monthly stats, partnerships, H2H, exports. 948/948. |
+| `9809d88` | Player form counts draws: one `PlayerForm` module feeds the profile form/record/Win Rate, Home and recent-form W-D-L; draws no longer dropped (Jams: 3–7 → 1W·3D·6L; 30% → 23.1%); draw colour. 947/947. |
+| `4ec05f9` | UI suite's clock-dependent tests pinned to the fixture era (were failing on unchanged code from mid-Oct). |
+| `3259cdc` | Predict a Matchup: no card until four valid, distinct players; up to five predictions (add/edit/remove) shared as one condensed card (same predictions); editable controls 16px on phones so iOS no longer zooms on focus. 938/938. |
+| `06370f5` | Match Result Card: four/five-set scores stay on one line, each set whole (were splitting "6–" over "4" on phones). 929/929. |
+| `bde692b` | Rated games say who submitted them again (were all "Submitted by unknown" since the v3 move): submitter kept at approval in `moneypadel_match_attribution`, seeded games from the 16 Sep export, later approvals show the approver. 927/927. |
+| `21f79c1` | Edit Game opens inside the game's card and keeps the reader's place: Cancel / Save / Close / confirmed correction return to where the editor was opened (was: form appended after the list and scrolled to, leaving the reader at the bottom). 920/920. |
+| `750e31b` | League and Last 10 read P W D L like every other table; the Monthly Race's P/W/D/L open the matches behind them (shared drill-down, Race wording and points). 912/912. |
+| `71dc4f1` | Match Result Card: a draw shows both pairs in the same type, size and colour with "vs" between, on screen and in the picture; no winners' rating row on a draw. 911/911. |
+| `a3e515b` | Matchup Card's big figure is the expected share of games (Shaun: % rather than a number of games); typical-match conversion removed. 911/911. |
+| `acba496` | Predict a Matchup at the top of More (Admin only) with a share-ready Matchup Card: teams, the call, expected games won in a typical match; Share matchup (picture) and Copy image (or text). More reordered; North vs South moved to Admin / Manage. Prediction unchanged. 911/911. |
+| `69e6640` | Player of the Month nominees picture: one 1080-wide PNG of every nominee (players' version of the cards) shared to WhatsApp from Admin or League › Information. 905/905. |
+| `010b43b` | Fixture court-booking tests pinned to their own date (they read the real clock and failed once the 14-day window passed). |
+| `e5f868a` | Player of the Month nominations. Player-centred reasons (label + one sentence), a four-figure support row, League / Merit / Monthly Race tier winners from the competitions' own tables (Month Champion / Triple Crown when combined), at most three reasons per card, quiet Admin controls, a clean players' shortlist, and a trim note above five. 22 tests, 10 mutations caught; 904/904. |
+| `7dca948` | Player of the Month. The app recommends the month's strongest cases (six evidence-backed stories among 5+ match players, ties kept, listed by name, no score); Admin curates and finalises the shortlist, which everyone can see; the group votes; Admin confirms. Snapshots in `playerOfTheMonth`; history, profile awards, and the old points-leader label replaced everywhere. 15 tests, 10 mutations caught; 897/897. |
+| `4cbfeb7` | Player status model: Active / Temporarily inactive / Archived on the v3 record; archived hidden from every live list, history untouched; Admin controls. 882/882. |
 | `c6acfd9` | Match Result Card + Match Analysis. The celebratory card opens first: winners as heroes with their tier on the day, a big score, one deterministic story, Expected / Performance / pp, and the winners' gains. The full breakdown is one tap behind it. Share result paints the card as a picture for WhatsApp. One view model, no new data path; 874/874. |
 | `19662b1` | Completed-match scorecard: one card per rated match, opened from Play › Games and from the approval confirmation. It shows players with their tier on the day, score, winner, Expected / Actual / pp per team, and each player's movement. Every figure is read back from the engine's recorded events; there is no new persistence and no recomputation. 9 tests, 10 mutations caught; 870/870. |
 | `269327c` | Desktop-friendly dashboard. Left rail (brand, sections, "Viewing as"), centred capped column, ranges 768 / 1200 / 1600; Home grid, Rankings toolbar + Kings beside podium, Find a Game beside results, Games card grid, Players master-detail, Board Pack and Player Pack editor beside live preview, dialogs and drawers, Escape and focus; `/preview` desktop presets. The phone is unchanged (snapshot at 390/360). All new tests fail on `8854107` but the overflow invariant; 9 mutations caught; 861/861. |
@@ -8390,17 +8984,63 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
 ## 8. NEXT
 
-**CCode, 3 Oct (latest, `ux/player-reset-v2`): Phase 3a Home is built
-(`659e32c`, 922 / 922).** Baton → Shaun / CGPT.
-- **Review:** Home on the branch's Vercel preview, at phone and laptop
-  sizes.
-- **Decide (Section 5):**
-  - what "View match" opens;
-  - Power movement in the hero, in place of a position movement;
-  - League-only hero;
-  - when to retire "as before".
-- Other screens do not take Home's components until Home is accepted
-  as the reference.
+**CCode, 27 Oct (latest): new-build notice (`79eddad`, 962 / 962).** Baton → Shaun. The notice first appears on the deploy after this one, since a device must already be running this build to check.
+
+**CCode, 27 Oct (latest): a game's date can be corrected in place (`a7a6761`, 959 / 959).** Baton → Shaun: the Rishi & Topsy v Tom & Fatch date can now be changed to 26 Oct from Edit game.
+
+**CCode, 27 Oct (latest): Add a game reads results however they're written (`c6f0b79`, 958 / 958).** Baton → Shaun. Topsy approved (confirmed by Shaun). Open idea: several results in one paste.
+
+**CCode, 27 Oct (latest): new players join the record with their first approved game (`2a7cbe9`, 951 / 951).** Baton → Shaun: approve Topsy's pending game (Rishi & Fatch def Tom & Topsy, 26 Oct). It now rates and brings her in at Tier C.
+
+**CCode, 15 Oct (latest): every record counts draws, per Shaun (`777b7c0`, 948 / 948).** Baton → Shaun / CGPT. Nothing open on draws.
+
+**CCode, 15 Oct (latest): player form counts draws everywhere it is shown (`9809d88`, 947 / 947).** Baton → Shaun / CGPT. One decision: should Power Rankings' W% count draws too (Open Questions, 15 Oct)? Rating Review flags should read `PlayerForm`.
+
+**CCode, 10 Oct (latest): Predict a Matchup batches + iPhone input zoom (`3259cdc`, 938 / 938).** Baton → Shaun / CGPT. For Shaun: singles predictions are gone from this tool (four players required), and Add to Upcoming works on a single prediction only. Say if either should change.
+
+**CCode, 8 Oct (latest): four/five-set scores fit the Match Result Card (`06370f5`, 929 / 929).** Baton → Shaun / CGPT.
+
+**CCode, 6 Oct (latest): rated games say who submitted them again (`bde692b`, 927 / 927).** Baton → Shaun / CGPT.
+
+**CCode, 6 Oct (latest): editing a game keeps your place on the Games tab (`21f79c1`, 920 / 920).** Baton → Shaun / CGPT.
+
+**CCode, 6 Oct (latest): League P W D L, and the Race's counts open their matches (`750e31b`, 912 / 912).** Baton → Shaun / CGPT.
+
+**CCode, 5 Oct (latest): draws on the Match Result Card no longer look like wins (`71dc4f1`, 911 / 911).** Baton → Shaun / CGPT.
+
+**CCode, 4 Oct (latest): the Matchup Card shows the expected % of games (`a3e515b`, 911 / 911).**
+Baton → Shaun / CGPT. One open idea: Upcoming's prediction could use the same card.
+
+**CCode, 4 Oct (latest): Predict a Matchup is the top of More with a share-ready card (`acba496`, 911 / 911).**
+Baton → Shaun / CGPT.
+- **Try it (unlocked):** More → **Predict a Matchup** → four names →
+  **Share matchup** → WhatsApp, or **Copy image** and paste.
+- **Decide (Section 5):** a typical match from the record (25 games now) or
+  a fixed length; whether Upcoming's prediction should use the same card.
+
+**CCode, 4 Oct (latest): one picture of the Player of the Month nominees (`69e6640`, 905 / 905).**
+Baton → Shaun / CGPT. **Try it:** Admin › Player of the Month › September →
+Finalise → **📷 Share nominees picture** → WhatsApp.
+
+**CCode, 4 Oct (latest): Player of the Month nominations refined (`e5f868a`, 904 / 904).**
+Baton → Shaun / CGPT.
+- **Try it:** Admin / Manage › Player of the Month › September 2026 (KC,
+  Len, Rishi), then July (7 nominations and the trim note). Finalise, then
+  look at League › Information as a player.
+- **Decide (Section 5):** a hard rule above five; the titles "Month
+  Champion" and "Triple Crown"; the joint-winner wording.
+
+**CCode, 4 Oct (latest): Player of the Month is live (`7dca948`, 897 / 897).**
+Baton → Shaun / CGPT.
+- **Try it:** Admin / Manage › Player of the Month › September 2026 →
+  review the cases, remove or add, **Finalise shortlist for the vote**, then
+  **Won the vote?** → **Confirm winner**. Players see the shortlist and then
+  the winner in League › Information; the winner's profile shows the award.
+- **Decide (Section 5, nothing blocked):** story wording/floors, a cap at
+  five, past months before June, in-app voting later.
+
+**CCode, 4 Oct: player statuses and archived players are live (`4cbfeb7`, 882 / 882).**
+Baton → Shaun / CGPT. Four small follow-ups in Section 5.
 
 **CCode, 3 Oct (latest): the Match Result Card is live (`c6acfd9`, 874 / 874).**
 Baton → Shaun / CGPT.

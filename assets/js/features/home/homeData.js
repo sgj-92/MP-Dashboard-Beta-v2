@@ -20,7 +20,9 @@ function computePromotionGap(name){
   const idx = order.indexOf(p.tier);
   if(idx === -1 || idx === order.length-1) return null; // top tier or unknown
   const tierAbove = order[idx+1];
-  const aboveRatings = PLAYERS.filter(x=>x.tier===tierAbove).map(x=>x.rating);
+  // The tier above as the group stands now: someone who has left (archived)
+  // does not set the bar.
+  const aboveRatings = livePlayers().filter(x=>x.tier===tierAbove).map(x=>x.rating);
   if(!aboveRatings.length) return null;
   const boundary = Math.min(...aboveRatings);
   const gap = Math.round(boundary - p.rating);
@@ -35,15 +37,18 @@ function computeClubPulse(){
   const eligible = PLAYERS.filter(p=>isRankingEligible(p.name));
   const topRanked = eligible.slice().sort((a,b)=>b.rating-a.rating)[0] || null;
 
+  // Club Pulse is about who is playing now: temporarily inactive and archived
+  // players are not "in form" or "on promotion watch".
+  const playing = PLAYERS.filter(p => p.active);
   let inForm = null;
-  PLAYERS.forEach(p=>{
+  playing.forEach(p=>{
     if(p.recent_form!==null && p.recent_form!==undefined && !p.recent_form_stale && p.recent_form_games>=3){
       if(!inForm || p.recent_form > inForm.recent_form) inForm = p;
     }
   });
 
   let promotionWatch = null, smallestGap = Infinity;
-  PLAYERS.forEach(p=>{
+  playing.forEach(p=>{
     const g = computePromotionGap(p.name);
     if(g && g.gap > 0 && g.gap < smallestGap){ smallestGap = g.gap; promotionWatch = { ...p, gap: g.gap, tierAbove: g.tierAbove }; }
   });
@@ -92,11 +97,8 @@ function computeMatchToMake(viewerName){
 // time -- which is exactly what happened to Home's dots. Callers must go
 // through MatchOutcome.classFor(), never a conditional of their own.
 function computeRecentFormSequence(name, windowSize){
-  windowSize = windowSize || 10;
-  const own = MATCHES.filter(m => m.winners.includes(name) || m.losers.includes(name))
-    .sort((a,b)=> a.date < b.date ? 1 : -1) // newest first
-    .slice(0, windowSize);
-  return own.reverse().map(m => MatchOutcome.letterFor(m, name));
+  const r = PlayerForm.recent(matchesIncludingDraws(), name, windowSize || PlayerForm.WINDOW);
+  return r ? r.run : [];   // oldest -> newest; the latest game is on the right
 }
 
 // The viewer's month, for Home's hero (DQ31): their place in the League of

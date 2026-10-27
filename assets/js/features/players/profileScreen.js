@@ -71,7 +71,7 @@ function buildProfileText(p){
   const bp = BEST_PARTNER[p.name];
   if(bp){
     const smallSample = bp.games < 3 ? ' (small sample)' : '';
-    parts.push(`Best chemistry so far has been with <b>${bp.partner}</b> — ${bp.wins}-${bp.losses} together (${bp.winpct}%), ${bp.avg_overperf>=0?'+':''}${bp.avg_overperf}% ahead of what the matchups alone predicted${smallSample}.`);
+    parts.push(`Best chemistry so far has been with <b>${bp.partner}</b> — ${PlayerForm.recordShort(bp)} together (${bp.winpct}%), ${bp.avg_overperf>=0?'+':''}${bp.avg_overperf}% ahead of what the matchups alone predicted${smallSample}.`);
   }
 
   return parts.join(' ');
@@ -136,7 +136,7 @@ function buildRankingNeighborsSection(name){
 
   let html = `<div class="section-heading" style="margin-top:14px;">📊 Neighbours in the rankings</div>`;
   if(!target.active){
-    html += `<div class="section-sub">${name} is inactive — shown against the active player list only.</div>`;
+    html += `<div class="section-sub">${name} is ${target.status === 'archived' ? 'archived' : 'temporarily inactive'} — shown against the players playing now.</div>`;
   }
   html += `<div class="matchup-vs">`;
   if(above){
@@ -365,7 +365,7 @@ function buildRecentFormSection(name){
     ? `<div class="section-sub" style="color:#e8a5a1; margin-top:4px;">⚠️ Last played ${fmtDaysAgo(form.daysSinceLastGame)} — this record is from before then, not a sign of current form.</div>`
     : '';
   return `<div class="section-heading" style="margin-top:14px;">📊 Recent form (last ${form.games} games)</div>
-    <div class="matchup-vs" style="${isStale?'opacity:0.7;':''}"><span class="${cls}" style="font-weight:700; font-size:15px;">${sign}${pct}%</span> <span style="color:var(--green); font-weight:700;">${form.wins}W</span>-<span style="color:var(--red); font-weight:700;">${form.losses}L</span> <span style="color:var(--text-dim); font-size:11.5px;">average overperformance vs. expectation — ${note}. This is separate from the overall rating above and moves faster, since it's a short window.</span></div>${staleWarning}`;
+    <div class="matchup-vs" style="${isStale?'opacity:0.7;':''}"><span class="${cls}" style="font-weight:700; font-size:15px;">${sign}${pct}%</span> <span style="color:var(--green); font-weight:700;">${form.wins}W</span>-${form.draws ? `<span style="color:var(--draw); font-weight:700;">${form.draws}D</span>-` : ''}<span style="color:var(--red); font-weight:700;">${form.losses}L</span> <span style="color:var(--text-dim); font-size:11.5px;">average overperformance vs. expectation — ${note}. This is separate from the overall rating above and moves faster, since it's a short window.</span></div>${staleWarning}`;
 }
 
 function buildDevAreasSection(name){
@@ -470,8 +470,8 @@ function openSheet(name, matchFilter){
   document.getElementById('sheetSub').innerHTML = `Tier ${p.tier} · Money Padel &nbsp; <span class="risk-badge ${riskInfo.cls}">${riskInfo.text}</span>`;
   document.getElementById('sheetStats').innerHTML = `
     <div><b>${Math.round(p.rating)}</b>Power rating</div>
-    <div><b>${p.winpct}%</b>Win rate</div>
-    <div><b>${p.wins}-${p.losses}</b>Record</div>
+    <div><b>${playerRecordOf(name).winpct}%</b>Win rate</div>
+    <div><b>${PlayerForm.recordText(playerRecordOf(name))}</b>Record</div>
     <div><b>${p.upset_wins}-${p.upset_losses}</b>Upset W-L</div>
   `;
   const journeyResult = playerJourney(name);
@@ -489,8 +489,9 @@ function openSheet(name, matchFilter){
   // A player's own match log is a record of what they played, so it holds the
   // drawn games too. (The rated set, MATCHES, deliberately does not -- see
   // recomputeAll. Nothing below this line feeds a rating or a ranking.)
-  let ms = matchesIncludingDraws().filter(m => m.winners.includes(name) || m.losers.includes(name));
-  ms.sort((a,b)=> a.date < b.date ? 1 : -1);
+  // In PlayerForm's order -- the order the form strip above is taken in -- so
+  // the first ten listed here are exactly the ten games in the strip.
+  let ms = PlayerForm.gamesOf(matchesIncludingDraws(), name);
 
   // Scoped only by the profile's OWN month. This line used to read "if a month
   // is selected elsewhere in the app, keep this profile scoped to it too" --
@@ -658,7 +659,7 @@ function buildProfileFactsHtml(p){
   return `<div class="pp-hero-facts">
     ${cell('Tier', `<div class="pp-fact-value">${p.tier}</div>`)}
     ${cell('Reliability', relValue)}
-    ${cell('Games', `<div class="pp-fact-value">${p.lifetimeMatches != null ? p.lifetimeMatches : (p.wins + p.losses)}</div>`)}
+    ${cell('Games', `<div class="pp-fact-value">${p.lifetimeMatches != null ? p.lifetimeMatches : p.total}</div>`)}
     ${joined ? cell('Joined', `<div class="pp-fact-value pp-fact-value-small">${joined}</div>`) : ''}
   </div>`;
 }
@@ -676,23 +677,26 @@ function renderPremiumProfile(name, matchFilter){
   if(wrap) wrap.remove(); // fully rebuilt each open/refresh, except the reparented live nodes below
 
   // ---- Hero ----
+  // Every game, draws included; win rate = wins / games played.
+  const rec = playerRecordOf(name);
   const heroHtml = `
     <div class="pp-hero">
       <div class="pp-hero-name">${name}</div>
       <div class="pp-hero-status">TIER ${p.tier} · ${riskInfo.text.toUpperCase()}</div>
       <div class="pp-hero-rating">${Math.round(p.rating)}</div>
       <div class="pp-hero-rating-label">Power Rating</div>
-      <div class="pp-hero-sub">${snap.tierRank ? `#${snap.tierRank} in Tier ${escapeHtml(p.tier)}` : 'Unranked'} · ${snap.overallRank ? `#${snap.overallRank} Overall` : 'Not currently ranked'} · ${p.wins}-${p.losses} · ${p.winpct}% Win Rate</div>
+      <div class="pp-hero-sub">${snap.tierRank ? `#${snap.tierRank} in Tier ${escapeHtml(p.tier)}` : 'Unranked'} · ${snap.overallRank ? `#${snap.overallRank} Overall` : 'Not currently ranked'} · ${PlayerForm.recordText(rec)} · ${rec.winpct}% Win Rate</div>
+      ${potmAwardsLineHtml(name)}
       ${buildProfileFactsHtml(p)}
     </div>
   `;
 
   // ---- Recent form (real chronological sequence, same source as Home) ----
-  const seq = computeRecentFormSequence(name, 10);
+  const seq = snap.recentForm ? snap.recentForm.run : [];
   const formHtml = snap.recentForm ? `
     <div class="pp-section">
       <div class="pp-form-seq">${seq.map(letter=>`<span class="pp-form-letter ${MatchOutcome.classFor(letter)}">${letter}</span>`).join('')}</div>
-      <div class="pp-form-record">${snap.recentForm.wins}–${snap.recentForm.losses} · Last ${snap.recentForm.games}</div>
+      <div class="pp-form-record">${PlayerForm.recordText(snap.recentForm)} · Last ${snap.recentForm.games}</div>
       <div class="pp-form-clutch section-sub">${p.avg_overperf_pct>=0?'+':''}${p.avg_overperf_pct}% vs expectation</div>
     </div>
   ` : '';

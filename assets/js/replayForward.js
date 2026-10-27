@@ -135,11 +135,30 @@
     return Object.entries(missing).map(([playerId, firstDate]) => ({ playerId, firstDate }));
   }
 
-  // change: { type: 'append' | 'appendMany' | 'edit' | 'delete', match?, matches?, matchId? }
+  // change: { type: 'append' | 'appendMany' | 'edit' | 'redate' | 'delete', match?, matches?, matchId? }
+  //         (redate: matchId is the old identifier, match the game under its new one)
   //       or: { type: 'clubDecision', events: [...] } -- one or more state
   //           events inserted at a historical date, after which everything that
   //           followed is re-derived.
+  // A change may bring players into the record with it (`change.initialisations`):
+  // a new player's first game is approved together with the decision about
+  // where they start, so the two are written as one. A player already in the
+  // record is never initialised twice.
   function applyChange(inputs, change) {
+    const out = applyMatchOrDecision(inputs, change);
+    const adds = change.initialisations || [];
+    if (!adds.length) return out;
+    const known = {};
+    inputs.initialisations.forEach((i) => { known[i.playerId] = true; });
+    adds.forEach((i) => {
+      if (!i || !i.playerId || !i.tier) throw new Error('A new player needs a name and a starting tier.');
+      if (known[i.playerId]) throw new Error(`${i.playerId} is already in the record.`);
+      known[i.playerId] = true;
+    });
+    return { ...out, initialisations: inputs.initialisations.concat(adds) };
+  }
+
+  function applyMatchOrDecision(inputs, change) {
     if (change.type === 'clubDecision') {
       if (!change.events || !change.events.length) throw new Error('No club decision to apply.');
       const superseded = {};
@@ -174,6 +193,18 @@
       const i = matches.findIndex((m) => m.id === change.match.id);
       if (i === -1) throw new Error(`Match ${change.match.id} is not in the record.`);
       matches[i] = change.match;
+    } else if (change.type === 'redate') {
+      // A game moved to another date. Its identifier is built from its date,
+      // so it leaves under the old one and returns under a new one, in one
+      // replay: everything from the earlier of the two dates is re-derived,
+      // exactly as a removal and a fresh entry would, but never with the game
+      // missing in between.
+      const i = matches.findIndex((m) => m.id === change.matchId);
+      if (i === -1) throw new Error(`Match ${change.matchId} is not in the record.`);
+      if (!change.match || change.match.id === change.matchId) throw new Error('A moved game needs its new identifier.');
+      if (matches.some((m) => m.id === change.match.id)) throw new Error(`Match ${change.match.id} is already in the record.`);
+      matches.splice(i, 1);
+      matches.push(change.match);
     } else if (change.type === 'delete') {
       const i = matches.findIndex((m) => m.id === change.matchId);
       if (i === -1) throw new Error(`Match ${change.matchId} is not in the record.`);
@@ -245,7 +276,10 @@
   // no longer appears to replay to itself. The same would be true of any field
   // added to a player document later, which is why the list is a constant here
   // rather than a special case for renaming.
-  const PLAYER_LABEL_FIELDS = ['displayName', 'previousDisplayNames'];
+  // Fields an admin sets on a player's record that no replay can derive: the
+  // name, and their standing in the group (playerStatus.js). Carried over as
+  // stored, so an approval or a correction never resets them.
+  const PLAYER_LABEL_FIELDS = ['displayName', 'previousDisplayNames', 'status', 'statusChangedAt', 'statusChangedBy'];
 
   // The matches written are the ones replayed, taken from the inputs. Deriving
   // them from the replay's own records would be re-reading the engine's working

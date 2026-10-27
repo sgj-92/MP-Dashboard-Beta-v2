@@ -176,9 +176,9 @@ test('Result Card: every figure is a field of the scorecard, copied -- one sourc
     assert.deepStrictEqual(card.opponents, other.players.map((p) => ({ name: p.name, tier: p.tier })));
     assert.deepStrictEqual(card.stats, { names: hero.names, expectedPct: hero.expectedPct, performancePct: hero.actualPct, vsExpectedPp: hero.vsExpectedPp });
     assert.deepStrictEqual(card.sets, vm.sets.map((s) => (card.heroNo === 1 ? s : [s[1], s[0]])));
-    const gained = hero.players.every((p) => p.movement > 0);
+    const gained = !vm.isDraw && hero.players.every((p) => p.movement > 0);
     assert.deepStrictEqual(card.rewards, gained ? hero.players.map((p) => ({ name: p.name, movement: p.movement })) : [],
-      `${m.id}: rewards are the heroes' own gains, or nothing`);
+      `${m.id}: rewards are the winners' own gains, or nothing -- and nothing on a draw`);
     card.rewards.forEach((rw) => assert.ok(rw.movement > 0));
     assert.strictEqual(card.headline, vm.isDraw ? `${hero.names.join(' & ')} and ${other.names.join(' & ')}: all square` : `${hero.names.join(' & ')} ${hero.names.length === 1 ? 'takes' : 'take'} the win`);
     assert.deepStrictEqual(card.story, SC.story(vm, hero), 'the same match always tells the same story');
@@ -263,7 +263,12 @@ test('Games: a played match opens its Result Card first, with the Match Analysis
         const heroes = GameType.orderTeam(m.winners.includes(heroNames[0]) ? m.winners : m.losers, tierOf);
         const hs = f.sides[heroSide];
         const e = pct(hs.expected), a = pct(hs.actual);
-        const gains = heroes.every((n) => f.byPlayer[n].ratingDelta > 0);
+        const gains = !m.isDraw && heroes.every((n) => f.byPlayer[n].ratingDelta > 0);
+        const others = GameType.orderTeam(m.winners.includes(heroNames[0]) ? m.losers : m.winners, tierOf);
+        // On a draw both sides are drawn alike; on a win only the winners are heroes.
+        const sides = [...card.querySelectorAll('.mrc-heroes')];
+        const colours = sides.map((el) => getComputedStyle(el).color);
+        const look = (el) => { const cs = getComputedStyle(el); return [cs.fontFamily, cs.fontSize, cs.color].join('|'); };
         const result = {
           heroes: [...card.querySelectorAll('.mrc-hero')].map((h) => [h.querySelector('.mrc-hero-name').textContent, h.querySelector('.mrc-tier').textContent]),
           kicker: card.querySelector('.mrc-kicker').textContent,
@@ -275,16 +280,22 @@ test('Games: a played match opens its Result Card first, with the Match Analysis
           story: card.querySelector('.mrc-story-title').textContent,
           teamWords: /Team [12]/.test(card.textContent),
           analysisInCard: !!card.querySelector('.msc-team'),
+          sideCount: sides.length,
+          sameLook: sides.length === 2 ? look(sides[0]) === look(sides[1]) && look(sides[0].querySelector('.mrc-hero-name')) === look(sides[1].querySelector('.mrc-hero-name')) : null,
+          against: !!card.querySelector('.mrc-against'),
         };
         const heroFirst = m.winners.includes(heroes[0]);
         const wantResult = {
-          heroes: heroes.map((n) => [n, tierOf(n)]),
+          heroes: (m.isDraw ? heroes.concat(others) : heroes).map((n) => [n, tierOf(n)]),
           kicker: m.isDraw ? 'All square' : 'Take the win',
           sets: m.sets.map((s) => (heroFirst ? `${s[0]}–${s[1]}` : `${s[1]}–${s[0]}`)),
           expected: e.toFixed(1) + '%', performance: a.toFixed(1) + '%', pp: sign(Math.round((a - e) * 10) / 10, 'pp'),
           rewards: gains ? heroes.map((n) => `${n} ${sign(f.byPlayer[n].ratingDelta, '')}`) : [],
           story: matchResultCardFor(id).story.title,
           teamWords: false, analysisInCard: false,
+          sideCount: m.isDraw ? 2 : 1,
+          sameLook: m.isDraw ? true : null,
+          against: !m.isDraw,
         };
 
         // One tap: the Match Analysis, every figure, losers included.
@@ -308,13 +319,19 @@ test('Games: a played match opens its Result Card first, with the Match Analysis
         const analysis = { teams, score: modal.querySelector('.msc-score').textContent, winner: modal.querySelector('.msc-winner').textContent };
         modal.querySelector('[data-scorecard-view="result"]').click();
         const back = !!modal.querySelector('.mrc') && !modal.querySelector('.msc');
-        out.push({ id, open: modal.classList.contains('show'), stillExpanded: expandedGameId === id, isDraw: m.isDraw,
+        out.push({ id, open: modal.classList.contains('show'), stillExpanded: expandedGameId === id, isDraw: m.isDraw, colours,
           result, wantResult, analysis, want, wantScore: m.sets.map((s) => s.join('-')).join(', '), back });
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
         out[out.length - 1].closed = !modal.classList.contains('show');
       });
       return out;
     });
+    // The winners' gold belongs to winners: a draw's two pairs are in neither.
+    const winnersGold = r.find((c) => !c.isDraw).colours[0];
+    const draw = r.find((c) => c.isDraw);
+    assert.strictEqual(draw.colours.length, 2);
+    assert.strictEqual(draw.colours[0], draw.colours[1], 'both pairs in the same colour');
+    assert.notStrictEqual(draw.colours[0], winnersGold, 'and not the winners\' gold');
     r.forEach((c) => {
       assert.ok(c.open, `${c.id}: it opens`);
       assert.ok(c.stillExpanded, `${c.id}: opening it does not collapse the card behind it`);
@@ -417,3 +434,32 @@ test('in the app, a player with no rating event falls back to the dated tier his
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
+
+// Four and five sets used to break each set across two lines ("6–" over "4")
+// on a phone: each set was a flex item that was allowed to wrap, at a size
+// meant for three. A set is one unit, and the row fits the card.
+for (const width of [360, 390]) {
+  test(`a four- or five-set score stays on one line, each set whole, at ${width}px`, { skip }, async () => {
+    const app = await H.open({ viewport: { width, height: 844 } });
+    try {
+      for (const sets of [[[4, 6], [6, 4], [6, 2], [6, 3]], [[4, 6], [6, 4], [6, 7], [7, 6], [10, 8]]]) {
+        const r = await app.run((sets) => {
+          const m = getAllApprovedMatches().find((x) => !x.isDraw);
+          m.sets = sets;
+          openMatchScorecard(m.id, 'result');
+          const card = document.querySelector('#matchScorecardModal .mrc').getBoundingClientRect();
+          const els = [...document.querySelectorAll('#matchScorecardModal .mrc-set')];
+          const lh = parseFloat(getComputedStyle(els[0]).fontSize) * 1.6;
+          return { n: els.length, tops: els.map((e) => Math.round(e.getBoundingClientRect().top)),
+            tall: els.filter((e) => e.getBoundingClientRect().height > lh).length,
+            out: els.filter((e) => e.getBoundingClientRect().left < card.left || e.getBoundingClientRect().right > card.right).length };
+        }, sets);
+        assert.strictEqual(r.n, sets.length);
+        assert.strictEqual(r.tall, 0, `${sets.length} sets: a set broke across lines`);
+        assert.strictEqual(new Set(r.tops).size, 1, `${sets.length} sets: the score did not fit on one line`);
+        assert.strictEqual(r.out, 0, `${sets.length} sets: a set ran outside the card`);
+      }
+      assert.deepStrictEqual(app.pageErrors, []);
+    } finally { await app.close(); }
+  });
+}

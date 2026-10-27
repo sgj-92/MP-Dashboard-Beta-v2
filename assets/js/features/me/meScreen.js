@@ -21,8 +21,15 @@ function meRows(viewer){
   // The Admin screen is lock-gated, not hidden: a locked reader is offered
   // the way to sign in, an unlocked one the tools.
   if(!isUnlocked) settings.push({ me: 'admin', label: 'Admin sign-in' });
+  // Predict a Matchup leads for an admin and is absent for everyone else
+  // (Shaun, 4 Oct: the top of More, Admin only -- Me is More's successor).
+  const admin = isUnlocked ? { title: 'Admin', rows: [
+    ...(canSeePredictions() ? [{ me: 'predict', label: 'Predict a Matchup' }] : []),
+    { me: 'admin', label: 'Admin / Manage' },
+  ] } : null;
   const groups = [
     { title: 'You', rows: you },
+    ...(admin ? [admin] : []),
     { title: 'Settings', rows: settings },
     { title: 'About the rankings', rows: [
       { me: 'guide', label: 'Power Rating Guide' },
@@ -30,7 +37,6 @@ function meRows(viewer){
     ] },
     { title: 'Club', rows: [{ me: 'doughnuts', label: 'Doughnuts' }] },
   ];
-  if(isUnlocked) groups.push({ title: 'Admin', rows: [{ me: 'admin', label: 'Admin / Manage' }] });
   return groups.filter(g => g.rows.length);
 }
 
@@ -72,5 +78,6 @@ function meOpen(which){
   else if(which === 'guide') openPowerRatingGuide();
   else if(which === 'about') openAboutPowerRankings();
   else if(which === 'doughnuts') openDoughnutLeaderboard();
+  else if(which === 'predict') openPredictMatchup();   // refuses anyone who is not an admin
   else if(which === 'admin'){ const b = legacyTabBtn('manage'); if(b) b.click(); }
 }

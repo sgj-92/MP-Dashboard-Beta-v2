@@ -447,7 +447,11 @@ maybe('partnerships carry their draws: counted from the month\'s approved draws,
     // The seeded record has no draw between two qualifying pairs; add one --
     // two September pairs who have each played twice -- while checking.
     const shown = await app.run(() => {
-      V3_MATCHES.push({ id: 'test-draw', date: '2026-09-20', winners: ['KC', 'Rishi'], losers: ['Erf', 'Osh'], isDraw: true, sets: [[5, 5]] });
+      // In the record, and in the rated draws partnerships are built from
+      // (matchesIncludingDraws), as a recompute would leave it.
+      const draw = { id: 'test-draw', date: '2026-09-20', winners: ['KC', 'Rishi'], losers: ['Erf', 'Osh'], isDraw: true, sets: [[5, 5]] };
+      V3_MATCHES.push(draw);
+      DRAW_MATCHES.push({ ...draw, performance_residual: 0, games_winner: 5, games_loser: 5 });
       const rows = boardPackModuleData({ id: 'partnerships', options: { top: 'all' } }, '2026-09');
       return boardPackBlocks().partnerships(rows, '2026-09')[0].rows.filter((x) => /KC & Rishi|Erf & Osh/.test(x.name)).map((x) => x.value);
     });
@@ -463,7 +467,10 @@ maybe('partnerships carry their draws: counted from the month\'s approved draws,
     assert.ok(r.length > 0);
     assert.ok(r.some((x) => x.expected > 0), 'the record has a pair with a draw to check');
     r.forEach((x) => assert.deepStrictEqual([x.draws, x.winpct], [x.expected, x.expectedPct], `${x.m} ${x.pair}`));
-    await app.run(() => { V3_MATCHES.splice(V3_MATCHES.findIndex((x) => x.id === 'test-draw'), 1); });
+    await app.run(() => {
+      V3_MATCHES.splice(V3_MATCHES.findIndex((x) => x.id === 'test-draw'), 1);
+      DRAW_MATCHES.splice(DRAW_MATCHES.findIndex((x) => x.id === 'test-draw'), 1);
+    });
   } finally { await app.close(); }
 });
 

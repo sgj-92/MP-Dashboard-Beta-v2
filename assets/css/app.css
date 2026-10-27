@@ -20,6 +20,7 @@
     --text-dim:#bcb096;          /* labels and meta: 8.2:1 on bg2, was 6.5:1 */
     --green:#5a9c5a;
     --red:#b5453f;
+    --draw:#a39a86;              /* a draw: neutral warm grey, between the win green and the loss red, and neither */
   }
   *{box-sizing:border-box;}
   html{

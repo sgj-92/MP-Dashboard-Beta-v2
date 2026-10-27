@@ -55,5 +55,19 @@
     };
   }
 
-  return { describe, shortSha, PRODUCT };
+  // ---- Is there a newer build? ----
+  // The deployed buildInfo.js, fetched fresh, read for its commit. Only the
+  // stamp's own shape is believed (`window.MP_BUILD = { sha: "...", ... }`).
+  function deployedSha(text) {
+    const m = /MP_BUILD\s*=\s*\{[^}]*\bsha\s*:\s*["']([0-9a-f]{7,40})["']/i.exec(String(text || ''));
+    return m ? m[1].toLowerCase() : null;
+  }
+  // A different, believable commit is a newer build. A device on a local or
+  // unstamped build never nags, and neither does a failed read.
+  function isNewer(runningSha, deployed) {
+    const a = shortSha(runningSha), b = shortSha(deployed);
+    return !!(a && b && a !== b);
+  }
+
+  return { describe, shortSha, PRODUCT, deployedSha, isNewer };
 }));

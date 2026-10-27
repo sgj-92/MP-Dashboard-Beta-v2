@@ -355,17 +355,14 @@ async function render(players, matches, journey, readAt) {
       const m = document.getElementById('monthlyRatingModal'); if (m) m.classList.remove('show');
       closeSheet();
       isUnlocked = true; currentUserName = 'Board';
-      const more = document.querySelector('#tabrow .tab-btn[data-tab="manage"]');
-      if (more) more.click();
-      adminOpenSections = { predict: true };
-      renderManage();
+      openPredictMatchup();   // the top of More, Admin only (4 Oct)
       const sorted = [...PLAYERS].sort((a, b) => b.rating - a.rating);
       const set = (id, v) => { document.getElementById(id).value = v; };
       set('predA1', sorted[3].name); set('predA2', sorted[9].name);
       set('predB1', sorted[14].name); set('predB2', sorted[16].name);
       document.getElementById('predA1').dispatchEvent(new Event('input'));
     },
-    () => { const el = document.querySelector('[data-acc="predict"]'); if (el) el.scrollIntoView({ block: 'start' }); });
+    () => { const el = document.getElementById('matchupCard'); if (el) el.scrollIntoView({ block: 'start' }); });
 
   // Renaming a player: one field on one document, with the confirmation open.
   await shot('20-admin-rename.png',

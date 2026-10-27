@@ -28,7 +28,11 @@ function getCurrentViewer(){
   catch(e){ return null; } // localStorage can be unavailable/restricted (e.g. private browsing) -- degrade gracefully
   if(!savedName) return null;
   const player = PLAYERS.find(p => p.name === savedName);
-  if(!player){ try{ localStorage.removeItem(VIEWER_STORAGE_KEY); }catch(e){} return null; }
+  // Gone from the data, or archived since this device chose them: the choice
+  // is cleared, so "Who are you?" is asked again rather than personalising
+  // the app for someone who has left the group.
+  const live = player && (typeof PlayerStatus === 'undefined' || PlayerStatus.isLive(player.status));
+  if(!live){ try{ localStorage.removeItem(VIEWER_STORAGE_KEY); }catch(e){} return null; }
   return player;
 }
 

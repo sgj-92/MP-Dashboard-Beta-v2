@@ -62,6 +62,7 @@
   .wl .rec{font-size:11px; color:var(--text-dim); margin-top:2px;}
   .wl .rec .w{color:var(--green);}
   .wl .rec .l{color:var(--red);}
+  .wl .rec .d{color:var(--draw);}
   .upset-tag{
     font-family:'Helvetica Neue', Arial, sans-serif;
     font-size:11.5px;

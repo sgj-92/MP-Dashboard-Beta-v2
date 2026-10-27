@@ -154,6 +154,8 @@ maybe('a row is a player card: avatar, serif name, sans detail, a way in', async
 maybe('an inactive player is unmistakable without Active saying anything', async () => {
   const app = await H.open();
   try {
+    await app.run(() => { const away = PLAYERS.find((p) => p.name === 'Max'); away.status = 'temporarilyInactive'; away.active = false;   // the fixture's only flagged player is archived, so mark one away
+    });
     await openDirectory(app);
     const r = await app.run(() => {
       const rows = [...document.querySelectorAll('#playersView .pdir-row')];
@@ -162,7 +164,7 @@ maybe('an inactive player is unmistakable without Active saying anything', async
       const op = (row) => Number(getComputedStyle(row.querySelector('.pdir-name')).opacity);
       return {
         inactiveCount: rows.filter((row) => row.classList.contains('is-inactive')).length,
-        expected: PLAYERS.filter((p) => !p.active).length,
+        expected: livePlayers().filter((p) => !p.active).length,
         badged: !!(inactive && inactive.querySelector('.pdir-inactive')),
         quieter: inactive && active ? op(inactive) < op(active) : null,
       };

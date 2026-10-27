@@ -66,6 +66,8 @@ async function submitGameRequest({ names, requestedBy, date, time, venue }){
   if(new Set(clean.map(n => n.toLowerCase())).size !== 4) return { ok: false, message: 'The same name appears more than once.' };
   const unrecognized = clean.filter(n => !PLAYERS.find(p => p.name.toLowerCase() === n.toLowerCase()));
   if(unrecognized.length) return { ok: false, message: `Unrecognized name${unrecognized.length > 1 ? 's' : ''}: ${unrecognized.join(', ')}. Add them via Manage first if they're new.` };
+  const archived = archivedAmong(clean);
+  if(archived.length) return { ok: false, message: archivedRefusal(archived) };
 
   currentUserName = requestedBy;
   await saveMyName(requestedBy);

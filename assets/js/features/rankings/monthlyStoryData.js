@@ -1,6 +1,7 @@
 // ===================== RANKINGS: A MONTH'S STORY (DATA) =====================
 // What a month said, as data: the Monthly Information review (most games,
-// most wins, win percentages, doughnuts, hardest games, Player of the Month)
+// most wins, win percentages, doughnuts, hardest games, and the month's
+// Player of the Month as the group chose it -- features/awards)
 // and the monthly stories beside Power Rankings (performance, rating and rank
 // movement, crossovers). Each used to be worked out inside the screen that
 // drew it; they live here so the Information tab, the Power Rankings stories
@@ -32,7 +33,11 @@ function monthlyInformation(month, { top = 3 } = {}){
   const doughnutMax = Math.max(0, ...statsArr.map(s=>s.doughnuts));
   const mostDoughnuts = doughnutMax > 0 ? statsArr.filter(s=>s.doughnuts===doughnutMax).map(s=>s.name) : [];
   const hardestGames = topNTied(eligible, 'hardness', top, true);
-  const playerOfMonth = mostWins.length ? mostWins[0] : null;
+  // Player of the Month is chosen by the group, never worked out from these
+  // lists: { state: 'confirmed' | 'shortlisted' | 'none', names, text }.
+  const playerOfMonth = month === 'all'
+    ? { state: 'none', names: [], text: 'Chosen by the group each month' }
+    : potmHeadline(month);
   return {
     month, stats, statsArr, minGamesForRanked: MONTHLY_INFORMATION_MIN_GAMES,
     mostGames, mostWins, mostLosses, lowestWinPct, highestWinPct, highestLossPct,

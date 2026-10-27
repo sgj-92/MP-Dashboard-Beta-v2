@@ -242,19 +242,9 @@ function boardPackSources(){ return {
     // carries its drawn games from the approved matches (the same draws the
     // League counts), and its win % has them in the denominator, as Monthly
     // Information's does.
-    const draws = {};
-    getAllApprovedMatches().filter(m => m.isDraw && m.date.slice(0,7) === month).forEach(m => {
-      [m.winners, m.losers].forEach(team => {
-        if(team.length !== 2) return;
-        const key = [...team].sort().join('|');
-        draws[key] = (draws[key] || 0) + 1;
-      });
-    });
-    const rows = buildPartnerships(MATCHES.filter(m => m.date.slice(0,7) === month), TIER_MAP).map(p => {
-      const drawn = draws[p.pair.join('|')] || 0;
-      const games = p.wins + drawn + p.losses;
-      return { ...p, draws: drawn, played: games, winpct: Math.round(1000 * p.wins / games) / 10 };
-    });
+    // Every game together, draws included (buildPartnerships counts them).
+    const rows = buildPartnerships(matchesIncludingDraws().filter(m => m.date.slice(0,7) === month), TIER_MAP)
+      .map(p => ({ ...p, played: p.games }));
     return { rows: rows.slice(0, BoardPack.limit(o.top)) };
   },
 

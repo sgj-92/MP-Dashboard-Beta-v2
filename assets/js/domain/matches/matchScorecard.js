@@ -239,7 +239,9 @@
     const other = heroNo === 1 ? t2 : t1;
     const person = (p) => ({ name: p.name, tier: p.tier });
     const names = hero.names.join(' & ');
-    const gains = vm.rated && hero.players.every((p) => typeof p.movement === 'number' && p.movement > 0);
+    // A draw has no winners' gains to celebrate: showing one pair's movement
+    // would make them look like the winners. The analysis has everyone's.
+    const gains = !vm.isDraw && vm.rated && hero.players.every((p) => typeof p.movement === 'number' && p.movement > 0);
     return {
       matchId: vm.matchId,
       date: vm.date,

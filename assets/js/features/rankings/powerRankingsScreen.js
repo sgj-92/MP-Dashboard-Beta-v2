@@ -200,6 +200,10 @@ function render(){
   rows = rows.filter(p => {
     const st = playerStateOf(p.name);
     if(!st) return true;
+    // Archived players have left the group: never in the current (All time)
+    // list, whatever the toggles say. A past month is history, and they stay
+    // in it exactly as before -- with the temporarily inactive toggle.
+    if(st.archived && selectedMonth === 'all') return false;
     if(st.participation === 'INACTIVE') return includeInactive;
     return st.ranking === 'RANKED' || includeIdle;
   });
@@ -263,7 +267,7 @@ function render(){
         </div>
         <div class="wl">
           <div class="pct">${p.winpct}%</div>
-          <div class="rec"><span class="w">${p.wins}W</span> · <span class="l">${p.losses}L</span></div>
+          <div class="rec"><span class="w">${p.wins}W</span>${p.draws ? ` · <span class="d">${p.draws}D</span>` : ''} · <span class="l">${p.losses}L</span></div>
         </div>
       `;
     } else {
@@ -287,7 +291,7 @@ function render(){
       const monthRatingHtml = (inMonthView && !hasMonthGames)
         ? `<div class="rating-sub" style="font-size:10px; color:var(--text-dim);">no games this month</div>`
         : '';
-      const wlHtml = inMonthView ? ` · <span style="color:var(--green);">${p.wins}W</span>-<span style="color:var(--red);">${p.losses}L</span>` : '';
+      const wlHtml = inMonthView ? ` · <span style="color:var(--green);">${p.wins}W</span>-${p.draws ? `<span style="color:var(--draw);">${p.draws}D</span>-` : ''}<span style="color:var(--red);">${p.losses}L</span>` : '';
 
       // Progressive disclosure: the row's one secondary "meta" line shows whichever stat the
       // current sort is actually about -- everything else stays reachable by tapping into the
@@ -306,11 +310,11 @@ function render(){
       let formLine = '';
       if(p.recent_form !== null && p.recent_form !== undefined){
         if(p.recent_form_stale){
-          formLine = `<div class="rating-sub" style="font-size:10px; color:var(--text-dim); opacity:0.6;">Form ${p.recent_form_wins}W-${p.recent_form_losses}L <span title="stale -- last played ${fmtDaysAgo(p.recent_form_days_ago)}">·</span></div>`;
+          formLine = `<div class="rating-sub" style="font-size:10px; color:var(--text-dim); opacity:0.6;">Form ${PlayerForm.recordShort({ wins: p.recent_form_wins, draws: p.recent_form_draws, losses: p.recent_form_losses })} <span title="stale -- last played ${fmtDaysAgo(p.recent_form_days_ago)}">·</span></div>`;
         } else {
           const trend = p.recent_form > 3 ? '↑' : (p.recent_form < -3 ? '↓' : '→');
           const trendClass = p.recent_form > 3 ? 'perf-pos' : (p.recent_form < -3 ? 'perf-neg' : '');
-          formLine = `<div class="rating-sub" style="font-size:10px;">Form ${p.recent_form_wins}W-${p.recent_form_losses}L <span class="${trendClass}">${trend}</span></div>`;
+          formLine = `<div class="rating-sub" style="font-size:10px;">Form ${PlayerForm.recordShort({ wins: p.recent_form_wins, draws: p.recent_form_draws, losses: p.recent_form_losses })} <span class="${trendClass}">${trend}</span></div>`;
         }
       }
 

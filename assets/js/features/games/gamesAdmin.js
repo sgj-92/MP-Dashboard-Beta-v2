@@ -51,8 +51,78 @@ function matchFixReset(){ matchFixPlan = null; matchFixMessage = ''; managingGam
 // an edit change it would leave the identifier describing a day the match no
 // longer belongs to. Correcting a date is a removal and a re-entry, which the
 // Admin can do as two deliberate steps.
-function matchFixDateChangeRefusal(original, next){
-  return `This correction changes the date from ${original} to ${next}. A match's identifier is built from its date, so changing it here would leave the record describing the wrong day. Delete this game and add it again on the correct date instead. Nothing was changed.`;
+// A game moved to another date gets a new identifier (it is built from the
+// date: YYYY-MM-DD-N). What refers to the game by identifier follows it: who
+// submitted it, and an Upcoming game it was reconciled with. Their history
+// lines keep the identifier they were written with.
+async function carryMatchIdentity(oldId, newId){
+  if(matchAttributionState && matchAttributionState[oldId]){
+    const next = { ...matchAttributionState, [newId]: { ...matchAttributionState[oldId], matchId: newId } };
+    delete next[oldId];
+    matchAttributionState = next;
+    await saveMatchAttribution(matchAttributionState);
+  }
+  let touched = false;
+  (gameRequestsState || []).forEach(r => {
+    if(r.playedMatchId === oldId){ r.playedMatchId = newId; touched = true; }
+    if(Array.isArray(r.notResults) && r.notResults.includes(oldId)){ r.notResults = r.notResults.map(x => x === oldId ? newId : x); touched = true; }
+  });
+  if(touched) await saveGameRequests(gameRequestsState);
+}
+
+// ---- New players --------------------------------------------------------------
+// A player enters the rating record with their first rated game. The rating
+// engine will not rate anyone it has never seen, and the record has no other
+// way in: Admin › Player tags › "Add a new player" only names them and their
+// starting tier. So when a game being approved (or corrected) includes a
+// player the record does not know, their entry is planned with it and written
+// in the same commit -- at the tier set there, on the date of that first
+// game, as the record's seed did for everyone. They enter PROVISIONAL
+// (UNKNOWN_NEW_PLAYER), the record's status for a player whose starting tier
+// is the club's judgement: the rating is the tier baseline either way, and it
+// leaves the one-off starting-tier correction open in Club Decisions.
+function newPlayerTier(name){
+  const key = Object.keys(tagOverridesState || {}).find(k => k.toLowerCase() === String(name).toLowerCase());
+  const t = key && tagOverridesState[key] && tagOverridesState[key].tier;
+  return t && RatingEngine.TIER_SEED[t] !== undefined ? t : null;
+}
+
+function planIncludingNewPlayers(args){
+  try {
+    return ReplayForward.plan(args);
+  } catch(e){
+    if(!e.unseen || !e.unseen.length) throw e;
+    const missing = e.unseen.filter(u => !newPlayerTier(u.playerId)).map(u => u.playerId);
+    if(missing.length){
+      throw new Error(`${missing.join(', ')} ${missing.length === 1 ? 'isn’t' : 'aren’t'} in the club yet. Add ${missing.length === 1 ? 'them' : 'each of them'} in More › Admin › Player tags › Add a new player, with a starting tier, then try again.`);
+    }
+    const initialisations = e.unseen.map(u => ({
+      playerId: u.playerId, tier: newPlayerTier(u.playerId),
+      classificationStatus: RatingEngine.CLASSIFICATION.PROVISIONAL,
+      effectiveDate: u.firstDate, reasonCode: 'UNKNOWN_NEW_PLAYER',
+    }));
+    const planned = ReplayForward.plan({ ...args, change: { ...args.change, initialisations } });
+    planned.newPlayers = initialisations.map(i => ({ ...i, rating: RatingEngine.TIER_SEED[i.tier] }));
+    return planned;
+  }
+}
+
+// One player's line in a "who moves" list. A new player has no rating to move
+// from: they start at their tier's baseline.
+function movedPlayerText(p, planned, html){
+  const to = Math.round(p.to*10)/10;
+  if(p.from === null || p.from === undefined){
+    const n = ((planned && planned.newPlayers) || []).find(x => x.playerId === p.playerId);
+    return `${p.playerId} (new${n ? ` · starts Tier ${n.tier} at ${n.rating}` : ''}) → ${to}`;
+  }
+  const d = `${p.delta>0?'+':''}${p.delta}`;
+  return `${p.playerId} ${html ? `<span class="${p.delta>0?'perf-pos':'perf-neg'}">${d}</span>` : d} → ${to}`;
+}
+
+function newPlayersNoteHtml(planned){
+  const list = (planned && planned.newPlayers) || [];
+  if(!list.length) return '';
+  return `<div class="section-sub" style="margin-top:4px; color:var(--gold-bright);">${list.map(n => `${escapeHtml(n.playerId)} joins the record here, in Tier ${n.tier} at ${n.rating}`).join('; ')}. The starting tier can be corrected once in Club Decisions if it turns out wrong.</div>`;
 }
 
 async function stageMatchCorrection(change, describe){
@@ -60,7 +130,7 @@ async function stageMatchCorrection(change, describe){
   try {
     if(!db) throw new Error('No database connection.');
     const stored = await readStoredRecord(RatingStore.firestoreCompatBackend(db));
-    const planned = ReplayForward.plan({
+    const planned = planIncludingNewPlayers({
       stored, change,
       provenance: { createdBy: reviewActor(), recordedAt: new Date().toISOString(), source: 'Historical Match Correction' },
     });
@@ -142,6 +212,8 @@ async function commitMatchCorrection(){
         done >= total ? 'Written. Re-reading the record…' : `${verb}… ${done} of ${total} documents`),
     });
     const what = matchFixPlan.describe;
+    const ch = matchFixPlan.change;
+    if(ch && ch.type === 'redate') await carryMatchIdentity(ch.matchId, ch.match.id);
     matchFixReset();
     editingMatchId = null;
     armedDeleteId = null;
@@ -166,9 +238,11 @@ function buildMatchFixConfirmHtml(){
   // different words. Sharing one confirmation for both was how "Confirm
   // removal?" ended up sitting above a button reading "Correct and replay".
   const isRemoval = !!(p.change && p.change.type === 'delete');
+  const isMove = !!(p.change && p.change.type === 'redate');
   const heading = isRemoval
     ? 'Confirm removal — this deletes the match and re-derives every rating after it'
-    : 'Confirm correction — this re-derives every rating after this game';
+    : (isMove ? 'Confirm new date — the game moves, and every rating from the earlier date is re-derived'
+      : 'Confirm correction — this re-derives every rating after this game');
   const commitLabel = isRemoval ? 'Remove and replay' : 'Correct and replay';
   const nobody = isRemoval
     ? 'Nobody — removing this match changes no rating.'
@@ -176,9 +250,11 @@ function buildMatchFixConfirmHtml(){
   return `<div class="callout-card" style="padding:12px; margin-top:8px; border-color:${isRemoval ? 'var(--red)' : 'var(--gold-dim)'};">
     <div style="font-weight:700; color:${isRemoval ? '#e8a5a1' : 'var(--gold-bright)'};">${heading}</div>
     <div class="section-sub" style="margin-top:4px; color:var(--text);">${p.describe}</div>
+    ${isMove ? `<div class="section-sub" style="font-size:10.5px;">It becomes <code>${escapeHtml(p.change.match.id)}</code> (was <code>${escapeHtml(p.change.matchId)}</code>) — a game's identifier carries its date. Who submitted it, and any Upcoming game it settled, move with it.</div>` : ''}
     <div class="section-sub" style="font-size:10.5px;">${p.documentsToWrite} documents rewritten, ${p.documentsToDelete} removed. Nothing is silently dropped: the record is replayed from the ${isRemoval ? 'remaining' : 'corrected'} history and verified afterwards.</div>
     <div class="section-sub" style="margin-top:6px; font-weight:700; color:var(--text);">${moved.length} player${moved.length===1?'':'s'} end on a different rating</div>
-    <div class="section-sub" style="font-size:10.5px; max-height:160px; overflow:auto;">${moved.length ? moved.map(m=>`${m.playerId} ${m.delta>0?'+':''}${m.delta} → ${Math.round(m.to*10)/10}`).join(' &nbsp;·&nbsp; ') : nobody}</div>
+    <div class="section-sub" style="font-size:10.5px; max-height:160px; overflow:auto;">${moved.length ? moved.map(m=>movedPlayerText(m, p, false)).join(' &nbsp;·&nbsp; ') : nobody}</div>
+    ${newPlayersNoteHtml(p)}
     <div class="difficulty-row" style="margin-top:8px;">
       <button class="preset-btn${isRemoval ? ' match-action-destructive' : ''}" id="matchFixCommitBtn" style="flex:1;" ${matchFixBusy?'disabled':''}>${matchFixBusy ? 'Working…' : commitLabel}</button>
       <button class="preset-btn" id="matchFixCancelBtn" style="flex:1;" ${matchFixBusy?'disabled':''}>Cancel</button>
@@ -187,11 +263,18 @@ function buildMatchFixConfirmHtml(){
   </div>`;
 }
 
+// The game a staged correction is about, so its card can stay put.
+function matchFixGameId(){
+  const c = matchFixPlan && matchFixPlan.change;
+  return c ? (c.matchId || (c.match && c.match.id) || null) : null;
+}
+
 function wireMatchFix(){
   const c = document.getElementById('matchFixCommitBtn');
-  if(c) c.onclick = commitMatchCorrection;
+  // Confirming closes the editor: back to where it was opened.
+  if(c) c.onclick = ()=>{ const id = matchFixGameId(); return closeGameEditor(id, commitMatchCorrection); };
   const x = document.getElementById('matchFixCancelBtn');
-  if(x) x.onclick = ()=>{ matchFixReset(); renderGamesTab(); };
+  if(x) x.onclick = ()=>{ const id = matchFixGameId(); withGameAnchor(id, ()=>{ matchFixReset(); renderGamesTab(); }); };
 }
 
 // Approving a game means RATING it: it joins the v3 record, the four players'
@@ -251,7 +334,7 @@ async function prepareApproval(id){
     const backend = RatingStore.firestoreCompatBackend(db);
     const stored = await readStoredRecord(backend);
     const matchId = nextMatchIdFor(m.date);
-    const planned = ReplayForward.plan({
+    const planned = planIncludingNewPlayers({
       stored,
       change: { type: 'append', match: pendingToEngineMatch(m, matchId) },
       provenance: { createdBy: name, recordedAt: new Date().toISOString(), source: 'Approved from a submission' },
@@ -285,6 +368,12 @@ async function commitApproval(){
   renderGamesTab();
   try {
     await ReplayForward.commit(RatingStore.firestoreCompatBackend(db), a.planned);
+    // Who submitted it goes with the game: the rating record has no place for
+    // it, and the submission is about to go (matchAttribution.js).
+    const submission = extraMatchesState.find(x => x.id === a.submissionId);
+    matchAttributionState = { ...matchAttributionState,
+      [a.matchId]: MatchAttribution.entryFor(submission, { matchId: a.matchId, approvedBy: a.approvedBy, approvedAt: new Date().toISOString() }) };
+    await saveMatchAttribution(matchAttributionState);
     // Only once it is safely in the record: the submission has served its
     // purpose and must not linger as a second copy of the same game.
     extraMatchesState = extraMatchesState.filter(x => x.id !== a.submissionId);
@@ -306,7 +395,7 @@ async function commitApproval(){
         : (a.fixtureChoice && a.fixtureChoice !== 'none' ? ' Its fixture is marked played.' : ' Fixtures left as they were.');
     }
     await loadV3State();
-    approvalMessage = `Rated as ${a.matchId}. ${a.planned.playersMoved.map(p=>`${p.playerId} ${p.delta>0?'+':''}${p.delta}`).join(', ')}.${fixtureNote}`
+    approvalMessage = `Rated as ${a.matchId}. ${a.planned.playersMoved.map(p=>movedPlayerText(p, a.planned, false)).join(', ')}.${fixtureNote}`
       + ` ${scorecardButtonHtml(a.matchId)}`;
   } catch(e){
     approvalMessage = 'Nothing was rated: ' + e.message;
@@ -321,7 +410,8 @@ function buildApprovalConfirmHtml(){
   return `<div class="callout-card" style="padding:12px; margin-top:8px; border-color:var(--gold-dim);">
     <div style="font-weight:700; color:var(--gold-bright);">Confirm — this rates the game</div>
     <div class="section-sub" style="margin-top:4px;">It joins the record as <code>${a.matchId}</code> and moves these ratings:</div>
-    <div class="section-sub" style="color:var(--text);">${a.planned.playersMoved.map(p=>`${p.playerId} <span class="${p.delta>0?'perf-pos':'perf-neg'}">${p.delta>0?'+':''}${p.delta}</span> → ${Math.round(p.to*10)/10}`).join(' &nbsp;·&nbsp; ')}</div>
+    <div class="section-sub" style="color:var(--text);">${a.planned.playersMoved.map(p=>movedPlayerText(p, a.planned, true)).join(' &nbsp;·&nbsp; ')}</div>
+    ${newPlayersNoteHtml(a.planned)}
     <div class="section-sub" style="font-size:10.5px;">${a.planned.documentsToWrite} documents. Nothing already in the record is rewritten — a new game only extends the sequence.</div>
     ${approvalFixtureChoiceHtml(a)}
     <div class="difficulty-row" style="margin-top:8px;">
@@ -479,9 +569,13 @@ function wireEditForm(id){
     };
   });
 
-  document.getElementById('edCancel').onclick = ()=>{ editingMatchId = null; renderGamesTab(); };
+  // Cancel returns the reader to where they opened the editor (gamesScreen.js).
+  document.getElementById('edCancel').onclick = ()=> closeGameEditor(id, ()=>{ editingMatchId = null; renderGamesTab(); });
 
-  document.getElementById('edSubmit').onclick = async ()=>{
+  // Save: a pending submission is saved and closed, and the reader returns to
+  // where they started; a rated game stages its correction in the same card,
+  // which stays put while the reader confirms (wireMatchFix).
+  document.getElementById('edSubmit').onclick = ()=> closeGameEditor(id, async ()=>{
     const name = requireName();
     if(!name) return;
     const msg = document.getElementById('edMessage');
@@ -511,21 +605,25 @@ function wireEditForm(id){
       const ok = await saveExtraMatches(extraMatchesState);
       if(!ok){ msg.textContent='Save failed.'; return; }
     } else {
-      if(date !== m.date){ msg.textContent = matchFixDateChangeRefusal(m.date, date); return; }
+      // A new date means a new identifier: the game is moved, not refused
+      // (Shaun, 27 Oct: change the date and let the system work it out).
+      const moving = date !== m.date;
+      const newId = moving ? nextMatchIdFor(date) : m.id;
       const corrected = {
-        id: m.id,
-        date: m.date,
-        sourceIndex: Number(String(m.id).slice(m.date.length + 1)) || 1,
+        id: newId,
+        date,
+        sourceIndex: Number(String(newId).slice(date.length + 1)) || 1,
         teamA: winners, teamB: losers, sets,
         outcome: isDraw ? RatingEngine.OUTCOME.DRAW : RatingEngine.OUTCOME.A_WINS,
         type: isSingles ? 'singles' : 'doubles',
         drawSideAssignmentArbitrary: !!isDraw,
       };
-      await stageMatchCorrection({ type: 'edit', match: corrected },
-        `Correct ${m.date}: ${winners.join(' & ')} vs ${losers.join(' & ')}, ${sets.map(x=>x.join('-')).join(', ')}${isDraw ? ' (draw)' : ''}.`);
+      const what = `${winners.join(' & ')} vs ${losers.join(' & ')}, ${sets.map(x=>x.join('-')).join(', ')}${isDraw ? ' (draw)' : ''}`;
+      await stageMatchCorrection(moving ? { type: 'redate', matchId: m.id, match: corrected } : { type: 'edit', match: corrected },
+        moving ? `Move from ${m.date} to ${date}: ${what}.` : `Correct ${m.date}: ${what}.`);
       return;
     }
     editingMatchId = null;
     dataChanged();
-  };
+  });
 }

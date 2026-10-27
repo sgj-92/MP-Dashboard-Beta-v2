@@ -50,14 +50,9 @@ function wireRequestPredictions(box){
 // an Upcoming game without naming the same four players again.
 let predictionDraft = null;
 
-// The draft survives a re-render of the Admin screen, which is what makes
-// "Add to Upcoming" possible at all: adding one changes the record, the screen
-// is redrawn from the record, and without this the four names the admin had
-// just chosen would be gone along with the confirmation that it worked.
-function predDraftName(side, i){
-  const v = predictionDraft && predictionDraft.ok && predictionDraft[side] && predictionDraft[side][i];
-  return v ? escapeHtml(v) : '';
-}
+// The four names themselves survive a redraw in predictScreen.js's batch,
+// which is what lets "Add to Upcoming" redraw the sheet and keep the matchup
+// on screen with the confirmation that it worked.
 
 // The agreed presentation: expected winning side, expected share of games,
 // and a plain sentence of why. Deliberately NOT the technical version it
@@ -96,7 +91,7 @@ function matchPredictionHtml(pred, opts){
 }
 
 // Turning a prediction into an agreed game. Admin-only by construction: this
-// markup only ever appears inside the Admin screen's Predict a matchup panel.
+// markup only ever appears inside Predict a Matchup (predictScreen.js), Admin only.
 function buildPredictionToUpcomingHtml(pred){
   const names = pred.teamA.concat(pred.teamB);
   // Shown once, by whichever render follows the write, and then gone.
@@ -115,7 +110,7 @@ function buildPredictionToUpcomingHtml(pred){
 
 let predictionUpcomingMessage = '';
 
-function wirePredictionToUpcoming(box){
+function wirePredictionToUpcoming(box, after){
   const btn = box.querySelector('#predUpAdd');
   if(!btn) return;
   btn.onclick = async ()=>{
@@ -153,5 +148,7 @@ function wirePredictionToUpcoming(box){
     // against a rating that has since moved.
     predictionUpcomingMessage = `Added to ${booked ? 'Upcoming' : 'Called Out'}: ${pred.teamA.join(' & ')} v ${pred.teamB.join(' & ')}.`;
     dataChanged();
+    // The Predict a Matchup sheet is not a tab, so it redraws itself.
+    if(after) after();
   };
 }

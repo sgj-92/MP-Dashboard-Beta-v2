@@ -802,6 +802,8 @@ function renderWishlist(flashMessage, adminFlashMessage){
       if(new Set(names.map(n=>n.toLowerCase())).size !== 4){ msg.textContent = 'The same name appears more than once.'; return; }
       const unrecognized = names.filter(n => !PLAYERS.find(p=>p.name.toLowerCase()===n.toLowerCase()));
       if(unrecognized.length){ msg.textContent = `Unrecognized name${unrecognized.length>1?'s':''}: ${unrecognized.join(', ')}.`; return; }
+      const archived = archivedAmong(names);
+      if(archived.length){ msg.textContent = archivedRefusal(archived); return; }
       const adminName = requireName();
       if(!adminName) return;
 

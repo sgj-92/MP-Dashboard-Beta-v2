@@ -118,7 +118,7 @@ function homePowerHtml(viewer, snap){
     ? `#${snap.tierRank || '–'}${snap.tierRankOf ? ` of ${snap.tierRankOf}` : ''} in Tier ${escapeHtml(viewer.tier)}`
     : `Tier ${escapeHtml(viewer.tier)} · <span class="${snap.state && snap.state.participation === 'INACTIVE' ? 'inactive-tag' : 'idle-tag'}">${snap.state ? escapeHtml(snap.state.label) : 'Idle'}</span>`;
   const form = snap.recentForm
-    ? `<span class="home-form-dots" aria-hidden="true">${computeRecentFormSequence(viewer.name, 10).map(r => `<span class="form-dot ${MatchOutcome.classFor(r)}" title="${r || ''}"></span>`).join('')}</span><span class="home-form-record">${snap.recentForm.wins}W–${snap.recentForm.losses}L</span>`
+    ? `<span class="home-form-dots" aria-hidden="true">${computeRecentFormSequence(viewer.name, 10).map(r => `<span class="form-dot ${MatchOutcome.classFor(r)}" title="${r || ''}"></span>`).join('')}</span><span class="home-form-record">${PlayerForm.recordText(snap.recentForm)}</span>`
     : `<span class="home-form-record">No recent games</span>`;
   return `<section class="home-block home-block-power">
     <button type="button" class="home-power" id="homeViewProfileBtn" aria-label="Power Rating ${Math.round(viewer.rating)}. Open your profile">

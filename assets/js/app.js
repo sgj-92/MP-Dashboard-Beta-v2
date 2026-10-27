@@ -107,6 +107,7 @@ let isUnlocked = false;
 
 let extraMatchesState = [];   // each: {id, date, winners, losers, sets, type, note, status, submittedBy, submittedAt}
 let tagOverridesState = {};
+let matchAttributionState = {};   // matchId -> who submitted / approved it (MatchAttribution)
 let matchEditsState = {};     // id -> {date?,winners?,losers?,sets?,type?,note?, editedBy, editedAt}
 let deletedIdsState = [];
 let currentUserName = '';
@@ -273,6 +274,7 @@ function playerStateOf(name, asOf){
     name,
     asOf: asOf === undefined ? Date.now() : asOf,
     active: p ? p.active !== false : true,
+    status: p ? p.status : undefined,
   });
 }
 
@@ -369,14 +371,28 @@ function enrichMatches(matches){
   });
 }
 
+// Every rated game counts, draws included (Shaun, 15 Oct: "align everything to
+// include draws"): a draw is a game played, never a win and never a loss, so
+// `total` is wins + draws + losses and win % is wins / total -- the League's,
+// the Games log's and the profile's definition. A draw's residual counts
+// toward "vs expectation" like any game (the stored residual is the
+// first-listed side's, negated for the other). It is never an upset.
 function buildPlayers(enrichedMatches, ratings, tierMap, activeMap){
   const agg = {};
   function A(name){
-    if(!agg[name]) agg[name] = {wins:0, losses:0, strengths:[], overperf:[], games_w:0, games_l:0, upset_wins:0, upset_losses:0};
+    if(!agg[name]) agg[name] = {wins:0, draws:0, losses:0, strengths:[], overperf:[], games_w:0, games_l:0, upset_wins:0, upset_losses:0};
     return agg[name];
   }
   const GAP_THRESHOLD = 15;
   enrichedMatches.forEach(m=>{
+    if(m.isDraw){
+      [[m.winners, 1, m.games_winner, m.games_loser], [m.losers, -1, m.games_loser, m.games_winner]].forEach(([side, sign, gf, ga])=>side.forEach(p=>{
+        const a = A(p);
+        a.draws++; a.strengths.push(m.match_strength); a.overperf.push(sign * m.performance_residual);
+        a.games_w += gf; a.games_l += ga;
+      }));
+      return;
+    }
     const gap = Math.abs(m.team_w_rating - m.team_l_rating);
     const isClose = gap < GAP_THRESHOLD;
     const winnerFavored = m.team_w_rating > m.team_l_rating;
@@ -422,8 +438,8 @@ function buildPlayers(enrichedMatches, ratings, tierMap, activeMap){
   TIER_ORDER_LIST.forEach(t=>{
     const names = (byTier[t]||[]).slice().sort((a,b)=>ratings[b]-ratings[a]);
     names.forEach((name, idx)=>{
-      const a = agg[name] || {wins:0,losses:0,strengths:[],overperf:[],games_w:0,games_l:0,upset_wins:0,upset_losses:0};
-      const total = a.wins + a.losses;
+      const a = agg[name] || {wins:0,draws:0,losses:0,strengths:[],overperf:[],games_w:0,games_l:0,upset_wins:0,upset_losses:0};
+      const total = a.wins + a.draws + a.losses;
       const avgStrength = a.strengths.length ? a.strengths.reduce((s,x)=>s+x,0)/a.strengths.length : ratings[name];
       const avgOverperf = a.overperf.length ? 100*a.overperf.reduce((s,x)=>s+x,0)/a.overperf.length : 0;
       const idx0 = TIER_IDX[t];
@@ -439,7 +455,7 @@ function buildPlayers(enrichedMatches, ratings, tierMap, activeMap){
 
       players.push({
         name, tier: t, rating: Math.round(ratings[name]*10)/10,
-        wins: a.wins, losses: a.losses, total, winpct: total? Math.round(1000*a.wins/total)/10 : 0,
+        wins: a.wins, draws: a.draws, losses: a.losses, total, winpct: total? Math.round(1000*a.wins/total)/10 : 0,
         avg_match_strength: Math.round(avgStrength*10)/10, avg_overperf_pct: Math.round(avgOverperf*10)/10,
         game_diff: a.games_w - a.games_l,
         upset_wins: a.upset_wins, upset_losses: a.upset_losses,
@@ -474,10 +490,13 @@ function buildPartnerships(enrichedMatches, tierMap){
     [[m.winners, true],[m.losers,false]].forEach(([team,isWin])=>{
       if(team.length!==2) return;
       const key = [...team].sort().join('|');
-      if(!partnerships[key]) partnerships[key] = {pair: [...team].sort(), games:0, wins:0, losses:0, overperfSum:0};
+      if(!partnerships[key]) partnerships[key] = {pair: [...team].sort(), games:0, wins:0, draws:0, losses:0, overperfSum:0};
       const p = partnerships[key];
       p.games++;
-      if(isWin){ p.wins++; p.overperfSum += m.performance_residual; }
+      // A draw is a game together, neither won nor lost; its residual is the
+      // first-listed side's, negated for the other, like any game.
+      if(m.isDraw){ p.draws++; p.overperfSum += isWin ? m.performance_residual : -m.performance_residual; }
+      else if(isWin){ p.wins++; p.overperfSum += m.performance_residual; }
       else { p.losses++; p.overperfSum += -m.performance_residual; }
     });
   });
@@ -485,7 +504,7 @@ function buildPartnerships(enrichedMatches, tierMap){
   Object.values(partnerships).forEach(p=>{
     if(p.games<2) return;
     rows.push({
-      pair: p.pair, games: p.games, wins: p.wins, losses: p.losses,
+      pair: p.pair, games: p.games, wins: p.wins, draws: p.draws, losses: p.losses,
       winpct: Math.round(1000*p.wins/p.games)/10,
       avg_overperf: Math.round(1000*p.overperfSum/p.games)/10,
       tier_a: tierMap[p.pair[0]], tier_b: tierMap[p.pair[1]],
@@ -502,7 +521,7 @@ function buildBestPartner(partnerships){
       const partner = r.pair[1-i];
       const cur = best[name];
       if(!cur || r.avg_overperf > cur.avg_overperf){
-        best[name] = {partner, games:r.games, wins:r.wins, losses:r.losses, winpct:r.winpct, avg_overperf:r.avg_overperf};
+        best[name] = {partner, games:r.games, wins:r.wins, draws:r.draws, losses:r.losses, winpct:r.winpct, avg_overperf:r.avg_overperf};
       }
     });
   });
@@ -836,18 +855,22 @@ function recomputeAllNow(){
   // So the screens that describe games ask for this as well, and the ones
   // that calculate do not.
   DRAW_MATCHES = enrichMatches(getAllApprovedMatches().filter(m => m.isDraw));
-  PLAYERS = buildPlayers(MATCHES, ratings, TIER_MAP, ACTIVE_MAP);
+  PLAYERS = buildPlayers(matchesIncludingDraws(), ratings, TIER_MAP, ACTIVE_MAP);
   PLAYERS.forEach(p=>V3Bridge.decoratePlayer(p, V3_STATE, PRODUCTION_SNAPSHOT_INDEX));
-
-  // v3 rates draws; wins/losses cannot. Counting them here is what makes a
-  // player's record reconcile with the evidence behind their rating:
-  // wins + losses + draws === lifetimeMatches.
-  const drawCounts = {};
-  getAllApprovedMatches().filter(m=>m.isDraw).forEach(m=>{
-    [...m.winners, ...m.losers].forEach(n=>{ drawCounts[n] = (drawCounts[n]||0) + 1; });
-  });
+  // Each player's standing in the group (playerStatus.js): the status on their
+  // record, else the legacy Admin flag -- looked up under any name they have
+  // had -- else active. `active` keeps its old meaning for every engine that
+  // reads it: playing now, so not temporarily inactive and not archived.
   PLAYERS.forEach(p=>{
-    p.draws = drawCounts[p.name] || 0;
+    const legacy = [p.name].concat(p.previousDisplayNames || []).map(n => ACTIVE_MAP[n]).find(v => typeof v === 'boolean');
+    p.status = PlayerStatus.statusOf({ stored: p.storedStatus, legacyActive: legacy });
+    p.active = PlayerStatus.isPlaying(p.status);
+  });
+
+  // v3 rates draws, and buildPlayers counts them, which is what makes a
+  // player's record reconcile with the evidence behind their rating:
+  // wins + draws + losses === lifetimeMatches.
+  PLAYERS.forEach(p=>{
     p.recordTotal = p.wins + p.losses + p.draws;
     p.recordReconciles = (p.lifetimeMatches === undefined) || (p.recordTotal === p.lifetimeMatches);
   });
@@ -857,11 +880,13 @@ function recomputeAllNow(){
     p.recent_form_games = form ? form.games : 0;
     p.recent_form_wins = form ? form.wins : 0;
     p.recent_form_losses = form ? form.losses : 0;
+    p.recent_form_draws = form ? form.draws : 0;
     p.recent_form_days_ago = form ? form.daysSinceLastGame : null;
     p.recent_form_stale = form ? form.daysSinceLastGame > RECENT_FORM_STALE_DAYS : false;
   });
-  H2H = buildH2H(MATCHES);
-  PARTNERSHIPS = buildPartnerships(MATCHES, TIER_MAP);
+  // Meetings and partnerships count every game played, draws included.
+  H2H = buildH2H(matchesIncludingDraws());
+  PARTNERSHIPS = buildPartnerships(matchesIncludingDraws(), TIER_MAP);
   BEST_PARTNER = buildBestPartner(PARTNERSHIPS);
   INACTIVE_PLAYERS = new Set(PLAYERS.filter(p=>!p.active).map(p=>p.name));
   const activePlayers = PLAYERS.filter(p=>p.active);
@@ -1125,7 +1150,9 @@ function dayLabel(ymd){
   return `${days[dt.getDay()]}, ${d} ${months[m-1]} ${y}`;
 }
 function computeMonthlyStats(month){
-  const filtered = month==='all' ? MATCHES : MATCHES.filter(m=>m.date.slice(0,7)===month);
+  // Every rated game, draws included -- the same games buildPlayers counts.
+  const all = matchesIncludingDraws();
+  const filtered = month==='all' ? all : all.filter(m=>m.date.slice(0,7)===month);
   // Judge opponent strength and upset status using each player's rating AS OF this specific
   // month, not their season-long rating -- otherwise "avg opp." and "upset" would be judged by
   // a different yardstick than the Month Rating headline number sitting right next to them.
@@ -1140,7 +1167,7 @@ function computeMonthlyStats(month){
   }
   const agg = {};
   function A(name){
-    if(!agg[name]) agg[name] = {wins:0, losses:0, strengths:[], overperf:[], games_w:0, games_l:0, upset_wins:0, upset_losses:0};
+    if(!agg[name]) agg[name] = {wins:0, draws:0, losses:0, strengths:[], overperf:[], games_w:0, games_l:0, upset_wins:0, upset_losses:0};
     return agg[name];
   }
   const GAP_THRESHOLD = 15;
@@ -1152,6 +1179,15 @@ function computeMonthlyStats(month){
     const isClose = gap < GAP_THRESHOLD;
     const winnerFavored = winnerTeamRating > loserTeamRating;
     const isUpset = !isClose && !winnerFavored;
+    if(m.isDraw){
+      // A game played, neither won nor lost, and never an upset.
+      [[m.winners, 1, m.games_winner, m.games_loser], [m.losers, -1, m.games_loser, m.games_winner]].forEach(([side, sign, gf, ga])=>side.forEach(p=>{
+        const a = A(p);
+        a.draws++; a.strengths.push(monthMatchStrength); a.overperf.push(sign * m.performance_residual);
+        a.games_w += gf; a.games_l += ga;
+      }));
+      return;
+    }
     m.winners.forEach(p=>{
       const a = A(p);
       a.wins++; a.strengths.push(monthMatchStrength); a.overperf.push(m.performance_residual);
@@ -1168,11 +1204,11 @@ function computeMonthlyStats(month){
   const stats = {};
   Object.keys(agg).forEach(name=>{
     const a = agg[name];
-    const total = a.wins+a.losses;
+    const total = a.wins+a.draws+a.losses;
     const avgStrength = a.strengths.length ? a.strengths.reduce((s,x)=>s+x,0)/a.strengths.length : 0;
     const avgOverperf = a.overperf.length ? 100*a.overperf.reduce((s,x)=>s+x,0)/a.overperf.length : 0;
     stats[name] = {
-      wins:a.wins, losses:a.losses, total, winpct: total?Math.round(1000*a.wins/total)/10:0,
+      wins:a.wins, draws:a.draws, losses:a.losses, total, winpct: total?Math.round(1000*a.wins/total)/10:0,
       avg_match_strength: Math.round(avgStrength*10)/10, avg_overperf_pct: Math.round(avgOverperf*10)/10,
       game_diff: a.games_w-a.games_l,
       upset_wins:a.upset_wins, upset_losses:a.upset_losses, upset_total:a.upset_wins+a.upset_losses,
@@ -1333,7 +1369,7 @@ function topNTied(statsArr, key, n, descending){
   });
   return groups.slice(0, n).map((g,i)=>({ rank: i+1, names: g.names, value: g.value }));
 }
-const ZERO_MONTH_STATS = {wins:0,losses:0,total:0,winpct:0,avg_match_strength:0,avg_overperf_pct:0,game_diff:0,upset_wins:0,upset_losses:0,upset_total:0,upset_rate:0};
+const ZERO_MONTH_STATS = {wins:0,draws:0,losses:0,total:0,winpct:0,avg_match_strength:0,avg_overperf_pct:0,game_diff:0,upset_wins:0,upset_losses:0,upset_total:0,upset_rate:0};
 
 // `value` is required. It used to default to the Rankings month, which is how a
 // select that forgot to say whose month it showed quietly displayed -- and
@@ -1471,7 +1507,7 @@ document.querySelectorAll('#tabrow .tab-btn').forEach(b=>{
       h2h: 'Opponent record only counts matches where the two were on opposite teams; teammate record only counts matches where they played together.',
       wishlist: 'Anyone can propose a game. Each of the four named players confirms it themselves from their own player profile — once all four are in, it moves to the Upcoming tab automatically.',
       upcoming: 'A game arrives here either by all four players confirming a request, or by an admin agreeing it directly — from Requests, or straight off a prediction. Date, time and venue can stay TBC until they are known. Once it has been played, "Add result" carries the same players into the Games form so nobody types them twice, and submitting the result clears it from here: there is one record of the game, in Games, not two.',
-      summary: 'Points: 3 for a win, 1 for a draw. "Hardest games" is average opponent strength that month, scaled down by 300 for a friendlier number. "Doughnuts" are sets lost 0-6 or similar. Player of the Month is whoever tops the points table.',
+      summary: 'Points: 3 for a win, 1 for a draw. "Hardest games" is average opponent strength that month, scaled down by 300 for a friendlier number. "Doughnuts" are sets lost 0-6 or similar. Player of the Month is chosen by the group from Admin\'s shortlist of the month\'s strongest cases.',
       players: '',
     };
     document.getElementById('explainer').innerHTML = EXPLAINER_BY_TAB[activeTab] || '';
@@ -1731,23 +1767,20 @@ const RISK_LABELS = {
   stable: {text: "Stable", cls: "risk-stable"},
 };
 
+// A player's latest rated games -- draws included -- as PlayerForm reads them
+// (domain/matches/playerForm.js). It used to read MATCHES, which leaves draws
+// out, so a draw was skipped and an older game slid into the ten in its
+// place: Jams's form said 3–7 while his Recent Results showed three draws.
 function computeRecentForm(name, windowSize){
-  windowSize = windowSize || 10;
-  const own = MATCHES.filter(m => m.winners.includes(name) || m.losers.includes(name))
-    .sort((a,b)=> a.date < b.date ? 1 : -1) // newest first
-    .slice(0, windowSize);
-  if(own.length === 0) return null;
-  const vals = own.map(m=>{
-    const won = m.winners.includes(name);
-    return won ? m.performance_residual : -m.performance_residual;
-  });
-  const avg = vals.reduce((s,x)=>s+x,0) / vals.length;
-  const wins = own.filter(m=>m.winners.includes(name)).length;
-  const losses = own.length - wins;
-  const lastGameDate = own[0].date; // own is sorted newest-first
-  const daysSinceLastGame = Math.floor((new Date() - new Date(lastGameDate)) / 86400000);
-  return { avgPct: Math.round(avg*1000)/10, games: own.length, wins, losses, lastGameDate, daysSinceLastGame };
+  const r = PlayerForm.recent(matchesIncludingDraws(), name, windowSize || PlayerForm.WINDOW);
+  if(!r) return null;
+  const daysSinceLastGame = Math.floor((new Date() - new Date(r.lastGameDate)) / 86400000);
+  return { avgPct: r.avgPct, games: r.played, wins: r.wins, draws: r.draws, losses: r.losses,
+    run: r.run, lastGameDate: r.lastGameDate, daysSinceLastGame };
 }
+
+// A player's whole record and win rate (wins / games played, draws included).
+function playerRecordOf(name){ return PlayerForm.record(matchesIncludingDraws(), name); }
 
 // A player who hasn't played in a while shouldn't read as "trending" just because their last
 // batch of games happened to go well -- this is the cutoff for treating Recent Form as stale.
@@ -1912,6 +1945,10 @@ function navigateToGamesTabForEdit(matchId){
   armedDeleteId = null;
   const gamesTabBtn = document.querySelector('#tabrow .tab-btn[data-tab="games"]');
   if(gamesTabBtn) gamesTabBtn.click();
+  // Arriving from elsewhere: the game being edited is the place to land, with
+  // its form open in its own card.
+  const card = gameCardEl(matchId);
+  if(card) card.scrollIntoView({ block: 'start' });
 }
 
 let linkedRequestId = null;
@@ -1948,8 +1985,37 @@ function navigateToGamesTabForResult(req){
 document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeSheet(); });
 
 
-function allPlayerNames(){
-  return [...PLAYERS].map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+// ===================== WHO IS IN THE LIVE APP =====================
+// PLAYERS is everyone the record knows, archived players included, because
+// every calculation and every piece of history needs them. Anything that
+// offers players as CURRENT people -- "Who are you?", the directory, a name
+// field, a selector, an autocomplete, a suggestion pool -- asks here instead,
+// so an archived player can never be offered by a screen that forgot to
+// filter. History (results, scorecards, past tables, the Rating Journey)
+// resolves names from the record and is untouched by this.
+function livePlayers(){
+  return PLAYERS.filter(p => PlayerStatus.isLive(p.status));
+}
+function livePlayerNames(){
+  return livePlayers().map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+}
+// The name older call sites use. Live players only, like livePlayerNames().
+function allPlayerNames(){ return livePlayerNames(); }
+// One player's status, by any name they are shown under; null if unknown.
+function playerStatusOf(name){
+  const p = PLAYERS.find(x => x.name === name);
+  return p ? p.status : null;
+}
+function isArchivedPlayer(name){ return playerStatusOf(name) === PlayerStatus.STATUS.ARCHIVED; }
+// The archived names among some typed names (any case), and what to say about
+// them: a new game, request or result cannot include someone who has left the
+// group. An admin restores them first; their history never needed it.
+function archivedAmong(names){
+  return (names || []).map(n => PLAYERS.find(p => p.name.toLowerCase() === String(n || '').trim().toLowerCase()))
+    .filter(p => p && p.status === PlayerStatus.STATUS.ARCHIVED).map(p => p.name);
+}
+function archivedRefusal(names){
+  return `${names.join(', ')} ${names.length > 1 ? 'are' : 'is'} archived. Restore them in Admin › Player tags to include them in a new game.`;
 }
 
 // Admin / Manage: features/admin/manageScreen.js (the accordion, settings,
@@ -2152,7 +2218,7 @@ async function init(){
   // the application has no rating without it and will not invent one -- and it
   // is, because nothing below runs until every one of these has landed.
   const [ , stored, myName, ownerHash, boardHash, unlocked,
-          visibility, requests, areas, challenges, northSouth ] =
+          visibility, requests, areas, challenges, northSouth, potmRecords ] =
     await PerfTrace.timeAsync('load the record', Promise.all([
       loadV3State(),
       loadStoredData(),
@@ -2165,9 +2231,11 @@ async function init(){
       loadDevAreas(),
       loadChallenges(),
       loadNorthSouthResults(),
+      loadPotmRecords(),
     ]));
   extraMatchesState = stored.extraMatches;
   tagOverridesState = stored.tagOverrides;
+  matchAttributionState = stored.matchAttribution || {};
   matchEditsState = stored.matchEdits;
   deletedIdsState = stored.deletedIds;
   currentUserName = myName;
@@ -2179,6 +2247,7 @@ async function init(){
   devAreasState = areas;
   challengesState = challenges;
   northSouthResultsState = northSouth;
+  potmRecordsState = potmRecords;
   PerfTrace.mark('record ready');
   // Power Rankings opens on the most recently completed month rather than
   // All Time. getAvailableMonths() only needs the raw match state loaded
@@ -2203,6 +2272,9 @@ async function init(){
   const runHealthCheck = ()=>{ runRecordHealthCheck().catch(()=>{}); };
   if(typeof requestIdleCallback === 'function') requestIdleCallback(runHealthCheck, { timeout: 4000 });
   else setTimeout(runHealthCheck, 1200);
+
+  // "New build available · Refresh" (features/updateNotice.js).
+  startUpdateChecks();
 }
 
 init();

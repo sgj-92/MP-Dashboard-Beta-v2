@@ -109,7 +109,7 @@
 }
 .pp-form-letter.w{ background: var(--green); }
 .pp-form-letter.l{ background: var(--red); }
-.pp-form-letter.d{ background: var(--line); color: var(--text-dim); }
+.pp-form-letter.d{ background: var(--draw); }
 .pp-form-record{ font-family: var(--font-interface); font-size: 13px; color: var(--text); margin-top: 8px; font-weight: 600; }
 .pp-form-clutch{ margin-top: 2px; }
 

@@ -18,7 +18,7 @@ function renderCallouts(){
       const smallSample = p.games < 3 ? ` <span style="color:var(--text-dim); font-size:10px;">(small sample)</span>` : '';
       html += `<div class="callout-card">
         <div class="cc-title">${p.pair[0]} (Tier ${p.tier_a}) &amp; ${p.pair[1]} (Tier ${p.tier_b})${smallSample}</div>
-        <div class="cc-detail">${p.games} games together · ${p.wins}-${p.losses} (${p.winpct}%) · <span class="${perfClass}">${p.avg_overperf>=0?'+':''}${p.avg_overperf}% chemistry</span></div>
+        <div class="cc-detail">${p.games} games together · ${PlayerForm.recordShort(p)} (${p.winpct}%) · <span class="${perfClass}">${p.avg_overperf>=0?'+':''}${p.avg_overperf}% chemistry</span></div>
       </div>`;
     });
   }

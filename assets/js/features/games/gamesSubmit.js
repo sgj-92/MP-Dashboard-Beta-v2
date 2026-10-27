@@ -9,67 +9,17 @@
 // ===================== MANAGE TAB =====================
 let addGameSets = [{w:'', l:''}, {w:'', l:''}];
 
+// A result as people write it, read by ResultParse (domain/matches/
+// resultParse.js) against the club's players -- current ones, and anyone just
+// added in Admin who hasn't played yet. Archived players are left out, as in
+// every other picker. It replaced a reader that accepted one exact layout.
 function parseQuickEntryText(text){
-  const rawLines = text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-  if(rawLines.length < 3){
-    return { error: 'Needs a winning team line, at least one set score, and a losing team line.' };
-  }
-
-  const scoreRe = /(\d+)\s*-\s*(\d+)/;
-  const teamLines = [];
-  const setLines = [];
-  rawLines.forEach(line=>{
-    if(!line.includes('&') && !/[a-zA-Z]{3,}/.test(line.replace(/🏆/g,'')) && scoreRe.test(line)){
-      setLines.push(line);
-    } else {
-      teamLines.push(line);
-    }
-  });
-
-  if(teamLines.length !== 2){
-    return { error: `Expected exactly 2 team lines but found ${teamLines.length}. Make sure each set score is on its own line, like "6-4".` };
-  }
-  if(setLines.length === 0){
-    return { error: 'No set scores found — each set should be on its own line, like "6-4".' };
-  }
-
-  const [line1, line2] = teamLines;
-  const line1HasTrophy = line1.includes('🏆');
-  const line2HasTrophy = line2.includes('🏆');
-  if(line1HasTrophy && line2HasTrophy){
-    return { error: 'Both teams have 🏆 — put it next to at most one team, or remove it from both if this was a draw.' };
-  }
-  const isDraw = !line1HasTrophy && !line2HasTrophy;
-
-  const cleanTeam = (line) => line.replace(/🏆/g,'').trim().split('&').map(n=>n.trim()).filter(n=>n.length>0);
-  const team1 = cleanTeam(line1);
-  const team2 = cleanTeam(line2);
-
-  if(team1.length !== team2.length || (team1.length!==1 && team1.length!==2)){
-    return { error: 'Each team needs the same number of players — 1 for singles, 2 for doubles.' };
-  }
-
-  const sets = [];
-  setLines.forEach(line=>{
-    const m = line.match(scoreRe);
-    if(m) sets.push([parseInt(m[1],10), parseInt(m[2],10)]);
-  });
-  if(sets.length === 0){
-    return { error: 'Could not read any set scores.' };
-  }
-
-  if(isDraw){
-    return { winners: team1, losers: team2, sets, isSingles: team1.length === 1, isDraw: true };
-  }
-
-  const winnerIsTeam1 = line1HasTrophy;
-  const orientedSets = winnerIsTeam1 ? sets : sets.map(([a,b])=>[b,a]);
-  return {
-    winners: winnerIsTeam1 ? team1 : team2,
-    losers: winnerIsTeam1 ? team2 : team1,
-    sets: orientedSets,
-    isSingles: team1.length === 1,
-  };
+  const archived = new Set(PLAYERS.filter(p => p.status === PlayerStatus.STATUS.ARCHIVED).map(p => p.name));
+  const directory = [...new Set(PLAYERS.map(p => p.name).filter(n => !archived.has(n))
+    .concat(Object.keys(tagOverridesState || {}).filter(n => !archived.has(n))))];
+  const now = new Date();
+  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  return ResultParse.parse(text, { directory, me: submissionIdentity() || null, today });
 }
 
 function renderAddGameSets(){
@@ -95,7 +45,10 @@ function renderAddGameSets(){
 
 function checkForNewPlayers(){
   const names = ['agA1','agA2','agB1','agB2'].map(id=>document.getElementById(id).value.trim()).filter(n=>n);
-  const known = new Set(PLAYERS.map(p=>p.name.toLowerCase()));
+  // Someone added in Admin who hasn't played yet already has their starting
+  // tier; asking again here would overwrite it with this picker's default.
+  const known = new Set(PLAYERS.map(p=>p.name.toLowerCase())
+    .concat(Object.keys(tagOverridesState || {}).filter(n => tagOverridesState[n] && tagOverridesState[n].tier).map(n => n.toLowerCase())));
   const newNames = names.filter(n=>!known.has(n.toLowerCase()));
   const row = document.getElementById('agNewPlayerRow');
   const box = document.getElementById('agNewPlayerTiers');
@@ -140,6 +93,8 @@ async function submitNewGame(){
   if(new Set([...winners,...losers].map(n=>n.toLowerCase())).size !== winners.length+losers.length){
     msg.textContent = 'The same name appears twice — check your entries.'; return;
   }
+  const archived = archivedAmong([...winners, ...losers]);
+  if(archived.length){ msg.textContent = archivedRefusal(archived); return; }
 
   const sets = [];
   for(const s of addGameSets){

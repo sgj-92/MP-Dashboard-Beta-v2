@@ -65,7 +65,8 @@ maybe('Rankings is Power | This Month, one segmented control, with the rest unde
     assert.strictEqual(r.role, 'tablist');
     assert.deepStrictEqual(r.selected, ['Power']);
     assert.strictEqual(r.thisMonth, 'summary', 'This Month is the League / Merit / Race screen');
-    assert.deepStrictEqual(r.more, ['Win / Loss', 'Insights / Call-Outs', 'North vs South', 'Doughnuts']);
+    // North vs South lives in Admin / Manage (Shaun, 4 Oct), not in More tables.
+    assert.deepStrictEqual(r.more, ['Win / Loss', 'Insights / Call-Outs', 'Doughnuts']);
     assert.deepStrictEqual(r.wl, { tab: 'wl', section: 'rankings', pressed: 'true', sheetOpen: false });
   } finally { await app.close(); }
 });
@@ -86,15 +87,21 @@ maybe('every former More destination is within two taps of Me or Rankings', asyn
       viaMe('player'); out.player = shown('viewerSelectorSheet'); document.getElementById('viewerSelectorSheet').remove();
       viaMe('profile'); out.profile = document.getElementById('overlay').classList.contains('show'); closeSheet();
       viaMe('admin'); out.admin = { tab: activeTab, me: document.body.classList.contains('is-me') };
-      goToSection('rankings'); openRankingsMoreTables(); document.querySelector('#rankingsMoreSheet [data-special="northsouth"]').click();
-      out.northsouth = !!document.querySelector('.shell-more-sheet.show'); close();
+      // North vs South: Admin / Manage, behind the lock (Shaun, 4 Oct).
+      goToSection('rankings'); openRankingsMoreTables();
+      out.northsouthListed = !!document.querySelector('#rankingsMoreSheet [data-special="northsouth"]'); close();
+      isUnlocked = true; adminRole = 'owner';
+      viaMe('admin'); adminOpenSections.northsouth = true; renderManage();
+      document.getElementById('openNorthSouthBtn').click();
+      out.northsouthAdmin = !!document.querySelector('.shell-more-sheet.show'); close();
+      isUnlocked = false; adminOpenSections.northsouth = false;
       goToSection('rankings'); openRankingsMoreTables(); document.querySelector('#rankingsMoreSheet [data-tab="callouts"]').click();
       out.insights = activeTab;
       return out;
     });
     assert.deepStrictEqual(r, {
       guide: true, about: true, datarange: true, doughnutsMe: true, player: true, profile: true,
-      admin: { tab: 'manage', me: false }, northsouth: true, insights: 'callouts',
+      admin: { tab: 'manage', me: false }, northsouthListed: false, northsouthAdmin: true, insights: 'callouts',
     });
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
@@ -260,3 +267,4 @@ maybe('every new entry is a 44px target, and nothing scrolls sideways at 375', a
     assert.ok(r.width <= 375, `page ${r.width}px wide`);
   } finally { await app.close(); }
 });
+
