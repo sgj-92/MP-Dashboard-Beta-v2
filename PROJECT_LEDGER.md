@@ -63,8 +63,8 @@ rating chokepoint now reads v3 persisted state.
 | Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
-| Last verified implementation commit | **`2a7cbe9`** (new players join the rating record with their first approved game, 27 Oct; every record counts draws `777b7c0`, 15 Oct; player form counts draws `9809d88`, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **951 / 951 on `main`** (27 Oct, after new-player entry; 948 after every record counts draws; 947 after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Last verified implementation commit | **`c6f0b79`** (Add a game reads results however they're written, 27 Oct; new players join the record with their first game `2a7cbe9`, 27 Oct; every record counts draws `777b7c0`, 15 Oct; player form counts draws `9809d88`, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
+| Tests | **958 / 958 on `main`** (27 Oct, after the result reader; 951 after new-player entry; 948 after every record counts draws; 947 after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,26 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Add a game reads results however they're written — DONE (`c6f0b79`), 27 Oct.** Shaun: "smart enough to detect the winners, losers and results… not always in the exact format".
+- New pure `domain/matches/resultParse.js` (`ResultParse`) replaces the one-layout
+  `parseQuickEntryText` reader. Sides come from result words (beat / def / lost
+  to / beaten by / drew with), "vs" or a team per line; partners from & / + ,
+  "and" or recognised names. Winner comes from the words, 🏆 / "won" / "(W)",
+  or more sets won; level sets with no winner read as not finished. Scores
+  written winners-first are turned round; "6/4" is accepted when no other style
+  is used. Names use `FixtureParse.resolveName`: a unique prefix is used and
+  said, an ambiguous one must be picked. Dates come from a WhatsApp timestamp,
+  26/10, 26 Oct, today/yesterday or a weekday.
+- It refuses rather than guesses: one team, no scores, a duplicate player, or
+  several results in one paste ("add them one at a time").
+- The form shows a read-out (one-line result + problems / warnings / how it
+  decided); a paste is read immediately; nothing is submitted automatically.
+- Fixed in passing: an Admin-added player who hasn't played was offered the
+  new-player tier picker again (default B would overwrite their tier).
+- `tests/resultParse.test.js` (7).
+- Possible next step, if wanted: several results in one paste (a review list,
+  like "Add multiple games").
 
 **New players join the rating record with their first approved game — DONE (`2a7cbe9`), 27 Oct.** Shaun: added Topsy (Tier C) in Admin, then approving her first game failed with "never been initialised".
 - **Root cause.** Admin › Player tags › "Add a new player" only wrote a tier tag
@@ -8796,6 +8816,7 @@ specification text.*
 
 | Commit | Work |
 |---|---|
+| `c6f0b79` | Add a game reads results however they're written (ResultParse): result words, vs, lines, 🏆, set majority, winners-first scores, names, dates; read-out of how it decided. 958/958. |
 | `2a7cbe9` | New players enter the rating record with their first approved game (tier from Admin, PROVISIONAL, first-game date); clear message when no tier is set. 951/951. |
 | `777b7c0` | Every record counts draws (Shaun's call): rankings W/L & Win %, monthly stats, partnerships, H2H, exports. 948/948. |
 | `9809d88` | Player form counts draws: one `PlayerForm` module feeds the profile form/record/Win Rate, Home and recent-form W-D-L; draws no longer dropped (Jams: 3–7 → 1W·3D·6L; 30% → 23.1%); draw colour. 947/947. |
@@ -8916,6 +8937,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 27 Oct (latest): Add a game reads results however they're written (`c6f0b79`, 958 / 958).** Baton → Shaun. Topsy approved (confirmed by Shaun). Open idea: several results in one paste.
 
 **CCode, 27 Oct (latest): new players join the record with their first approved game (`2a7cbe9`, 951 / 951).** Baton → Shaun: approve Topsy's pending game (Rishi & Fatch def Tom & Topsy, 26 Oct). It now rates and brings her in at Tier C.
 
