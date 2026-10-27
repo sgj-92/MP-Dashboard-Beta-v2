@@ -55,12 +55,67 @@ function matchFixDateChangeRefusal(original, next){
   return `This correction changes the date from ${original} to ${next}. A match's identifier is built from its date, so changing it here would leave the record describing the wrong day. Delete this game and add it again on the correct date instead. Nothing was changed.`;
 }
 
+// ---- New players --------------------------------------------------------------
+// A player enters the rating record with their first rated game. The rating
+// engine will not rate anyone it has never seen, and the record has no other
+// way in: Admin › Player tags › "Add a new player" only names them and their
+// starting tier. So when a game being approved (or corrected) includes a
+// player the record does not know, their entry is planned with it and written
+// in the same commit -- at the tier set there, on the date of that first
+// game, as the record's seed did for everyone. They enter PROVISIONAL
+// (UNKNOWN_NEW_PLAYER), the record's status for a player whose starting tier
+// is the club's judgement: the rating is the tier baseline either way, and it
+// leaves the one-off starting-tier correction open in Club Decisions.
+function newPlayerTier(name){
+  const key = Object.keys(tagOverridesState || {}).find(k => k.toLowerCase() === String(name).toLowerCase());
+  const t = key && tagOverridesState[key] && tagOverridesState[key].tier;
+  return t && RatingEngine.TIER_SEED[t] !== undefined ? t : null;
+}
+
+function planIncludingNewPlayers(args){
+  try {
+    return ReplayForward.plan(args);
+  } catch(e){
+    if(!e.unseen || !e.unseen.length) throw e;
+    const missing = e.unseen.filter(u => !newPlayerTier(u.playerId)).map(u => u.playerId);
+    if(missing.length){
+      throw new Error(`${missing.join(', ')} ${missing.length === 1 ? 'isn’t' : 'aren’t'} in the club yet. Add ${missing.length === 1 ? 'them' : 'each of them'} in More › Admin › Player tags › Add a new player, with a starting tier, then try again.`);
+    }
+    const initialisations = e.unseen.map(u => ({
+      playerId: u.playerId, tier: newPlayerTier(u.playerId),
+      classificationStatus: RatingEngine.CLASSIFICATION.PROVISIONAL,
+      effectiveDate: u.firstDate, reasonCode: 'UNKNOWN_NEW_PLAYER',
+    }));
+    const planned = ReplayForward.plan({ ...args, change: { ...args.change, initialisations } });
+    planned.newPlayers = initialisations.map(i => ({ ...i, rating: RatingEngine.TIER_SEED[i.tier] }));
+    return planned;
+  }
+}
+
+// One player's line in a "who moves" list. A new player has no rating to move
+// from: they start at their tier's baseline.
+function movedPlayerText(p, planned, html){
+  const to = Math.round(p.to*10)/10;
+  if(p.from === null || p.from === undefined){
+    const n = ((planned && planned.newPlayers) || []).find(x => x.playerId === p.playerId);
+    return `${p.playerId} (new${n ? ` · starts Tier ${n.tier} at ${n.rating}` : ''}) → ${to}`;
+  }
+  const d = `${p.delta>0?'+':''}${p.delta}`;
+  return `${p.playerId} ${html ? `<span class="${p.delta>0?'perf-pos':'perf-neg'}">${d}</span>` : d} → ${to}`;
+}
+
+function newPlayersNoteHtml(planned){
+  const list = (planned && planned.newPlayers) || [];
+  if(!list.length) return '';
+  return `<div class="section-sub" style="margin-top:4px; color:var(--gold-bright);">${list.map(n => `${escapeHtml(n.playerId)} joins the record here, in Tier ${n.tier} at ${n.rating}`).join('; ')}. The starting tier can be corrected once in Club Decisions if it turns out wrong.</div>`;
+}
+
 async function stageMatchCorrection(change, describe){
   matchFixBusy = true; matchFixMessage = 'Replaying…'; renderGamesTab();
   try {
     if(!db) throw new Error('No database connection.');
     const stored = await readStoredRecord(RatingStore.firestoreCompatBackend(db));
-    const planned = ReplayForward.plan({
+    const planned = planIncludingNewPlayers({
       stored, change,
       provenance: { createdBy: reviewActor(), recordedAt: new Date().toISOString(), source: 'Historical Match Correction' },
     });
@@ -178,7 +233,8 @@ function buildMatchFixConfirmHtml(){
     <div class="section-sub" style="margin-top:4px; color:var(--text);">${p.describe}</div>
     <div class="section-sub" style="font-size:10.5px;">${p.documentsToWrite} documents rewritten, ${p.documentsToDelete} removed. Nothing is silently dropped: the record is replayed from the ${isRemoval ? 'remaining' : 'corrected'} history and verified afterwards.</div>
     <div class="section-sub" style="margin-top:6px; font-weight:700; color:var(--text);">${moved.length} player${moved.length===1?'':'s'} end on a different rating</div>
-    <div class="section-sub" style="font-size:10.5px; max-height:160px; overflow:auto;">${moved.length ? moved.map(m=>`${m.playerId} ${m.delta>0?'+':''}${m.delta} → ${Math.round(m.to*10)/10}`).join(' &nbsp;·&nbsp; ') : nobody}</div>
+    <div class="section-sub" style="font-size:10.5px; max-height:160px; overflow:auto;">${moved.length ? moved.map(m=>movedPlayerText(m, p, false)).join(' &nbsp;·&nbsp; ') : nobody}</div>
+    ${newPlayersNoteHtml(p)}
     <div class="difficulty-row" style="margin-top:8px;">
       <button class="preset-btn${isRemoval ? ' match-action-destructive' : ''}" id="matchFixCommitBtn" style="flex:1;" ${matchFixBusy?'disabled':''}>${matchFixBusy ? 'Working…' : commitLabel}</button>
       <button class="preset-btn" id="matchFixCancelBtn" style="flex:1;" ${matchFixBusy?'disabled':''}>Cancel</button>
@@ -258,7 +314,7 @@ async function prepareApproval(id){
     const backend = RatingStore.firestoreCompatBackend(db);
     const stored = await readStoredRecord(backend);
     const matchId = nextMatchIdFor(m.date);
-    const planned = ReplayForward.plan({
+    const planned = planIncludingNewPlayers({
       stored,
       change: { type: 'append', match: pendingToEngineMatch(m, matchId) },
       provenance: { createdBy: name, recordedAt: new Date().toISOString(), source: 'Approved from a submission' },
@@ -319,7 +375,7 @@ async function commitApproval(){
         : (a.fixtureChoice && a.fixtureChoice !== 'none' ? ' Its fixture is marked played.' : ' Fixtures left as they were.');
     }
     await loadV3State();
-    approvalMessage = `Rated as ${a.matchId}. ${a.planned.playersMoved.map(p=>`${p.playerId} ${p.delta>0?'+':''}${p.delta}`).join(', ')}.${fixtureNote}`
+    approvalMessage = `Rated as ${a.matchId}. ${a.planned.playersMoved.map(p=>movedPlayerText(p, a.planned, false)).join(', ')}.${fixtureNote}`
       + ` ${scorecardButtonHtml(a.matchId)}`;
   } catch(e){
     approvalMessage = 'Nothing was rated: ' + e.message;
@@ -334,7 +390,8 @@ function buildApprovalConfirmHtml(){
   return `<div class="callout-card" style="padding:12px; margin-top:8px; border-color:var(--gold-dim);">
     <div style="font-weight:700; color:var(--gold-bright);">Confirm — this rates the game</div>
     <div class="section-sub" style="margin-top:4px;">It joins the record as <code>${a.matchId}</code> and moves these ratings:</div>
-    <div class="section-sub" style="color:var(--text);">${a.planned.playersMoved.map(p=>`${p.playerId} <span class="${p.delta>0?'perf-pos':'perf-neg'}">${p.delta>0?'+':''}${p.delta}</span> → ${Math.round(p.to*10)/10}`).join(' &nbsp;·&nbsp; ')}</div>
+    <div class="section-sub" style="color:var(--text);">${a.planned.playersMoved.map(p=>movedPlayerText(p, a.planned, true)).join(' &nbsp;·&nbsp; ')}</div>
+    ${newPlayersNoteHtml(a.planned)}
     <div class="section-sub" style="font-size:10.5px;">${a.planned.documentsToWrite} documents. Nothing already in the record is rewritten — a new game only extends the sequence.</div>
     ${approvalFixtureChoiceHtml(a)}
     <div class="difficulty-row" style="margin-top:8px;">

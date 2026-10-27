@@ -189,7 +189,7 @@ function renderManage(){
     tagOverridesState[name] = {...(tagOverridesState[name]||{}), tier, active:true};
     const ok = await saveTagOverrides(tagOverridesState);
     if(!ok){ msg.textContent = storageAvailable() ? `Save failed (${lastStorageError || 'unknown error'}) — try again.` : `Save failed — this page can't reach shared storage. Open the actual published/shared claude.ai link, not a downloaded file.`;; return; }
-    msg.textContent = `${name} added to Tier ${tier}. They'll appear once they've played a game.`;
+    msg.textContent = `${name} added, starting in Tier ${tier}. They join the rankings when their first game is approved.`;
     document.getElementById('npName').value = '';
   }; });
 

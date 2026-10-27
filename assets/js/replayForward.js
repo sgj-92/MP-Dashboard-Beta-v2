@@ -139,7 +139,25 @@
   //       or: { type: 'clubDecision', events: [...] } -- one or more state
   //           events inserted at a historical date, after which everything that
   //           followed is re-derived.
+  // A change may bring players into the record with it (`change.initialisations`):
+  // a new player's first game is approved together with the decision about
+  // where they start, so the two are written as one. A player already in the
+  // record is never initialised twice.
   function applyChange(inputs, change) {
+    const out = applyMatchOrDecision(inputs, change);
+    const adds = change.initialisations || [];
+    if (!adds.length) return out;
+    const known = {};
+    inputs.initialisations.forEach((i) => { known[i.playerId] = true; });
+    adds.forEach((i) => {
+      if (!i || !i.playerId || !i.tier) throw new Error('A new player needs a name and a starting tier.');
+      if (known[i.playerId]) throw new Error(`${i.playerId} is already in the record.`);
+      known[i.playerId] = true;
+    });
+    return { ...out, initialisations: inputs.initialisations.concat(adds) };
+  }
+
+  function applyMatchOrDecision(inputs, change) {
     if (change.type === 'clubDecision') {
       if (!change.events || !change.events.length) throw new Error('No club decision to apply.');
       const superseded = {};
