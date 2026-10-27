@@ -15,6 +15,13 @@ const H = require('./helpers/uiHarness.js');
 const maybe = H.available() ? test : test.skip;
 const PHONE = { width: 390, height: 844 };
 
+// "The same place" on screen. Layout can fall on a fraction of a pixel (it
+// moves with text such as how long ago a game was submitted) and scrolling
+// snaps to whole pixels, so a return may land one pixel off -- invisible, and
+// not a move. Anything more is.
+const samePlace = (actual, expected, msg) =>
+  assert.ok(Math.abs(actual - expected) <= 1, `${msg || 'moved'}: expected ${expected}, got ${actual}`);
+
 async function openGames(extra) {
   const app = await H.open({ viewport: PHONE, ...(extra || {}) });
   await app.run(() => {
@@ -70,8 +77,8 @@ maybe('the edit form opens inside the game card, and the card does not move', as
     await app.page.click(`#gamesView [data-edit="${id}"]`);
     const open = await where(app, id);
     assert.ok(open.formInCard, 'the form must open inside the game being edited, not after the list');
-    assert.strictEqual(open.card, before.card, 'opening the editor moved the game on screen');
-    assert.strictEqual(open.y, before.y, 'opening the editor scrolled the page');
+    samePlace(open.card, before.card, 'opening the editor moved the game on screen');
+    samePlace(open.y, before.y, 'opening the editor scrolled the page');
     assert.ok(open.form > open.card && open.form < open.vh, `the form must start on screen, at ${open.form}`);
     // Nothing is appended after the list any more.
     const last = await app.run(() => {
@@ -114,8 +121,8 @@ maybe('Cancel returns exactly to where the editor was opened, even after scrolli
       await app.page.click('#edCancel');
       const back = await where(app, id);
       assert.strictEqual(back.form, null, 'Cancel must close the editor');
-      assert.strictEqual(back.card, start.card, `card started at ${start.card}, came back at ${back.card}`);
-      assert.strictEqual(back.y, start.y);
+      samePlace(back.card, start.card, `card started at ${start.card}, came back at ${back.card}`);
+      samePlace(back.y, start.y);
     }
     assert.strictEqual(await app.run(() => window.__writes.length), 0, 'Cancel wrote something');
     assert.deepStrictEqual(app.pageErrors, []);
@@ -134,7 +141,7 @@ maybe('Close on the card being edited closes the editor and returns, as Cancel d
     const back = await where(app, id);
     assert.strictEqual(back.form, null, 'Close must close the editor');
     assert.strictEqual(await app.run(() => editingMatchId), null);
-    assert.strictEqual(back.card, start.card);
+    samePlace(back.card, start.card);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
@@ -179,7 +186,7 @@ maybe('a rated correction is confirmed in the same card and returns the reader t
     const fixed = await app.run((id) => findMatchById(id).sets[0], id);
     assert.deepStrictEqual(fixed, sets, 'the correction was not applied');
     assert.strictEqual(back.form, null);
-    assert.strictEqual(back.card, start.card, `card started at ${start.card}, came back at ${back.card}`);
+    samePlace(back.card, start.card, `card started at ${start.card}, came back at ${back.card}`);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
@@ -198,7 +205,7 @@ maybe('saving a pending submission updates it and keeps the reader in place', as
     await app.page.click(`#gamesView [data-edit="${id}"]`);
     const open = await where(app, id);
     assert.ok(open.formInCard, 'the form must open inside the submission');
-    assert.strictEqual(open.card, start.card);
+    samePlace(open.card, start.card);
     await app.page.fill('#edSets .ed-set-input[data-idx="1"][data-side="1"]', '2');
     await app.page.click('#edSubmit');
     await app.page.waitForFunction(() => !editingMatchId);
@@ -210,7 +217,7 @@ maybe('saving a pending submission updates it and keeps the reader in place', as
     assert.deepStrictEqual(r.sets, [[6, 3], [6, 2]]);
     assert.match(r.shown, /6-3, 6-2/, 'the card must show the saved score');
     assert.strictEqual(back.form, null);
-    assert.strictEqual(back.card, start.card, `card started at ${start.card}, came back at ${back.card}`);
+    samePlace(back.card, start.card, `card started at ${start.card}, came back at ${back.card}`);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
