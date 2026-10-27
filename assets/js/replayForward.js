@@ -135,7 +135,8 @@
     return Object.entries(missing).map(([playerId, firstDate]) => ({ playerId, firstDate }));
   }
 
-  // change: { type: 'append' | 'appendMany' | 'edit' | 'delete', match?, matches?, matchId? }
+  // change: { type: 'append' | 'appendMany' | 'edit' | 'redate' | 'delete', match?, matches?, matchId? }
+  //         (redate: matchId is the old identifier, match the game under its new one)
   //       or: { type: 'clubDecision', events: [...] } -- one or more state
   //           events inserted at a historical date, after which everything that
   //           followed is re-derived.
@@ -192,6 +193,18 @@
       const i = matches.findIndex((m) => m.id === change.match.id);
       if (i === -1) throw new Error(`Match ${change.match.id} is not in the record.`);
       matches[i] = change.match;
+    } else if (change.type === 'redate') {
+      // A game moved to another date. Its identifier is built from its date,
+      // so it leaves under the old one and returns under a new one, in one
+      // replay: everything from the earlier of the two dates is re-derived,
+      // exactly as a removal and a fresh entry would, but never with the game
+      // missing in between.
+      const i = matches.findIndex((m) => m.id === change.matchId);
+      if (i === -1) throw new Error(`Match ${change.matchId} is not in the record.`);
+      if (!change.match || change.match.id === change.matchId) throw new Error('A moved game needs its new identifier.');
+      if (matches.some((m) => m.id === change.match.id)) throw new Error(`Match ${change.match.id} is already in the record.`);
+      matches.splice(i, 1);
+      matches.push(change.match);
     } else if (change.type === 'delete') {
       const i = matches.findIndex((m) => m.id === change.matchId);
       if (i === -1) throw new Error(`Match ${change.matchId} is not in the record.`);

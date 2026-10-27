@@ -1429,11 +1429,8 @@ test('a player whose name contains quotes is still safe to render and tap', { sk
   } finally { await app.close(); }
 });
 
-test('a correction that changes the date is refused rather than mis-filed', { skip }, async () => {
-  const msg = await shared.run(() => matchFixDateChangeRefusal('2026-06-02', '2026-06-09'));
-  assert.match(msg, /identifier is built from its date/);
-  assert.match(msg, /Nothing was changed/);
-});
+// A correction that changes the date is no longer refused: the game moves to
+// the new date under a new identifier (tests/matchRedate.test.js).
 
 test('diagnostics notices a document tampered with behind the app', { skip }, async () => {
   const app = await H.open();
