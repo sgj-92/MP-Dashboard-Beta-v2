@@ -2268,6 +2268,9 @@ async function init(){
   const runHealthCheck = ()=>{ runRecordHealthCheck().catch(()=>{}); };
   if(typeof requestIdleCallback === 'function') requestIdleCallback(runHealthCheck, { timeout: 4000 });
   else setTimeout(runHealthCheck, 1200);
+
+  // "New build available · Refresh" (features/updateNotice.js).
+  startUpdateChecks();
 }
 
 init();
