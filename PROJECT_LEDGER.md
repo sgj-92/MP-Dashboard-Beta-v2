@@ -60,7 +60,7 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
-| Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production; every other branch gets its own Vercel preview deployment. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
+| Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production. **Since 27 Oct (Shaun's storage clean-up) Vercel skips Preview deployments ("Ignored Build Step")**; production still builds on every push to `main`. The last `app-features-fixes` preview is `b2eb028`, so its branch link is frozen there. Use the production link. Previews only matter for held work (`app-redesign`); re-enable for that branch if it needs review. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
 | Last verified implementation commit | **`79eddad`** ("New build available · Refresh" notice, 27 Oct; correcting a game's date moves it `a7a6761`, 27 Oct; Add a game result reader `c6f0b79`, 27 Oct; new players join the record with their first game `2a7cbe9`, 27 Oct; every record counts draws `777b7c0`, 15 Oct; player form counts draws `9809d88`, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
@@ -2926,6 +2926,20 @@ with Shaun.**
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 27 Oct — Vercel previews are off; keep them for `app-redesign`?
+
+**For Shaun (CCode recommends: skip previews for everything except `app-redesign`).**
+Shaun's Vercel storage clean-up set an Ignored Build Step, and since then every
+Preview deployment is cancelled; Production is unaffected (verified from
+GitHub's deployment records: `d298c25`, `432fa1f`, `e6efbee` all deployed to
+Production). In the normal workflow previews only duplicated production
+(`app-features-fixes` = `main`), so nothing is lost there. A preview is only
+needed to review held work before it is released: the redesign branch. If
+wanted, the Ignored Build Step command
+`if [ "$VERCEL_ENV" = "production" ] || [ "$VERCEL_GIT_COMMIT_REF" = "app-redesign" ]; then exit 1; else exit 0; fi`
+builds production and the redesign branch only. CCode can also put it in
+`vercel.json` (`ignoreCommand`) so it is versioned.
 
 ### RESOLVED 15 Oct — every record counts draws (`777b7c0`)
 
