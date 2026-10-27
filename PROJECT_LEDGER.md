@@ -59,10 +59,10 @@ rating chokepoint now reads v3 persisted state.
 
 | | |
 |---|---|
-| Repository | **`sgj-92/MP-Dashboard-Beta-v2`** (renamed from `MP-Dashboard-NewRatings` by Shaun, 29 Sep; GitHub redirects the old git URLs) |
-| Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production. **Since 27 Oct (Shaun's storage clean-up) Vercel skips Preview deployments ("Ignored Build Step")**; production still builds on every push to `main`. The last `app-features-fixes` preview is `b2eb028`, so its branch link is frozen there. Use the production link. Previews only matter for held work (the redesign, `ux/player-reset-v2`); re-enable for that branch if it needs review. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
+| Repository | **`sgj-92/money-padel`** (renamed by Shaun 27 Oct from `MP-Dashboard-Beta-v2`, itself renamed 29 Sep from `MP-Dashboard-NewRatings`; GitHub redirects the old URLs. The older repos `MP-Dashboard` and `MP-DashboardBeta` are **archived**, read-only.) |
+| Hosting (30 Sep) | **Vercel is the primary host:** <https://mp-dashboard-new-ratings.vercel.app> (desktop review at `/preview`). `main` is production. **Since 27 Oct (Shaun's storage clean-up) Vercel skips Preview deployments ("Ignored Build Step")**; production still builds on every push to `main`. The last `app-features-fixes` preview is `b2eb028`, so its branch link is frozen there. Use the production link. Previews only matter for held work (the `redesign` branch); re-enable for that branch if it needs review. Custom domains come later. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
-| Working branches (30 Sep) | **`app-features-fixes`** — features, bug fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`app-redesign`** — the app redesign, **held**: never merged to or deployed from `main` until Shaun releases it. `claude/upload-commit-main-yfgpx0` is retired (renamed to `app-features-fixes`). **Superseded 30 Sep:** the redesign branch is **`ux/player-reset-v2`**. Shaun has now completed/approved the IA review, so it is authorised to be cut from **`f75a493`** and then brought up to date with current `main`; `app-redesign` (`ec963d5`) predates the code split and should not be used — Section 5. **Created 30 Sep (CCode, on Shaun's go-ahead):** `ux/player-reset-v2`, cut from `f75a493` and brought up to `main` (`b4e57e4`, a fast-forward, since `f75a493` is already in `main`'s history). Redesign phases land there; Ledger and design-map edits stay on `main` and reach it by merge. |
+| Working branches (27 Oct) | **Three branches.** **`main`** — production (Vercel). **`app-features-fixes`** — features, fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`redesign`** — the app redesign (renamed by Shaun 27 Oct from `ux/player-reset-v2`; `8b9588d`, 4 Oct), **held**: never merged to or deployed from `main` until Shaun releases it; 42 commits behind `main`, and merging `main` into it conflicts in ~20 files. `app-redesign` (superseded 30 Sep) and `claude/upload-commit-main-yfgpx0` were deleted 27 Oct. *(Older entries below use the old names.)* |
 | Last verified implementation commit | **`79eddad`** ("New build available · Refresh" notice, 27 Oct; correcting a game's date moves it `a7a6761`, 27 Oct; Add a game result reader `c6f0b79`, 27 Oct; new players join the record with their first game `2a7cbe9`, 27 Oct; every record counts draws `777b7c0`, 15 Oct; player form counts draws `9809d88`, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
 | Tests | **962 / 962 on `main`** (27 Oct, after the new-build notice; 959 after date moves; 958 after the result reader; 951 after new-player entry; 948 after every record counts draws; 947 after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
@@ -2929,12 +2929,14 @@ with Shaun.**
 
 ### OPEN 27 Oct — Vercel previews are off; keep them for the redesign branch?
 
-**For Shaun (CCode recommends: skip previews for everything except `ux/player-reset-v2`).**
+**For Shaun (CCode recommends: skip previews for everything except `redesign`).**
 *Corrected 27 Oct:* the redesign branch is **`ux/player-reset-v2`** (`8b9588d`, 4 Oct,
 last preview built 4 Oct), not `app-redesign` (superseded 30 Sep). It is 42
 commits behind `main` (every functional fix since 4 Oct), and a merge of `main`
 into it conflicts in ~20 files. Shaun wants it on his domain as well (a subdomain
 assigned to that Git branch in Vercel, which needs its previews re-enabled).
+*27 Oct:* Shaun renamed it **`redesign`**; use that name in Vercel (Ignored Build
+Step and the branch domain). Production domain: assign to **Production**, not a branch.
 Shaun's Vercel storage clean-up set an Ignored Build Step, and since then every
 Preview deployment is cancelled; Production is unaffected (verified from
 GitHub's deployment records: `d298c25`, `432fa1f`, `e6efbee` all deployed to
@@ -2942,7 +2944,7 @@ Production). In the normal workflow previews only duplicated production
 (`app-features-fixes` = `main`), so nothing is lost there. A preview is only
 needed to review held work before it is released: the redesign branch. If
 wanted, the Ignored Build Step command
-`if [ "$VERCEL_ENV" = "production" ] || [ "$VERCEL_GIT_COMMIT_REF" = "ux/player-reset-v2" ]; then exit 1; else exit 0; fi`
+`if [ "$VERCEL_ENV" = "production" ] || [ "$VERCEL_GIT_COMMIT_REF" = "redesign" ]; then exit 1; else exit 0; fi`
 builds production and the redesign branch only. CCode can also put it in
 `vercel.json` (`ignoreCommand`) so it is versioned.
 
