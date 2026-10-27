@@ -242,15 +242,16 @@ function renderGamesTab(){
         ${escapeHtml(sideA.join(' & '))} v ${escapeHtml(sideB.join(' & '))} — submitting it removes it from Upcoming.</div>`;
     }
   }
-  html += `<div class="section-sub">Anyone can submit a result — it lands below as pending until an admin approves it. Paste a result in the usual WhatsApp shorthand and it'll fill in the form for you to check before submitting.</div>`;
+  html += `<div class="section-sub">Anyone can submit a result — it lands below as pending until an admin approves it. Paste or type the result however it was written and it fills in the form for you to check before submitting.</div>`;
   html += `<div class="fg-controls">
     <div class="fg-row"><label class="fg-label">Quick paste</label>
-      <textarea id="agQuickPaste" class="fg-select" rows="5" style="width:100%; font-family:monospace; resize:vertical;" placeholder="Player A &amp; Player B 🏆
-6-4
-6-4
-Player C &amp; Player D"></textarea>
+      <textarea id="agQuickPaste" class="fg-select" rows="5" style="width:100%; font-family:monospace; resize:vertical;" placeholder="Any of these work:
+Rishi &amp; Fatch beat Tom &amp; Topsy 6-0 6-2
+Tom/Topsy lost to Rishi/Fatch 6-0, 6-2
+Rishi Fatch v Tom Topsy 6-0 6-2
+or a team per line with 🏆 and the sets"></textarea>
     </div>
-    <div class="fg-row"><button class="preset-btn" id="agQuickParse" style="width:100%;">Parse &amp; fill form below</button></div>
+    <div class="fg-row"><button class="preset-btn" id="agQuickParse" style="width:100%;">Read result &amp; fill the form</button></div>
     <div id="agQuickMessage" class="section-sub"></div>
   </div>`;
   html += `<div class="section-sub">Or fill in the fields directly. New games go into Pending below until an admin approves them — nothing here affects ratings until then.</div>`;
@@ -606,17 +607,24 @@ Player C &amp; Player D"></textarea>
     renderAddGameSets();
   };
 
-  document.getElementById('agQuickParse').onclick = ()=>{
+  const readQuickPaste = ()=>{
     const msg = document.getElementById('agQuickMessage');
     const raw = document.getElementById('agQuickPaste').value;
     const result = parseQuickEntryText(raw);
-    if(result.error){
-      msg.textContent = result.error;
-      msg.style.color = 'var(--red)';
+    msg.style.color = '';
+    // How it was read, and anything to check -- so a misreading is obvious
+    // before anyone submits.
+    const list = (items, cls) => items.length ? `<ul class="ag-read-list ${cls}">${items.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` : '';
+    if(!result.winners){
+      msg.innerHTML = `<div class="ag-read is-problem">${list(result.problems, 'is-problem')}</div>`;
       return;
     }
-    msg.style.color = '';
-    msg.textContent = result.isDraw ? 'Parsed as a draw — check the fields below and hit Submit.' : 'Parsed — check the fields below and hit Submit.';
+    msg.innerHTML = `<div class="ag-read${result.ok ? '' : ' is-problem'}">
+      <div class="ag-read-line">${escapeHtml(ResultParse.describe(result))}</div>
+      ${list(result.problems, 'is-problem')}${list(result.warnings, 'is-warning')}${list(result.notes, 'is-note')}
+      <div class="ag-read-foot">${result.ok ? 'Filled in below — check it, then Submit.' : 'Filled in what it could below — fix the above, then Submit.'}</div>
+    </div>`;
+    if(result.date){ const d = document.getElementById('agDate'); if(d) d.value = result.date; }
 
     const typeBtn = document.querySelector(`#agTypeToggle .fg-toggle-btn[data-type="${result.isSingles ? 'singles' : 'doubles'}"]`);
     if(typeBtn) typeBtn.click();
@@ -629,13 +637,14 @@ Player C &amp; Player D"></textarea>
     document.getElementById('agB1').value = result.losers[0] || '';
     document.getElementById('agB2').value = result.losers[1] || '';
 
-    addGameSets = result.sets.map(([w,l])=>({ w: String(w), l: String(l) }));
+    addGameSets = result.sets.length ? result.sets.map(([w,l])=>({ w: String(w), l: String(l) })) : [{w:'', l:''}];
     renderAddGameSets();
     checkForNewPlayers();
 
-    const dateEl = document.getElementById('agDate');
-    try { dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){ /* non-critical */ }
   };
+  document.getElementById('agQuickParse').onclick = readQuickPaste;
+  // A paste is read straight away; typing waits for the button.
+  document.getElementById('agQuickPaste').addEventListener('paste', ()=> setTimeout(readQuickPaste, 0));
 
   ['agA1','agA2','agB1','agB2'].forEach(id=>{
     document.getElementById(id).addEventListener('input', checkForNewPlayers);
