@@ -502,3 +502,19 @@ maybe('split by tier, a player who moved tier mid-month is in each tier they pla
     assert.deepStrictEqual(r.oneRows, [r.total], 'one list: one row, the whole month');
   } finally { await app.close(); }
 });
+
+maybe('the Merit slide splits wins Hard, Even and Fav, which add up to W (Shaun, 30 Oct)', async () => {
+  const app = await open();
+  try {
+    const r = await app.run(() => {
+      const m = boardPackMonths()[0];
+      const d = boardPackModuleData({ id: 'merit', options: BoardPack.defaultOptions('merit') }, m);
+      const tables = boardPackBlocks().merit(d, m).filter((b) => b.type === 'table');
+      return { headers: tables[0].headers, rows: tables.flatMap((t) => t.rows.map((row) => row.map((c) => (c && typeof c === 'object' ? c.text : c)))) };
+    });
+    assert.deepStrictEqual(r.headers, ['#', 'Player', 'P', 'W', 'Hard', 'Even', 'Fav', 'Pts']);
+    assert.ok(r.rows.length > 0);
+    r.rows.forEach((row) => assert.strictEqual(Number(row[4]) + Number(row[5]) + Number(row[6]), Number(row[3]), `${row[1]}: Hard + Even + Fav = W`));
+    assert.ok(r.rows.some((row) => Number(row[5]) > 0), 'the month has even wins');
+  } finally { await app.close(); }
+});
