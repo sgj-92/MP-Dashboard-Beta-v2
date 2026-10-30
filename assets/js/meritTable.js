@@ -185,7 +185,7 @@
           // produced the 10. A screen that re-derived hard-versus-favoured
           // from the match would be a second opinion, and the two would
           // eventually disagree about a fixture nobody had thought about.
-          hard: [], favoured: [],
+          hard: [], even: [], favoured: [],
           // Every game behind P, each with its result for this player, pushed
           // in the same step that counts it -- so P, W, D and L can each be
           // opened and will always list exactly what they count.
@@ -195,7 +195,7 @@
         row.merit += points;
         if (won) {
           row.wins++;
-          if (scored.steps === 0) row.evenWins++;
+          if (scored.steps === 0) { row.evenWins++; row.even.push(detailOf(m, scored, points)); }
           else if (scored.winnerWasFavourite) { row.easyWins++; row.favoured.push(detailOf(m, scored, points)); }
           else { row.hardWins++; row.hard.push(detailOf(m, scored, points)); }
           if (row.bestWin === null || points > row.bestWin) row.bestWin = points;
