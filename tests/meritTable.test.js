@@ -258,8 +258,10 @@ test('a win is hard, favoured, or neither — never two of them', () => {
   assert.strictEqual(row.evenWins, 1);
   assert.strictEqual(row.hardWins + row.evenWins + row.easyWins, row.wins,
     'every win falls into exactly one of the three');
-  // An equal-strength win counts toward neither of the two shown columns.
+  // Each of the three has its own list, so each column opens what it counts.
   assert.strictEqual(row.hard.length + row.favoured.length, row.wins - row.evenWins);
+  assert.strictEqual(row.even.length, row.evenWins);
+  assert.ok(row.even.every((d) => d.kind === 'even' && d.points === Merit.BASELINE));
 });
 
 test('the counts and the matches behind them are the same thing', () => {

@@ -405,17 +405,17 @@ let meritExplainerOpen = false;
 // One drill-down open at a time: two expanded lists on a phone is a wall.
 let meritDrill = null;
 
-// The two halves of the same story: Hard is a win over a stronger pairing,
-// Favoured a win over a weaker one. An even-strength win counts toward
-// neither -- it is the baseline both are measured from.
+// Every win falls in exactly one of three: Hard (over a stronger pairing),
+// Even (an equal one -- the baseline), Fav (over a weaker one). Shaun, 30 Oct:
+// Even shown too, so the three add up to W.
 //
-// Column labels are deliberately terse. A ninth column on a 375px screen is
+// Column labels are deliberately terse. A tenth column on a 375px screen is
 // the difference between a table and a horizontal scroll, and the drill-down
 // underneath says in full what the header cannot.
 function meritDrillKey(row, kind){ return tableDrillKey(row.playerId, row.tier, kind); }
 
 function meritCountCell(row, kind){
-  const n = kind === 'hard' ? row.hardWins : row.easyWins;
+  const n = kind === 'hard' ? row.hardWins : kind === 'even' ? row.evenWins : row.easyWins;
   return tableCountCell(meritDrill, row.playerId, row.tier, kind, n,
     { zero: `<span style="color:var(--text-dim);">–</span>`, colour: kind === 'hard' ? 'var(--green)' : 'var(--text-dim)' });
 }
@@ -436,13 +436,23 @@ function meritDrillRowHtml(d, subject){
       <span class="merit-drill-pts">${d.points} pt${d.points===1?'':'s'}</span>
     </div>
     <div class="merit-drill-teams"><b>${side(d.winners, d.winnerTiers)}</b> beat ${side(d.losers, d.loserTiers)}</div>
-    <div class="merit-drill-meta">${score ? escapeHtml(score) + ' · ' : ''}${gap} apart${d.kind === 'hard' ? ' · stronger pairing' : ' · weaker pairing'}</div>
+    <div class="merit-drill-meta">${score ? escapeHtml(score) + ' · ' : ''}${d.kind === 'even' ? 'evenly matched' : gap + ' apart'}${d.kind === 'hard' ? ' · stronger pairing' : d.kind === 'favoured' ? ' · weaker pairing' : ''}</div>
   </div>`;
+}
+
+// The layout is fixed (rankings.css), which shares the width out evenly unless
+// told otherwise. With ten columns that left a name about 33px on a phone, so
+// names broke mid-word; the counts are given just what they need and the name
+// takes the rest.
+function meritColgroupHtml(showTierColumn){
+  const w = ['6%', null, ...(showTierColumn ? ['8%'] : []), '8%', '8%', '7%', '8%', '9%', '10%', '10%', '9%'];
+  return `<colgroup>${w.map(x => x ? `<col style="width:${x};">` : '<col>').join('')}</colgroup>`;
 }
 
 function buildMeritTableHtml(rows, showTierColumn){
   let html = `<div class="callout-card" style="padding:0;">
     <table class="merit-table" style="width:100%; border-collapse:collapse; font-size:11px;">
+      ${meritColgroupHtml(showTierColumn)}
       <thead><tr style="background:var(--bg2); text-align:left;">
       <th style="padding:7px 2px 7px 7px;">#</th>
       <th style="padding:7px 2px;">Player</th>
@@ -453,9 +463,10 @@ function buildMeritTableHtml(rows, showTierColumn){
       <th style="padding:7px 2px; text-align:center;">L</th>
       <th style="padding:7px 3px; text-align:right; color:var(--gold-bright);">Pts</th>
       <th style="padding:7px 2px; text-align:center;" title="Wins against a stronger pairing">Hard</th>
+      <th style="padding:7px 2px; text-align:center;" title="Wins against an evenly matched pairing">Even</th>
       <th style="padding:7px 7px 7px 2px; text-align:center;" title="Wins against a weaker pairing">Fav</th>
       </tr></thead><tbody>`;
-  const cols = showTierColumn ? 10 : 9;
+  const cols = showTierColumn ? 11 : 10;
   rows.forEach((r,i)=>{
     html += `<tr style="border-top:1px solid var(--line);">
       <td style="padding:7px 2px 7px 7px; color:var(--text-dim);">${i+1}</td>
@@ -467,15 +478,16 @@ function buildMeritTableHtml(rows, showTierColumn){
       <td style="padding:7px 2px; text-align:center; color:var(--red);">${tableCountCell(meritDrill, r.playerId, r.tier, 'losses', r.losses, { plain: true, colour: 'var(--red)' })}</td>
       <td style="padding:7px 3px; text-align:right; font-weight:700; color:var(--gold-bright);">${r.merit}</td>
       <td style="padding:7px 2px; text-align:center;">${meritCountCell(r, 'hard')}</td>
+      <td style="padding:7px 2px; text-align:center;">${meritCountCell(r, 'even')}</td>
       <td style="padding:7px 7px 7px 2px; text-align:center;">${meritCountCell(r, 'favoured')}</td>
     </tr>`;
-    // Hard and Fav keep their own wording and lines; P/W/D/L use the plain
-    // game line. All of them are the same detail row.
-    ['hard','favoured'].forEach(kind=>{
+    // Hard, Even and Fav keep their own wording and lines; P/W/D/L use the
+    // plain game line. All of them are the same detail row.
+    ['hard','even','favoured'].forEach(kind=>{
       if(meritDrill !== meritDrillKey(r, kind)) return;
-      const list = kind === 'hard' ? r.hard : r.favoured;
+      const list = r[kind];
       html += tableDrillRowHtml(cols,
-        `${escapeHtml(r.playerId)} · ${list.length} win${list.length===1?'':'s'} against a ${kind === 'hard' ? 'stronger' : 'weaker'} pairing`,
+        `${escapeHtml(r.playerId)} · ${list.length} win${list.length===1?'':'s'} against ${kind === 'even' ? 'an evenly matched' : kind === 'hard' ? 'a stronger' : 'a weaker'} pairing`,
         list, (d)=> meritDrillRowHtml(d, r.playerId),
         // Hard / Fav keep the order they have always listed in.
         (a,b)=> a.date < b.date ? 1 : -1);

@@ -152,6 +152,11 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Merit Table: an Even column — DONE (commit below), 30 Oct.** Shaun: "add even games into the columns at the end, so wins are broken down by hard, even and favourable".
+- Columns now end **Hard · Even · Fav**; the three always add up to W. Even opens its own list of wins (`MeritTable` rows carry `even` beside `hard` / `favoured`), each marked "evenly matched".
+- The table's widths are set (`meritColgroupHtml`): with fixed layout and ten equal columns, names had been breaking mid-word on a phone ("Jord s"); now the counts get what they need and the name the rest. No name breaks at 360px.
+- Board Pack's Merit slide still shows Hard and Fav only; say if it should match.
+
 **Standings site for the WhatsApp group — DONE (`1108a73`), 30 Oct.** Shaun: share the live standings instead of screenshots, on a domain of its own so members can't reach the full app by trimming the URL; "mpstandings.sgj.luxe. This month and all historical standings is fine. Results too."
 - `data/siteMode.js`: `isStandingsMode()` is true on a host starting `mpstandings.` (or `?standings`, for local testing). The same build serves both domains.
 - In standings mode the app is Rankings only: **League** (opens first), **Power**, **Results**; every month and All time. No tab bar or rail, no Home, no "who are you?", no player profiles (`openSheet` inert), never unlocked, and Results has no Add a game, Admin lock or pending list.
@@ -9029,6 +9034,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Oct (latest): Merit Table Even column (commit below, 967 / 967).** Baton → Shaun.
 
 **CCode, 30 Oct (latest): standings site for members (`1108a73`, 967 / 967).** Baton → Shaun: add `mpstandings.sgj.luxe` to Vercel on Production, then share that link with the group. Decision open: Admin sign-in before the full app goes to members (Open Questions, 30 Oct).
 

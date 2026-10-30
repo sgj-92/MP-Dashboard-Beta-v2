@@ -4795,7 +4795,7 @@ test('a collapsed single-player tier still opens when tapped', { skip }, async (
 // must read the same classification the table does rather than working it out
 // again for itself.
 
-test('the Merit table shows Hard and Favoured, and fits a phone', { skip }, async () => {
+test('the Merit table shows Hard, Even and Favoured, and fits a phone', { skip }, async () => {
   const app = await H.open();
   try {
     await app.page.setViewportSize({ width: 375, height: 812 });
@@ -4814,26 +4814,29 @@ test('the Merit table shows Hard and Favoured, and fits a phone', { skip }, asyn
         headers: [...t.querySelectorAll('thead th')].map((h) => h.textContent),
         pageOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
         cardScrolls: card.scrollWidth > card.clientWidth + 1,
-        rows: rows.map((tr) => { const c = cells(tr); return { name: c[1], hard: c[7], fav: c[8] }; }),
+        brokenNames: [...t.querySelectorAll('.request-player-link')].filter((l) => !/\s/.test(l.textContent) && l.getClientRects().length > 1).map((l) => l.textContent),
+        rows: rows.map((tr) => { const c = cells(tr); return { name: c[1], hard: c[7], even: c[8], fav: c[9] }; }),
         truth: truth.map((x) => ({ name: x.playerId, hard: x.hardWins, fav: x.easyWins,
           wins: x.wins, even: x.evenWins })),
       };
     });
 
-    assert.deepStrictEqual(r.headers, ['#', 'Player', 'P', 'W', 'D', 'L', 'Pts', 'Hard', 'Fav'],
-      'compact labels, and Favoured beside Hard');
+    assert.deepStrictEqual(r.headers, ['#', 'Player', 'P', 'W', 'D', 'L', 'Pts', 'Hard', 'Even', 'Fav'],
+      'compact labels: Hard, Even, Favoured (Shaun, 30 Oct)');
     assert.strictEqual(r.pageOverflow, false, 'nothing runs off a 375px screen');
     assert.strictEqual(r.cardScrolls, false, 'and the table does not scroll sideways inside its card');
+    assert.deepStrictEqual(r.brokenNames, [], 'no name broken mid-word');
 
     const byName = Object.fromEntries(r.truth.map((t) => [t.name, t]));
     r.rows.forEach((row) => {
       const t = byName[row.name];
       assert.strictEqual(row.hard, t.hard ? String(t.hard) : '–', `${row.name}: Hard`);
+      assert.strictEqual(row.even, t.even ? String(t.even) : '–', `${row.name}: Even`);
       assert.strictEqual(row.fav, t.fav ? String(t.fav) : '–', `${row.name}: Fav`);
-      // An equal-strength win counts toward neither column.
+      // The three columns add up to W.
       assert.strictEqual(t.hard + t.fav + t.even, t.wins, `${row.name}: every win is in exactly one bucket`);
     });
-    assert.ok(r.truth.some((t) => t.even > 0), 'the fixture has even wins, which appear in neither column');
+    assert.ok(r.truth.some((t) => t.even > 0), 'the fixture has even wins, shown under Even');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
@@ -4847,7 +4850,7 @@ test('a zero count is not tappable; a real one opens its matches', { skip }, asy
       const t = document.querySelector('#summaryContent table');
       const rows = [...t.querySelectorAll('tbody tr')].filter((tr) => !tr.classList.contains('merit-drill'));
       // Every cell showing a dash must have no control in it; every number must.
-      const cellsOk = rows.every((tr) => [7, 8].every((i) => {
+      const cellsOk = rows.every((tr) => [7, 8, 9].every((i) => {
         const td = tr.children[i];
         const hasButton = !!td.querySelector('.merit-count');
         const isDash = td.innerText.trim() === '–';
@@ -4873,6 +4876,15 @@ test('a zero count is not tappable; a real one opens its matches', { skip }, asy
       t.querySelector(`.merit-count[data-kind="hard"][data-player="${who}"]`).click();
       const fav = t.querySelector(`.merit-count[data-kind="favoured"][data-player="${who}"]`);
       if (fav) { fav.click(); out.afterFav = document.querySelectorAll('#summaryContent .merit-drill-body').length; }
+
+      // Even opens exactly the even wins it counts.
+      const even = t.querySelector('.merit-count[data-kind="even"]');
+      out.evenCount = Number(even.textContent);
+      even.click();
+      const eb = document.querySelector('#summaryContent .merit-drill-body');
+      out.evenListed = eb.querySelectorAll('.merit-drill-row').length;
+      out.evenHead = eb.querySelector('.merit-drill-head').innerText;
+      out.evenMeta = eb.querySelector('.merit-drill-meta').innerText;
       return out;
     });
 
@@ -4885,6 +4897,10 @@ test('a zero count is not tappable; a real one opens its matches', { skip }, asy
     assert.strictEqual(r.overflow, false, 'and opening one does not push the page sideways');
     assert.strictEqual(r.closedAgain, true, 'tapping the same count closes it');
     assert.strictEqual(r.afterFav, 1, 'opening the other kind replaces rather than stacks');
+    assert.ok(r.evenCount > 0);
+    assert.strictEqual(r.evenListed, r.evenCount, 'Even lists exactly the wins it counts');
+    assert.match(r.evenHead, /evenly matched pairing/i);
+    assert.match(r.evenMeta, /evenly matched/i);
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
