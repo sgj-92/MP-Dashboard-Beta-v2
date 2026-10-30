@@ -330,3 +330,12 @@ body:is(.is-me, .is-mygames, .is-club) > :not(.shell-header):not(#sectionSubnav)
   flex: 0 0 auto; width: 32px; height: 32px; border: none; background: none; cursor: pointer;
   color: var(--text-dim); font-size: 15px;
 }
+
+/* The standings site (data/siteMode.js): Rankings only -- League, Power,
+   Results -- with nothing personal and nothing to manage. */
+body.standings-mode .shell-bottom-nav,
+body.standings-mode #homeDashboard,
+body.standings-mode .home-viewer-switch,
+body.standings-mode #tabrow{ display: none !important; }
+body.standings-mode{ padding-bottom: calc(24px + var(--shell-safe-bottom)); --rail-w: 0px; }
+body.standings-mode .update-notice{ bottom: calc(var(--shell-safe-bottom) + 14px); }

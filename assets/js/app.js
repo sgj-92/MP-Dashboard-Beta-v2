@@ -2241,7 +2241,7 @@ async function init(){
   currentUserName = myName;
   ownerPasswordHash = ownerHash;
   boardPasswordHash = boardHash;
-  isUnlocked = unlocked;
+  isUnlocked = unlocked && !isStandingsMode();   // the standings site has no Admin (siteMode.js)
   visibilityState = visibility;
   gameRequestsState = requests;
   devAreasState = areas;

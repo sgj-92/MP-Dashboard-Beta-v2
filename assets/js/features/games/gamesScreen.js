@@ -227,6 +227,10 @@ function renderGamesTab(){
     </div></div>`;
   }
 
+  // The standings site lists results and nothing else (siteMode.js): no
+  // Add a game, no admin, no pending submissions.
+  const standingsOnly = isStandingsMode();
+  if(!standingsOnly){
   html += foldHeading('addGameToggle', '➕ Add a game', addGameExpanded,
     { bodyId: 'addGameBody', summary: linkedRequestId ? 'from Upcoming' : 'submit a result' });
   html += `<div id="addGameBody" style="display:${addGameExpanded ? 'block' : 'none'};">`;
@@ -293,7 +297,9 @@ or a team per line with 🏆 and the sets"></textarea>
   </div>`;
   html += `</div>`; // close addGameBody
 
-  if(!isUnlocked){
+  }
+  if(standingsOnly){ /* no admin on the standings site */ }
+  else if(!isUnlocked){
     html += `<div class="section-heading">🔒 Admin actions</div>`;
     html += `<div class="section-sub">Approving, editing, or deleting a game needs the admin password.</div>`;
     html += buildLockScreenHtml();
@@ -312,7 +318,7 @@ or a team per line with 🏆 and the sets"></textarea>
     html += `<div class="section-sub approval-outcome" style="color:var(--gold-bright);">${approvalMessage}</div>`;
   }
 
-  if(pendingFiltered.length > 0){
+  if(pendingFiltered.length > 0 && !standingsOnly){
     html += `<div class="section-heading">⏳ Pending approval (${pendingFiltered.length})</div>`;
     html += `<div class="section-sub">Submitted but not yet counted in any rating. Approving a game rates it: it joins the record and moves the four players' ratings.</div>`;
     if(approvalMessage) html += `<div class="section-sub" style="color:var(--gold-bright);">${approvalMessage}</div>`;
@@ -564,6 +570,7 @@ or a team per line with 🏆 and the sets"></textarea>
   }
 
   // ===== Add a game (always available, not gated by admin lock) =====
+  if(standingsOnly) return;
   document.getElementById('addGameToggle').onclick = ()=>{
     addGameExpanded = !addGameExpanded;
     if(!addGameExpanded) linkedRequestId = null; // abandoning the form -- don't carry the link into an unrelated later submission
