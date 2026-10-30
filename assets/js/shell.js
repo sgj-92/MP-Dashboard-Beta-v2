@@ -53,6 +53,24 @@ const MORE_ADMIN_ITEM = { tab: 'manage', label: 'Admin / Manage' };
 
 let activeSection = 'rankings'; // matches legacy default activeTab === 'power'
 
+// The standings site (siteMode.js): Rankings is the whole app -- League, then
+// Power, then Results (the Games log, read-only) -- with no bottom nav, no
+// player chooser and no profiles. Set up before the shell builds itself.
+function enterStandingsMode(){
+  document.body.classList.add('standings-mode');
+  const icon = (tab) => ((SECTION_SUBNAV.rankings || []).find(it => it.tab === tab) || {}).icon;
+  SECTION_SUBNAV.rankings = [
+    { tab: 'summary', label: 'League', icon: icon('summary') },
+    { tab: 'power', label: 'Power', icon: icon('power') },
+    { tab: 'games', label: 'Results', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14"/><path d="M5 12h14"/><path d="M5 17h9"/></svg>' },
+  ];
+  TAB_TO_SECTION.summary = 'rankings';
+  TAB_TO_SECTION.games = 'rankings';
+  document.title = 'Money Padel · Standings';
+  // Names stay names here: a profile is the full app's.
+  window.openSheet = function(){};
+}
+
 function legacyTabBtn(tab){
   return document.querySelector(`#tabrow .tab-btn[data-tab="${tab}"]`);
 }
@@ -582,6 +600,8 @@ function openMatchInGames(matchId){
 
 
 document.addEventListener('DOMContentLoaded', ()=>{
+  const standings = isStandingsMode();
+  if(standings) enterStandingsMode();
   buildShellDom();
   const hero = buildRankingsHero();
   buildCompactFiltersBar();
@@ -622,12 +642,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
       // call site in app.js (after edit/delete/confirm) goes through this
       // same global function, so they all pick up the premium restructuring
       // automatically without touching those call sites.
-      const _originalOpenSheet = window.openSheet;
-      window.openSheet = function(name, matchFilter){
-        _originalOpenSheet.apply(this, arguments);
-        renderPremiumProfile(name, matchFilter);
-      };
-      if(!getCurrentViewer()) buildViewerSelector();
+      if(!isStandingsMode()){
+        const _originalOpenSheet = window.openSheet;
+        window.openSheet = function(name, matchFilter){
+          _originalOpenSheet.apply(this, arguments);
+          renderPremiumProfile(name, matchFilter);
+        };
+        if(!getCurrentViewer()) buildViewerSelector();
+      }
       // If Home is already the active section by the time data is ready (or
       // becomes active later), keep the dashboard in sync with the viewer.
       document.addEventListener('viewerchanged', ()=>{
@@ -658,6 +680,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   updateBottomNavHighlight();
   renderSectionSubnav();
+  // The standings site opens on the League.
+  if(standings){ const lg = legacyTabBtn('summary'); if(lg) lg.click(); }
   // A laptop or a monitor gets the desktop layout; a phone, nothing new.
   initDesktopShell();
   initMatchScorecard();

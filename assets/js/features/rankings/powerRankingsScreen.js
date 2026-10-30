@@ -213,7 +213,9 @@ function render(){
   const list = document.getElementById('list');
   const empty = document.getElementById('empty');
   list.innerHTML = '';
-  empty.style.display = rows.length ? 'none' : 'block';
+  // Only the rankings list owns this message; a render that lands while
+  // another screen is showing (the data arriving under League) must not leak it.
+  empty.style.display = (rows.length || list.style.display === 'none') ? 'none' : 'block';
 
   if(selectedMonth !== 'all'){
     const noteWrapper = document.createElement('div');

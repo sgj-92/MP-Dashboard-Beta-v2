@@ -4,6 +4,17 @@
   "buildCommand": "node scripts/stamp-build.js",
   "redirects": [
     {
+      "source": "/((?!assets/).+)",
+      "has": [
+        {
+          "type": "host",
+          "value": "mpstandings.sgj.luxe"
+        }
+      ],
+      "destination": "/",
+      "permanent": false
+    },
+    {
       "source": "/preview",
       "destination": "/preview/",
       "permanent": false

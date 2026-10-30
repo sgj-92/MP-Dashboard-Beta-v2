@@ -60,11 +60,11 @@ rating chokepoint now reads v3 persisted state.
 | | |
 |---|---|
 | Repository | **`sgj-92/money-padel`** (renamed by Shaun 27 Oct from `MP-Dashboard-Beta-v2`, itself renamed 29 Sep from `MP-Dashboard-NewRatings`; GitHub redirects the old URLs. The older repos `MP-Dashboard` and `MP-DashboardBeta` are **archived**, read-only.) |
-| Hosting (27 Oct) | **Vercel is the primary host. Live app: <https://moneypadel.sgj.luxe>** (Shaun's domain, on Production, 27 Oct); <https://mp-dashboard-new-ratings.vercel.app> still serves the same build (desktop review at `/preview`). Vercel project `mp-dashboard-beta-v2` (Shaun may rename it; the domains above are unaffected). `main` is production. **Since 27 Oct (Shaun's storage clean-up) Vercel skips Preview deployments ("Ignored Build Step")**; production still builds on every push to `main`. The last `app-features-fixes` preview is `b2eb028`, so its branch link is frozen there. Use the production link. Previews only matter for held work (the `redesign` branch); re-enable for that branch if it needs review. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
+| Hosting (27 Oct) | **Vercel is the primary host. Live app: <https://moneypadel.sgj.luxe>** (Shaun's domain, on Production, 27 Oct); **standings for members: <https://mpstandings.sgj.luxe>** (30 Oct, Production; League, Power and Results only — see Added since the compaction); <https://mp-dashboard-new-ratings.vercel.app> still serves the same build (desktop review at `/preview`). Vercel project `mp-dashboard-beta-v2` (Shaun may rename it; the domains above are unaffected). `main` is production. **Since 27 Oct (Shaun's storage clean-up) Vercel skips Preview deployments ("Ignored Build Step")**; production still builds on every push to `main`. The last `app-features-fixes` preview is `b2eb028`, so its branch link is frozen there. Use the production link. Previews only matter for held work (the `redesign` branch); re-enable for that branch if it needs review. GitHub Pages is legacy, kept only while it is trivial (Section 2). |
 | Branch | `main` (production: Vercel deploys it) |
 | Working branches (27 Oct) | **Three branches.** **`main`** — production (Vercel). **`app-features-fixes`** — features, fixes and functional updates; CCode keeps it identical to `main` and pushes both, so this work goes live. **`redesign`** — the app redesign (renamed by Shaun 27 Oct from `ux/player-reset-v2`), **held**: never merged to or deployed from `main` until Shaun releases it. **Up to date with `main` at `ed8a9dd` (27 Oct)**; served at **<https://mpr.sgj.luxe>** (Vercel Preview, branch `redesign`). `app-redesign` (superseded 30 Sep) and `claude/upload-commit-main-yfgpx0` were deleted 27 Oct. *(Older entries below use the old names.)* |
 | Last verified implementation commit | **`79eddad`** ("New build available · Refresh" notice, 27 Oct; correcting a game's date moves it `a7a6761`, 27 Oct; Add a game result reader `c6f0b79`, 27 Oct; new players join the record with their first game `2a7cbe9`, 27 Oct; every record counts draws `777b7c0`, 15 Oct; player form counts draws `9809d88`, 15 Oct; Predict a Matchup batches + 16px inputs `3259cdc`, 10 Oct; four/five-set scores `06370f5`, 8 Oct; rated games say who submitted them again `bde692b`, 6 Oct; editing a game keeps your place `21f79c1`, 6 Oct; League P W D L + Race drill-downs `750e31b`, 6 Oct; draws on the Match Result Card `71dc4f1`, 5 Oct; Matchup Card shows the % of games `a3e515b`, 4 Oct; Predict a Matchup: More + Matchup Card `acba496`; POTM nominees picture `69e6640`; nominations refined `e5f868a`; Player of the Month `7dca948`; player status model `4cbfeb7`; Match Result Card + Match Analysis `c6acfd9`; completed-match scorecard `19662b1`; desktop-friendly dashboard `269327c`; Board Pack split by tier `382f907`; whole-pack PDF `d74d466`; losing modules `337c70e`; Player Monthly Packs `d6e4ae1`; partnership draws `2d43540`; options + autosave `f58ec1d`; Tier S + pictures `6f40764`; Unpublish + Kings tiles `a5cbe84`; the Share Deck is `4af924d`; the Board Pack is `9e4a5e6` + `e666a96`), on `app-features-fixes` = `main`. The redesign branching point is still **`f75a493`**; the redesign branch is at `e463300` (Phase 2). *(Was `8e1c91e`, the desktop phone preview.)* |
-| Tests | **962 / 962 on `main`** (27 Oct, after the new-build notice; 959 after date moves; 958 after the result reader; 951 after new-player entry; 948 after every record counts draws; 947 after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
+| Tests | **967 / 967 on `main`** (30 Oct, after the standings site; 962 after the new-build notice; 959 after date moves; 958 after the result reader; 951 after new-player entry; 948 after every record counts draws; 947 after player form draws + UI suite pinned to the fixture era; 938 after Predict a Matchup batches + 16px inputs; 929 after the four/five-set score fix; 927 after match attribution; 920 after the Edit Game position fix; 912 after the League / Race drill-downs; 911 after Predict a Matchup's Matchup Card; 905 after the POTM nominees picture; 904 after the POTM nomination refinement; 897 after Player of the Month; 882 after the player status model; 874 after the Match Result Card; 870 after the match scorecard; 861 after the desktop layout; 852 after the tier split; 849 after whole-pack saving; 843 after the losing modules; 839 after Player Monthly Packs; 824 after partnership draws); 816 / 816 on `ux/player-reset-v2` at Phase 2. *(Was 762 / 762.)* |
 | First content, at a phone's 250ms round trip | **499ms** (was 3,779ms) |
 | **Live record status** | **REPAIRED 20 Sep — replays to itself (0 differences), diagnostics 8/8. Editing works again.** |
 | Firebase (beta) | `mp-dashboard-beta-v3` |
@@ -151,6 +151,15 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 ---
 
 ### Added since the compaction
+
+**Standings site for the WhatsApp group — DONE (commit below), 30 Oct.** Shaun: share the live standings instead of screenshots, on a domain of its own so members can't reach the full app by trimming the URL; "mpstandings.sgj.luxe. This month and all historical standings is fine. Results too."
+- `data/siteMode.js`: `isStandingsMode()` is true on a host starting `mpstandings.` (or `?standings`, for local testing). The same build serves both domains.
+- In standings mode the app is Rankings only: **League** (opens first), **Power**, **Results**; every month and All time. No tab bar or rail, no Home, no "who are you?", no player profiles (`openSheet` inert), never unlocked, and Results has no Add a game, Admin lock or pending list.
+- `vercel.json`: on that host every path except `/assets/` redirects to `/`, so `/review/`, `/preview/` etc. are not reachable there.
+- Fixed in passing: the rankings' "No players match that filter." could show over another screen when a render landed while it was hidden.
+- `tests/standings.test.js`. **967 / 967 on `main`.**
+- **Shaun:** add `mpstandings.sgj.luxe` in Vercel → Domains, environment **Production**, and the DNS record Vercel shows.
+- **Caveat (see OPEN 30 Oct):** this hides the full app; it does not protect the data. The database still accepts writes from anyone who knows how.
 
 **Redesign brought up to date with the live app — DONE (`ed8a9dd` on `redesign`), 27 Oct.** Shaun: "go ahead and update redesign".
 - `main` merged into `redesign` (42 commits). Four files conflicted.
@@ -2949,6 +2958,16 @@ with Shaun.**
 ---
 
 ## 5. OPEN QUESTIONS / DECISIONS
+
+### OPEN 30 Oct — Admin sign-in before members get the full app (Shaun)
+The beta Firestore (`mp-dashboard-beta-v3`) is open read/write with no
+authentication; the Admin lock is a deterrent in the page, not a control. The
+standings site (mpstandings.sgj.luxe) shows read-only screens, but the data
+underneath is as writable as before. **Recommendation (CCode):** before the
+full app goes to members, add an Admin sign-in (Firebase Auth) and Firestore
+rules allowing writes to signed-in admins only (reads stay public). Needs
+Shaun's go-ahead: it changes who can submit games and touches production data
+rules.
 
 ### RESOLVED 27 Oct — Vercel builds Production and the `redesign` branch only
 
@@ -9010,6 +9029,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Oct (latest): standings site for members (967 / 967).** Baton → Shaun: add `mpstandings.sgj.luxe` to Vercel on Production, then share that link with the group. Decision open: Admin sign-in before the full app goes to members (Open Questions, 30 Oct).
 
 **CCode, 27 Oct (latest): the redesign is up to date with the live app (`ed8a9dd` on `redesign`, 1011 / 1011) and served at mpr.sgj.luxe.** Baton → Shaun to review the redesign there. From now on, `main` is merged into `redesign` whenever it moves on, so the redesign never falls behind.
 
