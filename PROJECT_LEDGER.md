@@ -155,7 +155,7 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 **Merit Table: an Even column — DONE (`0baa96f`), 30 Oct.** Shaun: "add even games into the columns at the end, so wins are broken down by hard, even and favourable".
 - Columns now end **Hard · Even · Fav**; the three always add up to W. Even opens its own list of wins (`MeritTable` rows carry `even` beside `hard` / `favoured`), each marked "evenly matched".
 - The table's widths are set (`meritColgroupHtml`): with fixed layout and ten equal columns, names had been breaking mid-word on a phone ("Jord s"); now the counts get what they need and the name the rest. No name breaks at 360px.
-- Board Pack's Merit slide now matches: Hard · Even · Fav (Shaun, 30 Oct; commit below).
+- Board Pack's Merit slide now matches: Hard · Even · Fav (Shaun, 30 Oct; `a432ae5`).
 - **Proposed, awaiting Shaun:** a Race column (the month's Monthly Race score) on the Merit Table. A mock at 360px fits, but tightly; see Open Questions.
 
 **Standings site for the WhatsApp group — DONE (`1108a73`), 30 Oct.** Shaun: share the live standings instead of screenshots, on a domain of its own so members can't reach the full app by trimming the URL; "mpstandings.sgj.luxe. This month and all historical standings is fine. Results too."
