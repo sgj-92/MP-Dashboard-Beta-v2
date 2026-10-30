@@ -144,8 +144,9 @@ function boardPackBlocks(){ return {
   league: (d) => bpTiers(d.tiers, rows => bpTable(['#', 'Player', 'P', 'W', 'D', 'L', 'GD', 'Pts'],
     rows.map((r, i) => [i + 1, r.name, r.games, r.wins, r.draws, r.losses, bpSigned(r.gd), bpStrong(r.points)]))),
 
-  merit: (d) => bpTiers(d.tiers, rows => bpTable(['#', 'Player', 'P', 'W', 'Hard', 'Fav', 'Pts'],
-    rows.map((r, i) => [i + 1, r.playerId, r.played, r.wins, r.hardWins, r.easyWins, bpStrong(r.merit)])))
+  // Hard, Even and Fav add up to W, as on the Merit Table (Shaun, 30 Oct).
+  merit: (d) => bpTiers(d.tiers, rows => bpTable(['#', 'Player', 'P', 'W', 'Hard', 'Even', 'Fav', 'Pts'],
+    rows.map((r, i) => [i + 1, r.playerId, r.played, r.wins, r.hardWins, r.evenWins, r.easyWins, bpStrong(r.merit)])))
     .concat(d.unresolved ? [bpFoot(`${d.unresolved} match${d.unresolved===1?'':'es'} could not be scored: a player's tier on that date is unknown.`)] : []),
 
   race: (d) => bpTiers(d.tiers, rows => bpTable(['#', 'Player', 'P', 'W', 'D', 'L', 'Score'],
