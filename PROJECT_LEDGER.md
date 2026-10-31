@@ -157,7 +157,7 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 - `raceStandingOf(name, month)` (monthlyTablesData.js): the Race's counterpart to `leagueStandingOf`, placing a player exactly as the Race table does; provisional players (under `MonthlyRace.MIN_MATCHES`) have no place, only a score and games to go.
 - **Redesign Home hero** (branch `redesign`): "Your October / Monthly Race / 2nd in Tier A / 11 games · 8W 2D 1L · +65 pts"; provisional reads "Provisional in Tier B · … · 2 more to qualify". Tapping opens the Race on Home's month. The live app's Home has no monthly-position hero, so nothing changes there.
 - **Bug fixed in passing:** a League screen opened before the record arrived (a tap during loading, or the standings site, which opens on it) kept "All time" as its month. Harmless for the League, but the Race has nothing for All time. It now re-picks its default once games arrive; a month the reader chose is kept.
-- Shaun also noted the Home imagery "isn't yet perfect": noted for the redesign, no brief yet.
+- Shaun also noted the Home imagery "isn't yet perfect": the photo is fine; the type was off. **Decided (Shaun, 31 Oct, option C of four mocked):** the hero's greeting and headline move from Instrument Serif (tall, narrow; 46px read as stretched) to the wordmark's Georgia at 24/32px (40px desktop); the rest unchanged. `redesign` `7f5b5e8`. Only the Home hero: other redesign titles keep Instrument Serif unless Shaun asks (open for CGPT: apply C app-wide?).
 
 **Merit Table: every column sorts — DONE (`060108b`), 31 Oct.** Shaun: "I have to be able to sort each column."
 - Player, P, W, D, L, Pts, Hard, Even, Fav and Race sort on tap: highest first (names A-Z), a second tap reverses. The # follows the order shown, as on the League table. Ties keep the Merit order, so the default (Pts, highest first) is unchanged.
@@ -9057,7 +9057,7 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 
 ## 8. NEXT
 
-**CCode, 31 Oct (latest): the Monthly Race leads (`3f45899`; redesign Home hero on `redesign`), 970 / 970 on `main`.** Baton → Shaun. Open: the Home imagery (Shaun: "isn't yet perfect") needs a brief from Shaun / CGPT.
+**CCode, 31 Oct (latest): the Monthly Race leads (`3f45899`; redesign Home hero on `redesign`), 970 / 970 on `main`.** Baton → Shaun. Home hero type set in Georgia (option C, `7f5b5e8` on `redesign`).
 
 **CCode, 31 Oct (latest): Merit Table columns sort (`060108b`, 970 / 970).** Baton → Shaun.
 
