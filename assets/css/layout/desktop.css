@@ -202,7 +202,7 @@
   .home-block-last{ grid-column: 2; grid-row: 3 / span 2; }
   .home-hero{ margin: 0; padding: var(--space-5) var(--space-5) var(--space-4); border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
   .home-hero .home-month{ max-width: 560px; }
-  .home-month-headline{ font-size: 52px; }
+  .home-month-headline{ font-size: 40px; }
   .home-power{ grid-template-columns: auto auto minmax(0, 1fr) auto; column-gap: 28px; }
   .home-power-label{ grid-column: 1; grid-row: 1; }
   .home-power-main{ grid-column: 2; grid-row: 1; }
