@@ -657,6 +657,8 @@
 /* Monthly Race: the score opens its matches, like a Merit count. */
 .race-score{ color: var(--gold-bright); }
 .race-score.is-neg{ color: var(--red); }
+/* On the Merit Table the Race is the eleventh column: the number needs its width more than the tap target needs side padding. */
+.merit-table td:last-child > .race-score{ padding-left: 0; padding-right: 0; }
 .race-pts.is-neg{ color: var(--red); }
 /* The drill-down lives inside a table cell; let its prose wrap. */
 .race-drill-row .merit-drill-teams, .race-drill-meta{ white-space: normal; }

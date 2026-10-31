@@ -4882,6 +4882,70 @@ test('a zero count is not tappable; a real one opens its matches', { skip }, asy
   } finally { await app.close(); }
 });
 
+// Shaun, 30 Oct: the month's Monthly Race score on the Merit Table, in whole
+// points, "so we can quickly see all of the context". The Race's own figures.
+test('the Merit Table carries the month\'s Race score; All time has none', { skip }, async () => {
+  const app = await H.open();
+  try {
+    await app.page.setViewportSize({ width: 360, height: 800 });
+    const r = await app.run(() => {
+      const month = getAvailableMonths()[0];
+      const whole = (v) => { const n = Math.round(v); return n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0'; };
+      const race = buildMonthlyRace(month).table;
+      const read = () => {
+        const t = document.querySelector('#summaryContent table');
+        return [...t.querySelectorAll('tbody tr')].filter((tr) => !tr.classList.contains('merit-drill'))
+          .map((tr) => [tr.children[1].innerText.trim(), tr.lastElementChild.innerText.trim()]);
+      };
+      legacyTabBtn('summary').click();
+      summaryMode = 'merit'; summaryMonth = month; meritDrill = null;
+
+      // By tier: each row is that tier's race.
+      leagueGrouped = true; resetMeritTierSections(); renderSummary();
+      const byTier = [...document.querySelectorAll('#summaryContent [id^="meritTierBody"]')].flatMap((body) => {
+        const tier = body.id.replace('meritTierBody', '');
+        return [...body.querySelectorAll('tbody tr:not(.merit-drill)')].map((tr) => {
+          const name = tr.children[1].innerText.trim();
+          const e = race.find((x) => x.playerId === name && x.tier === tier);
+          return { name, shown: tr.lastElementChild.innerText.trim(), want: e ? whole(e.score) : '–' };
+        });
+      });
+
+      // All together: a player's races summed.
+      leagueGrouped = false; renderSummary();
+      const t = document.querySelector('#summaryContent table');
+      const all = read().map(([name, shown]) => ({ name, shown,
+        want: race.some((x) => x.playerId === name) ? whole(race.filter((x) => x.playerId === name).reduce((a, x) => a + x.score, 0)) : '–' }));
+      const fits = { page: document.documentElement.scrollWidth > window.innerWidth + 1,
+        cells: [...t.querySelectorAll('td, th')].filter((c) => c.scrollWidth > c.clientWidth + 1).length };
+      const head = [...t.querySelectorAll('thead th')].map((h) => h.textContent);
+
+      // A Race score opens the race's matches.
+      const btn = t.querySelector('.merit-count[data-kind="race"]');
+      const who = btn.dataset.player;
+      btn.click();
+      const body = document.querySelector('#summaryContent .merit-drill-body');
+      const drill = { head: body.querySelector('.merit-drill-head').innerText, rows: body.querySelectorAll('.race-drill-row').length,
+        want: race.filter((x) => x.playerId === who).reduce((a, x) => a + x.matches.length, 0) };
+
+      // All time: no race.
+      summaryMonth = 'all'; meritDrill = null; renderSummary();
+      const allTime = [...document.querySelectorAll('#summaryContent table thead th')].map((h) => h.textContent);
+      return { byTier, all, fits, head, drill, allTime };
+    });
+    assert.deepStrictEqual(r.head, ['#', 'Player', 'P', 'W', 'D', 'L', 'Pts', 'Hard', 'Even', 'Fav', 'Race']);
+    assert.ok(r.byTier.length > 0 && r.all.length > 0);
+    r.byTier.forEach((x) => assert.strictEqual(x.shown, x.want, `by tier, ${x.name}`));
+    r.all.forEach((x) => assert.strictEqual(x.shown, x.want, `all together, ${x.name}`));
+    assert.ok(r.all.some((x) => /^−/.test(x.shown)), 'a negative score reads as one');
+    assert.deepStrictEqual(r.fits, { page: false, cells: 0 }, 'eleven columns fit a 360px phone');
+    assert.match(r.drill.head, /race · \d+ match/i);
+    assert.strictEqual(r.drill.rows, r.drill.want, 'the drill lists exactly the race\'s matches');
+    assert.ok(!r.allTime.includes('Race'), 'the Race starts again every month, so All time has no column');
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
 test('the drill-down is the table\'s own classification, not a second opinion', { skip }, async () => {
   const app = await H.open();
   try {

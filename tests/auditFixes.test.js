@@ -300,9 +300,10 @@ const reconcile = (app, table, month, grouped) => app.run(({ table, month, group
   let opened = 0, zeroButtons = 0;
   const cells = [...document.querySelectorAll('#summaryContent .merit-count')].filter((b) => b.dataset.kind in KINDS)
     .map((b) => ({ player: b.dataset.player, tier: b.dataset.tier, kind: b.dataset.kind, n: Number(b.textContent) }));
-  // Zero cells are plain text, never a button.
+  // Zero counts are plain text, never a button. (A Race score of 0 is not a
+  // count: it has the month's matches behind it, so it opens them.)
   document.querySelectorAll('#summaryContent tbody tr:not(.merit-drill) td').forEach((td) => {
-    if (td.textContent.trim() === '0' && td.querySelector('button')) zeroButtons++;
+    if (td.textContent.trim() === '0' && td.querySelector('button:not([data-kind="race"])')) zeroButtons++;
   });
   cells.forEach((c) => {
     const btn = [...document.querySelectorAll('#summaryContent .merit-count')].find((b) => b.dataset.player === c.player && b.dataset.tier === c.tier && b.dataset.kind === c.kind);
