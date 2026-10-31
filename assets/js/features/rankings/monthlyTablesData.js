@@ -46,6 +46,22 @@ function leagueSplitRows(month){
     .map(s => ({ ...s, tier: s.segmentTier || '?' }));
 }
 
+// The same question of the Monthly Race (Home's hero, Shaun 31 Oct): one
+// entry per tier the player raced in that month, placed as the Race table
+// places them -- qualified players ranked by score; a provisional player (fewer
+// than MonthlyRace.MIN_MATCHES matches) has no place yet, only a score.
+function raceStandingOf(name, month){
+  const table = buildMonthlyRace(month).table;
+  return table.filter(r => r.playerId === name).map(r => {
+    const ranked = table.filter(x => x.tier === r.tier && x.qualified);
+    return { tier: r.tier, qualified: r.qualified,
+      position: r.qualified ? ranked.findIndex(x => x.playerId === name) + 1 : null, of: ranked.length,
+      score: r.score, games: r.played, wins: r.wins, draws: r.draws, losses: r.losses,
+      toQualify: Math.max(0, MonthlyRace.MIN_MATCHES - r.played),
+      lastDate: r.matches.map(m => m.date).sort().pop() || null };
+  });
+}
+
 // Last 10 as it stood at the close of a month: the same table, built from the
 // record up to and including that month's last day -- so a past month's form
 // is that month's, not today's.

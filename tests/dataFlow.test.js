@@ -51,17 +51,18 @@ maybe('a screen tapped while the record is still arriving is drawn when it lands
   } finally { await app.close(); }
 });
 
-maybe('the same is true of the League Table, which nothing else would redraw', async () => {
+maybe('the same is true of the League screen, which nothing else would redraw -- and it lands on a month, not All time', async () => {
   const app = await harness.open({ readLatency: LATENCY, tapDuringBoot: 'summary' });
   try {
     const seen = await app.run(() => ({
-      tab: activeTab,
+      tab: activeTab, month: summaryMonth,
       rows: document.querySelectorAll('#summaryContent tr').length,
       text: document.getElementById('summaryContent').textContent.trim().length,
     }));
     assert.strictEqual(seen.tab, 'summary');
-    assert.ok(seen.rows > 5, `the League Table should have rows, not ${seen.rows}`);
-    assert.ok(seen.text > 200, 'the League Table should have content');
+    assert.ok(seen.rows > 5, `the League screen should have rows, not ${seen.rows}`);
+    assert.notStrictEqual(seen.month, 'all', 'the default month is picked from the games, once they are here');
+    assert.ok(seen.text > 200, 'the League screen should have content');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
