@@ -101,14 +101,14 @@ function computeRecentFormSequence(name, windowSize){
   return r ? r.run : [];   // oldest -> newest; the latest game is on the right
 }
 
-// The viewer's month, for Home's hero (DQ31): their place in the League of
-// Home's month, read from the League's own table (leagueStandingOf). A
-// mid-month mover is placed by their current spell -- the tier they played in
-// last that month (DQ24) -- and the record and points are that spell's row.
-// Nothing here ranks or scores anything itself; with no game that month there
-// is no spell.
+// The viewer's month, for Home's hero (DQ31): their place in the Monthly Race
+// of Home's month (Shaun, 31 Oct; it was the League), read from the Race's own
+// table (raceStandingOf). A mid-month mover is placed by their current spell
+// -- the tier they played in last that month (DQ24), each tier being its own
+// race -- and the record and score are that spell's. Nothing here ranks or
+// scores anything itself; with no game that month there is no spell.
 function homeMonthStory(name, month){
-  const spells = month ? leagueStandingOf(name, month) : [];
+  const spells = month ? raceStandingOf(name, month) : [];
   const spell = spells.slice().sort((a, b) => String(a.lastDate || '').localeCompare(String(b.lastDate || ''))).pop() || null;
   return { month, spell, tiersPlayed: spells.length };
 }

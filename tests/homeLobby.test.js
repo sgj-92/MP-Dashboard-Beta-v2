@@ -81,41 +81,49 @@ maybe('Home is in the IA\'s order: hero, Needs you, Next game, Last time out, Ar
   } finally { await app.close(); }
 });
 
-maybe('the hero names the viewer\'s League position in their tier, exactly as the League table lists it', async () => {
+// Shaun, 31 Oct: the Monthly Race is the month's centrepiece; the hero tells
+// it in place of the League.
+maybe('the hero names the viewer\'s Monthly Race position in their tier, exactly as the Race table places them', async () => {
   const app = await open();
   try {
     const r = await app.run(() => {
       const out = [];
-      ['Eli', 'Rishi', 'Max', 'Jords'].forEach((name) => {
+      ['Eli', 'Rishi', 'Max', 'Jords', 'Rocky', 'Antz'].forEach((name) => {
         setCurrentViewer(name);
         goToSection('home');
         const s = homeState();
         const month = homeMonth();
-        // The League screen itself, by tier, in its own standing order.
-        summaryMonth = month; summaryMode = 'league'; leagueGrouped = true; leagueLastTen = false;
-        leagueSortKey = 'points'; leagueSortDesc = true;
-        const spells = leagueStandingOf(name, month);
-        const spell = spells.slice().sort((a, b) => String(a.lastDate).localeCompare(String(b.lastDate))).pop() || null;
-        const split = leagueSplitRows(month).filter((x) => x.games > 0 && spell && x.tier === spell.tier);
-        const order = sortLeagueRows(split, 'points', true).map((x) => x.name);
-        out.push({ name, month, headline: s.headline, line: s.line, label: s.label, system: s.system, spell, leaguePos: order.indexOf(name) + 1 });
+        const table = buildMonthlyRace(month).table;
+        const rows = table.filter((x) => x.playerId === name);
+        const lastOf = (x) => x.matches.map((m) => m.date).sort().pop();
+        const row = rows.slice().sort((a, b) => lastOf(a).localeCompare(lastOf(b))).pop() || null;
+        const pos = row && row.qualified ? table.filter((x) => x.tier === row.tier && x.qualified).indexOf(row) + 1 : null;
+        out.push({ name, month, headline: s.headline, line: s.line, label: s.label, system: s.system,
+          row: row && { tier: row.tier, qualified: row.qualified, score: row.score, played: row.played, wins: row.wins, losses: row.losses }, pos });
       });
       return out;
     });
     const ord = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'));
+    const whole = (v) => { const n = Math.round(v); return n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0'; };
     const monthName = (m) => ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][+m.slice(5) - 1];
-    let ranked = 0;
+    let ranked = 0, provisional = 0;
     r.forEach((p) => {
       assert.strictEqual(p.label, `Your ${monthName(p.month)}`, `${p.name}: the month is named`);
-      assert.strictEqual(p.system, 'League', `${p.name}: the ranking system is named before the position`);
-      if (!p.spell) { assert.match(p.headline, /^No games/, `${p.name}: no rank without a game`); return; }
-      ranked++;
-      assert.strictEqual(p.spell.position, p.leaguePos, `${p.name}: the League's own order`);
-      assert.strictEqual(p.headline, `${ord(p.spell.position)} in Tier ${p.spell.tier}`, `${p.name}: the tier is named`);
-      assert.ok(p.line.includes(`${p.spell.points} pts`) && p.line.includes(`${p.spell.games} game`), `${p.name}: ${p.line}`);
-      assert.ok(p.line.includes(`${p.spell.wins}W`) && p.line.includes(`${p.spell.losses}L`), `${p.name}: the record is the table's`);
+      assert.strictEqual(p.system, 'Monthly Race', `${p.name}: the ranking system is named before the position`);
+      if (!p.row) { assert.match(p.headline, /^No games/, `${p.name}: no rank without a game`); return; }
+      if (p.row.qualified) {
+        ranked++;
+        assert.strictEqual(p.headline, `${ord(p.pos)} in Tier ${p.row.tier}`, `${p.name}: the Race's own order`);
+      } else {
+        provisional++;
+        assert.strictEqual(p.headline, `Provisional in Tier ${p.row.tier}`, `${p.name}: no place before qualifying`);
+        assert.match(p.line, /\d more to qualify/);
+      }
+      assert.ok(p.line.includes(`${whole(p.row.score)} pts`) && p.line.includes(`${p.row.played} game`), `${p.name}: ${p.line}`);
+      assert.ok(p.line.includes(`${p.row.wins}W`) && p.line.includes(`${p.row.losses}L`), `${p.name}: the record is the race's`);
     });
-    assert.ok(ranked >= 3, 'most of these players have a September row');
+    assert.ok(ranked >= 3, 'most of these players are qualified in September');
+    assert.ok(provisional >= 1, 'and one is still provisional');
   } finally { await app.close(); }
 });
 
@@ -154,7 +162,7 @@ maybe('the hero is the League story only; Power is its own section, named, with 
   } finally { await app.close(); }
 });
 
-maybe('the hero opens Rankings › This Month, on Home\'s month, without choosing a month for the reader', async () => {
+maybe('the hero opens the Monthly Race, on Home\'s month, without choosing a month for the reader', async () => {
   const app = await open();
   try {
     const r = await app.run(() => {
@@ -168,7 +176,7 @@ maybe('the hero opens Rankings › This Month, on Home\'s month, without choosin
         shown: document.getElementById('summaryView').style.display !== 'none', table: !!document.querySelector('#summaryContent table'),
         sub: [...document.querySelectorAll('#sectionSubnav .section-subnav-item.active')].map((b) => b.textContent.trim()) };
     });
-    assert.deepStrictEqual([r.section, r.tab, r.summaryMonth, r.summaryMode], ['rankings', 'summary', r.month, 'league']);
+    assert.deepStrictEqual([r.section, r.tab, r.summaryMonth, r.summaryMode], ['rankings', 'summary', r.month, 'race']);
     assert.strictEqual(r.choiceAfter, r.choiceBefore, 'Home hands the month over; it does not make the reader\'s choice');
     assert.deepStrictEqual(r.sub, ['This Month']);
     assert.ok(r.shown && r.table);
@@ -181,7 +189,7 @@ maybe('with no game in Home\'s month the hero says so in words, never a rank', a
     const r = await app.run(() => {
       // A current player: an archived one cannot be chosen as the viewer
       // (player status model, 6 Oct).
-      const name = PLAYERS.filter((p) => p.status !== 'archived').map((p) => p.name).find((n) => !leagueStandingOf(n, homeMonth()).length);
+      const name = PLAYERS.filter((p) => p.status !== 'archived').map((p) => p.name).find((n) => !raceStandingOf(n, homeMonth()).length);
       setCurrentViewer(name);
       goToSection('home');
       return { name, ...homeState() };

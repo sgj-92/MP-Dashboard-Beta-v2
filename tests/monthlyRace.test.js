@@ -204,14 +204,14 @@ const withRace = async (options) => {
   return app;
 };
 
-maybe('the Monthly Race is a view on the League screen, beside League and Merit', async () => {
+maybe('the Monthly Race is a view on the League screen, first, then Merit and League', async () => {
   const app = await withRace({ now: NOW });
   try {
     const r = await app.run(() => {
       document.querySelector('#tabrow .tab-btn[data-tab="summary"]').click();
       return [...document.querySelectorAll('#summaryModeSelect option')].map((o) => o.value);
     });
-    assert.deepStrictEqual(r, ['league', 'merit', 'race', 'information']);
+    assert.deepStrictEqual(r, ['race', 'merit', 'league', 'information'], 'in order of importance (Shaun, 31 Oct)');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
@@ -308,6 +308,43 @@ maybe('opening the race changes nothing it sits beside: ratings, League, Merit, 
     const after = await app.run(snap);
     assert.deepStrictEqual(after, before);
     assert.strictEqual(after.writes, 0, 'the race writes nothing');
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+// Shaun, 31 Oct: the Monthly Race is the centrepiece of the month -- the League
+// screen opens on it, and Home's hero tells it (raceStandingOf).
+maybe('the League screen opens on the Monthly Race', async () => {
+  const app = await H.open({ now: NOW });
+  try {
+    const r = await app.run(() => {
+      document.querySelector('#tabrow .tab-btn[data-tab="summary"]').click();
+      return { mode: summaryMode, select: document.getElementById('summaryModeSelect').value,
+        heading: document.querySelector('#summaryContent .section-heading').textContent };
+    });
+    assert.deepStrictEqual([r.mode, r.select], ['race', 'race']);
+    assert.match(r.heading, /Monthly Race/);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+maybe('raceStandingOf places a player exactly as the Race table does', async () => {
+  const app = await H.open({ now: NOW });
+  try {
+    const r = await app.run(() => {
+      const month = '2026-09';
+      const table = buildMonthlyRace(month).table;
+      return [...new Set(table.map((x) => x.playerId))].map((name) => ({ name, got: raceStandingOf(name, month),
+        want: table.filter((x) => x.playerId === name).map((x) => {
+          const ranked = table.filter((y) => y.tier === x.tier && y.qualified);
+          return { tier: x.tier, qualified: x.qualified, position: x.qualified ? ranked.indexOf(x) + 1 : null, score: x.score, games: x.played };
+        }) }));
+    });
+    assert.ok(r.length > 5);
+    r.forEach(({ name, got, want }) => assert.deepStrictEqual(
+      got.map((g) => ({ tier: g.tier, qualified: g.qualified, position: g.position, score: g.score, games: g.games })), want, name));
+    const prov = r.flatMap((x) => x.got).find((g) => !g.qualified);
+    assert.ok(prov && prov.position === null && prov.toQualify > 0, 'a provisional player has no place, and is told how many to go');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });

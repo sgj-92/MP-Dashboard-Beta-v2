@@ -1575,6 +1575,11 @@ function drawFirstScreen(){
   // once, from nothing, and never drawn again: blank until they navigated away
   // and back. See renderActiveTab, which now declines to draw a screen at all
   // before there is anything to draw it from.
+  // A League screen opened before the record arrived (a tap during the load,
+  // or the standings site, which opens on it) picked its default month from
+  // an empty club -- All time, where the Monthly Race has nothing to show.
+  // Pick it again now there are games; a month the reader chose is kept.
+  if(activeTab === 'summary') arriveAtSummary();
   if(activeTab !== 'power' && activeTab !== 'wl') renderActiveTab();
   renderHomeDashboard(); // no-ops until the dashboard exists
   PerfTrace.mark('screen drawn');
@@ -2119,7 +2124,9 @@ let h2hMonth = 'all';
 
 let summaryMonth = null;
 
-let summaryMode = 'league'; // 'league' | 'information' -- League Table is the default view
+// The Monthly Race is the default view (Shaun, 31 Oct): Race, then Merit, then
+// League, in order of importance. 'race' | 'merit' | 'league' | 'information'.
+let summaryMode = 'race';
 
 
 // Rankings › League / Merit / Race / Information: the screen is

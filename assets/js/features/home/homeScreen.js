@@ -3,9 +3,10 @@
 // it answers: how am I doing this month? does anything need me? when am I
 // playing next? what happened last time? what's going on around the club?
 //
-//   hero            the club photograph: greeting, and this month's League
-//                   story -- "Your September / League / 9th in Tier B" -- tap
-//                   opens Rankings › This Month on Home's month
+//   hero            the club photograph: greeting, and this month's Monthly
+//                   Race story -- "Your October / Monthly Race / 2nd in Tier
+//                   A" (Shaun, 31 Oct: the Race leads, then Merit, then
+//                   League) -- tap opens the Race on Home's month
 //   Power           Power Rating, Power position in tier, recent form: one
 //                   quiet section under the hero, opening the profile
 //   Needs you       only when something is waiting on the viewer: a count
@@ -14,8 +15,8 @@
 //   Last time out   the viewer's latest rated match
 //   Around the club a light rail of Club Pulse cards, and the month's review
 //
-// Presentation and wiring only. Every fact is read from its owner: the League
-// table (leagueStandingOf), My Games (myGamesVisible), the engine's recorded
+// Presentation and wiring only. Every fact is read from its owner: the
+// Monthly Race (raceStandingOf), My Games (myGamesVisible), the engine's recorded
 // match facts, Club Pulse and the viewer snapshot. Match Ideas lives in Play ›
 // Arrange a Game (DQ32); the month's club recap is behind its review link.
 //
@@ -35,31 +36,34 @@ function buildHomeDashboard(){
 const homeOrdinal = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'));
 const homeSigned = (v) => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v);
 
-// ---- Hero: the League story ---------------------------------------------------
+// ---- Hero: the Monthly Race story ----------------------------------------------
 //
 // The hero is the photograph and one job (Shaun, 4 Oct): welcome the player
-// and tell their monthly League story. It names the system before the
-// position -- "Your September / League / 9th in Tier B" -- so the position is
-// never read against a different ranking. Power is not in the hero: it has
+// and tell their month. Since 31 Oct that is the Monthly Race (it was the
+// League). It names the system before the position -- "Your October /
+// Monthly Race / 2nd in Tier A" -- so the position is never read against a
+// different ranking. Power is not in the hero: it has
 // its own quiet section beneath (homePowerHtml). The Meaningful Month line,
 // the monthly Power movement and the gap to the next tier stay in Rankings
 // and the profile; Home gives the headline.
 
-// A position only when the viewer has a row in that month's League;
-// otherwise it says, in words, why not -- never a dash or a "0th".
+// A position only when the viewer is a qualified runner in that month's race;
+// a provisional one (fewer than MonthlyRace.MIN_MATCHES matches) is told so,
+// with how many games to go. Otherwise it says, in words, why not -- never a
+// dash or a "0th". Race points are whole here, as on the Merit Table.
 function homeMonthBlockHtml(viewer, month, story){
   const mName = month ? MeaningfulMonth.monthLabel(month).split(' ')[0] : 'month';
   const sp = story.spell;
   let headline, line;
-  if(sp && sp.tier && sp.tier !== '?'){
-    headline = `${homeOrdinal(sp.position)} in Tier ${escapeHtml(sp.tier)}`;
+  if(sp){
+    const tier = sp.tier && sp.tier !== '?' ? `Tier ${escapeHtml(sp.tier)}` : null;
+    headline = sp.qualified && tier ? `${homeOrdinal(sp.position)} in ${tier}`
+      : tier ? `Provisional in ${tier}` : `${sp.games} ${sp.games === 1 ? 'game' : 'games'} in ${escapeHtml(mName)}`;
     const record = `${sp.wins}W${sp.draws ? ` ${sp.draws}D` : ''} ${sp.losses}L`;
-    const bits = [`${sp.games} ${sp.games === 1 ? 'game' : 'games'}`, record, `${sp.points} pts`];
+    const bits = [`${sp.games} ${sp.games === 1 ? 'game' : 'games'}`, record, `${raceWholePoints(sp.score)} pts`];
+    if(!sp.qualified && sp.toQualify) bits.push(`${sp.toQualify} more to qualify`);
     if(story.tiersPlayed > 1) bits.push('since moving tier');
     line = bits.join(' · ');
-  } else if(sp){
-    headline = `${sp.games} ${sp.games === 1 ? 'game' : 'games'} in ${escapeHtml(mName)}`;
-    line = `${sp.wins}W${sp.draws ? ` ${sp.draws}D` : ''} ${sp.losses}L · ${sp.points} pts`;
   } else {
     // Nothing on the table: say so in words. Home's month can be last month
     // (the Meaningful Month), in which case the next game counts towards this
@@ -69,12 +73,12 @@ function homeMonthBlockHtml(viewer, month, story){
     const isCurrent = month === current;
     headline = isCurrent ? 'No games yet this month' : `No games in ${escapeHtml(mName)}`;
     line = isCurrent
-      ? `Your first game puts you on the Tier ${escapeHtml(viewer.tier)} table`
+      ? `Your first game puts you in the Tier ${escapeHtml(viewer.tier)} race`
       : `Your next game counts towards ${MeaningfulMonth.monthLabel(current).split(' ')[0]}`;
   }
   return `<div class="home-month-context">Your ${escapeHtml(mName)}</div>
-  <button type="button" class="home-month${sp ? '' : ' home-month-empty'}" id="homeMonthBtn" aria-label="${escapeHtml(`League, ${mName}: ${headline.replace(/<[^>]+>/g, '')}. ${line}. Open This Month in Rankings`)}">
-    <span class="home-month-label">League</span>
+  <button type="button" class="home-month${sp ? '' : ' home-month-empty'}" id="homeMonthBtn" aria-label="${escapeHtml(`Monthly Race, ${mName}: ${headline.replace(/<[^>]+>/g, '')}. ${line}. Open the Monthly Race in Rankings`)}">
+    <span class="home-month-label">Monthly Race</span>
     <span class="home-month-headline">${headline}</span>
     <span class="home-month-line">${escapeHtml(line)}</span>
     <span class="home-month-chev" aria-hidden="true"></span>
@@ -418,9 +422,9 @@ function openHomeMonthInRankings(){
   goToSection('rankings');
   const b = legacyTabBtn('summary');
   if(b) b.click();
-  if(summaryMonth !== month || summaryMode !== 'league'){
+  if(summaryMonth !== month || summaryMode !== 'race'){
     summaryMonth = month;
-    summaryMode = 'league';
+    summaryMode = 'race';
     renderSummary();
   }
   renderSectionSubnav();

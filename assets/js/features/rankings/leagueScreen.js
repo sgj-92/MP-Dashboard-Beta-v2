@@ -52,9 +52,9 @@ function renderSummary(){
     </div>
     <div class="fg-row"><label class="fg-label">View</label>
       <select id="summaryModeSelect" class="fg-select">
-        <option value="league">League Table</option>
-        <option value="merit">Merit Table</option>
         <option value="race">Monthly Race</option>
+        <option value="merit">Merit Table</option>
+        <option value="league">League Table</option>
         <option value="information">Information</option>
       </select>
     </div>
