@@ -645,6 +645,15 @@
   white-space: normal; word-break: break-word;
 }
 
+/* A Merit column you can sort by (Shaun, 31 Oct). The arrow sits in the
+   header's bottom padding, so sorting costs no width on a phone. */
+.merit-sort-th{ position: relative; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+.merit-sort-th.is-sorted{ color: var(--gold-bright) !important; }
+.merit-sort-th.is-sorted::after{
+  content: attr(data-arrow); position: absolute; left: 0; right: 0; bottom: 0;
+  text-align: center; font-size: 8px; line-height: 8px; color: var(--gold-bright);
+}
+
 /* A count you can open. It reads as a number first and a control second. */
 .merit-count{
   background: none; border: none; padding: 2px 4px; margin: -2px 0;

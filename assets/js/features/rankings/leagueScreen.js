@@ -483,23 +483,59 @@ function meritRaceCellHtml(row, entry){
     aria-expanded="${open}" aria-label="${escapeHtml(`${row.playerId}: Monthly Race ${raceWholePoints(entry.score)} — show the matches`)}">${raceWholePoints(entry.score)}</button>`;
 }
 
+// Every column sorts (Shaun, 31 Oct), as the League's do: a tap sorts by it,
+// highest first (names A-Z), and a second tap turns it round. The # follows
+// the order shown. Ties keep the table's own order, so the default -- Pts,
+// highest first -- is exactly the Merit standings. The arrow sits in the
+// header's bottom padding: ten columns on a phone have no width to spare.
+let meritSortKey = 'merit';
+let meritSortDesc = true;
+
+function meritSortTh(key, label, style, title){
+  const on = meritSortKey === key;
+  return `<th class="merit-sort-th${on ? ' is-sorted' : ''}" data-key="${key}" style="${style}"${title ? ` title="${escapeHtml(title)}"` : ''}
+    aria-sort="${on ? (meritSortDesc ? 'descending' : 'ascending') : 'none'}" tabindex="0" role="button"
+    ${on ? `data-arrow="${meritSortDesc ? '▾' : '▴'}"` : ''}>${label}</th>`;
+}
+
+function meritRaceEntry(race, r){
+  return race ? race[r.tier ? `${r.playerId}\u0000${r.tier}` : r.playerId] : null;
+}
+
+function sortMeritRows(rows, race){
+  const key = (meritSortKey === 'race' && !race) ? 'merit' : meritSortKey;
+  const dir = meritSortDesc ? -1 : 1;
+  const value = (r) => key === 'race' ? (meritRaceEntry(race, r) ? meritRaceEntry(race, r).score : null) : r[key];
+  return rows.map((r, i) => ({ r, i })).sort((a, b) => {
+    if(key === 'name'){
+      const c = a.r.playerId.localeCompare(b.r.playerId);
+      return (meritSortDesc ? c : -c) || a.i - b.i;
+    }
+    const va = value(a.r), vb = value(b.r);
+    // A player with no race this month sits at the bottom either way.
+    if(va === null || vb === null) return (va === null) - (vb === null) || a.i - b.i;
+    return dir * (va - vb) || a.i - b.i;
+  }).map(x => x.r);
+}
+
 function buildMeritTableHtml(rows, showTierColumn, race){
+  rows = sortMeritRows(rows, race);
   let html = `<div class="callout-card" style="padding:0;">
     <table class="merit-table" style="width:100%; border-collapse:collapse; font-size:11px;">
       ${meritColgroupHtml(showTierColumn, !!race)}
       <thead><tr style="background:var(--bg2); text-align:left;">
       <th style="padding:7px 2px 7px 7px;">#</th>
-      <th style="padding:7px 2px;">Player</th>
+      ${meritSortTh('name', 'Player', 'padding:7px 2px;')}
       ${showTierColumn ? `<th style="padding:7px 2px; text-align:center;">Tier</th>` : ''}
-      <th style="padding:7px 2px; text-align:center;">P</th>
-      <th style="padding:7px 2px; text-align:center;">W</th>
-      <th style="padding:7px 2px; text-align:center;">D</th>
-      <th style="padding:7px 2px; text-align:center;">L</th>
-      <th style="padding:7px 3px; text-align:right; color:var(--gold-bright);">Pts</th>
-      <th style="padding:7px 2px; text-align:center;" title="Wins against a stronger pairing">Hard</th>
-      <th style="padding:7px 2px; text-align:center;" title="Wins against an evenly matched pairing">Even</th>
-      <th style="padding:7px ${race ? '2px' : '7px'} 7px 2px; text-align:center;" title="Wins against a weaker pairing">Fav</th>
-      ${race ? `<th style="padding:7px 7px 7px 2px; text-align:right; color:var(--gold-bright);" title="This month's Monthly Race score">Race</th>` : ''}
+      ${meritSortTh('played', 'P', 'padding:7px 2px; text-align:center;')}
+      ${meritSortTh('wins', 'W', 'padding:7px 2px; text-align:center;')}
+      ${meritSortTh('draws', 'D', 'padding:7px 2px; text-align:center;')}
+      ${meritSortTh('losses', 'L', 'padding:7px 2px; text-align:center;')}
+      ${meritSortTh('merit', 'Pts', 'padding:7px 3px; text-align:right; color:var(--gold-bright);')}
+      ${meritSortTh('hardWins', 'Hard', 'padding:7px 2px; text-align:center;', 'Wins against a stronger pairing')}
+      ${meritSortTh('evenWins', 'Even', 'padding:7px 2px; text-align:center;', 'Wins against an evenly matched pairing')}
+      ${meritSortTh('easyWins', 'Fav', `padding:7px ${race ? '2px' : '7px'} 7px 2px; text-align:center;`, 'Wins against a weaker pairing')}
+      ${race ? meritSortTh('race', 'Race', 'padding:7px 7px 7px 2px; text-align:right; color:var(--gold-bright);', "This month's Monthly Race score") : ''}
       </tr></thead><tbody>`;
   const cols = (showTierColumn ? 11 : 10) + (race ? 1 : 0);
   rows.forEach((r,i)=>{
@@ -515,7 +551,7 @@ function buildMeritTableHtml(rows, showTierColumn, race){
       <td style="padding:7px 2px; text-align:center;">${meritCountCell(r, 'hard')}</td>
       <td style="padding:7px 2px; text-align:center;">${meritCountCell(r, 'even')}</td>
       <td style="padding:7px ${race ? '2px' : '7px'} 7px 2px; text-align:center;">${meritCountCell(r, 'favoured')}</td>
-      ${race ? `<td style="padding:7px 7px 7px 2px; text-align:right;">${meritRaceCellHtml(r, race[r.tier ? `${r.playerId}\u0000${r.tier}` : r.playerId])}</td>` : ''}
+      ${race ? `<td style="padding:7px 7px 7px 2px; text-align:right;">${meritRaceCellHtml(r, meritRaceEntry(race, r))}</td>` : ''}
     </tr>`;
     // Hard, Even and Fav keep their own wording and lines; P/W/D/L use the
     // plain game line. All of them are the same detail row.
@@ -528,7 +564,7 @@ function buildMeritTableHtml(rows, showTierColumn, race){
         // Hard / Fav keep the order they have always listed in.
         (a,b)=> a.date < b.date ? 1 : -1);
     });
-    const raceEntry = race && race[r.tier ? `${r.playerId}\u0000${r.tier}` : r.playerId];
+    const raceEntry = meritRaceEntry(race, r);
     if(raceEntry && meritDrill === meritDrillKey(r, 'race')){
       const tiers = raceEntry.tiers.map(t => `Tier ${escapeHtml(t)}`).join(' + ');
       html += tableDrillRowHtml(cols,
@@ -565,6 +601,8 @@ function renderMeritTable(){
   // holds without building the whole table again to count them.
   let meritRowsByTier = null;
   const race = meritRaceIndex(summaryMonth, leagueGrouped);
+  // All time has no Race column, so a Race sort goes back to Pts.
+  if(!race && meritSortKey === 'race'){ meritSortKey = 'merit'; meritSortDesc = true; }
 
   if(leagueGrouped){
     const { table, unresolved } = PerfTrace.time('MeritTable.build',
@@ -608,6 +646,17 @@ function renderMeritTable(){
   // Tapping any count -- P, W, D, L, Hard, Even, Fav or Race -- opens the matches behind
   // it; tapping the same one again closes it.
   wireTableCounts(content, ()=> meritDrill, (k)=>{ meritDrill = k; }, renderMeritTable);
+  content.querySelectorAll('.merit-sort-th').forEach(th=>{
+    const sortBy = ()=>{
+      const key = th.dataset.key;
+      if(meritSortKey === key) meritSortDesc = !meritSortDesc;
+      // Highest first for a number; A-Z for a name.
+      else { meritSortKey = key; meritSortDesc = true; }
+      renderMeritTable();
+    };
+    th.onclick = sortBy;
+    th.onkeydown = (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); sortBy(); } };
+  });
 }
 
 let raceTierOpen = {};
