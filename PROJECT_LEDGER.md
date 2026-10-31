@@ -152,6 +152,13 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Redesign: Power Rankings calmer; one type system app-wide — DONE (`646d91b` on `redesign`), 31 Oct.** Shaun: "Too many fonts, a lot of visual noise. Can't see October or all tiers inside the boxes"; approved from a mock, then "apply the fonts app-wide".
+- **Decision (Shaun): Inter for everything read or tapped; Georgia for titles and player names.** Instrument Serif retired (files removed); `--font-display` is Georgia; the Helvetica/Arial `--font-interface` token, the Georgia `body` default and unstyled buttons/inputs all resolve to Inter. The Power screen had four families and ~20 sizes; it now has two.
+- Power: eyebrow removed; month/tier boxes lose their icons and show whole names ("September 2026", "All tiers") down to 360px; Include idle / temporarily inactive moved into Filters; Kings of Tiers is a list (crown, name over tier, rating); podium and Monthly Summary on the type scale.
+- Every dropdown (`select.fg-select`) gets a slim drawn chevron in place of the browser's arrow, which was clipping month names on This Month too.
+- **Bug fixed:** the Filters dot was lit on every month view (it counted min games ≠ 10 as custom, but a month's default is 5); now it compares with the month's own default and refreshes on every draw.
+- `tests/powerScreen.test.js`; `designFoundations` updated for the new font rule. **1027 / 1027 on `redesign`.** Redesign-only; the live app is unchanged.
+
 **The Monthly Race leads the month — DONE (`3f45899`; redesign Home below), 31 Oct.** Shaun: "I want the monthly race to be the centrepiece of monthly checks now, as the default as opposed to League Table. The order of importance is: Monthly Race, Merit Table then League table. Monthly Race data should show on the home page alongside position, instead of League."
 - **Decision (Shaun):** order of importance Race → Merit → League. The League screen opens on the Race; the View select lists Monthly Race, Merit Table, League Table, Information.
 - `raceStandingOf(name, month)` (monthlyTablesData.js): the Race's counterpart to `leagueStandingOf`, placing a player exactly as the Race table does; provisional players (under `MonthlyRace.MIN_MATCHES`) have no place, only a score and games to go.
@@ -9056,6 +9063,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 31 Oct (latest): redesign Power Rankings + app-wide fonts (`646d91b` on `redesign`).** Baton → Shaun to review at mpr.sgj.luxe.
 
 **CCode, 31 Oct (latest): the Monthly Race leads (`3f45899`; redesign Home hero on `redesign`), 970 / 970 on `main`.** Baton → Shaun. Home hero type set in Georgia (option C, `7f5b5e8` on `redesign`).
 
