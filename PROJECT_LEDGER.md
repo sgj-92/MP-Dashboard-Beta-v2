@@ -156,7 +156,7 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 - Columns now end **Hard · Even · Fav**; the three always add up to W. Even opens its own list of wins (`MeritTable` rows carry `even` beside `hard` / `favoured`), each marked "evenly matched".
 - The table's widths are set (`meritColgroupHtml`): with fixed layout and ten equal columns, names had been breaking mid-word on a phone ("Jord s"); now the counts get what they need and the name the rest. No name breaks at 360px.
 - Board Pack's Merit slide now matches: Hard · Even · Fav (Shaun, 30 Oct; `a432ae5`).
-- **Proposed, awaiting Shaun:** a Race column (the month's Monthly Race score) on the Merit Table. A mock at 360px fits, but tightly; see Open Questions.
+- **Race column on the Merit Table — DONE (commit below), approved by Shaun 30 Oct** ("Whole numbers work. It's so we can quickly see all of the context."). Month views only (no All-time race); whole points ("+52", "−81"); By tier shows that tier's race, All together sums a mid-month mover's races; tapping it lists the race's matches with their stakes. Figures are `buildMonthlyRace`'s own. Fits 360px with no clipping (tested, incl. a three-figure score).
 
 **Standings site for the WhatsApp group — DONE (`1108a73`), 30 Oct.** Shaun: share the live standings instead of screenshots, on a domain of its own so members can't reach the full app by trimming the URL; "mpstandings.sgj.luxe. This month and all historical standings is fine. Results too."
 - `data/siteMode.js`: `isStandingsMode()` is true on a host starting `mpstandings.` (or `?standings`, for local testing). The same build serves both domains.
@@ -2965,7 +2965,7 @@ with Shaun.**
 
 ## 5. OPEN QUESTIONS / DECISIONS
 
-### OPEN 30 Oct — Monthly Race score as a column on the Merit Table (Shaun)
+### RESOLVED 30 Oct — Monthly Race score as a column on the Merit Table (built as proposed)
 Shaun wants the Race score beside Merit for context. A mock with an 11th
 column at 360px fits without breaking names (name column ~72px), but the
 Hard/Even/Fav headers touch and a three-figure negative score sits on the
@@ -9044,6 +9044,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 30 Oct (latest): Race column on the Merit Table (commit below, 969 / 969).** Baton → Shaun.
 
 **CCode, 30 Oct (latest): Merit Table Even column (`0baa96f`, 967 / 967).** Baton → Shaun.
 

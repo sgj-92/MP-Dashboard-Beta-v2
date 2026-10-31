@@ -444,15 +444,49 @@ function meritDrillRowHtml(d, subject){
 // told otherwise. With ten columns that left a name about 33px on a phone, so
 // names broke mid-word; the counts are given just what they need and the name
 // takes the rest.
-function meritColgroupHtml(showTierColumn){
-  const w = ['6%', null, ...(showTierColumn ? ['8%'] : []), '8%', '8%', '7%', '8%', '9%', '10%', '10%', '9%'];
+function meritColgroupHtml(showTierColumn, withRace){
+  const w = withRace
+    ? ['6%', null, ...(showTierColumn ? ['8%'] : []), '7%', '7%', '6%', '7%', '7%', '9%', '9%', '8%', '10%']
+    : ['6%', null, ...(showTierColumn ? ['8%'] : []), '8%', '8%', '7%', '8%', '9%', '10%', '10%', '9%'];
   return `<colgroup>${w.map(x => x ? `<col style="width:${x};">` : '<col>').join('')}</colgroup>`;
 }
 
-function buildMeritTableHtml(rows, showTierColumn){
+// The month's Monthly Race score beside each Merit row, so a glance gives
+// both stories (Shaun, 30 Oct). The Race's own figures, from buildMonthlyRace,
+// never recomputed. By tier, a row is one tier's race; All together, a player
+// who changed tier mid-month gets the sum of their races. No month, no race.
+function meritRaceIndex(month, byTier){
+  if(month === 'all') return null;
+  const index = {};
+  buildMonthlyRace(month).table.forEach(r => {
+    const key = byTier ? `${r.playerId}\u0000${r.tier}` : r.playerId;
+    const e = index[key] || (index[key] = { score: 0, matches: [], tiers: [] });
+    e.score += r.score;
+    e.tiers.push(r.tier);
+    r.matches.forEach(d => e.matches.push({ ...d, raceTier: r.tier }));
+  });
+  return index;
+}
+
+// Whole points here; the Race table keeps the decimal.
+function raceWholePoints(v){
+  const n = Math.round(v);
+  return n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0';
+}
+
+function meritRaceCellHtml(row, entry){
+  if(!entry) return `<span style="color:var(--text-dim);">–</span>`;
+  const key = meritDrillKey(row, 'race');
+  const open = meritDrill === key;
+  return `<button type="button" class="merit-count race-score${open ? ' is-open' : ''}${Math.round(entry.score) < 0 ? ' is-neg' : ''}"
+    data-player="${escapeHtml(row.playerId)}" data-tier="${escapeHtml(row.tier || '')}" data-kind="race"
+    aria-expanded="${open}" aria-label="${escapeHtml(`${row.playerId}: Monthly Race ${raceWholePoints(entry.score)} — show the matches`)}">${raceWholePoints(entry.score)}</button>`;
+}
+
+function buildMeritTableHtml(rows, showTierColumn, race){
   let html = `<div class="callout-card" style="padding:0;">
     <table class="merit-table" style="width:100%; border-collapse:collapse; font-size:11px;">
-      ${meritColgroupHtml(showTierColumn)}
+      ${meritColgroupHtml(showTierColumn, !!race)}
       <thead><tr style="background:var(--bg2); text-align:left;">
       <th style="padding:7px 2px 7px 7px;">#</th>
       <th style="padding:7px 2px;">Player</th>
@@ -464,9 +498,10 @@ function buildMeritTableHtml(rows, showTierColumn){
       <th style="padding:7px 3px; text-align:right; color:var(--gold-bright);">Pts</th>
       <th style="padding:7px 2px; text-align:center;" title="Wins against a stronger pairing">Hard</th>
       <th style="padding:7px 2px; text-align:center;" title="Wins against an evenly matched pairing">Even</th>
-      <th style="padding:7px 7px 7px 2px; text-align:center;" title="Wins against a weaker pairing">Fav</th>
+      <th style="padding:7px ${race ? '2px' : '7px'} 7px 2px; text-align:center;" title="Wins against a weaker pairing">Fav</th>
+      ${race ? `<th style="padding:7px 7px 7px 2px; text-align:right; color:var(--gold-bright);" title="This month's Monthly Race score">Race</th>` : ''}
       </tr></thead><tbody>`;
-  const cols = showTierColumn ? 11 : 10;
+  const cols = (showTierColumn ? 11 : 10) + (race ? 1 : 0);
   rows.forEach((r,i)=>{
     html += `<tr style="border-top:1px solid var(--line);">
       <td style="padding:7px 2px 7px 7px; color:var(--text-dim);">${i+1}</td>
@@ -479,7 +514,8 @@ function buildMeritTableHtml(rows, showTierColumn){
       <td style="padding:7px 3px; text-align:right; font-weight:700; color:var(--gold-bright);">${r.merit}</td>
       <td style="padding:7px 2px; text-align:center;">${meritCountCell(r, 'hard')}</td>
       <td style="padding:7px 2px; text-align:center;">${meritCountCell(r, 'even')}</td>
-      <td style="padding:7px 7px 7px 2px; text-align:center;">${meritCountCell(r, 'favoured')}</td>
+      <td style="padding:7px ${race ? '2px' : '7px'} 7px 2px; text-align:center;">${meritCountCell(r, 'favoured')}</td>
+      ${race ? `<td style="padding:7px 7px 7px 2px; text-align:right;">${meritRaceCellHtml(r, race[r.tier ? `${r.playerId}\u0000${r.tier}` : r.playerId])}</td>` : ''}
     </tr>`;
     // Hard, Even and Fav keep their own wording and lines; P/W/D/L use the
     // plain game line. All of them are the same detail row.
@@ -492,6 +528,13 @@ function buildMeritTableHtml(rows, showTierColumn){
         // Hard / Fav keep the order they have always listed in.
         (a,b)=> a.date < b.date ? 1 : -1);
     });
+    const raceEntry = race && race[r.tier ? `${r.playerId}\u0000${r.tier}` : r.playerId];
+    if(raceEntry && meritDrill === meritDrillKey(r, 'race')){
+      const tiers = raceEntry.tiers.map(t => `Tier ${escapeHtml(t)}`).join(' + ');
+      html += tableDrillRowHtml(cols,
+        `${escapeHtml(r.playerId)} · ${tiers} race · ${raceEntry.matches.length} match${raceEntry.matches.length===1?'':'es'} · ${raceWholePoints(raceEntry.score)}`,
+        raceEntry.matches, (d)=> raceDrillRowHtml(d, d.raceTier));
+    }
     html += tableCountDrillHtml(meritDrill, cols, r.playerId, r.tier, r.games);
   });
   html += `</tbody></table></div>`;
@@ -506,7 +549,7 @@ function renderMeritTable(){
   let html = `<div class="section-heading" style="margin-top:6px;">🥇 ${label} Merit Table</div>`;
   html += `<div class="section-sub" style="margin:2px 0 0;">Harder wins earn more.</div>`;
   html += leagueInlineFold('meritExplainerToggle', 'How points work', meritExplainerOpen,
-    `<div class="section-sub" style="margin:0;">An even matchup is worth 3 points for a win. Beat a stronger pairing and you earn an extra point for each tier-step difference. Beat a weaker pairing and you earn one point less per tier-step. Merit Points cannot fall below 0 for a win. Draws and losses earn 0.</div>`);
+    `<div class="section-sub" style="margin:0;">An even matchup is worth 3 points for a win. Beat a stronger pairing and you earn an extra point for each tier-step difference. Beat a weaker pairing and you earn one point less per tier-step. Merit Points cannot fall below 0 for a win. Draws and losses earn 0.${summaryMonth === 'all' ? '' : ' Race is the same player\'s Monthly Race score this month, to the nearest point; tap it for the matches behind it.'}</div>`);
 
   html += `<div class="fg-toggle" style="margin:8px 0 14px;">
     <button class="fg-toggle-btn ${leagueGrouped?'active':''}" id="meritGroupedBtn">By tier</button>
@@ -521,6 +564,7 @@ function renderMeritTable(){
   // Kept so the tier-heading handlers below can ask how many rows a section
   // holds without building the whole table again to count them.
   let meritRowsByTier = null;
+  const race = meritRaceIndex(summaryMonth, leagueGrouped);
 
   if(leagueGrouped){
     const { table, unresolved } = PerfTrace.time('MeritTable.build',
@@ -534,7 +578,7 @@ function renderMeritTable(){
       anyShown = true;
       const open = tierSectionOpen(meritTierOpen, tier, rows.length);
       html += leagueTierHeading(tier, open).replace('leagueTier', 'meritTier');
-      if(open) html += `<div id="meritTierBody${tier}">${buildMeritTableHtml(rows, false)}</div>`;
+      if(open) html += `<div id="meritTierBody${tier}">${buildMeritTableHtml(rows, false, race)}</div>`;
     });
     if(!anyShown) html += `<div class="section-sub">No games recorded for ${label}.</div>`;
     if(unresolved.length) html += `<div class="section-sub">${unresolved.length} match${unresolved.length===1?'':'es'} could not be scored: a player's tier on that date is unknown.</div>`;
@@ -542,7 +586,7 @@ function renderMeritTable(){
     const { table, unresolved } = PerfTrace.time('MeritTable.build', ()=> MeritTable.build(matches, tierAt));
     const rows = table.filter(r => r.played > 0);
     if(rows.length === 0) html += `<div class="section-sub">No games recorded for ${label}.</div>`;
-    else html += buildMeritTableHtml(rows, false);
+    else html += buildMeritTableHtml(rows, false, race);
     if(unresolved.length) html += `<div class="section-sub">${unresolved.length} match${unresolved.length===1?'':'es'} could not be scored: a player's tier on that date is unknown.</div>`;
   }
 
@@ -561,7 +605,7 @@ function renderMeritTable(){
       renderMeritTable();
     };
   });
-  // Tapping any count -- P, W, D, L, Hard or Fav -- opens the matches behind
+  // Tapping any count -- P, W, D, L, Hard, Even, Fav or Race -- opens the matches behind
   // it; tapping the same one again closes it.
   wireTableCounts(content, ()=> meritDrill, (k)=>{ meritDrill = k; }, renderMeritTable);
 }
