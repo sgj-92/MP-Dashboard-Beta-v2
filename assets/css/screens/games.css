@@ -16,7 +16,7 @@
 .cc-meta-row .cc-meta{ min-width:0; flex:1; }
 .game-manage-btn{
   flex:none; align-self:center;
-  font-family:'Helvetica Neue', Arial, sans-serif; font-size:10px;
+  font-family: var(--font-ui); font-size:10px;
   letter-spacing:.03em; color:var(--text-dim);
   background:transparent; border:1px solid var(--line); border-radius:8px;
   padding:3px 8px; cursor:pointer; white-space:nowrap;

@@ -5,7 +5,7 @@
 
   .risk-badge{
     display:inline-block;
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
     font-size:10px; font-weight:700;
     padding:2px 8px; border-radius:999px;
     letter-spacing:.03em; text-transform:uppercase;
@@ -16,7 +16,7 @@
   .risk-stable{ background:rgba(212,175,55,.1); color:var(--gold-soft); border:1px solid var(--gold-dim); }
 
   .profile-box{
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
     font-size:12.5px; line-height:1.65; color:var(--text);
     background:var(--bg2); border:1px solid var(--line); border-radius:10px;
     padding:12px; margin:10px 0;
@@ -37,15 +37,15 @@
   .sheet h2{margin:0 0 2px; font-size:20px; color:var(--gold-bright);}
   .sheet .stat-row{
     display:flex; gap:14px; margin:10px 0 14px;
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
   }
   .sheet .stat-row div{
     background:var(--bg2); border:1px solid var(--line); border-radius:10px;
     padding:8px 12px; font-size:12px; color:var(--text-dim); flex:1; text-align:center;
   }
-  .sheet .stat-row b{display:block; font-size:16px; color:var(--text); font-family:Georgia,serif;}
+  .sheet .stat-row b{display:block; font-size:16px; color:var(--text); font-family:var(--font-figures); font-variant-numeric:tabular-nums;}
   .match{
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
     font-size:12.5px;
     padding:9px 0;
     border-bottom:1px solid var(--line);
@@ -58,7 +58,7 @@
     display:block; margin:14px auto 0; padding:9px 20px;
     border-radius:999px; border:1px solid var(--gold-dim);
     background:transparent; color:var(--gold-bright);
-    font-family:'Helvetica Neue', Arial, sans-serif; font-size:13px;
+    font-family: var(--font-ui); font-size:13px;
   }
 
 /* ==========================================================================

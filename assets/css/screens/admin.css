@@ -29,13 +29,13 @@
 .audit-row-superseded .audit-dot{ background:var(--text-dim); }
 .audit-body{ min-width:0; }
 .audit-head{
-  font-family:'Helvetica Neue', Arial, sans-serif; font-size:12px; font-weight:700;
+  font-family: var(--font-ui); font-size:12px; font-weight:700;
   color:var(--text); display:flex; align-items:center; gap:6px; flex-wrap:wrap;
 }
-.audit-facts{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:11.5px; color:var(--text-soft); margin-top:2px; }
-.audit-meta{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; color:var(--text-dim); margin-top:2px; }
+.audit-facts{ font-family: var(--font-ui); font-size:11.5px; color:var(--text-soft); margin-top:2px; }
+.audit-meta{ font-family: var(--font-ui); font-size:10.5px; color:var(--text-dim); margin-top:2px; }
 .audit-badge{
-  font-family:'Helvetica Neue', Arial, sans-serif; font-size:9.5px; font-weight:700;
+  font-family: var(--font-ui); font-size:9.5px; font-weight:700;
   letter-spacing:0.04em; text-transform:none;
   padding:1px 7px; border-radius:999px; border:1px solid var(--line);
 }
@@ -63,7 +63,7 @@
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   width:100%; padding:13px 14px;
   background:transparent; border:0; cursor:pointer; text-align:left;
-  font-family:'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui);
 }
 .admin-acc-title{
   font-size:13px; font-weight:700; color:var(--text);
@@ -93,20 +93,20 @@
   display:flex; align-items:center; justify-content:space-between; gap:10px;
   width:100%; padding:11px 2px;
   background:transparent; border:0; cursor:pointer; text-align:left;
-  font-family:'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui);
 }
 /* Deliberately NOT the public serif player-name treatment: this is a
    maintenance list, and borrowing the player-facing styling made it read like
    a leaderboard. */
 .ptag-name{
   display:block;
-  font-family:'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size:13px; font-weight:600; color:var(--text); min-width:0;
 }
 .ptag-meta{
   display:block;
   font-size:11px; color:var(--text-dim); margin-top:2px;
-  font-family:'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui);
 }
 .ptag-right{ display:flex; align-items:center; gap:8px; flex:none; }
 .ptag-state{
@@ -164,52 +164,52 @@
 .bp-item{ border-top:1px solid var(--surface-border-soft); padding:8px 0; }
 .bp-item:first-child{ border-top:0; }
 .bp-item-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.bp-check{ display:flex; align-items:center; gap:8px; min-width:0; font-family:'Helvetica Neue', Arial, sans-serif; font-size:12.5px; color:var(--text-soft); }
+.bp-check{ display:flex; align-items:center; gap:8px; min-width:0; font-family: var(--font-ui); font-size:12.5px; color:var(--text-soft); }
 .bp-item.is-on .bp-check{ color:var(--text); font-weight:600; }
 .bp-move{ display:flex; gap:4px; flex:none; }
 .bp-move-btn{ min-width:34px; padding:4px 8px; }
 .bp-move-btn[disabled]{ opacity:.35; }
 .bp-opts{ display:flex; flex-wrap:wrap; gap:6px 10px; margin:6px 0 0 26px; }
-.bp-opt{ display:flex; flex-direction:column; gap:2px; font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; color:var(--text-dim); }
-.bp-opt .fg-select{ padding:5px 8px; font-size:12px; min-width:118px; }
+.bp-opt{ display:flex; flex-direction:column; gap:2px; font-family: var(--font-ui); font-size:10.5px; color:var(--text-dim); }
+.bp-opt .fg-select{ padding:5px 22px 5px 8px; background-position:right 8px center; font-size:12px; min-width:118px; }
 .bp-item-note .fg-select{ margin-top:6px; width:100%; }
 .bp-note-input{ resize:vertical; min-height:64px; }
 .bp-remove{ margin-top:6px; }
 .bp-note-tag{
-  display:inline-block; font-family:'Helvetica Neue', Arial, sans-serif; font-size:9.5px; font-weight:700;
+  display:inline-block; font-family: var(--font-ui); font-size:9.5px; font-weight:700;
   letter-spacing:.06em; text-transform:uppercase; color:var(--gold-bright);
   border:1px solid var(--gold-dim); border-radius:999px; padding:1px 7px;
 }
 .bp-actions{ display:flex; gap:8px; }
 .bp-actions .preset-btn{ flex:1; }
 .bp-warn{
-  font-family:'Helvetica Neue', Arial, sans-serif; font-size:11.5px; line-height:1.45; color:var(--text);
+  font-family: var(--font-ui); font-size:11.5px; line-height:1.45; color:var(--text);
   border:1px solid var(--gold-dim); border-radius:8px; padding:8px 10px; margin:6px 0;
 }
 .bp-pack{ margin-top:10px; border-top:1px solid var(--surface-border-soft); padding-top:8px; }
-.bp-pack-head{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
+.bp-pack-head{ font-family: var(--font-ui); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
 .bp-module{ padding:10px 0; border-bottom:1px solid var(--surface-border-soft); }
 .bp-module:last-child{ border-bottom:0; }
-.bp-module-title{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px; }
+.bp-module-title{ font-family: var(--font-ui); font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px; }
 .bp-note .bp-note-tag{ margin-bottom:6px; }
-.bp-note-body{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:12.5px; line-height:1.5; color:var(--text-soft); overflow-wrap:anywhere; }
-.bp-subhead{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--gold-soft); margin:8px 0 3px; }
+.bp-note-body{ font-family: var(--font-ui); font-size:12.5px; line-height:1.5; color:var(--text-soft); overflow-wrap:anywhere; }
+.bp-subhead{ font-family: var(--font-ui); font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--gold-soft); margin:8px 0 3px; }
 .bp-list{ list-style:none; margin:0; padding:0; }
-.bp-list li{ display:flex; align-items:baseline; gap:8px; padding:3px 0; font-family:'Helvetica Neue', Arial, sans-serif; font-size:12.5px; color:var(--text); }
+.bp-list li{ display:flex; align-items:baseline; gap:8px; padding:3px 0; font-family: var(--font-ui); font-size:12.5px; color:var(--text); }
 .bp-rank{ flex:none; min-width:18px; color:var(--text-dim); font-variant-numeric:tabular-nums; }
 .bp-name{ min-width:0; overflow-wrap:anywhere; }
 .bp-val{ margin-left:auto; text-align:right; color:var(--text-soft); font-variant-numeric:tabular-nums; }
-.bp-table{ width:100%; border-collapse:collapse; font-family:'Helvetica Neue', Arial, sans-serif; font-size:12px; font-variant-numeric:tabular-nums; }
+.bp-table{ width:100%; border-collapse:collapse; font-family: var(--font-ui); font-size:12px; font-variant-numeric:tabular-nums; }
 .bp-table th{ text-align:left; font-size:10px; font-weight:600; color:var(--text-dim); padding:3px 4px; border-bottom:1px solid var(--surface-border-soft); }
 .bp-table td{ padding:4px; color:var(--text); border-bottom:1px solid var(--surface-border-soft); }
 .bp-table tr:last-child td{ border-bottom:0; }
 .bp-table th:nth-child(n+3), .bp-table td:nth-child(n+3){ text-align:right; }
 .bp-stats{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
 .bp-stat{ text-align:center; }
-.bp-stat-num{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:20px; font-weight:700; color:var(--text); }
-.bp-stat-label{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; color:var(--text-dim); }
-.bp-foot{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:10.5px; color:var(--text-dim); margin-top:6px; }
-.bp-empty{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:12px; color:var(--text-dim); padding:2px 0; }
+.bp-stat-num{ font-family: var(--font-ui); font-size:20px; font-weight:700; color:var(--text); }
+.bp-stat-label{ font-family: var(--font-ui); font-size:10.5px; color:var(--text-dim); }
+.bp-foot{ font-family: var(--font-ui); font-size:10.5px; color:var(--text-dim); margin-top:6px; }
+.bp-empty{ font-family: var(--font-ui); font-size:12px; color:var(--text-dim); padding:2px 0; }
 .bp-dim{ color:var(--text-dim); }
 
 /* Publishing the players' Monthly Review from the pack. */
@@ -228,12 +228,12 @@
 .bp-share-img{ display:block; margin:8px 0 0 auto; padding:4px 12px; font-size:12px; }
 /* Saving the whole pack at once: PDF or every picture. */
 .bp-save-all{ margin:10px 0 4px; padding:10px; border:1px solid var(--surface-border-soft); border-radius:10px; }
-.bp-save-all-head{ font-family:'Helvetica Neue', Arial, sans-serif; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); }
-.bp-share-ready{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0; padding:8px 10px; border:1px solid var(--gold-dim); border-radius:10px; font-family:'Helvetica Neue', Arial, sans-serif; font-size:12px; color:var(--text); }
+.bp-save-all-head{ font-family: var(--font-ui); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); }
+.bp-share-ready{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0; padding:8px 10px; border:1px solid var(--gold-dim); border-radius:10px; font-family: var(--font-ui); font-size:12px; color:var(--text); }
 /* Player Packs: the month's players, then one player's pack. */
 .pp-list{ display:flex; flex-direction:column; margin:8px 0; border-top:1px solid var(--surface-border-soft); }
-.pp-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; min-height:44px; padding:8px 4px; background:none; border:0; border-bottom:1px solid var(--surface-border-soft); color:var(--text); text-align:left; cursor:pointer; font-family:'Helvetica Neue', Arial, sans-serif; }
+.pp-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; min-height:44px; padding:8px 4px; background:none; border:0; border-bottom:1px solid var(--surface-border-soft); color:var(--text); text-align:left; cursor:pointer; font-family: var(--font-ui); }
 .pp-name{ min-width:0; font-size:13px; font-weight:600; overflow-wrap:anywhere; }
 .pp-state{ flex:none; font-size:11px; color:var(--text-dim); }
 .pp-head{ display:flex; align-items:center; gap:10px; margin:6px 0 8px; }
-.pp-title{ min-width:0; font-family:'Helvetica Neue', Arial, sans-serif; font-size:14px; font-weight:700; color:var(--text); overflow-wrap:anywhere; }
+.pp-title{ min-width:0; font-family: var(--font-ui); font-size:14px; font-weight:700; color:var(--text); overflow-wrap:anywhere; }

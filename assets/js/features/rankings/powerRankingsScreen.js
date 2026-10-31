@@ -163,6 +163,7 @@ function render(){
   // "empty" message in answer is worse than saying nothing: it reads as a
   // finished screen with no players in the club.
   if(!DATA_READY){ showBootPlaceholder(); return; }
+  syncRankingsFilterDot();
   renderRankingsMonthNote();
   const monthRatingBtn = document.getElementById('sortMonthRatingBtn');
   if(monthRatingBtn){

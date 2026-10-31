@@ -23,6 +23,9 @@
     --draw:#a39a86;              /* a draw: neutral warm grey, between the win green and the loss red, and neither */
   }
   *{box-sizing:border-box;}
+  /* Buttons and form controls take the browser's own font unless told to
+     inherit; without this every unstyled button was the system face. */
+  button, input, select, textarea{ font-family: inherit; }
   html{
     background: var(--bg0);
     height: 100%;
@@ -30,7 +33,9 @@
   }
   body{
     margin:0;
-    font-family:'Georgia', 'Iowan Old Style', serif;
+    /* Inter for everything read or tapped; Georgia only where a rule asks for
+       it -- titles and player names (Shaun, 31 Oct: "apply the fonts app-wide"). */
+    font-family: var(--font-ui);
     background:
       radial-gradient(ellipse at top, #23200f 0%, var(--bg0) 55%),
       var(--bg0);

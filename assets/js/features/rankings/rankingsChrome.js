@@ -185,13 +185,26 @@ function buildRankingsHero(){
   hero.id = 'rankingsHero';
   hero.style.cssText = 'display:none; padding: var(--space-4) var(--space-4) 0;';
   hero.innerHTML = `
-    <div class="mp-section-label">Money Padel · Results Only</div>
-    <div class="mp-display-title" style="font-size:28px; margin-top:4px;">Power Rankings</div>
-    <div style="font-family:var(--font-interface); font-size:12px; color:var(--text-dim); margin-top:4px; line-height:1.4; max-width:32ch;">A tier-anchored rating. Scoreline counts, not just who won.</div>
+    <div class="mp-display-title rankings-hero-title">Power Rankings</div>
+    <div class="rankings-hero-sub">A tier-anchored rating. Scoreline counts, not just who won.</div>
   `;
   const controls = document.querySelector('.controls');
   controls.parentNode.insertBefore(hero, controls);
   return hero;
+}
+
+// The gold dot on Filters: on whenever the list is narrowed or widened from
+// its default. Min games defaults to 10 on All time and 5 on a month
+// (applyRankingsMonth), so only a departure from the default for the month
+// shown counts -- before, every month view lit it. Also run by render(), so
+// arriving on a default month or changing month keeps it right.
+function syncRankingsFilterDot(){
+  const btn = document.getElementById('openFiltersBtn');
+  const search = document.getElementById('search');
+  if(!btn) return;
+  const nonDefault = minGames !== (selectedMonth === 'all' ? 10 : 5)
+    || (search && search.value.trim() !== '') || includeIdle || includeInactive;
+  btn.classList.toggle('has-filters', nonDefault);
 }
 
 function buildCompactFiltersBar(){
@@ -221,21 +234,19 @@ function buildCompactFiltersBar(){
     if(btn) btn.click();
   };
 
-  // One clean row: Month | Tier | Filter icon, each an icon+bordered control
-  // per the approved reference. Month's own "Month:" label wrapper is left
-  // behind -- only the raw select moves into the toolbar.
+  // One clean row: Month | Tier | Filter icon. No leading icons (Shaun, 31
+  // Oct): they left "Octob…" and "All ti…" in the boxes. Month's own "Month:"
+  // label wrapper is left behind -- only the raw select moves into the toolbar.
   const toolbar = document.createElement('div');
   toolbar.id = 'rankingsToolbar';
   toolbar.className = 'rankings-toolbar';
 
   const monthWrap = document.createElement('div');
   monthWrap.className = 'toolbar-control';
-  monthWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>';
   monthWrap.appendChild(monthSelectEl);
 
   const tierWrap = document.createElement('div');
   tierWrap.className = 'toolbar-control';
-  tierWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 3.5 8 12 12.5 20.5 8Z"/><path d="M3.5 12.5 12 17 20.5 12.5"/><path d="M3.5 17 12 21.5 20.5 17"/></svg>';
   tierWrap.appendChild(tierSelect);
 
   toolbar.appendChild(monthWrap);
@@ -268,6 +279,18 @@ function buildCompactFiltersBar(){
   panel.innerHTML = `<h3>Filters</h3>`;
   panel.appendChild(searchWrap);
   panel.appendChild(minGamesRow);
+  // Include idle / temporarily inactive: off the main screen (Shaun, 31 Oct --
+  // too much on it), here with the other ways of widening the list. The gold
+  // dot on the Filter button says when either is on.
+  const stateFilterRow = document.getElementById('stateFilterRow');
+  if(stateFilterRow){
+    const stateLabel = document.createElement('div');
+    stateLabel.className = 'section-sub';
+    stateLabel.style.cssText = 'margin-top:12px;';
+    stateLabel.textContent = 'Also show';
+    panel.appendChild(stateLabel);
+    panel.appendChild(stateFilterRow);
+  }
   const secondarySortLabel = document.createElement('div');
   secondarySortLabel.className = 'section-sub';
   secondarySortLabel.style.cssText = 'margin-top:12px;';
@@ -287,13 +310,11 @@ function buildCompactFiltersBar(){
   // global indicator.
   const searchInputEl = document.getElementById('search');
   const minGamesInputEl = document.getElementById('minGamesInput');
-  function updateFilterDot(){
-    const nonDefault = minGames !== 10 || (searchInputEl.value.trim() !== '');
-    filtersBtn.classList.toggle('has-filters', nonDefault);
-  }
+  const updateFilterDot = syncRankingsFilterDot;
   minGamesInputEl.addEventListener('input', ()=> setTimeout(updateFilterDot, 0));
   document.querySelectorAll('.minGamesPresets .preset-btn').forEach(b=> b.addEventListener('click', ()=> setTimeout(updateFilterDot, 0)));
   searchInputEl.addEventListener('input', updateFilterDot);
+  document.querySelectorAll('#stateFilterRow .state-toggle').forEach(b=> b.addEventListener('click', ()=> setTimeout(updateFilterDot, 0)));
 
   // Screen isolation: the toolbar belongs to Rankings (both Power Rankings
   // and Win/Loss share Month/Tier filtering) and must never persist onto

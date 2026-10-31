@@ -14,7 +14,7 @@
   }
   .searchwrap input{
     width:100%;
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
     background:var(--bg1);
     border:1px solid var(--line);
     border-radius:10px;
@@ -26,7 +26,7 @@
   .sortbar{
     display:flex;
     gap:6px;
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
   }
 
   .list{padding:0 16px;}
@@ -40,7 +40,7 @@
   }
   .rank{
     text-align:center;
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
     color:var(--text-dim);
     font-size:12px;
   }
@@ -48,13 +48,13 @@
   .namecol{min-width:0;}
   .namecol .nm{font-size:15.5px; font-weight:600; letter-spacing:.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .namecol .meta{
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
     font-size:11px; color:var(--text-dim); margin-top:2px;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .wl{
     text-align:right;
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
     min-width:56px;
     white-space:nowrap;
   }
@@ -64,7 +64,7 @@
   .wl .rec .l{color:var(--red);}
   .wl .rec .d{color:var(--draw);}
   .upset-tag{
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
     font-size:11.5px;
     font-weight:700;
     padding:5px 8px;
@@ -79,7 +79,7 @@
     display:flex;
     align-items:center;
     gap:8px;
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--font-ui);
     flex-wrap:wrap;
   }
   .minGamesLabel{ font-size:12px; color:var(--text-dim); }
@@ -125,9 +125,9 @@
 }
 .podium-slot{ flex: 1; text-align: center; cursor: pointer; position: relative; }
 .podium-slot .rank-num{
-  font-family: var(--font-prestige); color: var(--text-dim); font-size: 13px; font-style: italic;
+  font-family: var(--font-figures); color: var(--text-dim); font-size: 12px; font-weight: 600;
 }
-.podium-slot .rank-num.gold{ color: var(--gold-bright); font-style: normal; font-size: 14px; }
+.podium-slot .rank-num.gold{ color: var(--gold-bright); font-size: 12px; }
 /* Production crown/laurel asset -- replaces the earlier CSS-drawn crown+laurel
    for #1 only. A prestige accent, not the focal point -- gets its own modest
    breathing room from the name below, distinct from the tight rating-to-
@@ -139,12 +139,12 @@
 }
 .podium-slot .crown-laurel-wrap .rank-num{ position: relative; }
 .podium-slot .p-name{
-  font-family: var(--font-prestige); color: var(--text); font-size: 13.5px; margin: 3px 0 1px;
+  font-family: var(--font-prestige); color: var(--text); font-size: 16px; margin: 3px 0 1px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding: 0 2px;
   position: relative; z-index: 1;
 }
 .podium-slot .p-rating{
-  font-family: var(--font-interface); color: var(--text); font-weight: 700; font-size: 16px; letter-spacing: -0.01em;
+  font-family: var(--font-figures); font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; font-size: 18px; letter-spacing: -0.01em;
   position: relative; z-index: 1;
 }
 /* Production pedestal artwork -- transparent PNGs, sized by height per
@@ -168,57 +168,55 @@
 .podium-slot.third .p-pedestal{ height: 34px; }
 .podium-slot.first{ padding-top: 2px; }
 .podium-slot.first .p-pedestal{ height: 64px; }
-.podium-slot.first .p-name{ font-size: 16.5px; font-style: normal; }
-.podium-slot.first .p-rating{ font-size: 22px; color: var(--gold-bright); }
+.podium-slot.first .p-name{ font-size: 18px; font-style: normal; }
+.podium-slot.first .p-rating{ font-size: 26px; color: var(--gold-bright); }
 .podium-caption{
   position: relative; z-index: 1; text-align: center; margin-top: var(--space-3);
-  font-family: var(--font-interface); color: var(--text-dim); font-size: 9px;
-  letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.65;
+  font-family: var(--font-ui); color: var(--text-dim); font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.8;
 }
 
 /* ==========================================================================
-   KINGS OF TIERS -- a compact honours-board panel, not another podium.
-   Three equal-weight cards (A/B/C never 1st/2nd/3rd against each other) --
-   same crown asset, same scale, same card treatment for all three; only a
-   subtle per-tier metallic tint (glow wash + text color) tells them apart.
+   KINGS OF TIERS -- an honours list, not another podium (Shaun, 31 Oct: the
+   nested cards were noise). One row per tier: crown, name over tier, rating.
+   Equal weight for every tier (A/B/C are never 1st/2nd/3rd against each
+   other); only the per-tier metal tint on the crown and figures tells them
+   apart.
    ========================================================================== */
 .kings-panel{
   background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-3) var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-2);
   margin: var(--space-2) var(--space-4) var(--space-3);
 }
 .kings-panel-header{
   display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2);
-  padding: 0 var(--space-1) var(--space-2);
+  padding-bottom: var(--space-1);
 }
 .kings-panel-title{
-  font-family: var(--font-interface); font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+  font-family: var(--font-ui); font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--gold-bright);
 }
-.kings-panel-period{ font-family: var(--font-interface); font-size: 10.5px; color: var(--text-dim); }
+.kings-panel-period{ font-family: var(--font-ui); font-size: 12px; color: var(--text-dim); }
 .kings-panel-note{
-  font-family: var(--font-interface); font-size: 10.5px; color: var(--text-dim);
-  line-height: 1.45; padding: var(--space-2) var(--space-1) 0;
+  font-family: var(--font-ui); font-size: 12px; color: var(--text-dim);
+  line-height: 1.45; padding: var(--space-2) 0 var(--space-1);
 }
 
-.kings-row{ display: flex; gap: var(--space-2); }
+.kings-row{ display: flex; flex-direction: column; }
 .kings-card{
-  flex: 1; min-width: 0; text-align: center; cursor: pointer;
-  background: var(--surface-2); border: 1px solid var(--surface-border); border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-1) var(--space-2);
-  position: relative; overflow: hidden;
+  display: grid; grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-areas: "crown name rating" "crown tier rating";
+  align-items: center; column-gap: 12px;
+  padding: 10px 0; cursor: pointer; text-align: left;
+  border-top: 1px solid var(--surface-border);
 }
-.kings-card::before{
-  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.55;
-  background: radial-gradient(ellipse 90% 60% at 50% 0%, var(--kings-glow, transparent) 0%, transparent 75%);
-}
+.kings-card:first-child{ border-top: 0; }
 .kings-tier-a{ --kings-glow: rgba(245,213,118,0.16); }
 .kings-tier-b{ --kings-glow: rgba(217,204,163,0.14); }
 .kings-tier-c{ --kings-glow: rgba(201,154,99,0.16); }
 
-.kings-crown-wrap{ position: relative; z-index: 1; height: 30px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
-.kings-crown{ height: 100%; width: auto; object-fit: contain; }
+.kings-crown-wrap{ grid-area: crown; display: flex; align-items: center; justify-content: center; }
+.kings-crown{ width: 28px; height: auto; object-fit: contain; }
 /* Same crown image and scale for every tier -- only a subtle filter (not a
    different asset) shifts A's warm champagne toward B's cooler antique-
    platinum and C's deeper bronze. */
@@ -226,27 +224,19 @@
 .kings-tier-c .kings-crown{ filter: sepia(0.35) saturate(0.85) brightness(0.8) hue-rotate(-8deg); }
 
 .kings-name{
-  position: relative; z-index: 1;
-  font-family: var(--font-prestige); font-size: 13.5px; color: var(--text);
+  grid-area: name; font-family: var(--font-prestige); font-size: 16px; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .kings-name-empty{ color: var(--text-dim); }
 .kings-tier-label{
-  position: relative; z-index: 1; margin-top: 2px;
-  font-family: var(--font-interface); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+  grid-area: tier; margin-top: 1px;
+  font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
 }
-.kings-rating{ position: relative; z-index: 1; font-family: var(--font-interface); font-weight: 700; font-size: 15px; margin-top: 3px; }
+.kings-rating{ grid-area: rating; font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 18px; }
 
 .kings-tier-a .kings-tier-label, .kings-tier-a .kings-rating{ color: var(--kings-a-bright); }
 .kings-tier-b .kings-tier-label, .kings-tier-b .kings-rating{ color: var(--kings-b-bright); }
 .kings-tier-c .kings-tier-label, .kings-tier-c .kings-rating{ color: var(--kings-c-bright); }
-
-@media (max-width: 360px){
-  .kings-name{ font-size: 12px; }
-  .kings-rating{ font-size: 13.5px; }
-  .kings-crown-wrap{ height: 26px; }
-
-}
 
 /* Compact ranking rows sit under the podium (or alone, once state is filtered
    away from canonical) -- restyles the EXISTING .row element additively. */
@@ -266,24 +256,31 @@
    dark bordered surfaces with icons, per the approved reference -- neutral
    borders by default, gold reserved for the filter button's active state. */
 .rankings-toolbar{
-  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) auto; gap: 8px; align-items: stretch;
-  padding: var(--space-2) var(--space-4) var(--space-2);
+  /* Month takes what Tier (sized to "All tiers") and Filter leave. */
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: stretch;
+  /* .controls already pads 16px each side: no second inset, so the boxes
+     line up with the title and the cards below and the month fits. */
+  padding: var(--space-2) 0;
   margin-top: 6px;
   max-width: 100%;
 }
 .toolbar-control{
-  display: flex; align-items: center; gap: 8px; height: 40px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 8px; height: 44px; box-sizing: border-box;
   background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
-  padding: 0 10px; width: 100%; min-width: 0;
+  padding: 0 10px 0 12px; width: 100%; min-width: 0;
 }
-.toolbar-control svg{ width: 14px; height: 14px; color: var(--text-dim); flex-shrink: 0; }
 .toolbar-control select{
-  background: transparent; border: none; flex: 1; min-width: 0; width: 0;
-  color: var(--text); font-family: var(--font-interface); font-size: 12.5px; padding: 0;
+  border: none; flex: 1; min-width: 0; width: 0;
+  color: var(--text); font-family: var(--font-ui); font-size: 15px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  /* The browser's own arrow took ~24px of a phone-width box ("Octob…");
+     a slim drawn chevron takes 16. */
+  -webkit-appearance: none; appearance: none; padding: 0 16px 0 0;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a59c88' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") right center / 10px 6px no-repeat;
 }
+#tierSelectCompact{ width: auto; flex: 0 0 auto; }
 .rankings-toolbar .filter-btn{
-  width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center;
   background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
   color: var(--text-dim); cursor: pointer; position: relative; flex-shrink: 0; box-sizing: border-box;
 }
@@ -309,12 +306,12 @@
    with the toolbar above it visually receding by comparison. */
 #sortbarPower{
   display: flex; background: var(--surface-1); border: 1px solid var(--surface-border);
-  border-radius: var(--radius-sm); padding: 3px; margin: 0 16px 14px; gap: 2px;
+  border-radius: var(--radius-sm); padding: 3px; margin: 4px 0 14px; gap: 2px;
 }
 #sortbarPower .sortbtn{
   flex: 1; border: 1px solid transparent;
   background: transparent; border-radius: 6px;
-  padding: 8px 2px; font-size: 10.5px; letter-spacing: 0.03em; color: var(--text-dim); font-weight: 500;
+  padding: 9px 2px; font-family: var(--font-ui); font-size: 13.5px; color: var(--text-dim); font-weight: 500;
 }
 #sortbarPower .sortbtn.active{
   color: var(--gold-bright); background: var(--gold-wash); border-color: var(--gold-hairline);
@@ -370,7 +367,7 @@
 .rg-panel{ padding-bottom: 8px; }
 .rg-sub{ font-family: var(--font-interface); font-size: 11.5px; color: var(--text-dim); margin-bottom: 12px; }
 .rg-anchor{
-  font-family: 'Georgia', serif; font-size: 14.5px; line-height: 1.5;
+  font-family: var(--font-prestige); font-size: 14.5px; line-height: 1.5;
   color: var(--gold-bright); border-left: 2px solid var(--gold-dim);
   padding: 2px 0 2px 12px; margin-bottom: 16px;
 }
@@ -536,7 +533,7 @@
   padding:9px 11px; margin-bottom:12px; background:rgba(212,175,55,.04);
 }
 .ms-takeaways-head{
-  font-family:'Helvetica Neue', Arial, sans-serif; font-size:10px;
+  font-family: var(--font-ui); font-size:10px;
   letter-spacing:.07em; text-transform:uppercase; color:var(--gold-soft);
   font-weight:700; margin-bottom:5px;
 }
@@ -607,10 +604,10 @@
 
 /* Month and View side by side. Both controls are preserved exactly -- same
    ids, same options, same handlers -- this is layout only. */
-.lg-controls{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+.lg-controls{ display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 8px; padding: 8px; }
 .lg-controls .fg-row{ margin-bottom: 0; min-width: 0; }
 .lg-controls .fg-label{ font-size: 10px; margin-bottom: 4px; }
-.lg-controls .fg-select{ padding: 7px 9px; font-size: 13px; }
+.lg-controls .fg-select{ padding: 7px 22px 7px 8px; background-position: right 8px center; font-size: 13px; }
 
 /* The Monthly Summary heading, made tappable. It keeps .ms-head, so the type,
    colour, letter-spacing and spacing are exactly as they were -- the chevron
@@ -722,3 +719,8 @@
 .tbl-result-W{ color: var(--green); }
 .tbl-result-L{ color: var(--red); }
 .tbl-result-D{ color: var(--text-dim); }
+
+/* Power Rankings title block (Shaun, 31 Oct): title and one line, no eyebrow
+   -- the wordmark is directly above. */
+.rankings-hero-title{ font-family: var(--font-prestige); font-size: 28px; letter-spacing: -0.01em; margin-top: 2px; }
+.rankings-hero-sub{ font-family: var(--font-ui); font-size: 14px; color: var(--text-soft); margin-top: 6px; line-height: 1.4; }

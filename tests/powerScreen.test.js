@@ -1,0 +1,135 @@
+// ===================== POWER RANKINGS, CALMER =====================
+// Shaun, 31 Oct: "This needs a redesign. Too many fonts, a lot of visual
+// noise. Can't see October or all tiers inside the boxes." Approved from a
+// mock: one type system (Inter; Georgia for the title and names), no eyebrow,
+// whole month and tier names in their boxes, the Idle / Inactive toggles in
+// Filters, and Kings of Tiers as a list rather than cards within a card.
+
+const test = require('node:test');
+const assert = require('node:assert');
+const H = require('./helpers/uiHarness.js');
+
+const maybe = H.available() ? test : test.skip;
+
+const openPower = (app) => app.run(async () => {
+  goToSection('rankings');
+  legacyTabBtn('power').click();
+  await document.fonts.ready;
+});
+
+maybe('the title block is the title and one line; the screen is set in Inter and Georgia only', async () => {
+  const app = await H.open({ viewport: { width: 390, height: 844 }, mobile: true });
+  try {
+    await openPower(app);
+    const r = await app.run(() => {
+      const hero = document.getElementById('rankingsHero');
+      const scope = '#rankingsHero, .controls, #kingsOfTiersPanel, #rankingsPodium, #list';
+      const fams = [...new Set([...document.querySelectorAll(scope.split(', ').map((s) => s + ' *').join(', '))]
+        .filter((e) => e.getClientRects().length && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()))
+        .map((e) => getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '')))];
+      return { text: hero.innerText, eyebrow: !!hero.querySelector('.mp-section-label'),
+        title: getComputedStyle(hero.querySelector('.rankings-hero-title')).fontFamily, fams };
+    });
+    assert.doesNotMatch(r.text, /Results only/i, 'no eyebrow: the wordmark is right above');
+    assert.strictEqual(r.eyebrow, false);
+    assert.match(r.title, /^Georgia/);
+    assert.deepStrictEqual(r.fams.filter((f) => !/^(Inter|Georgia)$/.test(f)), [], r.fams.join(', '));
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+for (const width of [360, 390]) {
+  maybe(`at ${width}px the month and tier boxes show their whole names`, async () => {
+    const app = await H.open({ viewport: { width, height: 844 }, mobile: true });
+    try {
+      await openPower(app);
+      const r = await app.run(() => {
+        const c = document.createElement('canvas').getContext('2d');
+        return ['monthSelect', 'tierSelectCompact'].map((id) => {
+          const s = document.getElementById(id);
+          const cs = getComputedStyle(s);
+          c.font = `${cs.fontWeight} ${cs.fontSize} Inter`;
+          const room = s.clientWidth - parseFloat(cs.paddingRight);
+          const longest = Math.max(...[...s.options].map((o) => c.measureText(o.text).width));
+          return { id, room, longest, icons: s.parentElement.querySelectorAll('svg').length };
+        }).concat([{ page: document.documentElement.scrollWidth > window.innerWidth + 1 }]);
+      });
+      r.slice(0, 2).forEach((x) => {
+        assert.ok(x.room >= x.longest, `${x.id}: ${Math.round(x.longest)}px of text in ${Math.round(x.room)}px`);
+        assert.strictEqual(x.icons, 0, `${x.id}: no leading icon`);
+      });
+      assert.strictEqual(r[2].page, false);
+    } finally { await app.close(); }
+  });
+}
+
+maybe('Include idle / temporarily inactive live in Filters, which shows a dot while either is on', async () => {
+  const app = await H.open({ viewport: { width: 390, height: 844 }, mobile: true });
+  try {
+    await openPower(app);
+    const r = await app.run(async () => {
+      const row = document.getElementById('stateFilterRow');
+      const inSheet = !!row.closest('#shellFiltersSheet');
+      const btn = document.getElementById('openFiltersBtn');
+      const before = btn.classList.contains('has-filters');
+      row.querySelector('[data-toggle="idle"]').click();
+      await new Promise((res) => setTimeout(res, 10));
+      const on = btn.classList.contains('has-filters');
+      row.querySelector('[data-toggle="idle"]').click();
+      await new Promise((res) => setTimeout(res, 10));
+      return { inSheet, before, on, after: btn.classList.contains('has-filters'), idle: includeIdle };
+    });
+    assert.strictEqual(r.inSheet, true, 'off the main screen, in Filters');
+    assert.deepStrictEqual([r.before, r.on, r.after, r.idle], [false, true, false, false]);
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
+maybe('Kings of Tiers is a list: one row per tier, name over tier, rating on the right', async () => {
+  const app = await H.open({ viewport: { width: 390, height: 844 }, mobile: true });
+  try {
+    await openPower(app);
+    const r = await app.run(() => [...document.querySelectorAll('#kingsOfTiersPanel .kings-card')].map((card) => {
+      const box = (sel) => card.querySelector(sel).getBoundingClientRect();
+      return { name: box('.kings-name'), tier: box('.kings-tier-label'), rating: box('.kings-rating'), card: card.getBoundingClientRect() };
+    }));
+    assert.ok(r.length >= 2);
+    r.forEach((k, i) => {
+      assert.ok(k.tier.top >= k.name.bottom - 1, 'tier under the name');
+      assert.ok(k.rating.left > k.name.right, 'rating to the right');
+      if (i) assert.ok(k.card.top >= r[i - 1].card.bottom - 1, 'stacked, not side by side');
+    });
+  } finally { await app.close(); }
+});
+
+// The same clipping, fixed for every dropdown in the app: a slim drawn chevron
+// in place of the browser's own arrow (inputs sharing the class get none).
+maybe('This Month\'s Month and View show their whole names at 360px; text inputs get no chevron', async () => {
+  const app = await H.open({ viewport: { width: 360, height: 844 }, mobile: true });
+  try {
+    const r = await app.run(async () => {
+      goToSection('rankings');
+      legacyTabBtn('summary').click();
+      await document.fonts.ready;
+      const c = document.createElement('canvas').getContext('2d');
+      const fits = ['summaryMonthSelect', 'summaryModeSelect'].map((id) => {
+        const s = document.getElementById(id);
+        const cs = getComputedStyle(s);
+        c.font = `${cs.fontWeight} ${cs.fontSize} Inter`;
+        const room = s.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        return { id, room, longest: Math.max(...[...s.options].map((o) => c.measureText(o.text).width)), appearance: cs.appearance };
+      });
+      const input = document.createElement('input');
+      input.className = 'fg-select';
+      document.body.appendChild(input);
+      const inputBg = getComputedStyle(input).backgroundImage;
+      input.remove();
+      return { fits, inputBg };
+    });
+    r.fits.forEach((x) => {
+      assert.ok(x.room >= x.longest, `${x.id}: ${Math.round(x.longest)}px of text in ${Math.round(x.room)}px`);
+      assert.strictEqual(x.appearance, 'none');
+    });
+    assert.strictEqual(r.inputBg, 'none');
+  } finally { await app.close(); }
+});

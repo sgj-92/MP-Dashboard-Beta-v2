@@ -82,29 +82,22 @@
      Serif: major titles, player names, prestige rank numerals only.
      Sans: controls, supporting stats, labels, navigation. Never invert this. */
   --font-prestige: 'Georgia', 'Iowan Old Style', serif;
-  --font-interface: 'Helvetica Neue', Arial, sans-serif;
+  /* One sans app-wide (Shaun, 31 Oct): the interface face is Inter, as --font-ui. */
+  --font-interface: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* ==========================================================================
    Self-hosted web fonts -- Player Experience Reset, Phase 0 (DQ20, 30 Sep 2026)
-   Instrument Serif (display) and Inter (interface, figures), SIL OFL 1.1,
-   from Fontsource 5.3.0; licences beside the files in assets/fonts/.
+   Inter (interface, figures), SIL OFL 1.1, from Fontsource 5.3.0; licence
+   beside the files in assets/fonts/. Instrument Serif was retired 31 Oct
+   (Shaun): its tall, narrow letters read as stretched; titles and names
+   use Georgia (--font-prestige / --font-display).
    Declaring a face downloads nothing: a browser fetches a file only when a
    rendered element uses the family, and nothing in the app does until a
    phase adopts --font-display / --font-ui / --font-figures. No third-party
    request, ever. Latin + Latin Extended subsets, split by unicode-range, so
    only the subset a page's text needs is fetched.
    ========================================================================== */
-@font-face{
-  font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: swap;
-  src: url("../fonts/instrument-serif/instrument-serif-latin-400-normal.woff2") format("woff2");
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-@font-face{
-  font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; font-display: swap;
-  src: url("../fonts/instrument-serif/instrument-serif-latin-400-italic.woff2") format("woff2");
-  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
 @font-face{
   font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap;
   src: url("../fonts/inter/inter-latin-400-normal.woff2") format("woff2");
@@ -119,16 +112,6 @@
   font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap;
   src: url("../fonts/inter/inter-latin-600-normal.woff2") format("woff2");
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-@font-face{
-  font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: swap;
-  src: url("../fonts/instrument-serif/instrument-serif-latin-ext-400-normal.woff2") format("woff2");
-  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
-}
-@font-face{
-  font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; font-display: swap;
-  src: url("../fonts/instrument-serif/instrument-serif-latin-ext-400-italic.woff2") format("woff2");
-  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
 }
 @font-face{
   font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap;
@@ -195,14 +178,13 @@
   --danger-text: #e8a5a1;               /* 9.2:1 */
   --danger-border: rgba(181,69,63,0.55);
 
-  /* ---- Type roles for the redesign (DQ20). Instrument Serif has NO
-     tabular figures (its digits differ in width -- checked in the font
-     files), so it is for display text and single display numerals only.
+  /* ---- Type roles for the redesign (DQ20; Georgia display since 31 Oct).
+     A serif is for display text and single display numerals only.
      Any number that must line up -- tables, points, scores, counts -- uses
      --font-figures with font-variant-numeric: tabular-nums (Inter has
      tnum). The Ledger's rule stands: serif for titles, names and prestige
      numerals; sans for everything read or tapped. ---- */
-  --font-display: 'Instrument Serif', 'Georgia', 'Iowan Old Style', serif;
+  --font-display: 'Georgia', 'Iowan Old Style', serif;
   --font-ui: 'Inter', 'Helvetica Neue', Arial, sans-serif;
   --font-figures: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 

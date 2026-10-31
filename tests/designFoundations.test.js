@@ -58,7 +58,9 @@ test('no token is declared twice: Phase 0 adds names, it never redefines one', (
 
 test('DQ20: the champagne accent, the fonts, and the Ledger contrast kept', () => {
   assert.strictEqual(token('--accent'), '#D5B76E');
-  assert.match(token('--font-display'), /^'Instrument Serif'/);
+  // Instrument Serif was retired 31 Oct (Shaun): titles are Georgia.
+  assert.match(token('--font-display'), /^'Georgia'/);
+  assert.match(token('--font-interface'), /^'Inter'/, 'one sans app-wide');
   assert.match(token('--font-ui'), /^'Inter'/);
   assert.match(token('--font-figures'), /^'Inter'/);
   // The existing gold and muted text are untouched in Phase 0.
@@ -87,16 +89,16 @@ test('Booked has its own hue: not Tier B sage, not upward movement (DQ20)', () =
 
 test('fonts are self-hosted WOFF2 with their OFL licences, and swap rather than block', () => {
   const faces = [...tokensCss.matchAll(/@font-face\s*\{([^}]*)\}/g)].map((m) => m[1]);
-  assert.strictEqual(faces.length, 10, 'Instrument Serif 400 + italic, Inter 400/500/600; Latin and Latin Extended');
+  assert.strictEqual(faces.length, 6, 'Inter 400/500/600; Latin and Latin Extended (Instrument Serif retired 31 Oct)');
   for (const f of faces) {
     assert.match(f, /font-display:\s*swap/);
-    assert.match(f, /font-family:\s*'(Instrument Serif|Inter)'/);
+    assert.match(f, /font-family:\s*'Inter'/);
     const url = /url\("\.\.\/fonts\/([^"]+)"\)/.exec(f);
     assert.ok(url, 'a local file');
     const file = path.join(ROOT, 'assets/fonts', url[1]);
     assert.strictEqual(fs.readFileSync(file).subarray(0, 4).toString('latin1'), 'wOF2', url[1]);
   }
-  for (const dir of ['instrument-serif', 'inter']) {
+  for (const dir of ['inter']) {
     assert.match(read(`assets/fonts/${dir}/OFL.txt`), /SIL Open Font License, Version 1\.1/);
   }
 });
@@ -107,7 +109,7 @@ test('nothing reaches a third party for type: no web-font service, no remote url
   assert.doesNotMatch(read('index.html') + refPage, /fonts\.googleapis|fonts\.gstatic|use\.typekit/);
 });
 
-test('numbers that must line up use tabular Inter: Instrument Serif has no tabular figures', () => {
+test('numbers that must line up use tabular Inter', () => {
   assert.match(PHASE0, /\.mp-figures\{[^}]*font-family:\s*var\(--font-figures\)[^}]*tabular-nums/);
   for (const sel of ['.mp-count-badge', '.mp-counter-num', '.mp-date-day', '.mp-player-row-rank', '.mp-player-row-value']) {
     const rule = new RegExp(sel.replace(/[.-]/g, (c) => '\\' + c) + '\\{([^}]*)\\}').exec(PHASE0);
@@ -228,9 +230,10 @@ function host() {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-// Phase 1 adopted the type roles for the shell's own navigation; the screens
-// themselves keep theirs until their phase. Home is rebuilt in Phase 3a.
-maybe('the app fetches only its own fonts, and no screen\'s content is set in a new family yet', async () => {
+// Shaun, 31 Oct: "apply the fonts app-wide". Every screen is now set in the
+// two families -- Inter for everything read or tapped, Georgia for titles and
+// names -- and nothing else (bar a monospace figure here and there).
+maybe('the app fetches only its own fonts, and every screen is set in Inter or Georgia', async () => {
   const app = await H.open();
   try {
     const fonts = [];
@@ -242,11 +245,11 @@ maybe('the app fetches only its own fonts, and no screen\'s content is set in a 
     }
     const origin = await app.run(() => location.origin);
     assert.deepStrictEqual(fonts.filter((u) => !u.startsWith(origin + '/assets/fonts/')), [], 'self-hosted only');
-    const CHROME = '.shell-header, #sectionSubnav, .shell-bottom-nav, #meView, .shell-more-sheet, #homeDashboard';
-    const families = await app.run((chrome) => [...new Set([...document.querySelectorAll('body *')]
-      .filter((el) => !el.closest(chrome)).map((el) => getComputedStyle(el).fontFamily))]
-      .filter((f) => /Instrument Serif|Inter/.test(f)), CHROME);
-    assert.deepStrictEqual(families, [], 'no screen content renders in a new family');
+    const families = await app.run(() => [...new Set([...document.querySelectorAll('body *')]
+      .filter((el) => el.getClientRects().length && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()))
+      .map((el) => getComputedStyle(el).fontFamily.split(',')[0].replace(/["']/g, '').trim()))]);
+    assert.deepStrictEqual(families.filter((f) => !/^(Inter|Georgia|ui-monospace|Menlo|monospace)$/.test(f)), [], `only Inter and Georgia: ${families.join(', ')}`);
+    assert.ok(families.includes('Inter'), 'Inter is the interface face');
     assert.deepStrictEqual(app.pageErrors, []);
   } finally { await app.close(); }
 });
@@ -265,9 +268,9 @@ maybe('the reference page loads the self-hosted fonts, same-origin only, and eve
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(origin + '/docs/design/primitives.html');
     await page.evaluate(() => document.fonts.ready);
-    const loaded = await page.evaluate(() => ['400 16px "Instrument Serif"', 'italic 400 16px "Instrument Serif"', '400 16px "Inter"', '500 16px "Inter"', '600 16px "Inter"']
+    const loaded = await page.evaluate(() => ['400 16px "Inter"', '500 16px "Inter"', '600 16px "Inter"']
       .map((f) => document.fonts.check(f)));
-    assert.deepStrictEqual(loaded, [true, true, true, true, true]);
+    assert.deepStrictEqual(loaded, [true, true, true]);
     assert.deepStrictEqual(offsite, []);
     assert.deepStrictEqual(errors, []);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= 375), 'no sideways scroll at 375');
