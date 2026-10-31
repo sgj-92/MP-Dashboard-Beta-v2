@@ -152,6 +152,11 @@ built; they exist — `scripts/screenshots.js`, 19 captures in
 
 ### Added since the compaction
 
+**Merit Table: every column sorts — DONE (commit below), 31 Oct.** Shaun: "I have to be able to sort each column."
+- Player, P, W, D, L, Pts, Hard, Even, Fav and Race sort on tap: highest first (names A-Z), a second tap reverses. The # follows the order shown, as on the League table. Ties keep the Merit order, so the default (Pts, highest first) is unchanged.
+- Players with no race this month sit at the bottom of a Race sort either way; on All time (no Race column) a Race sort falls back to Pts.
+- The ▾/▴ sits in the header's bottom padding, so it costs no width at 360px. Headers are keyboard-operable with `aria-sort`.
+
 **Merit Table: an Even column — DONE (`0baa96f`), 30 Oct.** Shaun: "add even games into the columns at the end, so wins are broken down by hard, even and favourable".
 - Columns now end **Hard · Even · Fav**; the three always add up to W. Even opens its own list of wins (`MeritTable` rows carry `even` beside `hard` / `favoured`), each marked "evenly matched".
 - The table's widths are set (`meritColgroupHtml`): with fixed layout and ten equal columns, names had been breaking mid-word on a phone ("Jord s"); now the counts get what they need and the name the rest. No name breaks at 360px.
@@ -9044,6 +9049,8 @@ Backfill of 817 documents to `mp-dashboard-beta-v3` verified against the plan:
 ---
 
 ## 8. NEXT
+
+**CCode, 31 Oct (latest): Merit Table columns sort (commit below, 970 / 970).** Baton → Shaun.
 
 **CCode, 30 Oct (latest): Race column on the Merit Table (`eaed298`, 969 / 969).** Baton → Shaun.
 

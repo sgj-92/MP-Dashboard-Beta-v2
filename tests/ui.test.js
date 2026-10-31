@@ -4969,6 +4969,58 @@ test('the Merit Table carries the month\'s Race score; All time has none', { ski
   } finally { await app.close(); }
 });
 
+// Shaun, 31 Oct: "I have to be able to sort each column."
+test('every Merit column sorts, both ways, and the # follows the order shown', { skip }, async () => {
+  const app = await H.open();
+  try {
+    await app.page.setViewportSize({ width: 360, height: 800 });
+    const r = await app.run(() => {
+      legacyTabBtn('summary').click();
+      summaryMode = 'merit'; summaryMonth = getAvailableMonths()[0]; leagueGrouped = false; meritDrill = null;
+      meritSortKey = 'merit'; meritSortDesc = true;
+      renderSummary();
+      const num = (t) => (t === '–' ? null : Number(t.replace('−', '-').replace('+', '')));
+      const col = (i) => [...document.querySelectorAll('#summaryContent table tbody tr:not(.merit-drill)')].map((tr) => tr.children[i].innerText.trim());
+      const th = (k) => document.querySelector(`#summaryContent .merit-sort-th[data-key="${k}"]`);
+      const keys = [...document.querySelectorAll('#summaryContent .merit-sort-th')].map((h) => h.dataset.key);
+      const defaultPts = col(6);
+      const out = { keys, defaultPts, checks: [] };
+      [['played', 2], ['wins', 3], ['draws', 4], ['losses', 5], ['merit', 6], ['hardWins', 7], ['evenWins', 8], ['easyWins', 9], ['race', 10]].forEach(([k, i]) => {
+        if (k !== meritSortKey) th(k).click(); else { th(k).click(); th(k).click(); }
+        const down = col(i).map(num);
+        const ariaDown = th(k).getAttribute('aria-sort');
+        th(k).click();
+        const up = col(i).map(num);
+        out.checks.push({ k, down, up, ariaDown, ariaUp: th(k).getAttribute('aria-sort'), ranks: col(0) });
+      });
+      th('name').click();
+      out.names = col(1);
+      const t = document.querySelector('#summaryContent table');
+      out.overflow = [...t.querySelectorAll('th')].filter((c) => c.scrollWidth > c.clientWidth + 1).length;
+      th('race').click();
+      summaryMonth = 'all'; renderSummary();
+      out.allTimeSort = document.querySelector('#summaryContent .merit-sort-th.is-sorted').dataset.key;
+      return out;
+    });
+    assert.deepStrictEqual(r.keys, ['name', 'played', 'wins', 'draws', 'losses', 'merit', 'hardWins', 'evenWins', 'easyWins', 'race']);
+    const isSorted = (xs, desc) => xs.every((x, i) => i === 0 || (desc ? xs[i - 1] >= x : xs[i - 1] <= x));
+    const dashLast = (xs) => xs.map((x) => (x === null ? 0 : x));   // a dash reads as no score: 0 for Hard/Even/Fav
+    r.checks.forEach((c) => {
+      const down = c.k === 'race' ? c.down.filter((x) => x !== null) : dashLast(c.down);
+      const up = c.k === 'race' ? c.up.filter((x) => x !== null) : dashLast(c.up);
+      assert.ok(isSorted(down, true), `${c.k}: highest first on the first tap`);
+      assert.ok(isSorted(up, false), `${c.k}: lowest first on the second`);
+      assert.strictEqual(c.ariaDown, 'descending'); assert.strictEqual(c.ariaUp, 'ascending');
+      assert.deepStrictEqual(c.ranks, c.ranks.map((_, i) => String(i + 1)), `${c.k}: # follows the order shown`);
+    });
+    assert.ok(isSorted(r.defaultPts.map(Number), true), 'the default is the Merit standings');
+    assert.deepStrictEqual(r.names, r.names.slice().sort((a, b) => a.localeCompare(b)), 'Player sorts A-Z');
+    assert.strictEqual(r.overflow, 0, 'the sort arrow takes no width on a phone');
+    assert.strictEqual(r.allTimeSort, 'merit', 'All time has no Race, so a Race sort falls back to Pts');
+    assert.deepStrictEqual(app.pageErrors, []);
+  } finally { await app.close(); }
+});
+
 test('the drill-down is the table\'s own classification, not a second opinion', { skip }, async () => {
   const app = await H.open();
   try {
